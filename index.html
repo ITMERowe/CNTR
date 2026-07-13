@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#101819" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" />
+    <title>CNTR</title>
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <div class="top-row">
+          <div>
+            <div class="brand">CNTR</div>
+            <div class="total" id="headline" aria-hidden="true"></div>
+          </div>
+          <div class="actions">
+            <button class="icon-btn" id="resetBtn" title="Clear sales"><span class="material-symbols-outlined">refresh</span></button>
+            <button class="icon-btn" id="openProductEdit" title="Edit product"><span class="material-symbols-outlined">add</span></button>
+          </div>
+        </div>
+        <div class="stats" id="stats"></div>
+      </header>
+      <main>
+        <section class="screen active" id="salesScreen">
+          <div class="sales-grid" id="grid"></div>
+        </section>
+        <section class="screen" id="reportsScreen">
+          <div class="page">
+            <h1 class="placeholder-title">Reports</h1>
+            <p class="placeholder-text">Daily and event summaries will live here later.</p>
+            <div class="report-card" id="reportCard"></div>
+          </div>
+        </section>
+        <section class="screen" id="historyScreen">
+          <div class="page">
+            <h1 class="placeholder-title">History</h1>
+            <p class="placeholder-text">Transaction history is planned for a future version.</p>
+          </div>
+        </section>
+        <section class="screen" id="settingsScreen">
+          <div class="page">
+            <div class="hero" id="settingsHero">+0</div>
+            <div class="panel">
+              <div class="menu-row"><span class="menu-icon material-symbols-outlined">info</span><span>About</span></div>
+              <div class="menu-row"><span class="menu-icon material-symbols-outlined">inventory_2</span><span>Products</span></div>
+              <div class="menu-row"><span class="menu-icon material-symbols-outlined">tune</span><span>Settings</span></div>
+            </div>
+            <div class="panel">
+              <div class="menu-row">Contact developer</div>
+              <div class="menu-row">Share app</div>
+              <div class="menu-row">Leave a review</div>
+            </div>
+            <div class="support">
+              <div>
+                <h3>Support this project</h3>
+                <p>Help keep it simple.</p>
+              </div>
+              <span class="material-symbols-outlined support-icon">support_agent</span>
+            </div>
+          </div>
+        </section>
+        <section class="screen" id="productEditScreen">
+          <div class="page">
+            <div class="page-header">
+              <button class="icon-btn back-btn" id="closeEditBtn" title="Back"><span class="material-symbols-outlined">arrow_back</span></button>
+              <h1 class="placeholder-title" id="productEditTitle">Add product</h1>
+              <button class="icon-btn delete-btn" id="removeProductBtn" title="Delete product"><span class="material-symbols-outlined">delete</span></button>
+            </div>
+            <div class="edit-panel">
+              <div class="field color-field">
+              <label>Color</label>
+              <div class="color-input-group" id="colorField">
+                <span class="color-text" id="editColorHex">#F76495</span>
+              </div>
+              <div class="color-picker-popover" id="colorPickerMenu" role="dialog" aria-label="Color picker">
+                <div class="picker-hex-card" id="pickerHexCard">
+                  <label for="editColorHexInput">HEX code</label>
+                  <input id="editColorHexInput" type="text" pattern="#?[A-Fa-f0-9]{6}" placeholder="#FF00AA" />
+                </div>
+                <div class="picker-surface" id="pickerSurface">
+                  <div class="picker-surface-thumb" id="pickerSurfaceThumb"></div>
+                </div>
+                <div class="picker-row hue-row">
+                  <span class="hue-label">Hue</span>
+                  <div class="hue-slider" id="hueSlider">
+                    <div class="hue-thumb" id="hueThumb"></div>
+                  </div>
+                  <span class="hue-value" id="hueValue">0°</span>
+                </div>
+                <div class="picker-presets">
+                  <button class="color-preset" type="button" style="--preset:#f76495" aria-label="Preset pink"></button>
+                  <button class="color-preset" type="button" style="--preset:#ff4d4d" aria-label="Preset red"></button>
+                  <button class="color-preset" type="button" style="--preset:#f9b234" aria-label="Preset orange"></button>
+                  <button class="color-preset" type="button" style="--preset:#51c43f" aria-label="Preset green"></button>
+                  <button class="color-preset" type="button" style="--preset:#30c7ff" aria-label="Preset cyan"></button>
+                  <button class="color-preset" type="button" style="--preset:#4f6eff" aria-label="Preset blue"></button>
+                  <button class="color-preset" type="button" style="--preset:#b85dff" aria-label="Preset purple"></button>
+                </div>
+              </div>
+            </div>
+              <div class="field name-field">
+                <label>Name
+                  <input id="editName" type="text" />
+                </label>
+              </div>
+              <div class="field row-two">
+                <label>Price
+                  <input id="editPrice" type="number" min="0" />
+                </label>
+                <label>Cost
+                  <input id="editCost" type="number" min="0" />
+                </label>
+              </div>
+              <button class="save-btn" id="saveProductBtn">Save</button>
+            </div>
+          </div>
+        </section>
+      </main>
+      <nav class="nav">
+        <button class="active" data-tab="salesScreen"><span class="material-symbols-outlined">menu</span></button>
+        <button data-tab="reportsScreen"><span class="material-symbols-outlined">bar_chart</span></button>
+        <button data-tab="historyScreen"><span class="material-symbols-outlined">history</span></button>
+        <button data-tab="settingsScreen"><span class="material-symbols-outlined">settings</span></button>
+      </nav>
+      <div class="toast" id="toast">Sale recorded</div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

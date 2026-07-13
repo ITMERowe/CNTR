@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CNTR</string>
+    <string name="title_activity_main">CNTR</string>
+    <string name="package_name">com.cntr.app</string>
+    <string name="custom_url_scheme">com.cntr.app</string>
+</resources>
