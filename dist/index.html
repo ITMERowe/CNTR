@@ -8,8 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" />
     <title>CNTR</title>
-    <script type="module" crossorigin src="/assets/index-DeTACiAd.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CGEi5mgM.css">
+    <script type="module" crossorigin src="/assets/index-D7kgnfZr.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-D8LfqRvN.css">
   </head>
   <body>
     <div class="app">
@@ -21,7 +21,12 @@
           </div>
           <div class="actions">
             <button class="icon-btn" id="resetBtn" title="Clear sales"><span class="material-symbols-outlined">refresh</span></button>
+            <button class="icon-btn" id="optionsBtn" title="Options"><span class="material-symbols-outlined">more_vert</span></button>
             <button class="icon-btn" id="openProductEdit" title="Edit product"><span class="material-symbols-outlined">add</span></button>
+            <div class="options-menu" id="optionsMenu" aria-label="Options menu">
+              <button type="button" id="saveReportOption">Save report</button>
+              <button type="button" id="saveEventReportOption">Save event report</button>
+            </div>
           </div>
         </div>
         <div class="stats" id="stats"></div>
@@ -32,15 +37,43 @@
         </section>
         <section class="screen" id="reportsScreen">
           <div class="page">
-            <h1 class="placeholder-title">Reports</h1>
-            <p class="placeholder-text">Daily and event summaries will live here later.</p>
+            <div class="page-header">
+              <button class="icon-btn back-btn" id="reportBackBtn" title="Back to live report" style="display:none"><span class="material-symbols-outlined">arrow_back</span></button>
+              <h1 class="placeholder-title" id="reportPageTitle">Report</h1>
+            </div>
             <div class="report-card" id="reportCard"></div>
+          </div>
+        </section>
+        <section class="screen" id="eventScreen">
+          <div class="page">
+            <div class="page-header">
+              <button class="icon-btn back-btn" id="eventBackBtn" title="Back to history" style="display:none"><span class="material-symbols-outlined">arrow_back</span></button>
+              <h1 class="placeholder-title" id="eventPageTitle">Event Report</h1>
+            </div>
+            <div class="report-card" id="eventCard"></div>
           </div>
         </section>
         <section class="screen" id="historyScreen">
           <div class="page">
-            <h1 class="placeholder-title">History</h1>
-            <p class="placeholder-text">Transaction history is planned for a future version.</p>
+            <div class="page-header">
+              <h1 class="placeholder-title">History</h1>
+            </div>
+            <div class="report-card">
+              <div class="history-grid">
+                <section class="history-card">
+                  <div class="section-head"><h2 class="report-title">Saved reports</h2></div>
+                  <div id="historySavedReports" class="history-list"></div>
+                </section>
+                <section class="history-card">
+                  <div class="section-head"><h2 class="report-title">Saved event reports</h2></div>
+                  <div id="historySavedEventReports" class="history-list"></div>
+                </section>
+                <section class="history-card">
+                  <div class="section-head"><h2 class="report-title">Recent purchases</h2></div>
+                  <div id="historyRecentPurchase" class="history-list"></div>
+                </section>
+              </div>
+            </div>
           </div>
         </section>
         <section class="screen" id="settingsScreen">
@@ -106,15 +139,15 @@
             </div>
               <div class="field name-field">
                 <label>Name
-                  <input id="editName" type="text" />
+                  <input id="editName" type="text" placeholder="Product Name" />
                 </label>
               </div>
               <div class="field row-two">
                 <label>Price
-                  <input id="editPrice" type="number" min="0" />
+                  <input id="editPrice" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" />
                 </label>
                 <label>Cost
-                  <input id="editCost" type="number" min="0" />
+                  <input id="editCost" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" />
                 </label>
               </div>
               <button class="save-btn" id="saveProductBtn">Save</button>
@@ -123,11 +156,63 @@
         </section>
       </main>
       <nav class="nav">
-        <button class="active" data-tab="salesScreen"><span class="material-symbols-outlined">menu</span></button>
+        <button data-tab="eventScreen"><span class="material-symbols-outlined">paid</span></button>
         <button data-tab="reportsScreen"><span class="material-symbols-outlined">bar_chart</span></button>
+        <button class="active" data-tab="salesScreen"><span class="material-symbols-outlined">menu</span></button>
         <button data-tab="historyScreen"><span class="material-symbols-outlined">history</span></button>
         <button data-tab="settingsScreen"><span class="material-symbols-outlined">settings</span></button>
       </nav>
+      <div class="save-modal-overlay" id="saveModalOverlay" aria-hidden="true">
+        <div class="save-modal" role="dialog" aria-modal="true" aria-labelledby="saveModalTitle">
+          <div class="save-modal-header">
+            <h2 id="saveModalTitle">Save report</h2>
+            <button type="button" class="icon-btn" id="saveModalCloseBtn" aria-label="Close save dialog"><span class="material-symbols-outlined">close</span></button>
+          </div>
+          <p class="save-modal-subtitle">Name this report so you can find it later.</p>
+          <label class="save-modal-field">
+            <span>Report name</span>
+            <input id="saveModalInput" type="text" placeholder="Report July 14" autocomplete="off" />
+          </label>
+          <div class="save-modal-actions">
+            <button type="button" class="secondary-btn" id="saveModalCancelBtn">Cancel</button>
+            <button type="button" class="save-btn" id="saveModalSaveBtn">Save</button>
+          </div>
+        </div>
+      </div>
+      <div class="save-modal-overlay" id="importModalOverlay" aria-hidden="true">
+        <div class="save-modal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
+          <div class="save-modal-header">
+            <h2 id="importModalTitle">Import event report</h2>
+            <button type="button" class="icon-btn" id="importModalCloseBtn" aria-label="Close import dialog"><span class="material-symbols-outlined">close</span></button>
+          </div>
+          <p class="save-modal-subtitle">Select saved event reports or include the current live event report to merge.</p>
+          <div class="import-list" id="importSavedReportsList"></div>
+          <div class="save-modal-actions">
+            <button type="button" class="secondary-btn" id="importModalCancelBtn">Cancel</button>
+            <button type="button" class="save-btn" id="importModalConfirmBtn">Import selected</button>
+          </div>
+        </div>
+      </div>
+      <div class="save-modal-overlay" id="expenseModalOverlay" aria-hidden="true">
+        <div class="save-modal" role="dialog" aria-modal="true" aria-labelledby="expenseModalTitle">
+          <div class="save-modal-header">
+            <h2 id="expenseModalTitle">Add Expense</h2>
+            <button type="button" class="icon-btn" id="expenseModalCloseBtn" aria-label="Close expense dialog"><span class="material-symbols-outlined">close</span></button>
+          </div>
+          <div class="save-modal-field">
+            <span>Name</span>
+            <input id="eventCostName" type="text" placeholder="Expense" />
+          </div>
+          <div class="save-modal-field">
+            <span>Amount</span>
+            <input id="eventCostAmount" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" />
+          </div>
+          <div class="save-modal-actions">
+            <button type="button" class="secondary-btn" id="expenseModalCancelBtn">Cancel</button>
+            <button type="button" class="save-btn" id="addCostBtn">Add Expense</button>
+          </div>
+        </div>
+      </div>
       <div class="toast" id="toast">Sale recorded</div>
     </div>
   </body>
