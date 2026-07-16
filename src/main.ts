@@ -200,6 +200,8 @@ function removeEventCost(id: string) {
 }
 
 let editingIndex = -1;
+let animatedProduct: string | null = null;
+let animatedPayment: string | null = null;
 const el = {
   grid: document.getElementById('grid') as HTMLDivElement,
   stats: document.getElementById('stats') as HTMLDivElement,
@@ -581,7 +583,7 @@ function makeTiles() {
             <span class="payment-label">Cash</span>
             <div class="payment-controls">
               <button class="control-btn" data-payment="Cash" data-action="minus"><span class="material-symbols-outlined control-icon">remove</span></button>
-              <span class="payment-value" data-counter-for="Cash">0</span>
+              <div class="payment-value-wrap"><span class="payment-value" data-counter-for="Cash">0</span></div>
               <button class="control-btn" data-payment="Cash" data-action="plus"><span class="material-symbols-outlined control-icon">add</span></button>
             </div>
           </div>
@@ -589,7 +591,7 @@ function makeTiles() {
             <span class="payment-label">QRIS</span>
             <div class="payment-controls">
               <button class="control-btn" data-payment="QRIS" data-action="minus"><span class="material-symbols-outlined control-icon">remove</span></button>
-              <span class="payment-value" data-counter-for="QRIS">0</span>
+              <div class="payment-value-wrap"><span class="payment-value" data-counter-for="QRIS">0</span></div>
               <button class="control-btn" data-payment="QRIS" data-action="plus"><span class="material-symbols-outlined control-icon">add</span></button>
             </div>
           </div>
@@ -626,6 +628,8 @@ function makeTiles() {
 function recordSale(p: Product, payment: string) {
   tx.push({ product: p.name, price: p.price, cost: p.cost, payment, timestamp: new Date() });
   saveSales();
+  animatedProduct = p.name;
+  animatedPayment = payment;
   render(true);
   showToast(`${p.name} • ${payment}`);
 }
@@ -635,6 +639,8 @@ function removeLastMatching(product: string, payment: string) {
     if (tx[i].product === product && tx[i].payment === payment) {
       tx.splice(i, 1);
       saveSales();
+      animatedProduct = product;
+      animatedPayment = payment;
       render(true);
       showToast(`${product} removed`);
       return;
@@ -741,10 +747,34 @@ function render(bump = false) {
     const cashCount = tx.filter((t) => t.product === product && t.payment === 'Cash').length;
     const qrisCount = tx.filter((t) => t.product === product && t.payment === 'QRIS').length;
     const cashValue = tile.querySelector('.payment-value[data-counter-for="Cash"]') as HTMLSpanElement | null;
+    const cashWrap = tile.querySelector('.payment-value-wrap') as HTMLDivElement | null;
     const qrisValue = tile.querySelector('.payment-value[data-counter-for="QRIS"]') as HTMLSpanElement | null;
+    const qrisWrap = tile.querySelectorAll('.payment-value-wrap')[1] as HTMLDivElement | null;
     if (cashValue) cashValue.textContent = `${cashCount}`;
     if (qrisValue) qrisValue.textContent = `${qrisCount}`;
   });
+
+  if (bump && animatedProduct && animatedPayment) {
+    const product = animatedProduct;
+    const payment = animatedPayment;
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.tile').forEach((tile) => {
+        const tileProduct = tile.getAttribute('data-product') || '';
+        if (tileProduct === product) {
+          const quarters = tile.querySelectorAll('.payment-quarter');
+          const matchingQuarter = payment === 'Cash' ? quarters[0] : quarters[1];
+          if (matchingQuarter) {
+            matchingQuarter.classList.remove('bump');
+            void (matchingQuarter as HTMLElement).offsetWidth;
+            matchingQuarter.classList.add('bump');
+          }
+        }
+      });
+    });
+    window.setTimeout(() => document.querySelectorAll('.payment-quarter.bump').forEach((quarter) => quarter.classList.remove('bump')), 260);
+    animatedProduct = null;
+    animatedPayment = null;
+  }
 
   el.hero.textContent = `+${tx.length}`;
   el.report.innerHTML = buildReportMarkup();
