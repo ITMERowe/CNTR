@@ -1,177 +1,242 @@
 import './style.css';
 import { Capacitor } from '@capacitor/core';
-
-interface Product {
-  name: string;
-  price: number;
-  cost: number;
-  color: string;
-}
-
-interface SaleRecord {
-  product: string;
-  price: number;
-  cost: number;
-  payment: string;
-  timestamp: Date;
-}
-
-interface HSV {
-  h: number;
-  s: number;
-  v: number;
-}
-
-interface EventCost {
-  id: string;
-  name: string;
-  amount: number;
-}
-
-const PRODUCT_STORAGE_KEY = 'cntrProducts';
-const TX_STORAGE_KEY = 'cntrSales';
-const EVENT_COST_STORAGE_KEY = 'cntrEventCosts';
-const SAVED_REPORTS_KEY = 'cntrSavedReports';
-const IMPORTED_EVENT_REPORT_KEY = 'cntrImportedEventReport';
-
-const defaultProducts: Product[] = [
-  { name: 'Gacha', price: 25000, cost: 12000, color: '#f76495' },
-  { name: 'Cheki', price: 35000, cost: 17000, color: '#31b500' },
-  { name: 'Poster', price: 30000, cost: 15000, color: '#f16900' },
-  { name: 'Photocard', price: 15000, cost: 7000, color: '#d49762' },
-  { name: 'Sticker', price: 5000, cost: 1500, color: '#c8070b' },
-  { name: 'Acrylic Stand', price: 45000, cost: 25000, color: '#9b48ad' },
-  { name: 'Keychain', price: 20000, cost: 9000, color: '#d8b800' },
-  { name: 'Tote Bag', price: 50000, cost: 30000, color: '#5f6d77' },
-];
+import { defaultProducts, ensureProductHistory, generateUUID, totals } from './data';
+import {
+  chooseUniqueColor,
+  fmt,
+  fmtCompact,
+  formatInputNumber,
+  formatMoney,
+  getContrastColor,
+  getUnusedPresetColor,
+  label,
+  normalizeHex,
+  parseCurrencyInput,
+  PRESET_COLORS,
+} from './formatters';
+import { DEFAULT_SETTINGS, loadSettings, saveSettings, type AppSettings } from './storage';
+import {
+  loadEventCosts as readEventCosts,
+  loadImportedEventReport as readImportedEventReport,
+  loadProductHistory as readProductHistory,
+  loadProducts as readProducts,
+  loadSales as readSales,
+  loadSavedReports as readSavedReports,
+  saveEventCosts as writeEventCosts,
+  saveImportedEventReport as writeImportedEventReport,
+  saveProductHistory as writeProductHistory,
+  saveProducts as writeProducts,
+  saveSales as writeSales,
+  saveSavedReports as writeSavedReports,
+} from './storage';
+import type { EventCost, HSV, Product, SaleRecord, SavedReport } from './types';
 
 const products: Product[] = loadProducts();
+const productHistory: Product[] = loadProductHistory();
+
+function syncProductState() {
+  const uniqueProducts = products.reduce<Product[]>((acc, product) => {
+    const index = acc.findIndex((item) => item.name === product.name);
+    if (index >= 0) {
+      acc[index] = { ...product };
+      return acc;
+    }
+    acc.push({ ...product });
+    return acc;
+  }, []);
+
+  const uniqueHistory = productHistory.reduce<Product[]>((acc, product) => {
+    const index = acc.findIndex((item) => item.name === product.name);
+    if (index >= 0) {
+      acc[index] = { ...product };
+      return acc;
+    }
+    acc.push({ ...product });
+    return acc;
+  }, []);
+
+  const activeNames = new Set(uniqueProducts.map((product) => product.name));
+  const mergedHistory = [...uniqueHistory.filter((product) => activeNames.has(product.name)), ...uniqueHistory.filter((product) => !activeNames.has(product.name))];
+
+  for (const product of uniqueProducts) {
+    if (!mergedHistory.some((item) => item.name === product.name)) {
+      mergedHistory.push({ ...product });
+    }
+  }
+
+  products.splice(0, products.length, ...uniqueProducts);
+  productHistory.splice(0, productHistory.length, ...mergedHistory);
+
+  if (products.length === 0 && productHistory.length) {
+    products.push(...productHistory.map((product) => ({ ...product })));
+  }
+}
+
+syncProductState();
 console.debug('startup: loaded products count=', products.length);
 const payments = ['Cash', 'QRIS'];
 const tx: SaleRecord[] = loadSales();
 const eventCosts: EventCost[] = loadEventCosts();
 let previewReport: SavedReport | null = null;
 let importedEventReport: { sales: SaleRecord[]; products: Product[] } | null = loadImportedEventReport();
+let renamingSavedReportId: string | null = null;
 
 function loadImportedEventReport() {
-  const stored = localStorage.getItem(IMPORTED_EVENT_REPORT_KEY);
-  if (!stored) return null;
-  try {
-    const parsed = JSON.parse(stored) as { sales: Array<{ product: string; price: number; cost: number; payment: string; timestamp: string }>; products: Product[] };
-    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.sales) || !Array.isArray(parsed.products)) return null;
-    return {
-      sales: parsed.sales.map((item) => ({ ...item, timestamp: new Date(item.timestamp) })),
-      products: parsed.products,
-    };
-  } catch {
-    return null;
-  }
+  return readImportedEventReport();
 }
 
 function saveImportedEventReport(report: { sales: SaleRecord[]; products: Product[] } | null) {
-  if (report === null) {
-    localStorage.removeItem(IMPORTED_EVENT_REPORT_KEY);
-  } else {
-    localStorage.setItem(IMPORTED_EVENT_REPORT_KEY, JSON.stringify(report));
-  }
+  writeImportedEventReport(report);
 }
 
 function loadProducts() {
-  const stored = localStorage.getItem(PRODUCT_STORAGE_KEY);
-  if (!stored) {
-    console.debug('loadProducts: no stored products — initial empty state');
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(stored) as Product[];
-    if (!Array.isArray(parsed)) {
-      console.debug('loadProducts: stored value is not an array', parsed);
-      return [];
-    }
-    console.debug('loadProducts: parsed products count=', parsed.length);
-    return parsed;
-  } catch (err) {
-    console.debug('loadProducts: parse error', err, stored);
-    return [];
-  }
+  return readProducts();
 }
 
 function saveProducts() {
-  localStorage.setItem(PRODUCT_STORAGE_KEY, JSON.stringify(products));
+  syncProductState();
+  writeProducts(products);
+}
+
+function loadProductHistory() {
+  return readProductHistory();
+}
+
+function saveProductHistory(history: Product[] = productHistory) {
+  const next = history.reduce<Product[]>((acc, product) => {
+    const index = acc.findIndex((item) => item.name === product.name);
+    if (index >= 0) {
+      acc[index] = { ...product };
+      return acc;
+    }
+    acc.push({ ...product });
+    return acc;
+  }, []);
+
+  productHistory.splice(0, productHistory.length, ...next);
+  writeProductHistory(productHistory);
 }
 
 function loadSales() {
-  const stored = localStorage.getItem(TX_STORAGE_KEY);
-  if (!stored) return [];
-
-  try {
-    const parsed = JSON.parse(stored) as Array<{
-      product: string;
-      price: number;
-      cost: number;
-      payment: string;
-      timestamp: string;
-    }>;
-    return parsed.map((item) => ({ ...item, timestamp: new Date(item.timestamp) }));
-  } catch {
-    return [];
-  }
+  return readSales();
 }
 
 function saveSales() {
-  localStorage.setItem(TX_STORAGE_KEY, JSON.stringify(tx));
+  writeSales(tx);
 }
 
 function loadEventCosts() {
-  const stored = localStorage.getItem(EVENT_COST_STORAGE_KEY);
-  if (!stored) return [];
-
-  try {
-    const parsed = JSON.parse(stored) as Array<{ id: string; name: string; amount: number; category?: string }>;
-    return Array.isArray(parsed)
-      ? parsed.map((item) => ({ id: item.id, name: item.name, amount: item.amount }))
-      : [];
-  } catch {
-    return [];
-  }
+  return readEventCosts();
 }
 
 function saveEventCosts() {
-  localStorage.setItem(EVENT_COST_STORAGE_KEY, JSON.stringify(eventCosts));
-}
-
-interface SavedReport {
-  id: string;
-  name: string;
-  createdAt: string;
-  type: 'sales' | 'event';
-  products: Product[];
-  sales: SaleRecord[];
-  eventCosts: EventCost[];
+  writeEventCosts(eventCosts);
 }
 
 function loadSavedReports() {
-  const stored = localStorage.getItem(SAVED_REPORTS_KEY);
-  if (!stored) return [] as SavedReport[];
-
-  try {
-    const parsed = JSON.parse(stored) as SavedReport[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [] as SavedReport[];
-  }
+  return readSavedReports() as SavedReport[];
 }
 
 function saveSavedReports(reports: SavedReport[]) {
-  localStorage.setItem(SAVED_REPORTS_KEY, JSON.stringify(reports));
+  writeSavedReports(reports as SavedReport[]);
+}
+
+function deleteSavedReport(reportId: string) {
+  const reports = loadSavedReports();
+  const remaining = reports.filter((report) => report.id !== reportId);
+  if (remaining.length === reports.length) return;
+  saveSavedReports(remaining);
+  if (previewReport?.id === reportId) previewReport = null;
+  showToast('Report deleted');
+  render();
+}
+
+function renameSavedReport(reportId: string, nextName: string) {
+  const trimmedName = nextName.trim();
+  if (!trimmedName) return;
+  const reports = loadSavedReports();
+  const target = reports.find((report) => report.id === reportId);
+  if (!target) return;
+  target.name = trimmedName;
+  saveSavedReports(reports);
+  if (previewReport?.id === reportId) previewReport = { ...target };
+  showToast('Report renamed');
+  render();
+}
+
+function getCurrentEventSnapshot() {
+  const activeScreen = document.querySelector('.screen.active')?.id;
+
+  if (activeScreen === 'eventScreen') {
+    if (importedEventReport) {
+      return {
+        sales: importedEventReport.sales.map((sale) => ({ ...sale })),
+        products: importedEventReport.products.map((product) => ({ ...product })),
+        eventCosts: eventCosts.map((cost) => ({ ...cost })),
+      };
+    }
+
+    return {
+      sales: tx.map((sale) => ({ ...sale })),
+      products: products.map((product) => ({ ...product })),
+      eventCosts: eventCosts.map((cost) => ({ ...cost })),
+    };
+  }
+
+  if (previewReport && previewReport.type === 'event') {
+    return {
+      sales: previewReport.sales.map((sale) => ({ ...sale })),
+      products: previewReport.products.map((product) => ({ ...product })),
+      eventCosts: previewReport.eventCosts.map((cost) => ({ ...cost })),
+    };
+  }
+
+  if (importedEventReport) {
+    return {
+      sales: importedEventReport.sales.map((sale) => ({ ...sale })),
+      products: importedEventReport.products.map((product) => ({ ...product })),
+      eventCosts: eventCosts.map((cost) => ({ ...cost })),
+    };
+  }
+
+  return {
+    sales: tx.map((sale) => ({ ...sale })),
+    products: products.map((product) => ({ ...product })),
+    eventCosts: eventCosts.map((cost) => ({ ...cost })),
+  };
 }
 
 function saveCurrentReport(name: string, type: 'sales' | 'event') {
   const reports = loadSavedReports();
   const reportName = name.trim() || `${type === 'event' ? 'Event report' : 'Report'} ${new Date().toLocaleString()}`;
+
+  if (type === 'event') {
+    const snapshot = getCurrentEventSnapshot();
+    if (!previewReport) {
+      importedEventReport = {
+        sales: snapshot.sales,
+        products: snapshot.products,
+      };
+      saveImportedEventReport(importedEventReport);
+    }
+
+    reports.push({
+      id: generateUUID(),
+      name: reportName,
+      createdAt: new Date().toISOString(),
+      type,
+      products: snapshot.products,
+      sales: snapshot.sales,
+      eventCosts: snapshot.eventCosts,
+    });
+    saveSavedReports(reports);
+    showToast(`Saved event report: ${reportName}`);
+    render();
+    return;
+  }
+
   reports.push({
-    id: crypto.randomUUID(),
+    id: generateUUID(),
     name: reportName,
     createdAt: new Date().toISOString(),
     type,
@@ -180,12 +245,12 @@ function saveCurrentReport(name: string, type: 'sales' | 'event') {
     eventCosts: eventCosts.map((cost) => ({ ...cost })),
   });
   saveSavedReports(reports);
-  showToast(`Saved ${type === 'event' ? 'event report' : 'report'}: ${reportName}`);
+  showToast(`Saved report: ${reportName}`);
   render();
 }
 
 function addEventCost(name: string, amount: number) {
-  eventCosts.push({ id: crypto.randomUUID(), name, amount });
+  eventCosts.push({ id: generateUUID(), name, amount });
   saveEventCosts();
   render();
 }
@@ -199,7 +264,30 @@ function removeEventCost(id: string) {
   }
 }
 
+function openExpenseModalForEdit(id: string) {
+  const cost = eventCosts.find((item) => item.id === id);
+  if (!cost) return;
+
+  const overlay = document.getElementById('expenseModalOverlay') as HTMLDivElement | null;
+  const title = document.getElementById('expenseModalTitle') as HTMLHeadingElement | null;
+  const nameInput = document.getElementById('eventCostName') as HTMLInputElement | null;
+  const amountInput = document.getElementById('eventCostAmount') as HTMLInputElement | null;
+  const addBtn = document.getElementById('addCostBtn') as HTMLButtonElement | null;
+
+  if (!overlay || !title || !nameInput || !amountInput || !addBtn) return;
+
+  editingExpenseId = cost.id;
+  nameInput.value = cost.name;
+  amountInput.value = String(cost.amount);
+  title.textContent = 'Edit Expense';
+  addBtn.textContent = 'Save changes';
+  overlay.classList.add('open');
+  updateExpenseButtonState();
+}
+
 let editingIndex = -1;
+let editingExpenseId: string | null = null;
+let productEditorReturnScreen = 'salesScreen';
 let animatedProduct: string | null = null;
 let animatedPayment: string | null = null;
 const el = {
@@ -229,7 +317,6 @@ const el = {
   hueValue: document.getElementById('hueValue') as HTMLSpanElement,
   pickerHexCard: document.getElementById('pickerHexCard') as HTMLDivElement,
   saveProductBtn: document.getElementById('saveProductBtn') as HTMLButtonElement,
-  hero: document.getElementById('settingsHero') as HTMLDivElement,
   report: document.getElementById('reportCard') as HTMLDivElement,
   eventReport: document.getElementById('eventCard') as HTMLDivElement,
   expenseModalOverlay: document.getElementById('expenseModalOverlay') as HTMLDivElement,
@@ -239,6 +326,8 @@ const el = {
   eventPageTitle: document.getElementById('eventPageTitle') as HTMLHeadingElement,
   reportBackBtn: document.getElementById('reportBackBtn') as HTMLButtonElement,
   eventBackBtn: document.getElementById('eventBackBtn') as HTMLButtonElement,
+  reportDeleteBtn: document.getElementById('reportDeleteBtn') as HTMLButtonElement,
+  eventDeleteBtn: document.getElementById('eventDeleteBtn') as HTMLButtonElement,
   historySavedReports: document.getElementById('historySavedReports') as HTMLDivElement,
   historySavedEventReports: document.getElementById('historySavedEventReports') as HTMLDivElement,
   historyRecentPurchase: document.getElementById('historyRecentPurchase') as HTMLDivElement,
@@ -248,6 +337,26 @@ const el = {
   saveModalSaveBtn: document.getElementById('saveModalSaveBtn') as HTMLButtonElement,
   saveModalCancelBtn: document.getElementById('saveModalCancelBtn') as HTMLButtonElement,
   saveModalCloseBtn: document.getElementById('saveModalCloseBtn') as HTMLButtonElement,
+  compareModalOverlay: document.getElementById('compareModalOverlay') as HTMLDivElement,
+  compareModalTitle: document.getElementById('compareModalTitle') as HTMLHeadingElement,
+  compareModalList: document.getElementById('compareModalList') as HTMLDivElement,
+  compareModalConfirmBtn: document.getElementById('compareModalConfirmBtn') as HTMLButtonElement,
+  compareModalCancelBtn: document.getElementById('compareModalCancelBtn') as HTMLButtonElement,
+  compareModalCloseBtn: document.getElementById('compareModalCloseBtn') as HTMLButtonElement,
+  compareSalesBtn: document.getElementById('compareSalesBtn') as HTMLButtonElement,
+  compareEventsBtn: document.getElementById('compareEventsBtn') as HTMLButtonElement,
+  compareSalesCard: document.getElementById('compareSalesCard') as HTMLDivElement,
+  compareEventCard: document.getElementById('compareEventCard') as HTMLDivElement,
+  compareSalesBackBtn: document.getElementById('compareSalesBackBtn') as HTMLButtonElement,
+  compareEventBackBtn: document.getElementById('compareEventBackBtn') as HTMLButtonElement,
+  productMenuBtn: document.getElementById('openProductsMenuBtn') as HTMLDivElement,
+  salesReportHistoryBackBtn: document.getElementById('salesReportHistoryBackBtn') as HTMLButtonElement,
+  eventReportHistoryBackBtn: document.getElementById('eventReportHistoryBackBtn') as HTMLButtonElement,
+  productHistoryBackBtn: document.getElementById('productHistoryBackBtn') as HTMLButtonElement,
+  productHistoryAddBtn: document.getElementById('productHistoryAddBtn') as HTMLButtonElement,
+  productHistoryList: document.getElementById('productHistoryList') as HTMLDivElement,
+  salesReportHistoryList: document.getElementById('salesReportHistoryList') as HTMLDivElement,
+  eventReportHistoryList: document.getElementById('eventReportHistoryList') as HTMLDivElement,
   importModalOverlay: document.getElementById('importModalOverlay') as HTMLDivElement,
   importSavedReportsList: document.getElementById('importSavedReportsList') as HTMLDivElement,
   importModalCancelBtn: document.getElementById('importModalCancelBtn') as HTMLButtonElement,
@@ -255,21 +364,6 @@ const el = {
   importModalCloseBtn: document.getElementById('importModalCloseBtn') as HTMLButtonElement,
   eventImportBtn: document.getElementById('eventImportBtn') as HTMLButtonElement,
 };
-
-const fmt = (n: number) => {
-  const formatted = n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return `Rp ${formatted}`;
-};
-const fmtCompact = (n: number) => {
-  if (Math.abs(n) >= 1000000) {
-    return `Rp ${(n / 1000000).toFixed(n % 1000000 === 0 ? 0 : 1)}m`;
-  }
-  if (Math.abs(n) >= 1000) {
-    return `Rp ${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`;
-  }
-  return `Rp ${n}`;
-};
-const label = (p: number) => p >= 1000 ? `${p / 1000}k` : `${p}`;
 
 function buildReportMarkup() {
   const reportSales = previewReport && previewReport.type === 'sales' ? previewReport.sales : tx;
@@ -315,12 +409,12 @@ function buildReportMarkup() {
         <div class="summary-grid">
           <div class="summary-tile">
             <span class="label">Revenue</span>
-            <span class="value">${fmtCompact(revenue)}</span>
+            <span class="value">${fmt(revenue)}</span>
             <span class="hint">${reportSales.length} total sales</span>
           </div>
           <div class="summary-tile">
             <span class="label">Profit</span>
-            <span class="value">${fmtCompact(profit)}</span>
+            <span class="value">${fmt(profit)}</span>
             <span class="hint">${grossMargin.toFixed(1)}% margin</span>
           </div>
           <div class="summary-tile">
@@ -350,9 +444,7 @@ function buildReportMarkup() {
                   <strong>${item.name}</strong>
                 </div>
                 <div class="performance-details">
-                  <span class="revenue">${fmtCompact(item.revenue)} Revenue</span>
-                  <span class="sep"> | </span>
-                  <span class="profit">${fmtCompact(item.profit)} Profit</span>
+                  <span class="profit">${fmt(item.profit)} Profit</span>
                 </div>
               </div>
               <div class="distribution-item">
@@ -399,8 +491,9 @@ function buildEventMarkup() {
   const allProducts = reportProducts.map((product) => {
     const sales = productTotals[product.name] || { count: 0, revenue: 0, profit: 0 };
     return { name: product.name, count: sales.count, revenue: sales.revenue, profit: sales.profit, color: product.color };
-  }).filter((item) => item.count > 0).sort((a, b) => b.count - a.count || b.revenue - a.revenue);
+  }).filter((item) => item.count > 0).sort((a, b) => b.profit - a.profit || b.revenue - a.revenue || b.count - a.count);
   const topProducts = allProducts.slice(0, 5);
+  const totalProfit = topProducts.reduce((sum, item) => sum + Math.abs(item.profit), 0) || 1;
 
   return `
     <div class="report-shell">
@@ -450,7 +543,8 @@ function buildEventMarkup() {
             </div>
             <div class="cost-actions">
               <span class="cost-amount">${fmt(cost.amount)}</span>
-              <button class="icon-btn delete-cost" data-id="${cost.id}" title="Remove cost"><span class="material-symbols-outlined">delete</span></button>
+              <button class="history-item-delete edit-cost" data-id="${cost.id}" title="Edit cost"><span class="material-symbols-outlined">edit</span></button>
+              <button class="history-item-delete delete-cost" data-id="${cost.id}" title="Remove cost"><span class="material-symbols-outlined">delete</span></button>
             </div>
           </div>`).join('')}</div>` : '<div class="empty-state">No event costs yet. Add booth cost, transportation, or staffing expenses.</div>'}
       </section>
@@ -460,18 +554,61 @@ function buildEventMarkup() {
           <h2 class="report-title">Sales</h2>
           <button class="control-btn add-expense-btn" id="eventImportBtn" type="button" title="Import"><span class="material-symbols-outlined control-icon">upload</span></button>
         </div>
-        ${topProducts.length ? `<div class="product-columns">${topProducts.map((item) => `
-          <div class="product-row">
-            <div>
-              <strong>${item.name}</strong>
-              <span class="history-meta">${item.count} sales · ${fmt(item.revenue)} revenue</span>
-            </div>
-            <div class="performance-details">
-              <span class="profit">${fmt(item.profit)} profit</span>
-            </div>
-          </div>`).join('')}</div>` : '<div class="empty-state">No product sales yet for event revenue.</div>'}
+        ${topProducts.length ? `<div class="event-product-columns">${topProducts.map((item) => {
+          const share = totalProfit ? (Math.abs(item.profit) / totalProfit) * 100 : 0;
+          const barWidth = Math.max(8, share);
+          return `
+            <div class="product-row event-product-row">
+              <div class="performance-item">
+                <div class="performance-top">
+                  <strong>${item.name}</strong>
+                </div>
+                <div class="performance-details">
+                  <span class="distribution-sales">${item.count} sales · ${fmt(item.revenue)} revenue</span>
+                </div>
+              </div>
+              <div class="distribution-item">
+                <div class="distribution-line">
+                  <span class="profit">${fmt(item.profit)} Profit</span>
+                  <span class="distribution-value">${share.toFixed(0)}%</span>
+                </div>
+                <div class="distribution-track">
+                  <div class="distribution-fill" style="width:${barWidth}%;background:${item.color || 'var(--highlight)'}"></div>
+                </div>
+              </div>
+            </div>`;
+        }).join('')}</div>` : '<div class="empty-state">No product sales yet for event revenue.</div>'}
       </section>
     </div>`;
+}
+
+function updateExpenseButtonState() {
+  const addCostBtn = document.getElementById('addCostBtn') as HTMLButtonElement | null;
+  const costName = document.getElementById('eventCostName') as HTMLInputElement | null;
+  const costAmount = document.getElementById('eventCostAmount') as HTMLInputElement | null;
+
+  if (!addCostBtn || !costName || !costAmount) return;
+  const name = costName.value.trim();
+  const amount = Number(costAmount.value);
+  addCostBtn.disabled = !name || Number.isNaN(amount) || amount <= 0;
+}
+
+function resetExpenseModal() {
+  const overlay = document.getElementById('expenseModalOverlay') as HTMLDivElement | null;
+  const title = document.getElementById('expenseModalTitle') as HTMLHeadingElement | null;
+  const nameInput = document.getElementById('eventCostName') as HTMLInputElement | null;
+  const amountInput = document.getElementById('eventCostAmount') as HTMLInputElement | null;
+  const addBtn = document.getElementById('addCostBtn') as HTMLButtonElement | null;
+
+  editingExpenseId = null;
+  if (overlay) overlay.classList.remove('open');
+  if (title) title.textContent = 'Add Expense';
+  if (nameInput) nameInput.value = '';
+  if (amountInput) amountInput.value = '';
+  if (addBtn) {
+    addBtn.textContent = 'Add Expense';
+    addBtn.disabled = true;
+  }
 }
 
 function wireEventActions() {
@@ -481,25 +618,51 @@ function wireEventActions() {
   const openAddExpenseBtn = document.getElementById('openAddExpenseBtn') as HTMLButtonElement | null;
   const expensePopover = document.getElementById('expensePopover') as HTMLDivElement | null;
 
+  const updateExpenseButton = () => {
+    updateExpenseButtonState();
+  };
+
   if (openAddExpenseBtn && expensePopover) {
     openAddExpenseBtn.onclick = (event) => {
       event.stopPropagation();
       const isOpen = expensePopover.classList.toggle('open');
       expensePopover.hidden = !isOpen;
       openAddExpenseBtn.setAttribute('aria-expanded', String(isOpen));
+      updateExpenseButton();
     };
   }
 
+  if (costName) {
+    costName.addEventListener('input', updateExpenseButton);
+  }
+
+  if (costAmount) {
+    costAmount.addEventListener('input', () => {
+      const nextValue = formatInputNumber(costAmount.value, loadSettings().currency);
+      costAmount.value = nextValue;
+      updateExpenseButton();
+    });
+  }
+
   if (addCostBtn && costName && costAmount) {
+    updateExpenseButton();
     addCostBtn.onclick = () => {
       const name = costName.value.trim();
-      const amount = Number(costAmount.value);
+      const amount = parseCurrencyInput(costAmount.value, loadSettings().currency);
       if (!name || Number.isNaN(amount) || amount <= 0) return;
-      addEventCost(name, amount);
-      costName.value = '';
-      costAmount.value = '';
-      const expenseOverlayEl = document.getElementById('expenseModalOverlay') as HTMLDivElement | null;
-      if (expenseOverlayEl) expenseOverlayEl.classList.remove('open');
+
+      if (editingExpenseId) {
+        const cost = eventCosts.find((item) => item.id === editingExpenseId);
+        if (cost) {
+          cost.name = name;
+          cost.amount = amount;
+          saveEventCosts();
+        }
+      } else {
+        addEventCost(name, amount);
+      }
+
+      resetExpenseModal();
       if (openAddExpenseBtn) openAddExpenseBtn.setAttribute('aria-expanded', 'false');
       if (el.eventReport) {
         el.eventReport.innerHTML = buildEventMarkup();
@@ -513,12 +676,7 @@ function wireEventActions() {
   if (eventImportBtnEl) {
     eventImportBtnEl.addEventListener('click', (e) => {
       e.stopPropagation();
-      try {
-        // @ts-ignore
-        openImportModal();
-      } catch (err) {
-        console.debug('Failed to open import modal:', err);
-      }
+      openImportModal();
     });
   }
 
@@ -530,13 +688,23 @@ function wireEventActions() {
   if (openAddExpenseBtn && expenseOverlay) {
     openAddExpenseBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      resetExpenseModal();
       expenseOverlay.classList.add('open');
+      updateExpenseButtonState();
     });
   }
 
-  if (expenseClose) expenseClose.addEventListener('click', () => expenseOverlay && expenseOverlay.classList.remove('open'));
-  if (expenseCancel) expenseCancel.addEventListener('click', () => expenseOverlay && expenseOverlay.classList.remove('open'));
-  if (expenseOverlay) expenseOverlay.addEventListener('click', (ev) => { if (ev.target === expenseOverlay) expenseOverlay.classList.remove('open'); });
+  if (expenseClose) expenseClose.addEventListener('click', () => { resetExpenseModal(); });
+  if (expenseCancel) expenseCancel.addEventListener('click', () => { resetExpenseModal(); });
+  if (expenseOverlay) expenseOverlay.addEventListener('click', (ev) => { if (ev.target === expenseOverlay) resetExpenseModal(); });
+
+  document.querySelectorAll('.edit-cost').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      const target = event.currentTarget as HTMLElement;
+      const id = target.getAttribute('data-id');
+      if (id) openExpenseModalForEdit(id);
+    });
+  });
 
   document.querySelectorAll('.delete-cost').forEach((button) => {
     button.addEventListener('click', (event) => {
@@ -649,19 +817,6 @@ function removeLastMatching(product: string, payment: string) {
   showToast('Nothing to remove');
 }
 
-function totals() {
-  return tx.reduce(
-    (a, t) => {
-      a.revenue += t.price;
-      a.profit += t.price - t.cost;
-      if (t.payment === 'Cash') a.cash += t.price;
-      if (t.payment === 'QRIS') a.qris += t.price;
-      return a;
-    },
-    { revenue: 0, profit: 0, cash: 0, qris: 0 },
-  );
-}
-
 function buildHistoryMarkup() {
   const savedReports = loadSavedReports().filter((r) => r.type === 'sales');
   const savedEventReports = loadSavedReports().filter((r) => r.type === 'event');
@@ -672,13 +827,17 @@ function buildHistoryMarkup() {
     return reports
       .map(
         (report) => `
-          <button class="history-item" type="button" data-id="${report.id}" data-type="${report.type}">
+          <div class="history-item" data-id="${report.id}" data-type="${report.type}" tabindex="0" role="button">
             <div>
               <strong>${report.name}</strong>
               <div class="history-meta">${new Date(report.createdAt).toLocaleString()}</div>
             </div>
-            <span class="history-badge">${report.type === 'event' ? 'Event' : 'Sales'}</span>
-          </button>
+            <div class="history-item-actions">
+              <button class="icon-btn history-item-delete" type="button" title="Delete report" data-delete-id="${report.id}">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            </div>
+          </div>
         `,
       )
       .join('');
@@ -687,6 +846,16 @@ function buildHistoryMarkup() {
   const attachReportClick = (container: HTMLDivElement | null) => {
     if (!container) return;
     container.querySelectorAll('.history-item').forEach((item) => {
+      const deleteBtn = item.querySelector('.history-item-delete') as HTMLButtonElement | null;
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const reportId = deleteBtn.getAttribute('data-delete-id');
+          if (!reportId) return;
+          deleteSavedReport(reportId);
+        });
+      }
+
       item.addEventListener('click', () => {
         const reportId = item.getAttribute('data-id');
         if (!reportId) return;
@@ -704,6 +873,14 @@ function buildHistoryMarkup() {
           render();
         } else {
           render();
+        }
+      });
+
+      item.addEventListener('keydown', (event) => {
+        const keyboardEvent = event as KeyboardEvent;
+        if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+          keyboardEvent.preventDefault();
+          (item as HTMLElement).click();
         }
       });
     });
@@ -733,9 +910,595 @@ function buildHistoryMarkup() {
   attachReportClick(el.historySavedEventReports);
 }
 
+function renderProductHistory() {
+  if (!el.productHistoryList) return;
+  const rows = productHistory.length
+    ? productHistory
+        .map((product) => {
+          const isActive = products.some((item) => item.name === product.name);
+          const productIndex = products.findIndex((item) => item.name === product.name);
+          return `
+            <div class="product-history-item" style="--product-color: ${product.color};">
+              <div class="product-row product-row-compact">
+                <div class="product-history-main">
+                  <strong>${product.name}</strong>
+                  <span class="history-meta">Price ${fmt(product.price)} · Cost ${fmt(product.cost)}</span>
+                </div>
+                <div class="product-history-actions">
+                  <button class="product-edit-btn" type="button" data-name="${product.name}" title="Edit ${product.name}">
+                    <span class="material-symbols-outlined">edit</span>
+                  </button>
+                  <button class="save-btn product-restore-btn" type="button" data-name="${product.name}" ${isActive ? 'disabled' : ''}>
+                    ${isActive ? 'Active' : 'Add back'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        })
+        .join('')
+    : '<div class="empty-state">No products have been created yet.</div>';
+
+  el.productHistoryList.innerHTML = rows;
+  el.productHistoryList.querySelectorAll<HTMLButtonElement>('.product-edit-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      const name = button.getAttribute('data-name');
+      if (!name) return;
+      const index = products.findIndex((product) => product.name === name);
+      if (index < 0) {
+        showToast(`${name} is not active yet`);
+        return;
+      }
+      openProductEditor(index);
+    });
+  });
+
+  el.productHistoryList.querySelectorAll<HTMLButtonElement>('.product-restore-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      const name = button.getAttribute('data-name');
+      if (!name) return;
+      const existing = productHistory.find((product) => product.name === name);
+      if (!existing) return;
+      if (products.some((item) => item.name === name)) {
+        showToast(`${name} is already active`);
+        return;
+      }
+      products.push({ ...existing });
+      saveProducts();
+      rebuildGrid();
+      showToast(`${name} added back to counter`);
+      render(true);
+    });
+  });
+}
+
+function renderSavedSalesReportHistory() {
+  if (!el.salesReportHistoryList) return;
+  const savedReports = loadSavedReports().filter((report) => report.type === 'sales');
+
+  const rows = savedReports.length
+    ? savedReports
+        .map(
+          (report) => `
+            <div class="sales-report-history-item" data-id="${report.id}" tabindex="0" role="button">
+              <div class="product-row product-row-compact">
+                <div class="product-history-main">
+                  <strong>${report.name}</strong>
+                  <span class="history-meta">${new Date(report.createdAt).toLocaleString()}</span>
+                </div>
+                <div class="product-history-actions">
+                  <button class="icon-btn sales-report-edit-btn" type="button" data-edit-id="${report.id}" title="Rename report">
+                    <span class="material-symbols-outlined">edit</span>
+                  </button>
+                  <button class="icon-btn history-item-delete" type="button" data-delete-id="${report.id}" title="Delete report">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `,
+        )
+        .join('')
+    : '<div class="empty-state">No saved sales reports yet.</div>';
+
+  el.salesReportHistoryList.innerHTML = rows;
+  el.salesReportHistoryList.querySelectorAll<HTMLElement>('.sales-report-history-item').forEach((item) => {
+    const reportId = item.getAttribute('data-id');
+    if (!reportId) return;
+
+    const editBtn = item.querySelector<HTMLButtonElement>('.sales-report-edit-btn');
+    if (editBtn) {
+      editBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const report = loadSavedReports().find((entry) => entry.id === reportId);
+        if (!report) return;
+        renamingSavedReportId = reportId;
+        el.saveModalTitle.textContent = 'Rename report';
+        el.saveModalInput.value = report.name;
+        el.saveModalInput.placeholder = 'New report name';
+        el.saveModalSaveBtn.textContent = 'Rename';
+        el.saveModalSaveBtn.disabled = report.name.trim().length === 0;
+        el.saveModalOverlay.classList.add('open');
+        el.saveModalInput.focus();
+      });
+    }
+
+    const deleteBtn = item.querySelector<HTMLButtonElement>('.history-item-delete');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        deleteSavedReport(reportId);
+      });
+    }
+
+    item.addEventListener('click', () => {
+      const report = loadSavedReports().find((entry) => entry.id === reportId);
+      if (!report) return;
+      previewReport = report;
+      openScreen('reportsScreen');
+      hideScreenActions('reportsScreen');
+      render();
+    });
+
+    item.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        item.click();
+      }
+    });
+  });
+}
+
+function renderSavedEventReportHistory() {
+  if (!el.eventReportHistoryList) return;
+  const savedReports = loadSavedReports().filter((report) => report.type === 'event');
+
+  const rows = savedReports.length
+    ? savedReports
+        .map(
+          (report) => `
+            <div class="sales-report-history-item" data-id="${report.id}" tabindex="0" role="button">
+              <div class="product-row product-row-compact">
+                <div class="product-history-main">
+                  <strong>${report.name}</strong>
+                  <span class="history-meta">${new Date(report.createdAt).toLocaleString()}</span>
+                </div>
+                <div class="product-history-actions">
+                  <button class="icon-btn sales-report-edit-btn" type="button" data-edit-id="${report.id}" title="Rename report">
+                    <span class="material-symbols-outlined">edit</span>
+                  </button>
+                  <button class="icon-btn history-item-delete" type="button" data-delete-id="${report.id}" title="Delete report">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `,
+        )
+        .join('')
+    : '<div class="empty-state">No saved event reports yet.</div>';
+
+  el.eventReportHistoryList.innerHTML = rows;
+  el.eventReportHistoryList.querySelectorAll<HTMLElement>('.sales-report-history-item').forEach((item) => {
+    const reportId = item.getAttribute('data-id');
+    if (!reportId) return;
+
+    const editBtn = item.querySelector<HTMLButtonElement>('.sales-report-edit-btn');
+    if (editBtn) {
+      editBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const report = loadSavedReports().find((entry) => entry.id === reportId);
+        if (!report) return;
+        renamingSavedReportId = reportId;
+        el.saveModalTitle.textContent = 'Rename report';
+        el.saveModalInput.value = report.name;
+        el.saveModalInput.placeholder = 'New report name';
+        el.saveModalSaveBtn.textContent = 'Rename';
+        el.saveModalSaveBtn.disabled = report.name.trim().length === 0;
+        el.saveModalOverlay.classList.add('open');
+        el.saveModalInput.focus();
+      });
+    }
+
+    const deleteBtn = item.querySelector<HTMLButtonElement>('.history-item-delete');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        deleteSavedReport(reportId);
+      });
+    }
+
+    item.addEventListener('click', () => {
+      const report = loadSavedReports().find((entry) => entry.id === reportId);
+      if (!report) return;
+      previewReport = report;
+      openScreen('eventScreen');
+      hideScreenActions('eventScreen');
+      render();
+    });
+
+    item.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        item.click();
+      }
+    });
+  });
+}
+
+function getReportSummary(report: SavedReport) {
+  const revenue = report.sales.reduce((sum, item) => sum + item.price, 0);
+  const profit = report.sales.reduce((sum, item) => sum + (item.price - item.cost), 0);
+  const margin = revenue ? (profit / revenue) * 100 : 0;
+  const salesCount = report.sales.length;
+  const breakdown = report.products
+    .map((product) => {
+      const matchingSales = report.sales.filter((sale) => sale.product === product.name);
+      const productRevenue = matchingSales.reduce((sum, sale) => sum + sale.price, 0);
+      const productProfit = matchingSales.reduce((sum, sale) => sum + (sale.price - sale.cost), 0);
+      return {
+        name: product.name,
+        count: matchingSales.length,
+        revenue: productRevenue,
+        profit: productProfit,
+      };
+    })
+    .filter((product) => product.count > 0)
+    .sort((a, b) => b.revenue - a.revenue || b.count - a.count);
+  const topProduct = breakdown[0] || null;
+
+  return { revenue, profit, margin, salesCount, breakdown, topProduct };
+}
+
+function buildCompareCard(report: SavedReport, label: string, comparisonReport?: SavedReport, productRows: Array<{ name: string; value: number; winner: boolean }> = []) {
+  const summary = getReportSummary(report);
+  const comparisonSummary = comparisonReport ? getReportSummary(comparisonReport) : null;
+  const { revenue, profit, margin, salesCount } = summary;
+
+  const revenueWinner = comparisonSummary ? revenue > comparisonSummary.revenue : false;
+  const profitWinner = comparisonSummary ? profit > comparisonSummary.profit : false;
+  const marginWinner = comparisonSummary ? margin > comparisonSummary.margin : false;
+  const salesWinner = comparisonSummary ? salesCount > comparisonSummary.salesCount : false;
+
+  return `
+    <div class="compare-card">
+      <div class="compare-card-header">
+        ${label ? `<span class="compare-card-tag">${label}</span>` : ''}
+        <h3>${report.name}</h3>
+      </div>
+      <div class="compare-metric ${revenueWinner ? 'compare-metric-winner' : ''}"><span>Revenue</span><span>${fmt(revenue)}</span></div>
+      <div class="compare-metric ${profitWinner ? 'compare-metric-winner' : ''}"><span>Profit</span><span>${fmt(profit)}</span></div>
+      <div class="compare-metric ${marginWinner ? 'compare-metric-winner' : ''}"><span>Margin</span><span>${margin.toFixed(1)}%</span></div>
+      <div class="compare-metric ${salesWinner ? 'compare-metric-winner' : ''}"><span>Sales</span><span>${salesCount}</span></div>
+      ${productRows.length ? `
+        <div class="compare-product-list compare-product-list-inline">
+          <div class="compare-product-section-title">Products Sold</div>
+          ${productRows
+            .map(
+              (item) => `
+                <div class="compare-product-row">
+                  <div class="compare-product-name">
+                    <strong>${item.name}</strong>
+                  </div>
+                  <div class="compare-product-side ${item.winner ? 'winner' : ''}">
+                    <span class="report-side-value">${item.value}</span>
+                  </div>
+                </div>
+              `,
+            )
+            .join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function buildEventCompareCard(report: SavedReport, label: string, comparisonReport?: SavedReport, productRows: Array<{ name: string; value: number; winner: boolean }> = []) {
+  const comparisonSummary = comparisonReport ? getReportSummary(comparisonReport) : null;
+  const revenue = report.sales.reduce((sum, item) => sum + item.price, 0);
+  const profit = report.sales.reduce((sum, item) => sum + (item.price - item.cost), 0);
+  const eventCost = report.eventCosts.reduce((sum, cost) => sum + cost.amount, 0);
+  const netProfit = revenue - eventCost;
+  const comparisonRevenue = comparisonSummary ? comparisonSummary.revenue : 0;
+  const comparisonProfit = comparisonSummary ? comparisonSummary.profit : 0;
+  const comparisonCost = comparisonReport ? comparisonReport.eventCosts.reduce((sum, cost) => sum + cost.amount, 0) : 0;
+  const comparisonNetProfit = comparisonRevenue - comparisonCost;
+
+  const costWinner = comparisonReport ? eventCost < comparisonCost : false;
+  const revenueWinner = comparisonReport ? revenue > comparisonRevenue : false;
+  const profitWinner = comparisonReport ? profit > comparisonProfit : false;
+  const netProfitWinner = comparisonReport ? netProfit > comparisonNetProfit : false;
+  const isDeficit = netProfit < 0;
+  const netMetricLabel = isDeficit ? 'Deficit' : 'Net profit';
+  const netMetricValueClass = isDeficit ? 'compare-metric-negative' : '';
+
+  const expenseNames = Array.from(new Set([
+    ...report.eventCosts.map((cost) => cost.name),
+    ...(comparisonReport ? comparisonReport.eventCosts.map((cost) => cost.name) : []),
+  ]));
+
+  const expenseRows = expenseNames
+    .map((name) => {
+      const leftCost = report.eventCosts.find((cost) => cost.name === name)?.amount ?? 0;
+      const rightCost = comparisonReport ? comparisonReport.eventCosts.find((cost) => cost.name === name)?.amount ?? 0 : 0;
+      return {
+        name,
+        value: leftCost,
+        winner: comparisonReport ? leftCost < rightCost : false,
+      };
+    })
+    .sort((a, b) => b.value - a.value);
+
+  return `
+    <div class="compare-card">
+      <div class="compare-card-header">
+        ${label ? `<span class="compare-card-tag">${label}</span>` : ''}
+        <h3>${report.name}</h3>
+      </div>
+      <div class="compare-metric ${costWinner ? 'compare-metric-winner' : ''}"><span>Event cost</span><span>${fmt(eventCost)}</span></div>
+      <div class="compare-metric ${revenueWinner ? 'compare-metric-winner' : ''}"><span>Revenue</span><span>${fmt(revenue)}</span></div>
+      <div class="compare-metric ${profitWinner ? 'compare-metric-winner' : ''}"><span>Profit</span><span>${fmt(profit)}</span></div>
+      <div class="compare-metric ${netProfitWinner ? 'compare-metric-winner' : ''}"><span>${netMetricLabel}</span><span class="${netMetricValueClass}">${fmt(netProfit)}</span></div>
+      ${expenseRows.length ? `
+        <div class="compare-expense-list compare-product-list-inline">
+          <div class="compare-product-section-title">Expenses</div>
+          ${expenseRows
+            .map(
+              (item) => `
+                <div class="compare-expense-row ${item.winner ? 'compare-expense-winner' : ''}">
+                  <span class="compare-expense-name">${item.name}</span>
+                  <span class="compare-expense-value">${fmt(item.value)}</span>
+                </div>
+              `,
+            )
+            .join('')}
+        </div>
+      ` : ''}
+      ${productRows.length ? `
+        <div class="compare-product-list compare-product-list-inline">
+          <div class="compare-product-section-title">Products Sold</div>
+          ${productRows
+            .map(
+              (item) => `
+                <div class="compare-product-row">
+                  <div class="compare-product-name">
+                    <strong>${item.name}</strong>
+                  </div>
+                  <div class="compare-product-side ${item.winner ? 'winner' : ''}">
+                    <span class="report-side-value">${item.value}</span>
+                  </div>
+                </div>
+              `,
+            )
+            .join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderCompareSalesPage() {
+  if (!el.compareSalesCard) return;
+  const savedIds = compareConfirmedIds.length ? compareConfirmedIds : (() => {
+    try {
+      return JSON.parse(el.compareSalesCard.dataset.compareIds || '[]');
+    } catch {
+      return [] as string[];
+    }
+  })();
+  const selected = loadSavedReports().filter((report) => report.type === 'sales' && savedIds.includes(report.id));
+  if (selected.length < 2) {
+    el.compareSalesCard.innerHTML = '<div class="empty-state">Select two saved sales reports to compare.</div>';
+    return;
+  }
+
+  el.compareSalesCard.dataset.compareIds = JSON.stringify(savedIds);
+  const [left, right] = selected;
+  const leftSummary = getReportSummary(left);
+  const rightSummary = getReportSummary(right);
+  const productNames = Array.from(new Set([...leftSummary.breakdown.map((item) => item.name), ...rightSummary.breakdown.map((item) => item.name)]));
+  const productSalesRows = productNames
+    .map((name) => {
+      const leftProduct = leftSummary.breakdown.find((item) => item.name === name);
+      const rightProduct = rightSummary.breakdown.find((item) => item.name === name);
+      const leftCount = leftProduct?.count ?? 0;
+      const rightCount = rightProduct?.count ?? 0;
+      return {
+        name,
+        leftCount,
+        rightCount,
+        winner: leftCount === rightCount ? 'equal' : leftCount > rightCount ? 'left' : 'right',
+      };
+    })
+    .sort((a, b) => b.leftCount + b.rightCount - (a.leftCount + a.rightCount))
+    .slice(0, 6);
+
+  el.compareSalesCard.innerHTML = `
+    <div class="compare-sales-page">
+      <div class="compare-report-columns">
+        <div class="compare-report-column">
+          <div class="compare-report-header">Report A</div>
+          ${buildCompareCard(
+            left,
+            '',
+            right,
+            productSalesRows.map((item) => ({
+              name: item.name,
+              value: item.leftCount,
+              winner: item.winner === 'left',
+            })),
+          )}
+        </div>
+        <div class="compare-report-column">
+          <div class="compare-report-header">Report B</div>
+          ${buildCompareCard(
+            right,
+            '',
+            left,
+            productSalesRows.map((item) => ({
+              name: item.name,
+              value: item.rightCount,
+              winner: item.winner === 'right',
+            })),
+          )}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCompareEventPage() {
+  if (!el.compareEventCard) return;
+  const savedIds = compareConfirmedIds.length ? compareConfirmedIds : (() => {
+    try {
+      return JSON.parse(el.compareEventCard.dataset.compareIds || '[]');
+    } catch {
+      return [] as string[];
+    }
+  })();
+  const selected = loadSavedReports().filter((report) => report.type === 'event' && savedIds.includes(report.id));
+  if (selected.length < 2) {
+    el.compareEventCard.innerHTML = '<div class="empty-state">Select two saved event reports to compare.</div>';
+    return;
+  }
+
+  el.compareEventCard.dataset.compareIds = JSON.stringify(savedIds);
+  const [left, right] = selected;
+  const leftSummary = getReportSummary(left);
+  const rightSummary = getReportSummary(right);
+  const productNames = Array.from(new Set([...leftSummary.breakdown.map((item) => item.name), ...rightSummary.breakdown.map((item) => item.name)]));
+  const productSalesRows = productNames
+    .map((name) => {
+      const leftProduct = leftSummary.breakdown.find((item) => item.name === name);
+      const rightProduct = rightSummary.breakdown.find((item) => item.name === name);
+      const leftCount = leftProduct?.count ?? 0;
+      const rightCount = rightProduct?.count ?? 0;
+      return {
+        name,
+        leftCount,
+        rightCount,
+        winner: leftCount === rightCount ? 'equal' : leftCount > rightCount ? 'left' : 'right',
+      };
+    })
+    .sort((a, b) => b.leftCount + b.rightCount - (a.leftCount + a.rightCount))
+    .slice(0, 6);
+
+  el.compareEventCard.innerHTML = `
+    <div class="compare-sales-page">
+      <div class="compare-report-columns">
+        <div class="compare-report-column">
+          <div class="compare-report-header">Report A</div>
+          ${buildEventCompareCard(
+            left,
+            '',
+            right,
+            productSalesRows.map((item) => ({
+              name: item.name,
+              value: item.leftCount,
+              winner: item.winner === 'left',
+            })),
+          )}
+        </div>
+        <div class="compare-report-column">
+          <div class="compare-report-header">Report B</div>
+          ${buildEventCompareCard(
+            right,
+            '',
+            left,
+            productSalesRows.map((item) => ({
+              name: item.name,
+              value: item.rightCount,
+              winner: item.winner === 'right',
+            })),
+          )}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+let compareReportIds: string[] = [];
+let compareConfirmedIds: string[] = [];
+let compareDraftIds: string[] = [];
+let compareModalType: 'sales' | 'event' = 'sales';
+
+function renderCompareSelectionList(type: 'sales' | 'event') {
+  if (!el.compareModalList) return;
+  const reports = loadSavedReports().filter((report) => report.type === type);
+  if (!reports.length) {
+    el.compareModalList.innerHTML = '<div class="empty-state">No saved reports yet.</div>';
+    return;
+  }
+
+  el.compareModalList.innerHTML = reports
+    .map((report) => `
+      <label class="import-item">
+        <input type="checkbox" value="${report.id}" ${compareDraftIds.includes(report.id) ? 'checked' : ''} />
+        <div>
+          <strong>${report.name}</strong>
+          <small>${new Date(report.createdAt).toLocaleString()}</small>
+        </div>
+      </label>
+    `)
+    .join('');
+}
+
+function openCompareModal(type: 'sales' | 'event') {
+  compareModalType = type;
+  compareDraftIds = [...compareConfirmedIds];
+  compareReportIds = [...compareConfirmedIds];
+  const title = type === 'sales' ? 'Compare sales' : 'Compare events';
+  if (el.compareModalTitle) el.compareModalTitle.textContent = title;
+  renderCompareSelectionList(type);
+  if (el.compareModalOverlay) {
+    el.compareModalOverlay.classList.add('open');
+  }
+}
+
+function closeCompareModal(resetSelection = false) {
+  if (el.compareModalOverlay) {
+    el.compareModalOverlay.classList.remove('open');
+  }
+  if (resetSelection) {
+    compareDraftIds = [];
+  }
+}
+
+function confirmCompareSelection() {
+  const checked = Array.from(el.compareModalList.querySelectorAll('input[type="checkbox"]'))
+    .filter((checkbox) => (checkbox as HTMLInputElement).checked)
+    .map((checkbox) => (checkbox as HTMLInputElement).value);
+
+  if (checked.length !== 2) {
+    showToast('Select exactly 2 reports');
+    return;
+  }
+
+  compareDraftIds = checked;
+  compareConfirmedIds = [...checked];
+  compareReportIds = [...checked];
+  if (compareModalType === 'sales' && el.compareSalesCard) {
+    el.compareSalesCard.dataset.compareIds = JSON.stringify(checked);
+  }
+  if (compareModalType === 'event' && el.compareEventCard) {
+    el.compareEventCard.dataset.compareIds = JSON.stringify(checked);
+  }
+  closeCompareModal(false);
+  if (compareModalType === 'sales') {
+    renderCompareSalesPage();
+    openScreen('compareSalesScreen');
+    hideScreenActions('compareSalesScreen');
+  } else {
+    renderCompareEventPage();
+    openScreen('compareEventScreen');
+    hideScreenActions('compareEventScreen');
+  }
+  render();
+}
+
 function render(bump = false) {
-  const s = totals();
-  const statRows: Array<[string, number]> = [['Revenue', s.revenue], ['Profit', s.profit], ['Cash', s.cash], ['QRIS', s.qris]];
+  const s = totals(tx);
+  const statRows: Array<[string, number]> = [['Revenue', s.revenue], ['Profit', s.profit]];
   el.headline.textContent = `${fmt(s.revenue)} × ${tx.length}`;
   el.stats.innerHTML = statRows
     .map((x) => `<div class="stat ${bump ? 'bump' : ''}"><span class="label">${x[0]}</span><span class="value">${fmt(x[1])}</span></div>`)
@@ -776,14 +1539,73 @@ function render(bump = false) {
     animatedPayment = null;
   }
 
-  el.hero.textContent = `+${tx.length}`;
   el.report.innerHTML = buildReportMarkup();
   if (el.eventReport) {
     el.eventReport.innerHTML = buildEventMarkup();
     wireEventActions();
   }
   buildHistoryMarkup();
+  renderProductHistory();
+  renderSavedSalesReportHistory();
+  renderSavedEventReportHistory();
   updatePreviewHeaders();
+}
+
+function isImportSelectionValid() {
+  if (!el.importSavedReportsList) return false;
+  const checkedInputs = Array.from(el.importSavedReportsList.querySelectorAll('input[type="checkbox"]')) as HTMLInputElement[];
+  return checkedInputs.some((input) => input.checked);
+}
+
+function updateImportModalButton() {
+  if (!el.importModalConfirmBtn) return;
+  el.importModalConfirmBtn.disabled = !isImportSelectionValid();
+}
+
+function renderImportList() {
+  const savedSalesReports = loadSavedReports().filter((r) => r.type === 'sales');
+  const savedRows = savedSalesReports.length
+    ? savedSalesReports
+        .map(
+          (report) => `
+              <label class="import-item">
+                <input type="checkbox" value="${report.id}" />
+                <div>
+                  <strong>${report.name}</strong>
+                  <small>${new Date(report.createdAt).toLocaleString()}</small>
+                </div>
+              </label>
+            `,
+        )
+        .join('')
+    : '<div class="empty-state">No saved sales reports to import.</div>';
+
+  if (el.importSavedReportsList) {
+    el.importSavedReportsList.innerHTML = `
+      <label class="import-item">
+        <input type="checkbox" id="importCurrentLiveReport" value="current-live" />
+        <div>
+          <strong>Current live report</strong>
+          <small>Import active costs from the current session.</small>
+        </div>
+      </label>
+      ${savedRows}
+    `;
+  }
+  updateImportModalButton();
+}
+
+function openImportModal() {
+  renderImportList();
+  if (el.importModalOverlay) {
+    el.importModalOverlay.classList.add('open');
+  }
+}
+
+function closeImportModal() {
+  if (el.importModalOverlay) {
+    el.importModalOverlay.classList.remove('open');
+  }
 }
 
 function updatePreviewHeaders() {
@@ -795,6 +1617,8 @@ function updatePreviewHeaders() {
 
   if (el.reportBackBtn) el.reportBackBtn.style.display = isReportPreview ? 'inline-grid' : 'none';
   if (el.eventBackBtn) el.eventBackBtn.style.display = isEventPreview ? 'inline-grid' : 'none';
+  if (el.reportDeleteBtn) el.reportDeleteBtn.style.display = isReportPreview ? 'inline-grid' : 'none';
+  if (el.eventDeleteBtn) el.eventDeleteBtn.style.display = isEventPreview ? 'inline-grid' : 'none';
 }
 
 if (el.reportBackBtn) {
@@ -823,6 +1647,36 @@ if (el.eventBackBtn) {
   });
 }
 
+if (el.reportDeleteBtn) {
+  el.reportDeleteBtn.addEventListener('click', () => {
+    if (!previewReport || previewReport.type !== 'sales') return;
+    deleteSavedReport(previewReport.id);
+    previewReport = null;
+    document.querySelectorAll('.nav button').forEach((button) => button.classList.remove('active'));
+    const historyButton = document.querySelector('.nav button[data-tab="historyScreen"]') as HTMLButtonElement | null;
+    if (historyButton) historyButton.classList.add('active');
+    openScreen('historyScreen');
+    if (el.stats) el.stats.style.display = 'none';
+    hideScreenActions('historyScreen');
+    render();
+  });
+}
+
+if (el.eventDeleteBtn) {
+  el.eventDeleteBtn.addEventListener('click', () => {
+    if (!previewReport || previewReport.type !== 'event') return;
+    deleteSavedReport(previewReport.id);
+    previewReport = null;
+    document.querySelectorAll('.nav button').forEach((button) => button.classList.remove('active'));
+    const historyButton = document.querySelector('.nav button[data-tab="historyScreen"]') as HTMLButtonElement | null;
+    if (historyButton) historyButton.classList.add('active');
+    openScreen('historyScreen');
+    if (el.stats) el.stats.style.display = 'none';
+    hideScreenActions('historyScreen');
+    render();
+  });
+}
+
 function closeOptionsMenu() {
   el.optionsMenu.classList.remove('open');
 }
@@ -834,8 +1688,13 @@ function toggleOptionsMenu() {
 function hideScreenActions(screenId: string) {
   const showOptions = screenId === 'reportsScreen' || screenId === 'eventScreen';
   el.optionsBtn.style.display = showOptions ? 'inline-grid' : 'none';
-  el.openProductEdit.style.display = screenId === 'salesScreen' ? 'inline-grid' : 'none';
-  el.reset.style.display = screenId === 'historyScreen' ? 'none' : 'inline-grid';
+  const showAddProduct = screenId === 'salesScreen' || screenId === 'productHistoryScreen';
+  el.openProductEdit.style.display = showAddProduct ? 'inline-grid' : 'none';
+  const showReset = screenId !== 'historyScreen' && screenId !== 'settingsScreen' && screenId !== 'productHistoryScreen';
+  el.reset.style.display = showReset ? 'inline-grid' : 'none';
+  if (el.productHistoryAddBtn) {
+    el.productHistoryAddBtn.style.display = showAddProduct ? 'none' : 'none';
+  }
   if (!showOptions) closeOptionsMenu();
 }
 
@@ -853,13 +1712,16 @@ function openScreen(screenId: string) {
 
 function openProductEditor(index: number) {
   const title = document.getElementById('productEditTitle') as HTMLHeadingElement;
+  const currentScreen = document.querySelector('.screen.active')?.id || 'salesScreen';
+  productEditorReturnScreen = currentScreen === 'productEditScreen' ? productEditorReturnScreen : currentScreen;
+
   if (index >= 0) {
     const product = products[index];
     editingIndex = index;
     title.textContent = 'Edit product';
     el.editName.value = product.name;
-    el.editPrice.value = product.price.toString();
-    el.editCost.value = product.cost.toString();
+    el.editPrice.value = formatInputNumber(String(product.price), loadSettings().currency);
+    el.editCost.value = formatInputNumber(String(product.cost), loadSettings().currency);
     el.editColorHex.textContent = product.color.toUpperCase();
     el.editColorHexInput.value = product.color.toUpperCase();
     el.removeProductBtn.style.display = 'grid';
@@ -869,13 +1731,21 @@ function openProductEditor(index: number) {
     el.editName.value = '';
     el.editPrice.value = '';
     el.editCost.value = '';
-    el.editColorHex.textContent = '#F76495';
-    el.editColorHexInput.value = '#F76495';
+    const startingColor = chooseUniqueColor(products, '#F76495');
+    el.editColorHex.textContent = startingColor;
+    el.editColorHexInput.value = startingColor;
     el.removeProductBtn.style.display = 'none';
   }
 
   updateColorInputs(el.editColorHex.textContent || '#F76495');
   openScreen('productEditScreen');
+
+  el.editPrice.addEventListener('input', () => {
+    el.editPrice.value = formatInputNumber(el.editPrice.value, loadSettings().currency);
+  });
+  el.editCost.addEventListener('input', () => {
+    el.editCost.value = formatInputNumber(el.editCost.value, loadSettings().currency);
+  });
 
   el.removeProductBtn.onclick = () => {
     if (editingIndex < 0) return;
@@ -890,13 +1760,14 @@ function openProductEditor(index: number) {
     editingIndex = -1;
     rebuildGrid();
     render(true);
-    openScreen('salesScreen');
+    openScreen(productEditorReturnScreen);
+    hideScreenActions(productEditorReturnScreen);
   };
 
   el.saveProductBtn.onclick = () => {
     const updatedName = el.editName.value.trim() || `Product ${products.length + 1}`;
-    const updatedPrice = Number(el.editPrice.value) || 0;
-    const updatedCost = Number(el.editCost.value) || 0;
+    const updatedPrice = parseCurrencyInput(el.editPrice.value, loadSettings().currency) || 0;
+    const updatedCost = parseCurrencyInput(el.editCost.value, loadSettings().currency) || 0;
     const colorValue = (el.editColorHex.textContent || '#ffffff').trim();
     const normalizedColor = colorValue.startsWith('#') ? colorValue : `#${colorValue}`;
 
@@ -918,25 +1789,31 @@ function openProductEditor(index: number) {
 
       saveProducts();
       saveSales();
+      ensureProductHistory(product, productHistory, oldProductName);
+      saveProductHistory(productHistory);
       showToast(`${updatedName} saved`);
     } else {
-      products.push({ name: updatedName, price: updatedPrice, cost: updatedCost, color: normalizedColor });
+      const finalColor = chooseUniqueColor(products, normalizedColor);
+      if (finalColor !== normalizedColor) {
+        updateColorInputs(finalColor);
+      }
+      const newProduct = { name: updatedName, price: updatedPrice, cost: updatedCost, color: finalColor };
+      products.push(newProduct);
       saveProducts();
+      ensureProductHistory(newProduct, productHistory);
+      saveProductHistory(productHistory);
       showToast(`${updatedName} added`);
     }
 
     rebuildGrid();
     render(true);
-    openScreen('salesScreen');
+    openScreen(productEditorReturnScreen);
+    hideScreenActions(productEditorReturnScreen);
   };
 }
 
 let currentHSV: HSV = { h: 340, s: 0.68, v: 0.97 };
 
-function normalizeHex(value: string) {
-  const hex = value.trim().replace(/^#/, '').slice(0, 6);
-  return `#${hex.toUpperCase()}`;
-}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -1070,10 +1947,141 @@ function updateHuePosition(event: PointerEvent) {
   updateFromHSV();
 }
 
+const settingsCurrencySelect = document.getElementById('currencySelect') as HTMLSelectElement | null;
+const settingsCompactToggle = document.getElementById('compactMoneyToggle') as HTMLInputElement | null;
+
+if (settingsCurrencySelect) {
+  const savedSettings = loadSettings();
+  settingsCurrencySelect.value = savedSettings.currency;
+  settingsCurrencySelect.addEventListener('change', () => {
+    const nextSettings = { ...loadSettings(), currency: settingsCurrencySelect.value as AppSettings['currency'] };
+    saveSettings(nextSettings);
+    render();
+  });
+}
+
+if (settingsCompactToggle) {
+  settingsCompactToggle.checked = loadSettings().compactMoney;
+  settingsCompactToggle.addEventListener('change', () => {
+    const nextSettings = { ...loadSettings(), compactMoney: settingsCompactToggle.checked };
+    saveSettings(nextSettings);
+    render();
+  });
+}
+
 el.openProductEdit.addEventListener('click', () => {
   openProductEditor(-1);
 });
-el.closeEditBtn.addEventListener('click', () => openScreen('salesScreen'));
+if (el.productMenuBtn) {
+  el.productMenuBtn.addEventListener('click', () => {
+    openScreen('productHistoryScreen');
+    hideScreenActions('productHistoryScreen');
+    render();
+  });
+}
+const openSalesReportMenuBtn = document.getElementById('openSalesReportMenuBtn') as HTMLButtonElement | null;
+if (openSalesReportMenuBtn) {
+  openSalesReportMenuBtn.addEventListener('click', () => {
+    document.querySelectorAll('.nav button').forEach((button) => button.classList.remove('active'));
+    openScreen('salesReportHistoryScreen');
+    hideScreenActions('salesReportHistoryScreen');
+    render();
+  });
+}
+if (el.salesReportHistoryBackBtn) {
+  el.salesReportHistoryBackBtn.addEventListener('click', () => {
+    openScreen('settingsScreen');
+    hideScreenActions('settingsScreen');
+    render();
+  });
+}
+const openEventReportMenuBtn = document.getElementById('openEventReportMenuBtn') as HTMLButtonElement | null;
+if (openEventReportMenuBtn) {
+  openEventReportMenuBtn.addEventListener('click', () => {
+    document.querySelectorAll('.nav button').forEach((button) => button.classList.remove('active'));
+    openScreen('eventReportHistoryScreen');
+    hideScreenActions('eventReportHistoryScreen');
+    render();
+  });
+}
+if (el.eventReportHistoryBackBtn) {
+  el.eventReportHistoryBackBtn.addEventListener('click', () => {
+    openScreen('settingsScreen');
+    hideScreenActions('settingsScreen');
+    render();
+  });
+}
+const openAboutMenuBtn = document.getElementById('openAboutMenuBtn') as HTMLButtonElement | null;
+if (openAboutMenuBtn) {
+  openAboutMenuBtn.addEventListener('click', () => {
+    showToast('About coming soon');
+  });
+}
+if (el.productHistoryBackBtn) {
+  el.productHistoryBackBtn.addEventListener('click', () => {
+    const previousScreen = productEditorReturnScreen === 'productEditScreen' ? 'productHistoryScreen' : 'settingsScreen';
+    openScreen(previousScreen);
+    hideScreenActions(previousScreen);
+    render();
+  });
+}
+if (el.compareSalesBtn) {
+  el.compareSalesBtn.addEventListener('click', () => openCompareModal('sales'));
+}
+if (el.compareEventsBtn) {
+  el.compareEventsBtn.addEventListener('click', () => openCompareModal('event'));
+}
+if (el.compareModalConfirmBtn) {
+  el.compareModalConfirmBtn.addEventListener('click', confirmCompareSelection);
+}
+if (el.compareModalCancelBtn) {
+  el.compareModalCancelBtn.addEventListener('click', () => closeCompareModal(true));
+}
+if (el.compareModalCloseBtn) {
+  el.compareModalCloseBtn.addEventListener('click', () => closeCompareModal(true));
+}
+if (el.compareSalesBackBtn) {
+  el.compareSalesBackBtn.addEventListener('click', () => {
+    compareConfirmedIds = [];
+    compareReportIds = [];
+    compareDraftIds = [];
+    openScreen('historyScreen');
+    hideScreenActions('historyScreen');
+    render();
+  });
+}
+if (el.compareEventBackBtn) {
+  el.compareEventBackBtn.addEventListener('click', () => {
+    compareConfirmedIds = [];
+    compareReportIds = [];
+    compareDraftIds = [];
+    openScreen('historyScreen');
+    hideScreenActions('historyScreen');
+    render();
+  });
+}
+if (el.compareModalOverlay) {
+  el.compareModalOverlay.addEventListener('click', (event) => {
+    if (event.target === el.compareModalOverlay) closeCompareModal(true);
+  });
+}
+if (el.compareModalList) {
+  el.compareModalList.addEventListener('change', () => {
+    const checked = Array.from(el.compareModalList.querySelectorAll('input[type="checkbox"]'))
+      .filter((checkbox) => (checkbox as HTMLInputElement).checked)
+      .map((checkbox) => (checkbox as HTMLInputElement).value);
+    compareDraftIds = checked;
+    el.compareModalConfirmBtn.disabled = checked.length !== 2;
+  });
+}
+if (el.productHistoryAddBtn) {
+  el.productHistoryAddBtn.addEventListener('click', () => openProductEditor(-1));
+}
+el.closeEditBtn.addEventListener('click', () => {
+  openScreen(productEditorReturnScreen);
+  hideScreenActions(productEditorReturnScreen);
+  render();
+});
 
 el.editColorHexInput.addEventListener('input', () => {
   const rawValue = el.editColorHexInput.value;
@@ -1126,14 +2134,6 @@ document.addEventListener('pointerdown', (event) => {
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') closeColorPicker();
 });
-
-function getContrastColor(hex: string) {
-  const n = parseInt(hex.slice(1), 16);
-  const r = (n >> 16) & 255;
-  const g = (n >> 8) & 255;
-  const b = n & 255;
-  return (r * 0.299 + g * 0.587 + b * 0.114) > 160 ? '#071f1d' : '#ffffff';
-}
 
 function setColorField(hex: string) {
   const color = hex.startsWith('#') ? hex : `#${hex}`;
@@ -1207,17 +2207,27 @@ el.optionsBtn.addEventListener('click', (event) => {
 
   let saveModalType: 'sales' | 'event' = 'sales';
 
+  const updateSaveModalButton = () => {
+    if (!el.saveModalSaveBtn || !el.saveModalInput) return;
+    el.saveModalSaveBtn.disabled = el.saveModalInput.value.trim().length === 0;
+  };
+
   const openSaveModal = (type: 'sales' | 'event') => {
     saveModalType = type;
     closeOptionsMenu();
     el.saveModalTitle.textContent = type === 'event' ? 'Save event report' : 'Save report';
     el.saveModalInput.placeholder = type === 'event' ? `Event report ${new Date().toLocaleDateString()}` : `Report ${new Date().toLocaleDateString()}`;
     el.saveModalInput.value = '';
+    updateSaveModalButton();
     el.saveModalOverlay.classList.add('open');
     el.saveModalInput.focus();
   };
 
   const closeSaveModal = () => {
+    renamingSavedReportId = null;
+    el.saveModalSaveBtn.textContent = 'Save';
+    el.saveModalTitle.textContent = 'Save report';
+    el.saveModalInput.value = '';
     el.saveModalOverlay.classList.remove('open');
   };
 
@@ -1227,9 +2237,14 @@ el.optionsBtn.addEventListener('click', (event) => {
 
   el.saveModalSaveBtn.addEventListener('click', () => {
     const reportName = el.saveModalInput.value.trim();
-    if (!reportName) return;
+    if (renamingSavedReportId) {
+      renameSavedReport(renamingSavedReportId, reportName);
+      closeSaveModal();
+      return;
+    }
     saveCurrentReport(reportName, saveModalType);
     closeSaveModal();
+    render();
   });
 
   el.saveModalCancelBtn.addEventListener('click', closeSaveModal);
@@ -1239,51 +2254,16 @@ el.optionsBtn.addEventListener('click', (event) => {
     if (event.target === el.saveModalOverlay) closeSaveModal();
   });
 
+  el.saveModalInput.addEventListener('input', () => {
+    updateSaveModalButton();
+  });
+
   el.saveModalInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      el.saveModalSaveBtn.click();
+      if (!el.saveModalSaveBtn.disabled) el.saveModalSaveBtn.click();
     }
   });
-
-  const renderImportList = () => {
-    const savedSalesReports = loadSavedReports().filter((r) => r.type === 'sales');
-    const savedRows = savedSalesReports.length
-      ? savedSalesReports
-          .map(
-            (report) => `
-              <label class="import-item">
-                <input type="checkbox" value="${report.id}" />
-                <div>
-                  <strong>${report.name}</strong>
-                  <small>${new Date(report.createdAt).toLocaleString()}</small>
-                </div>
-              </label>
-            `,
-          )
-          .join('')
-      : '<div class="empty-state">No saved sales reports to import.</div>';
-
-    el.importSavedReportsList.innerHTML = `
-      <label class="import-item">
-        <input type="checkbox" id="importCurrentLiveReport" value="current-live" />
-        <div>
-          <strong>Current live event report</strong>
-          <small>Import active event costs from the current session.</small>
-        </div>
-      </label>
-      ${savedRows}
-    `;
-  };
-
-  const openImportModal = () => {
-    renderImportList();
-    el.importModalOverlay.classList.add('open');
-  };
-
-  const closeImportModal = () => {
-    el.importModalOverlay.classList.remove('open');
-  };
 
   if (el.importModalCancelBtn) el.importModalCancelBtn.addEventListener('click', closeImportModal);
   if (el.importModalCloseBtn) el.importModalCloseBtn.addEventListener('click', closeImportModal);
@@ -1291,7 +2271,11 @@ el.optionsBtn.addEventListener('click', (event) => {
     if (event.target === el.importModalOverlay) closeImportModal();
   });
 
-  if (el.eventImportBtn) el.eventImportBtn.addEventListener('click', openImportModal);
+  if (el.importSavedReportsList) {
+    el.importSavedReportsList.addEventListener('change', () => {
+      updateImportModalButton();
+    });
+  }
 
   if (el.importModalConfirmBtn) el.importModalConfirmBtn.addEventListener('click', () => {
     const currentLiveCheckbox = el.importSavedReportsList.querySelector('#importCurrentLiveReport') as HTMLInputElement | null;
@@ -1301,13 +2285,16 @@ el.optionsBtn.addEventListener('click', (event) => {
       .filter((value) => value !== 'current-live');
 
     const selectedSalesReports = loadSavedReports().filter((r) => r.type === 'sales' && selectedIds.includes(r.id));
-    const mergedSales = selectedSalesReports.flatMap((report) => report.sales.map((sale) => ({ ...sale })));
+    const mergedSales = [
+      ...(currentLiveCheckbox?.checked ? tx.map((sale) => ({ ...sale })) : []),
+      ...selectedSalesReports.flatMap((report) => report.sales.map((sale) => ({ ...sale })))
+    ];
     const mergedCosts = currentLiveCheckbox?.checked
-      ? eventCosts.map((cost) => ({ ...cost, id: crypto.randomUUID() }))
+      ? eventCosts.map((cost) => ({ ...cost, id: generateUUID() }))
       : [];
 
-    if (!selectedSalesReports.length && !mergedCosts.length) {
-      showToast('Select at least one saved sales report or current live event report');
+    if (!mergedSales.length && !mergedCosts.length) {
+      showToast('Select at least one saved sales report or current live report');
       return;
     }
 
@@ -1331,7 +2318,7 @@ el.optionsBtn.addEventListener('click', (event) => {
   });
 
   makeTiles();
-render();
+  render();
 
 // Ensure stats and action button visibility match the initial active screen
 (() => {

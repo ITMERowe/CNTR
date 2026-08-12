@@ -38,6 +38,7 @@
             <div class="page-header">
               <button class="icon-btn back-btn" id="reportBackBtn" title="Back to live report" style="display:none"><span class="material-symbols-outlined">arrow_back</span></button>
               <h1 class="placeholder-title" id="reportPageTitle">Report</h1>
+              <button class="icon-btn delete-btn" id="reportDeleteBtn" title="Delete saved report" style="display:none"><span class="material-symbols-outlined">delete</span></button>
             </div>
             <div class="report-card" id="reportCard"></div>
           </div>
@@ -47,6 +48,7 @@
             <div class="page-header">
               <button class="icon-btn back-btn" id="eventBackBtn" title="Back to history" style="display:none"><span class="material-symbols-outlined">arrow_back</span></button>
               <h1 class="placeholder-title" id="eventPageTitle">Event Report</h1>
+              <button class="icon-btn delete-btn" id="eventDeleteBtn" title="Delete saved event report" style="display:none"><span class="material-symbols-outlined">delete</span></button>
             </div>
             <div class="report-card" id="eventCard"></div>
           </div>
@@ -58,14 +60,10 @@
             </div>
             <div class="report-card">
               <div class="history-grid">
-                <section class="history-card">
-                  <div class="section-head"><h2 class="report-title">Saved reports</h2></div>
-                  <div id="historySavedReports" class="history-list"></div>
-                </section>
-                <section class="history-card">
-                  <div class="section-head"><h2 class="report-title">Saved event reports</h2></div>
-                  <div id="historySavedEventReports" class="history-list"></div>
-                </section>
+                <div class="compare-actions">
+                  <button class="compare-btn" id="compareSalesBtn" type="button">Compare Sales</button>
+                  <button class="compare-btn" id="compareEventsBtn" type="button">Compare Events</button>
+                </div>
                 <section class="history-card">
                   <div class="section-head"><h2 class="report-title">Recent purchases</h2></div>
                   <div id="historyRecentPurchase" class="history-list"></div>
@@ -74,25 +72,94 @@
             </div>
           </div>
         </section>
+        <section class="screen" id="compareSalesScreen">
+          <div class="page">
+            <div class="page-header">
+              <button class="icon-btn back-btn" id="compareSalesBackBtn" title="Back"><span class="material-symbols-outlined">arrow_back</span></button>
+              <h1 class="placeholder-title">Compare Sales</h1>
+            </div>
+            <div class="report-card" id="compareSalesCard"></div>
+          </div>
+        </section>
+        <section class="screen" id="compareEventScreen">
+          <div class="page">
+            <div class="page-header">
+              <button class="icon-btn back-btn" id="compareEventBackBtn" title="Back"><span class="material-symbols-outlined">arrow_back</span></button>
+              <h1 class="placeholder-title">Compare Events</h1>
+            </div>
+            <div class="report-card" id="compareEventCard"></div>
+          </div>
+        </section>
         <section class="screen" id="settingsScreen">
           <div class="page">
-            <div class="hero" id="settingsHero">+0</div>
-            <div class="panel">
-              <div class="menu-row"><span class="menu-icon material-symbols-outlined">info</span><span>About</span></div>
-              <div class="menu-row"><span class="menu-icon material-symbols-outlined">inventory_2</span><span>Products</span></div>
-              <div class="menu-row"><span class="menu-icon material-symbols-outlined">tune</span><span>Settings</span></div>
+            <div class="page-header">
+              <h1 class="placeholder-title">Settings</h1>
             </div>
-            <div class="panel">
-              <div class="menu-row">Contact developer</div>
-              <div class="menu-row">Share app</div>
-              <div class="menu-row">Leave a review</div>
-            </div>
-            <div class="support">
-              <div>
-                <h3>Support this project</h3>
-                <p>Help keep it simple.</p>
+            <div class="settings-panel">
+              <div class="settings-group">
+                <div class="settings-field">
+                  <label for="currencySelect">Currency</label>
+                  <div class="custom-select">
+                    <select id="currencySelect">
+                      <option value="IDR">IDR (Rp)</option>
+                      <option value="USD">USD ($)</option>
+                      <option value="EUR">EUR (€)</option>
+                      <option value="SGD">SGD (S$)</option>
+                      <option value="AUD">AUD (A$)</option>
+                      <option value="GBP">GBP (£)</option>
+                      <option value="JPY">JPY (¥)</option>
+                      <option value="MYR">MYR (RM)</option>
+                    </select>
+                  </div>
+                </div>
+                <label class="settings-toggle" for="compactMoneyToggle">
+                  <span>Use compact money format</span>
+                  <span class="toggle-switch">
+                    <input type="checkbox" id="compactMoneyToggle" />
+                    <span class="toggle-slider"></span>
+                  </span>
+                </label>
               </div>
-              <span class="material-symbols-outlined support-icon">support_agent</span>
+            </div>
+            <div class="panel">
+              <button class="menu-row menu-action" id="openProductsMenuBtn" type="button"><span class="menu-icon material-symbols-outlined">inventory_2</span><span>Products</span></button>
+              <button class="menu-row menu-action" id="openSalesReportMenuBtn" type="button"><span class="menu-icon material-symbols-outlined">bar_chart</span><span>Sales Report</span></button>
+              <button class="menu-row menu-action" id="openEventReportMenuBtn" type="button"><span class="menu-icon material-symbols-outlined">paid</span><span>Event Report</span></button>
+              <button class="menu-row menu-action" id="openAboutMenuBtn" type="button"><span class="menu-icon material-symbols-outlined">info</span><span>About</span></button>
+            </div>
+          </div>
+        </section>
+        <section class="screen" id="salesReportHistoryScreen">
+          <div class="page">
+            <div class="page-header">
+              <button class="icon-btn back-btn" id="salesReportHistoryBackBtn" title="Back"><span class="material-symbols-outlined">arrow_back</span></button>
+              <h1 class="placeholder-title">Sales Report</h1>
+            </div>
+            <div class="report-card">
+              <div id="salesReportHistoryList" class="product-history-list"></div>
+            </div>
+          </div>
+        </section>
+        <section class="screen" id="eventReportHistoryScreen">
+          <div class="page">
+            <div class="page-header">
+              <button class="icon-btn back-btn" id="eventReportHistoryBackBtn" title="Back"><span class="material-symbols-outlined">arrow_back</span></button>
+              <h1 class="placeholder-title">Event Report</h1>
+            </div>
+            <div class="report-card">
+              <div id="eventReportHistoryList" class="product-history-list"></div>
+            </div>
+          </div>
+        </section>
+        <section class="screen" id="productHistoryScreen">
+          <div class="page">
+            <div class="page-header">
+              <button class="icon-btn back-btn" id="productHistoryBackBtn" title="Back"><span class="material-symbols-outlined">arrow_back</span></button>
+              <h1 class="placeholder-title">Products</h1>
+              <button class="icon-btn add-product-btn" id="productHistoryAddBtn" type="button" title="Add product"><span class="material-symbols-outlined">add</span></button>
+            </div>
+            <div class="report-card">
+              <div id="productHistoryList" class="product-history-list"></div>
             </div>
           </div>
         </section>
@@ -174,6 +241,20 @@
           <div class="save-modal-actions">
             <button type="button" class="secondary-btn" id="saveModalCancelBtn">Cancel</button>
             <button type="button" class="save-btn" id="saveModalSaveBtn">Save</button>
+          </div>
+        </div>
+      </div>
+      <div class="save-modal-overlay" id="compareModalOverlay" aria-hidden="true">
+        <div class="save-modal" role="dialog" aria-modal="true" aria-labelledby="compareModalTitle">
+          <div class="save-modal-header">
+            <h2 id="compareModalTitle">Compare sales</h2>
+            <button type="button" class="icon-btn" id="compareModalCloseBtn" aria-label="Close compare dialog"><span class="material-symbols-outlined">close</span></button>
+          </div>
+          <p class="save-modal-subtitle">Select exactly 2 saved reports to compare.</p>
+          <div class="import-list" id="compareModalList"></div>
+          <div class="save-modal-actions">
+            <button type="button" class="secondary-btn" id="compareModalCancelBtn">Cancel</button>
+            <button type="button" class="save-btn" id="compareModalConfirmBtn">Compare</button>
           </div>
         </div>
       </div>
