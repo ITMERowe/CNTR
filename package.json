@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:watch": "chokidar \"src/**/*\" -c \"npm run build\"",
     "preview": "vite preview",
     "cap:sync": "npx cap sync"
   },
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
+    "chokidar-cli": "^3.0.0",
     "typescript": "^5.7.3",
     "vite": "^5.4.10"
   }

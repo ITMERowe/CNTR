@@ -67,8 +67,12 @@ export function parseCurrencyInput(rawValue: string, currency: 'IDR' | 'USD' | '
   const withoutSymbol = sanitized.replace(new RegExp(`^${symbolText}`), '');
 
   const { group, decimal } = getCurrencySeparators(currency);
-  const withoutGroup = withoutSymbol.replace(new RegExp(`\\${group === '.' ? '\\.' : group}`, 'g'), '');
-  const normalized = withoutGroup.replace(decimal, '.').replace(/[^0-9.\-]/g, '');
+  // Escape separators for RegExp
+  const escapeForRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedGroup = escapeForRegExp(group);
+  const escapedDecimal = escapeForRegExp(decimal);
+  const withoutGroup = withoutSymbol.replace(new RegExp(escapedGroup, 'g'), '');
+  const normalized = withoutGroup.replace(new RegExp(escapedDecimal, 'g'), '.').replace(/[^0-9.\-]/g, '');
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
 }

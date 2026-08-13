@@ -67,8 +67,10 @@ function syncProductState() {
   products.splice(0, products.length, ...uniqueProducts);
   productHistory.splice(0, productHistory.length, ...mergedHistory);
 
-  if (products.length === 0 && productHistory.length) {
-    products.push(...productHistory.map((product) => ({ ...product })));
+  // If no active products and no history, seed with defaults.
+  // Do NOT repopulate active products from history when the user intentionally removed all products.
+  if (products.length === 0 && productHistory.length === 0) {
+    products.push(...defaultProducts.map((product) => ({ ...product })));
   }
 }
 
@@ -278,7 +280,7 @@ function openExpenseModalForEdit(id: string) {
 
   editingExpenseId = cost.id;
   nameInput.value = cost.name;
-  amountInput.value = String(cost.amount);
+  amountInput.value = formatInputNumber(String(cost.amount), loadSettings().currency);
   title.textContent = 'Edit Expense';
   addBtn.textContent = 'Save changes';
   overlay.classList.add('open');
@@ -287,9 +289,31 @@ function openExpenseModalForEdit(id: string) {
 
 let editingIndex = -1;
 let editingExpenseId: string | null = null;
+let editingHistoryIndex: number | null = null;
+let editingHistoryOldName: string | null = null;
 let productEditorReturnScreen = 'salesScreen';
 let animatedProduct: string | null = null;
 let animatedPayment: string | null = null;
+let _savedBodyScroll = 0;
+
+function lockBodyScroll() {
+  _savedBodyScroll = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+  document.body.style.position = 'fixed';
+  document.body.style.top = `-${_savedBodyScroll}px`;
+  document.body.style.left = '0';
+  document.body.style.right = '0';
+  document.body.style.width = '100%';
+}
+
+function unlockBodyScroll() {
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.left = '';
+  document.body.style.right = '';
+  document.body.style.width = '';
+  window.scrollTo(0, _savedBodyScroll || 0);
+  _savedBodyScroll = 0;
+}
 const el = {
   grid: document.getElementById('grid') as HTMLDivElement,
   stats: document.getElementById('stats') as HTMLDivElement,
@@ -363,7 +387,41 @@ const el = {
   importModalConfirmBtn: document.getElementById('importModalConfirmBtn') as HTMLButtonElement,
   importModalCloseBtn: document.getElementById('importModalCloseBtn') as HTMLButtonElement,
   eventImportBtn: document.getElementById('eventImportBtn') as HTMLButtonElement,
+  confirmModalOverlay: document.getElementById('confirmModalOverlay') as HTMLDivElement,
+  confirmModalTitle: document.getElementById('confirmModalTitle') as HTMLHeadingElement,
+  confirmModalMessage: document.getElementById('confirmModalMessage') as HTMLParagraphElement,
+  confirmModalCloseBtn: document.getElementById('confirmModalCloseBtn') as HTMLButtonElement,
+  confirmModalCancelBtn: document.getElementById('confirmModalCancelBtn') as HTMLButtonElement,
+  confirmModalConfirmBtn: document.getElementById('confirmModalConfirmBtn') as HTMLButtonElement,
 };
+
+function openConfirmModal(message: string, confirmLabel = 'Delete', onConfirm?: () => void) {
+  const overlay = el.confirmModalOverlay;
+  const msg = el.confirmModalMessage;
+  const confirmBtn = el.confirmModalConfirmBtn;
+  const cancelBtn = el.confirmModalCancelBtn;
+  const closeBtn = el.confirmModalCloseBtn;
+  if (!overlay || !msg || !confirmBtn || !cancelBtn || !closeBtn) return;
+  msg.textContent = message;
+  confirmBtn.textContent = confirmLabel;
+  overlay.classList.add('open');
+
+  const cleanup = () => {
+    overlay.classList.remove('open');
+    confirmBtn.onclick = null;
+    cancelBtn.onclick = null;
+    closeBtn.onclick = null;
+  };
+
+  confirmBtn.onclick = () => {
+    cleanup();
+    try { onConfirm && onConfirm(); } catch { /* ignore */ }
+  };
+  cancelBtn.onclick = () => { cleanup(); };
+  closeBtn.onclick = () => { cleanup(); };
+
+  overlay.onclick = (ev) => { if (ev.target === overlay) cleanup(); };
+}
 
 function buildReportMarkup() {
   const reportSales = previewReport && previewReport.type === 'sales' ? previewReport.sales : tx;
@@ -589,7 +647,7 @@ function updateExpenseButtonState() {
 
   if (!addCostBtn || !costName || !costAmount) return;
   const name = costName.value.trim();
-  const amount = Number(costAmount.value);
+  const amount = parseCurrencyInput(costAmount.value, loadSettings().currency);
   addCostBtn.disabled = !name || Number.isNaN(amount) || amount <= 0;
 }
 
@@ -602,6 +660,8 @@ function resetExpenseModal() {
 
   editingExpenseId = null;
   if (overlay) overlay.classList.remove('open');
+  // restore scrolling when closing the expense modal
+  try { unlockBodyScroll(); } catch (e) { /* ignore */ }
   if (title) title.textContent = 'Add Expense';
   if (nameInput) nameInput.value = '';
   if (amountInput) amountInput.value = '';
@@ -690,6 +750,7 @@ function wireEventActions() {
       e.stopPropagation();
       resetExpenseModal();
       expenseOverlay.classList.add('open');
+      lockBodyScroll();
       updateExpenseButtonState();
     });
   }
@@ -912,8 +973,13 @@ function buildHistoryMarkup() {
 
 function renderProductHistory() {
   if (!el.productHistoryList) return;
-  const rows = productHistory.length
-    ? productHistory
+  // Use preserved view order if user is currently on the product history screen
+  const orderedHistory = productHistoryViewOrder
+    ? productHistoryViewOrder.map((name) => productHistory.find((p) => p.name === name)).filter(Boolean) as typeof productHistory
+    : productHistory;
+
+  const rows = orderedHistory.length
+    ? orderedHistory
         .map((product) => {
           const isActive = products.some((item) => item.name === product.name);
           const productIndex = products.findIndex((item) => item.name === product.name);
@@ -928,8 +994,11 @@ function renderProductHistory() {
                   <button class="product-edit-btn" type="button" data-name="${product.name}" title="Edit ${product.name}">
                     <span class="material-symbols-outlined">edit</span>
                   </button>
-                  <button class="save-btn product-restore-btn" type="button" data-name="${product.name}" ${isActive ? 'disabled' : ''}>
-                    ${isActive ? 'Active' : 'Add back'}
+                  <button class="icon-btn product-delete-btn" type="button" data-name="${product.name}" title="Delete ${product.name}">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                  <button class="product-toggle-btn" type="button" data-name="${product.name}" data-active="${isActive}" aria-pressed="${isActive}">
+                    <span class="toggle-label">${isActive ? 'Active' : 'Add'}</span>
                   </button>
                 </div>
               </div>
@@ -945,18 +1014,59 @@ function renderProductHistory() {
       const name = button.getAttribute('data-name');
       if (!name) return;
       const index = products.findIndex((product) => product.name === name);
-      if (index < 0) {
-        showToast(`${name} is not active yet`);
+      if (index >= 0) {
+        openProductEditor(index);
         return;
       }
-      openProductEditor(index);
+
+      const historyIndex = productHistory.findIndex((p) => p.name === name);
+      if (historyIndex < 0) {
+        showToast(`${name} not found`);
+        return;
+      }
+
+      // Open editor in "add" mode but prefill with history data so inactive products can be edited
+      const hist = productHistory[historyIndex];
+      // Remember where the user came from so the back button returns correctly
+      const currentScreen = document.querySelector('.screen.active')?.id || 'salesScreen';
+      productEditorReturnScreen = currentScreen === 'productEditScreen' ? productEditorReturnScreen : currentScreen;
+      editingHistoryIndex = historyIndex;
+      editingHistoryOldName = hist.name;
+      editingIndex = -1;
+      const title = document.getElementById('productEditTitle') as HTMLHeadingElement;
+      if (title) title.textContent = 'Edit product';
+      el.editName.value = hist.name;
+      el.editPrice.value = formatInputNumber(String(hist.price), loadSettings().currency);
+      el.editCost.value = formatInputNumber(String(hist.cost), loadSettings().currency);
+      el.editColorHex.textContent = hist.color.toUpperCase();
+      el.editColorHexInput.value = hist.color.toUpperCase();
+      el.removeProductBtn.style.display = 'none';
+      updateColorInputs(el.editColorHex.textContent || '#F76495');
+      openScreen('productEditScreen');
     });
   });
 
-  el.productHistoryList.querySelectorAll<HTMLButtonElement>('.product-restore-btn').forEach((button) => {
-    button.addEventListener('click', () => {
+  // Toggle add/remove active product to save space (single compact control)
+  el.productHistoryList.querySelectorAll<HTMLButtonElement>('.product-toggle-btn').forEach((button) => {
+    button.addEventListener('click', (ev) => {
+      ev.stopPropagation();
       const name = button.getAttribute('data-name');
       if (!name) return;
+      const isActive = products.some((item) => item.name === name);
+
+      if (isActive) {
+        // Deactivate: remove from active products but keep history
+        for (let i = products.length - 1; i >= 0; i--) {
+          if (products[i].name === name) products.splice(i, 1);
+        }
+        saveProducts();
+        rebuildGrid();
+        showToast(`${name} removed from counter`);
+        render(true);
+        return;
+      }
+
+      // Activate: add back from history
       const existing = productHistory.find((product) => product.name === name);
       if (!existing) return;
       if (products.some((item) => item.name === name)) {
@@ -968,6 +1078,38 @@ function renderProductHistory() {
       rebuildGrid();
       showToast(`${name} added back to counter`);
       render(true);
+    });
+  });
+
+  el.productHistoryList.querySelectorAll<HTMLButtonElement>('.product-delete-btn').forEach((button) => {
+    button.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const name = button.getAttribute('data-name');
+      if (!name) return;
+
+      openConfirmModal(`Permanently delete product '${name}'? This cannot be undone.`, 'Delete', () => {
+        // Remove from productHistory
+        for (let i = productHistory.length - 1; i >= 0; i--) {
+          if (productHistory[i].name === name) productHistory.splice(i, 1);
+        }
+
+        // Remove from active products
+        for (let i = products.length - 1; i >= 0; i--) {
+          if (products[i].name === name) products.splice(i, 1);
+        }
+
+        // Remove related sales
+        for (let i = tx.length - 1; i >= 0; i--) {
+          if (tx[i].product === name) tx.splice(i, 1);
+        }
+
+        saveProductHistory();
+        saveProducts();
+        saveSales();
+        rebuildGrid();
+        render(true);
+        showToast(`${name} permanently deleted`);
+      });
     });
   });
 }
@@ -1421,6 +1563,7 @@ let compareReportIds: string[] = [];
 let compareConfirmedIds: string[] = [];
 let compareDraftIds: string[] = [];
 let compareModalType: 'sales' | 'event' = 'sales';
+let productHistoryViewOrder: string[] | null = null;
 
 function renderCompareSelectionList(type: 'sales' | 'event') {
   if (!el.compareModalList) return;
@@ -1706,6 +1849,13 @@ function rebuildGrid() {
 
 function openScreen(screenId: string) {
   document.querySelectorAll('.screen').forEach((screen) => screen.classList.remove('active'));
+  // Preserve product history ordering while the user stays on the Product history screen.
+  if (screenId === 'productHistoryScreen') {
+    productHistoryViewOrder = productHistory.map((p) => p.name);
+  } else {
+    productHistoryViewOrder = null;
+  }
+
   const screen = document.getElementById(screenId);
   if (screen) screen.classList.add('active');
 }
@@ -1792,6 +1942,38 @@ function openProductEditor(index: number) {
       ensureProductHistory(product, productHistory, oldProductName);
       saveProductHistory(productHistory);
       showToast(`${updatedName} saved`);
+    } else if (editingHistoryIndex !== null) {
+      // Editing an inactive product from history
+      const hist = productHistory[editingHistoryIndex];
+      const oldName = hist.name;
+      hist.name = updatedName;
+      hist.price = updatedPrice;
+      hist.cost = updatedCost;
+      hist.color = normalizedColor;
+
+      // If an active product with the old name exists, update it and related sales
+      const activeIdx = products.findIndex((p) => p.name === oldName);
+      if (activeIdx >= 0) {
+        const p = products[activeIdx];
+        p.name = updatedName;
+        p.price = updatedPrice;
+        p.cost = updatedCost;
+        p.color = normalizedColor;
+        tx.forEach((sale) => {
+          if (sale.product === oldName) {
+            sale.product = updatedName;
+            sale.price = updatedPrice;
+            sale.cost = updatedCost;
+          }
+        });
+        saveProducts();
+        saveSales();
+      }
+
+      saveProductHistory(productHistory);
+      showToast(`${updatedName} saved`);
+      editingHistoryIndex = null;
+      editingHistoryOldName = null;
     } else {
       const finalColor = chooseUniqueColor(products, normalizedColor);
       if (finalColor !== normalizedColor) {
@@ -2313,7 +2495,10 @@ el.optionsBtn.addEventListener('click', (event) => {
     if (event.key === 'Escape' && (el.saveModalOverlay.classList.contains('open') || el.importModalOverlay.classList.contains('open') || (el.expenseModalOverlay && el.expenseModalOverlay.classList.contains('open')))) {
       closeSaveModal();
       closeImportModal();
-      if (el.expenseModalOverlay) el.expenseModalOverlay.classList.remove('open');
+      if (el.expenseModalOverlay) {
+        el.expenseModalOverlay.classList.remove('open');
+        try { unlockBodyScroll(); } catch (e) { /* ignore */ }
+      }
     }
   });
 
