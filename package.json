@@ -10,6 +10,7 @@
     "build:watch": "chokidar \"src/**/*\" -c \"npm run build\"",
     "preview": "vite preview",
     "test": "node --test --experimental-strip-types tests/storage.test.ts",
+    "test:e2e": "node tests/e2e/run.mjs",
     "cap:sync": "npx cap sync"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "@capacitor/cli": "^8.0.0",
     "@playwright/cli": "^0.1.22",
     "chokidar-cli": "^3.0.0",
+    "playwright-core": "1.64.0-alpha-1790635538000",
     "typescript": "^5.7.3",
     "vite": "^5.4.10"
   }

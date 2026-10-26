@@ -139,7 +139,7 @@
                   <button class="group-row group-link" id="exportCsvBtn" type="button"><span class="group-icon"><i data-icon="csv"></i></span><span class="group-row-label">Export sales as CSV<small>For a spreadsheet; cannot be restored</small></span><i data-icon="chevron-right"></i></button>
                   <button class="group-row group-link" id="restoreBackupBtn" type="button"><span class="group-icon"><i data-icon="restore"></i></span><span class="group-row-label">Restore from backup<small>Replaces all data on this phone</small></span><i data-icon="chevron-right"></i></button>
                 </div>
-                <p class="group-note">Your data is stored only on this phone and never needs internet. Uninstalling CNTR, clearing its data, or losing the phone deletes it. Export a backup after every event and keep a copy somewhere else.</p>
+                <p class="group-note">Your data is stored only on this phone and never needs internet. Uninstalling CNTR, clearing its data, or losing the phone deletes it. Export a backup after every event and keep a copy somewhere else. CNTR also saves automatic copies on this phone (in Documents/CNTR/auto, newest 20 kept) before you clear sales or delete a report.</p>
                 <input type="file" id="restoreFileInput" hidden />
               </section>
               <section class="group">
@@ -178,6 +178,38 @@
               <h1 class="page-title">Products</h1>
             </div>
             <div class="list list-card" id="productHistoryList"></div>
+          </div>
+        </section>
+
+        <section class="screen" id="aboutScreen">
+          <div class="page">
+            <div class="page-header">
+              <button class="icon-btn back-btn" id="aboutBackBtn" type="button" title="Back" aria-label="Back"><i data-icon="arrow-left"></i></button>
+              <h1 class="page-title">About</h1>
+            </div>
+            <div class="stack">
+              <section class="group">
+                <div class="group-body">
+                  <div class="group-row"><span class="group-row-label">CNTR<small>Offline sales counter for booths</small></span></div>
+                  <div class="group-row"><span class="group-row-label">Version</span><span class="about-value" id="aboutVersion"></span></div>
+                  <div class="group-row"><span class="group-row-label">License</span><span class="about-value">MIT © 2026 ITMERowe</span></div>
+                </div>
+              </section>
+              <section class="group">
+                <h2 class="group-title">Privacy</h2>
+                <div class="card about-text">
+                  <p>CNTR has no account, server, ads or analytics, and never uses the internet. Everything you record stays on this phone.</p>
+                  <p>A file leaves the phone only when you export a backup or CSV and choose where to send it.</p>
+                  <p>Uninstalling CNTR or clearing its data deletes everything on the phone, so export a backup regularly.</p>
+                </div>
+              </section>
+              <section class="group">
+                <h2 class="group-title">Open-source software</h2>
+                <div class="card about-text">
+                  <p>Preact (MIT), Capacitor and its plugins (MIT), Capacitor SQLite (MIT), Lucide icons (ISC), Plus Jakarta Sans font (SIL Open Font License 1.1).</p>
+                </div>
+              </section>
+            </div>
           </div>
         </section>
 

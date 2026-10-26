@@ -60,6 +60,33 @@ export async function saveSafetyCopy(name: string, text: string) {
   }
 }
 
+const AUTO_FOLDER = `${FOLDER}/auto`;
+const AUTO_KEEP = 20;
+
+/**
+ * Writes an automatic backup to Documents/CNTR/auto (else app-private storage) and keeps the newest 20.
+ * Returns false in the browser, where nothing is written. Throws if the file could not be written.
+ */
+export async function saveAutoBackup(name: string, text: string): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  let directory = Directory.Documents;
+  const write = () => Filesystem.writeFile({ path: `${AUTO_FOLDER}/${name}`, data: text, directory, encoding: Encoding.UTF8, recursive: true });
+  try {
+    await write();
+  } catch {
+    directory = Directory.Data;
+    await write();
+  }
+  try {
+    // Names start with a sortable timestamp, so the oldest sort first.
+    const old = (await Filesystem.readdir({ path: AUTO_FOLDER, directory })).files.map((file) => file.name).filter((file) => file.startsWith('cntr-auto-')).sort().slice(0, -AUTO_KEEP);
+    for (const file of old) await Filesystem.deleteFile({ path: `${AUTO_FOLDER}/${file}`, directory });
+  } catch (error) {
+    console.error('Pruning old automatic backups failed', error); // harmless: just more files kept
+  }
+  return true;
+}
+
 /** Opens the system file picker and returns the chosen file's text, or null if nothing was chosen. */
 export function pickTextFile(input: HTMLInputElement): Promise<string | null> {
   return new Promise((resolve, reject) => {

@@ -3,11 +3,13 @@ node_modules/
 
 # Build output (CI rebuilds it; native build outputs are ignored in android/ and ios/)
 dist/
+dist-apk/
 *.tsbuildinfo
 
 # Release signing: never commit keystores or their passwords
 *.jks
 *.keystore
+*.p12
 keystore.properties
 
 # Environment and logs

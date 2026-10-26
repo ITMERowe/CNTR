@@ -101,6 +101,19 @@ export function normalizeHex(value: string) {
   return `#${hex.toUpperCase()}`;
 }
 
+/** True when dark text (#1e1e1e) has more contrast than white on `hex`, e.g. on yellow or pastel tiles. */
+export function needsDarkText(hex: string) {
+  const value = parseInt(normalizeHex(hex).slice(1), 16);
+  if (Number.isNaN(value)) return false;
+  const channel = (shift: number) => {
+    const c = ((value >> shift) & 255) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance = 0.2126 * channel(16) + 0.7152 * channel(8) + 0.0722 * channel(0);
+  const dark = 0.0137; // luminance of #1e1e1e
+  return (luminance + 0.05) / (dark + 0.05) > 1.05 / (luminance + 0.05);
+}
+
 /** Returns `candidate` unless another product already uses it, then the first unused preset. */
 export function chooseUniqueColor(products: Array<{ color: string }>, candidate: string) {
   const normalized = normalizeHex(candidate);

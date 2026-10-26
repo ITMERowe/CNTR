@@ -228,6 +228,11 @@ p {
   gap: var(--s3);
 }
 
+/* Grid items default to their content's width; let cards shrink so long rows ellipsize instead of overflowing */
+.stack > * {
+  min-width: 0;
+}
+
 /* ---------- Hero (Sell screen totals) ---------- */
 
 .hero {
@@ -254,6 +259,11 @@ p {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Sell screen: 3/4 of the report heroes' size, so the tiles get the room */
+.hero .hero-figure {
+  font-size: calc(0.75 * min(clamp(40px, 12vw, 52px), calc((min(100vw, 520px) - 40px) / (var(--chars, 1) * 0.6))));
 }
 
 .hero-figure.is-negative {
@@ -453,7 +463,7 @@ p {
 }
 
 .tile {
-  /* --tile is the product colour; text and icons on it are always white */
+  /* --tile is the product colour; text and icons are white, or dark on light colours (.on-light) */
   --ink: #ffffff;
   --ink-soft: rgba(255, 255, 255, 0.16);
   --ink-faint: rgba(255, 255, 255, 0.09);
@@ -856,6 +866,12 @@ p {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Expense names wrap rather than hide behind "…" next to a long amount on narrow phones */
+.cost-item .list-title {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .list-value {
@@ -1564,6 +1580,17 @@ p {
   position: relative;
 }
 
+/* Dark ink on light product colours (needsDarkText), for tiles and the editor's tile preview */
+.tile.on-light {
+  --ink: #1e1e1e;
+  --ink-soft: rgba(0, 0, 0, 0.14);
+  --ink-faint: rgba(0, 0, 0, 0.08);
+}
+
+.color-swatch.on-light {
+  color: #1e1e1e;
+}
+
 .color-swatch {
   display: flex;
   align-items: flex-end;
@@ -1822,6 +1849,19 @@ p {
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
+}
+
+.about-value {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.about-text {
+  display: grid;
+  gap: var(--s3);
+  color: var(--text-2);
+  font-size: 14px;
 }
 
 .group-note {

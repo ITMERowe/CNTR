@@ -1,4 +1,4 @@
-import { fmt } from '../formatters';
+import { fmt, needsDarkText } from '../formatters';
 import type { Product } from '../types';
 import { Icon } from './Icon';
 
@@ -36,7 +36,7 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit }: Pr
     <>
       {products.map((product, index) => {
         return (
-          <article class="tile" key={product.name} data-product={product.name} style={{ '--tile': product.color, '--i': index }}>
+          <article class={needsDarkText(product.color) ? 'tile on-light' : 'tile'} key={product.name} data-product={product.name} style={{ '--tile': product.color, '--i': index }}>
             <div class="tile-head">
               <div class="tile-meta">
                 <h2 class="product-name">{product.name}</h2>

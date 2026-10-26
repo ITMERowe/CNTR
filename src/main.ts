@@ -5,8 +5,9 @@ import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { h, render as renderView } from 'preact';
 import { formatInputNumber, parseCurrencyInput } from './formatters';
+import { version as packageVersion } from '../package.json';
 import { buildBackup, parseBackup, salesCsv } from './backup';
-import { pickTextFile, saveFile, saveSafetyCopy } from './files';
+import { pickTextFile, saveAutoBackup, saveFile, saveSafetyCopy } from './files';
 import { plural, totals } from './reports';
 import {
   addExpense,
@@ -230,11 +231,13 @@ function openSavedReport(id: string) {
 function confirmDeleteSavedReport(id: string, onDeleted?: () => void) {
   const report = findSavedReport(id);
   if (!report) return;
-  openConfirmModal(`Delete report '${report.name}'? This cannot be undone.`, 'Delete', () => {
-    if (deleteSavedReport(id)) showToast('Report deleted');
-    onDeleted?.();
-    render();
-  });
+  openConfirmModal(`Delete report '${report.name}'? This cannot be undone.`, 'Delete', () =>
+    void withAutoBackup(() => {
+      if (deleteSavedReport(id)) showToast('Report deleted');
+      onDeleted?.();
+      render();
+    }),
+  );
 }
 
 function returnToHistory() {
@@ -290,6 +293,7 @@ function submitSaveModal() {
   } else {
     const savedName = saveCurrentReport(name, saveModalType);
     showToast(`Saved ${saveModalType === 'event' ? 'event report' : 'report'}: ${savedName}`);
+    autoBackup().catch((error) => showMessage('Automatic backup failed', `The report is saved, but the automatic backup could not be written (${errorText(error)}). Export a backup from Settings.`));
   }
   closeSaveModal();
   render();
@@ -420,11 +424,13 @@ function resetActiveScreen() {
       showToast('Saved reports cannot be cleared');
       return;
     }
-    openConfirmModal('Clear the imported event sales and all event expenses?', 'Clear', () => {
-      clearLiveEvent();
-      render();
-      showToast('Event report cleared');
-    });
+    openConfirmModal('Clear the imported event sales and all event expenses?', 'Clear', () =>
+      void withAutoBackup(() => {
+        clearLiveEvent();
+        render();
+        showToast('Event report cleared');
+      }),
+    );
     return;
   }
 
@@ -432,11 +438,13 @@ function resetActiveScreen() {
     showToast('Nothing to clear');
     return;
   }
-  openConfirmModal(`Clear all ${state.sales.length} recorded sales? Save a report first if you need them.`, 'Clear', () => {
-    clearSales();
-    render();
-    showToast('Sales cleared');
-  });
+  openConfirmModal(`Clear all ${state.sales.length} recorded sales? Save a report first if you need them.`, 'Clear', () =>
+    void withAutoBackup(() => {
+      clearSales();
+      render();
+      showToast('Sales cleared');
+    }),
+  );
 }
 
 function toggleOptionsMenu(event: Event) {
@@ -480,8 +488,8 @@ function wireNavigation() {
   onClick(el.openProductsMenuBtn, () => goTo('productHistoryScreen'));
   onClick(el.openSalesReportMenuBtn, () => goTo('salesReportHistoryScreen'));
   onClick(el.openEventReportMenuBtn, () => goTo('eventReportHistoryScreen'));
-  onClick(el.openAboutMenuBtn, () => showToast('About coming soon'));
-  for (const back of [el.productHistoryBackBtn, el.salesReportHistoryBackBtn, el.eventReportHistoryBackBtn]) {
+  onClick(el.openAboutMenuBtn, () => goTo('aboutScreen'));
+  for (const back of [el.productHistoryBackBtn, el.salesReportHistoryBackBtn, el.eventReportHistoryBackBtn, el.aboutBackBtn]) {
     onClick(back, () => goTo('settingsScreen'));
   }
   onClick(el.reportBackBtn, returnToHistory);
@@ -670,6 +678,23 @@ async function applyRestore(values: Map<string, string>) {
   location.reload(); // start fresh from the restored data
 }
 
+/** Writes an automatic backup on the phone (Documents/CNTR/auto). Throws if it could not be saved. */
+async function autoBackup() {
+  const now = new Date();
+  await saveAutoBackup(`cntr-auto-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2));
+}
+
+/** Runs a destructive `action` after an automatic backup; if the backup fails, asks before going ahead. */
+async function withAutoBackup(action: () => void) {
+  try {
+    await autoBackup();
+  } catch (error) {
+    openConfirmModal(`The automatic backup failed (${errorText(error)}), so nothing was changed yet. Continue anyway?`, 'Continue', action, { title: 'Backup failed' });
+    return;
+  }
+  action();
+}
+
 function wireBackup() {
   updateLastBackupText();
   onClick(el.exportBackupBtn, () => void exportBackup());
@@ -703,6 +728,8 @@ async function start() {
   }
   initState();
   hydrateIcons();
+  // The installed app's version on the phone (e.g. 1.0.42 from CI); package.json in the browser.
+  el.aboutVersion.textContent = isNative ? (await App.getInfo().catch(() => ({ version: packageVersion }))).version : `${packageVersion} (browser)`;
   wireNavigation();
   wireHeader();
   wireSettings();

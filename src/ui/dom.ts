@@ -56,6 +56,8 @@ export const el = {
   openSalesReportMenuBtn: byId<HTMLButtonElement>('openSalesReportMenuBtn'),
   openEventReportMenuBtn: byId<HTMLButtonElement>('openEventReportMenuBtn'),
   openAboutMenuBtn: byId<HTMLButtonElement>('openAboutMenuBtn'),
+  aboutBackBtn: byId<HTMLButtonElement>('aboutBackBtn'),
+  aboutVersion: byId<HTMLSpanElement>('aboutVersion'),
   salesReportHistoryBackBtn: byId<HTMLButtonElement>('salesReportHistoryBackBtn'),
   eventReportHistoryBackBtn: byId<HTMLButtonElement>('eventReportHistoryBackBtn'),
   productHistoryBackBtn: byId<HTMLButtonElement>('productHistoryBackBtn'),
@@ -195,6 +197,7 @@ const PARENT_TAB: Record<string, string> = {
   productHistoryScreen: 'settingsScreen',
   salesReportHistoryScreen: 'settingsScreen',
   eventReportHistoryScreen: 'settingsScreen',
+  aboutScreen: 'settingsScreen',
 };
 
 let productListOrder: string[] | null = null;
