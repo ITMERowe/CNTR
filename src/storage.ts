@@ -1,33 +1,4 @@
-type ProductShape = {
-  name: string;
-  price: number;
-  cost: number;
-  color: string;
-};
-
-type SaleRecordShape = {
-  product: string;
-  price: number;
-  cost: number;
-  payment: string;
-  timestamp: Date;
-};
-
-type EventCostShape = {
-  id: string;
-  name: string;
-  amount: number;
-};
-
-type SavedReportShape = {
-  id: string;
-  name: string;
-  createdAt: string;
-  type: 'sales' | 'event';
-  products: ProductShape[];
-  sales: SaleRecordShape[];
-  eventCosts: EventCostShape[];
-};
+import type { AppSettings, Currency, EventCost, ImportedEventReport, Product, SaleRecord, SavedReport } from './types';
 
 export const PRODUCT_STORAGE_KEY = 'cntrProducts';
 export const PRODUCT_HISTORY_STORAGE_KEY = 'cntrProductHistory';
@@ -37,15 +8,15 @@ export const SAVED_REPORTS_KEY = 'cntrSavedReports';
 export const IMPORTED_EVENT_REPORT_KEY = 'cntrImportedEventReport';
 export const SETTINGS_KEY = 'cntrSettings';
 
-export type AppSettings = {
-  currency: 'IDR' | 'USD' | 'EUR' | 'SGD' | 'AUD' | 'GBP' | 'JPY' | 'MYR';
-  compactMoney: boolean;
-};
+export const CURRENCIES: Currency[] = ['IDR', 'USD', 'EUR', 'SGD', 'AUD', 'GBP', 'JPY', 'MYR'];
 
 export const DEFAULT_SETTINGS: AppSettings = {
   currency: 'IDR',
   compactMoney: false,
 };
+
+/** Sales are stored with ISO string timestamps. */
+type StoredSale = Omit<SaleRecord, 'timestamp'> & { timestamp: string };
 
 function readJson<T>(key: string, fallback: T): T {
   const stored = localStorage.getItem(key);
@@ -73,84 +44,71 @@ function writeJson<T>(key: string, value: T) {
   }
 }
 
-export function loadImportedEventReport() {
-  const stored = localStorage.getItem(IMPORTED_EVENT_REPORT_KEY);
-  if (!stored) return null;
-
-  try {
-    const parsed = JSON.parse(stored) as {
-      sales: Array<{ product: string; price: number; cost: number; payment: string; timestamp: string }>;
-      products: ProductShape[];
-    };
-
-    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.sales) || !Array.isArray(parsed.products)) {
-      return null;
-    }
-
-    return {
-      sales: parsed.sales.map((item) => ({ ...item, timestamp: new Date(item.timestamp) })),
-      products: parsed.products,
-    };
-  } catch {
-    return null;
-  }
+function reviveSales(sales: StoredSale[]): SaleRecord[] {
+  return sales.map((item) => ({ ...item, timestamp: new Date(item.timestamp) }));
 }
 
-export function saveImportedEventReport(report: { sales: SaleRecordShape[]; products: ProductShape[] } | null) {
+function serializeSales(sales: SaleRecord[]) {
+  return sales.map((item) => ({
+    ...item,
+    timestamp: item.timestamp instanceof Date ? item.timestamp.toISOString() : item.timestamp,
+  }));
+}
+
+export function loadImportedEventReport(): ImportedEventReport | null {
+  const parsed = readJson<{ sales?: unknown; products?: unknown } | null>(IMPORTED_EVENT_REPORT_KEY, null);
+  if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.sales) || !Array.isArray(parsed.products)) {
+    return null;
+  }
+  return { sales: reviveSales(parsed.sales as StoredSale[]), products: parsed.products as Product[] };
+}
+
+export function saveImportedEventReport(report: ImportedEventReport | null) {
   if (report === null) {
     localStorage.removeItem(IMPORTED_EVENT_REPORT_KEY);
     return;
   }
-
-  writeJson(IMPORTED_EVENT_REPORT_KEY, report);
+  writeJson(IMPORTED_EVENT_REPORT_KEY, { ...report, sales: serializeSales(report.sales) });
 }
 
-export function loadProducts(): ProductShape[] {
-  return readArray<ProductShape>(PRODUCT_STORAGE_KEY);
+export function loadProducts(): Product[] {
+  return readArray<Product>(PRODUCT_STORAGE_KEY);
 }
 
-export function saveProducts(products: ProductShape[]) {
+export function saveProducts(products: Product[]) {
   writeJson(PRODUCT_STORAGE_KEY, products);
 }
 
-export function loadProductHistory(): ProductShape[] {
-  return readArray<ProductShape>(PRODUCT_HISTORY_STORAGE_KEY);
+export function loadProductHistory(): Product[] {
+  return readArray<Product>(PRODUCT_HISTORY_STORAGE_KEY);
 }
 
-export function saveProductHistory(products: ProductShape[]) {
+export function saveProductHistory(products: Product[]) {
   writeJson(PRODUCT_HISTORY_STORAGE_KEY, products);
 }
 
-export function loadSales(): SaleRecordShape[] {
-  const parsed = readArray<{ product: string; price: number; cost: number; payment: string; timestamp: string }>(TX_STORAGE_KEY);
-  return parsed.map((item) => ({ ...item, timestamp: new Date(item.timestamp) }));
+export function loadSales(): SaleRecord[] {
+  return reviveSales(readArray<StoredSale>(TX_STORAGE_KEY));
 }
 
-export function saveSales(sales: SaleRecordShape[]) {
-  writeJson(
-    TX_STORAGE_KEY,
-    sales.map((item) => ({
-      ...item,
-      timestamp: item.timestamp instanceof Date ? item.timestamp.toISOString() : item.timestamp,
-    }))
-  );
+export function saveSales(sales: SaleRecord[]) {
+  writeJson(TX_STORAGE_KEY, serializeSales(sales));
 }
 
-export function loadEventCosts(): EventCostShape[] {
-  return readArray<{ id: string; name: string; amount: number; category?: string }>(EVENT_COST_STORAGE_KEY).map(
-    (item) => ({ id: item.id, name: item.name, amount: item.amount })
-  );
+export function loadEventCosts(): EventCost[] {
+  // Older versions stored a `category` field; keep only the current shape.
+  return readArray<EventCost & { category?: string }>(EVENT_COST_STORAGE_KEY).map((item) => ({ id: item.id, name: item.name, amount: item.amount }));
 }
 
-export function saveEventCosts(eventCosts: EventCostShape[]) {
+export function saveEventCosts(eventCosts: EventCost[]) {
   writeJson(EVENT_COST_STORAGE_KEY, eventCosts);
 }
 
-export function loadSavedReports(): SavedReportShape[] {
-  return readArray<SavedReportShape>(SAVED_REPORTS_KEY);
+export function loadSavedReports(): SavedReport[] {
+  return readArray<SavedReport>(SAVED_REPORTS_KEY);
 }
 
-export function saveSavedReports(reports: SavedReportShape[]) {
+export function saveSavedReports(reports: SavedReport[]) {
   writeJson(SAVED_REPORTS_KEY, reports);
 }
 
@@ -160,12 +118,9 @@ let cachedSettings: AppSettings | null = null;
 export function loadSettings(): AppSettings {
   if (cachedSettings) return { ...cachedSettings };
   const stored = readJson<Partial<AppSettings>>(SETTINGS_KEY, {});
-  const allowedCurrencies: AppSettings['currency'][] = ['IDR', 'USD', 'EUR', 'SGD', 'AUD', 'GBP', 'JPY', 'MYR'];
 
   cachedSettings = {
-    currency: allowedCurrencies.includes(stored.currency as AppSettings['currency'])
-      ? (stored.currency as AppSettings['currency'])
-      : DEFAULT_SETTINGS.currency,
+    currency: CURRENCIES.includes(stored.currency as Currency) ? (stored.currency as Currency) : DEFAULT_SETTINGS.currency,
     compactMoney: Boolean(stored.compactMoney),
   };
   return { ...cachedSettings };

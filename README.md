@@ -2,7 +2,7 @@
 
 A fast, offline sales counter for booths at conventions and pop-up events. Tap **+** under Cash or QRIS to record a sale, and CNTR keeps running totals, product breakdowns, and an event profit report after your expenses.
 
-Built with TypeScript and Vite, packaged for Android (and iOS) with Capacitor. All data stays on the device in `localStorage`; there is no server and no account.
+Built with TypeScript, Preact and Vite, packaged for Android (and iOS) with Capacitor 8. All data stays on the device in `localStorage`; there is no server and no account.
 
 ## Features
 
@@ -42,7 +42,7 @@ Every push to GitHub builds a debug APK automatically.
 
 ## Build the APK locally
 
-Needs JDK 21 and the Android SDK (easiest via Android Studio).
+Needs JDK 21 and the Android SDK 36 (easiest via Android Studio Otter 2025.2.1 or newer).
 
 ```bash
 npm run build
@@ -56,14 +56,16 @@ Or run `npx cap open android` and press Run in Android Studio with your phone co
 ## Project structure
 
 ```
-index.html            All screens and dialogs (static markup)
-src/main.ts           App controller: state, rendering, navigation, event handlers
+index.html            All screens and dialog shells (static markup)
+src/main.ts           Controller: wires controls, owns render(), dialogs
+src/state.ts          App state and the rules for changing it (no DOM)
 src/storage.ts        localStorage read/write, settings cache
-src/formatters.ts     Money formatting/parsing, HTML escaping, colour helpers
-src/data.ts           Default products, totals, product history helpers
-src/types.ts          Shared types (Product, SaleRecord, SavedReport, ...)
+src/reports.ts        Report maths: totals, product breakdowns, compare rows
+src/formatters.ts     Money formatting/parsing, colour helpers
+src/ui/               Navigation chrome, product editor, colour picker
+src/views/            Preact components for every data-driven screen
 src/style.css         All styles (design tokens at the top)
-android/, ios/        Capacitor native projects
+android/, ios/        Capacitor 8 native projects (Android target API 36)
 .github/workflows/    CI that builds the debug APK
 ```
 

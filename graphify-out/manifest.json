@@ -1,83 +1,73 @@
 {
   "android/app/build.gradle": {
-    "mtime": 1783928978.2676277,
-    "ast_hash": "51948083e60a9a13910189d859d46c1f",
+    "mtime": 1793004421.0460234,
+    "ast_hash": "9caa5d48b49bffcacdbdca5f9b6b45b0",
     "semantic_hash": ""
   },
   "android/app/capacitor.build.gradle": {
-    "mtime": 1783928978.3482046,
+    "mtime": 1793004446.2135673,
     "ast_hash": "b863e425fbde80251bd3c68ac8ccba02",
-    "semantic_hash": ""
-  },
-  "android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java": {
-    "mtime": 1781858530.0,
-    "ast_hash": "fbaf7cc870c663eb52dcf218531c439d",
-    "semantic_hash": ""
+    "semantic_hash": "b863e425fbde80251bd3c68ac8ccba02"
   },
   "android/app/src/main/java/com/cntr/app/MainActivity.java": {
     "mtime": 1783928978.264587,
     "ast_hash": "a05ad3d15b99debb045aecb36549e6fb",
-    "semantic_hash": ""
-  },
-  "android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java": {
-    "mtime": 1781858530.0,
-    "ast_hash": "e91b4501c14da821682fa5c26a16d616",
-    "semantic_hash": ""
+    "semantic_hash": "a05ad3d15b99debb045aecb36549e6fb"
   },
   "android/build.gradle": {
-    "mtime": 1781858530.0,
-    "ast_hash": "edcd663b51acb2986e22ef151e00036f",
+    "mtime": 1793004370.053203,
+    "ast_hash": "682315a426653617c6a74fc12bef55b6",
     "semantic_hash": ""
   },
   "android/capacitor.settings.gradle": {
-    "mtime": 1783928978.3472042,
+    "mtime": 1793004446.2110212,
     "ast_hash": "455ebb7f9fe84a6974da6bdae43097c2",
-    "semantic_hash": ""
+    "semantic_hash": "455ebb7f9fe84a6974da6bdae43097c2"
   },
   "android/gradlew": {
-    "mtime": 1781858530.0,
-    "ast_hash": "f092910dfa8e47c5a37a452c3f6baf8a",
+    "mtime": 1793004385.1880603,
+    "ast_hash": "acf9007174811a6ebb9c43febccbcf37",
     "semantic_hash": ""
   },
   "android/settings.gradle": {
     "mtime": 1781858530.0,
     "ast_hash": "f6cd925b3f859e23c3d819fe2459e0e4",
-    "semantic_hash": ""
+    "semantic_hash": "f6cd925b3f859e23c3d819fe2459e0e4"
   },
   "android/variables.gradle": {
-    "mtime": 1781858530.0,
-    "ast_hash": "7f844007d51d16140dbd0903de821b18",
+    "mtime": 1793004370.0763264,
+    "ast_hash": "4b3fce8ea2a515a9d2e47e74757172ec",
     "semantic_hash": ""
   },
   "ios/App/App/AppDelegate.swift": {
-    "mtime": 1781858530.0,
-    "ast_hash": "b2865a48d0e54c1613fa58272418bf98",
+    "mtime": 1793004364.8535693,
+    "ast_hash": "a8959d1671924516055906c1a3aea74c",
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1786517868.9984374,
-    "ast_hash": "0b27fcb13d06cc2afb6d7f4abacc7cfa",
+    "mtime": 1793004687.9628897,
+    "ast_hash": "480250390f4969492ab0de8490c9fc88",
     "semantic_hash": ""
   },
   "src/main.ts": {
-    "mtime": 1786521567.8533254,
-    "ast_hash": "c6f213cfa66444f6ae621ba52ddea4c5",
+    "mtime": 1793004953.227308,
+    "ast_hash": "53d1a02475eeac72f02b5b4e9c1954d8",
     "semantic_hash": ""
   },
   "tsconfig.json": {
-    "mtime": 1783928847.1892855,
-    "ast_hash": "bafcbe7a8b03cb41f40341c0d3ab2641",
+    "mtime": 1793004964.506608,
+    "ast_hash": "5df5a1bcdb20a1f9dd8f30c43f4f7d4a",
     "semantic_hash": ""
   },
   "vite.config.ts": {
     "mtime": 1786439271.7749119,
     "ast_hash": "f6268fdfc1f72f069739b1ea90679bde",
-    "semantic_hash": ""
+    "semantic_hash": "f6268fdfc1f72f069739b1ea90679bde"
   },
   ".claude/CLAUDE.md": {
-    "mtime": 1786517322.1176562,
-    "ast_hash": "f5569558bfd82b0a08d10392e45ee293",
-    "semantic_hash": ""
+    "mtime": 1786522703.9971857,
+    "ast_hash": "196ca0762c3e88e4afa535f6b3f5039a",
+    "semantic_hash": "196ca0762c3e88e4afa535f6b3f5039a"
   },
   ".claude/skills/graphify/SKILL.md": {
     "mtime": 1786436998.2848847,
@@ -170,28 +160,28 @@
     "semantic_hash": ""
   },
   ".github/workflows/build-apk.yml": {
-    "mtime": 1785145195.8541133,
-    "ast_hash": "3e83538b8e41efeb8fe5be697680a677",
+    "mtime": 1793003647.9532218,
+    "ast_hash": "ae5327a8e06847446253a9695ffa6248",
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1786517322.1176562,
-    "ast_hash": "b650c03259a9f7e3d20f2d2e593ed7a4",
-    "semantic_hash": ""
+    "mtime": 1786522703.9971857,
+    "ast_hash": "7f92a99976889d4127d8bb637135d68a",
+    "semantic_hash": "7f92a99976889d4127d8bb637135d68a"
   },
   "CLAUDE.md": {
     "mtime": 1786436998.2888827,
     "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
-    "semantic_hash": ""
+    "semantic_hash": "8a6643a420fdad6bfb583523bc6cef16"
   },
   "README.md": {
-    "mtime": 1783332676.9392443,
-    "ast_hash": "f574ff8e56d881bb7e97a32342eb9623",
+    "mtime": 1793005148.0025704,
+    "ast_hash": "226e69a8741f772d6e64b6b5d2a014ed",
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1786518148.4618945,
-    "ast_hash": "1adf167641ee3c7619820c6abe62c696",
+    "mtime": 1793004978.073294,
+    "ast_hash": "3c9f5a7a912d8edf3031c527b590d8fc",
     "semantic_hash": ""
   },
   "android/app/src/main/res/drawable-land-hdpi/splash.png": {
@@ -312,7 +302,7 @@
   "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": {
     "mtime": 1781858530.0,
     "ast_hash": "9e029293ab1ae8e3a6a7b7d0b7177e46",
-    "semantic_hash": ""
+    "semantic_hash": "9e029293ab1ae8e3a6a7b7d0b7177e46"
   },
   "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png": {
     "mtime": 1781858530.0,
@@ -342,26 +332,181 @@
   "ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png": {
     "mtime": 1781858530.0,
     "ast_hash": "958532b95c3e7d4997327dc977b80600",
-    "semantic_hash": ""
+    "semantic_hash": "958532b95c3e7d4997327dc977b80600"
   },
   "src/data.ts": {
-    "mtime": 1786520158.5197191,
-    "ast_hash": "d3c442ebb6cbf337f6e1a0825a1e5109",
+    "mtime": 1793004744.9367385,
+    "ast_hash": "90e7a077b6a12dc9782ebe32f2307666",
     "semantic_hash": ""
   },
   "src/formatters.ts": {
-    "mtime": 1786517979.5326228,
-    "ast_hash": "5991e4e7f7dfc4eb0f29d45ab49f6050",
+    "mtime": 1793004743.1302645,
+    "ast_hash": "3282d7a99d7d25213e835d3993e0cd96",
     "semantic_hash": ""
   },
   "src/storage.ts": {
-    "mtime": 1786517568.3877335,
-    "ast_hash": "237d79327c481ed436253af8b4091848",
+    "mtime": 1793004709.564476,
+    "ast_hash": "c6d7bc54ac5991f4c79f23f2bd1fdad7",
     "semantic_hash": ""
   },
   "src/types.ts": {
-    "mtime": 1786517868.9869082,
-    "ast_hash": "7019f4eea720adbd460d3ee08293da03",
+    "mtime": 1793004708.6614506,
+    "ast_hash": "83447e0c33eb4bcc463c1a0df822b5a8",
+    "semantic_hash": ""
+  },
+  ".claude/settings.json": {
+    "mtime": 1786436998.2943952,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  ".codex/hooks.json": {
+    "mtime": 1786437001.134421,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "capacitor.config.json": {
+    "mtime": 1783928968.423656,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json": {
+    "mtime": 1781858530.0,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "ios/App/App/Assets.xcassets/Contents.json": {
+    "mtime": 1781858530.0,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "ios/App/App/Assets.xcassets/Splash.imageset/Contents.json": {
+    "mtime": 1781858530.0,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "src/vite-env.d.ts": {
+    "mtime": 1793001991.5051622,
+    "ast_hash": "0352474ba2918efe13895edbc3780d94",
+    "semantic_hash": ""
+  },
+  ".claude/skills/playwright-cli/SKILL.md": {
+    "mtime": 1793002911.1671476,
+    "ast_hash": "0821c515eb1c0d2c50b50a6715aafab1",
+    "semantic_hash": ""
+  },
+  ".claude/skills/playwright-cli/references/element-attributes.md": {
+    "mtime": 1793002911.079124,
+    "ast_hash": "8b8ffc48e38a5b4a04baec18a2732cd7",
+    "semantic_hash": ""
+  },
+  ".claude/skills/playwright-cli/references/playwright-tests.md": {
+    "mtime": 1793002911.1213892,
+    "ast_hash": "99970dceff6228941c8f994e7dd71d27",
+    "semantic_hash": ""
+  },
+  ".claude/skills/playwright-cli/references/pr-attachments.md": {
+    "mtime": 1793002911.1233876,
+    "ast_hash": "1177e18d35661616471a5dbc56d915b8",
+    "semantic_hash": ""
+  },
+  ".claude/skills/playwright-cli/references/request-mocking.md": {
+    "mtime": 1793002911.1334493,
+    "ast_hash": "3b74af1fc908062c9c7f2cef04be6a24",
+    "semantic_hash": ""
+  },
+  ".claude/skills/playwright-cli/references/running-code.md": {
+    "mtime": 1793002911.1601152,
+    "ast_hash": "a051719484d5330b826a5664fa1fbb32",
+    "semantic_hash": ""
+  },
+  ".claude/skills/playwright-cli/references/session-management.md": {
+    "mtime": 1793002911.162623,
+    "ast_hash": "911dd3af00bd5e8c8fa4515970d90dc1",
+    "semantic_hash": ""
+  },
+  ".claude/skills/playwright-cli/references/storage-state.md": {
+    "mtime": 1793002911.1882503,
+    "ast_hash": "128ea37ea2ddc5022920718d0f9ab96d",
+    "semantic_hash": ""
+  },
+  ".claude/skills/playwright-cli/references/test-generation.md": {
+    "mtime": 1793002911.207318,
+    "ast_hash": "b15132f278666e69e42fbe607056651b",
+    "semantic_hash": ""
+  },
+  ".claude/skills/playwright-cli/references/tracing.md": {
+    "mtime": 1793002911.2098348,
+    "ast_hash": "ef8d17a2e59f58c77800ddde72f7ce51",
+    "semantic_hash": ""
+  },
+  ".claude/skills/playwright-cli/references/video-recording.md": {
+    "mtime": 1793002911.2425783,
+    "ast_hash": "839208845060c048ac8e23f114e11aab",
+    "semantic_hash": ""
+  },
+  "ios/App/App/SceneDelegate.swift": {
+    "mtime": 1793004364.8505714,
+    "ast_hash": "109aded755e8064cd0c2de99e039aeb5",
+    "semantic_hash": ""
+  },
+  "src/reports.ts": {
+    "mtime": 1793004744.007546,
+    "ast_hash": "44b3c8b8fad0647af198ae84844da9cc",
+    "semantic_hash": ""
+  },
+  "src/state.ts": {
+    "mtime": 1793004769.1569867,
+    "ast_hash": "afcd2bed3b939374e673bf82cb0c16b5",
+    "semantic_hash": ""
+  },
+  "src/ui/colorPicker.ts": {
+    "mtime": 1793004819.331529,
+    "ast_hash": "7d0461238e5e8c78d52888ce10821b21",
+    "semantic_hash": ""
+  },
+  "src/ui/dom.ts": {
+    "mtime": 1793004801.190366,
+    "ast_hash": "730584f265277f9decd375e252fb61a3",
+    "semantic_hash": ""
+  },
+  "src/ui/productEditor.ts": {
+    "mtime": 1793004837.144137,
+    "ast_hash": "634c27e76aeaab772690e5e01d2656ad",
+    "semantic_hash": ""
+  },
+  "src/views/Compare.tsx": {
+    "mtime": 1793004892.9656694,
+    "ast_hash": "056cc765f874dd0d9e6e49dba2572eb9",
+    "semantic_hash": ""
+  },
+  "src/views/EventReport.tsx": {
+    "mtime": 1793004864.4702165,
+    "ast_hash": "cf05a2504b2aa6c93ab176435f943227",
+    "semantic_hash": ""
+  },
+  "src/views/Lists.tsx": {
+    "mtime": 1793004892.1016173,
+    "ast_hash": "0dea3cd78307d8e2ae47f7c79cc23962",
+    "semantic_hash": ""
+  },
+  "src/views/ReportParts.tsx": {
+    "mtime": 1793004862.7611876,
+    "ast_hash": "2e1f99aed4a4ffbfe5ba9f32f18ffd69",
+    "semantic_hash": ""
+  },
+  "src/views/SalesReport.tsx": {
+    "mtime": 1793004863.6086774,
+    "ast_hash": "3096b9d8d463d54ba303401e60fe0b8c",
+    "semantic_hash": ""
+  },
+  "CHANGELOG.md": {
+    "mtime": 1793005159.3857677,
+    "ast_hash": "a8fb3d280281436111646b4f144c6120",
+    "semantic_hash": ""
+  },
+  "docs/ARCHITECTURE.md": {
+    "mtime": 1793005135.002856,
+    "ast_hash": "175368ace9578ec06a1653a68c5b83e3",
     "semantic_hash": ""
   }
 }
