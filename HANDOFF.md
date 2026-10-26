@@ -2,12 +2,13 @@
 
 Session-to-session context for CNTR. **Read this before starting work; update it at the end of each session, after milestones, and when a blocker or decision comes up.** If this file disagrees with the code, trust the code and fix this file.
 
-_Last updated: 2026-10-26, end of the merge session: `ui/revamp` is **merged into `main` and pushed** (see "Merge session")._
+_Last updated: 2026-10-26, end of the safe-storage session: SQLite storage + backup/restore **committed and pushed** on branch `feature/safe-storage` (not merged; see "Safe storage session"). `main` = `a09eb61` (pushed)._
 
 ## Goal
 
 - **Project:** CNTR, an offline sales counter for convention/pop-up booths (TypeScript + Preact + Vite, packaged with Capacitor 8 for Android). Owner wants it **published on Google Play**.
-- **Last task (latest session):** clean up, verify, commit, push, and merge everything into `main` (owner authorized the push and merge).
+- **Last task (latest session):** make data storage reliable and 100% offline: SQLite instead of localStorage, safe migration, JSON/CSV export, validated restore, failure handling, tests (see "Safe storage session").
+- **Before that:** clean up, verify, commit, push, and merge everything into `main` (owner authorized the push and merge).
 - **Before that:** polish with all applicable skills, and make Android back (button/gesture) step back inside the app (see "Multi-skill polish + Android back").
 - **Earlier:** make the Sell and Event screens compact, so 4 tiles fit and amounts in the millions are not cut off.
 - **Task before that:** clean up the project locally and on GitHub; rewrite the README; add a license (owner chose **MIT**); prepare the GitHub description and topics.
@@ -140,12 +141,39 @@ Tooling note: in this shell, piping node+playwright output into `grep` swallows 
 - Not done: no DESIGN.md (run `/impeccable document` if wanted). No `.impeccable/config.json` (no image generation available). Live mode not configured.
 - Also rebuilt `graphify-out/` this session. The vendored graphify skill docs were left out of the graph, with the owner's approval.
 
+## Safe storage session (2026-10-26). Committed and pushed on branch `feature/safe-storage` (from `main` `a09eb61`); not merged
+
+Decision: **SQLite** (`@capacitor-community/sqlite` 8.1.1) over `@capacitor/preferences`. Preferences is a small key-value store (Android rewrites one XML file per save; no multi-key atomicity), unsuitable for growing sales history. SQLite gives transactional writes, so a restore is all-or-nothing. Data model unchanged: one table `kv(key, value)` holding the same JSON strings as before, so backups, the browser build and migration all use one format. Also added `@capacitor/filesystem` 8.1.5 and `@capacitor/share` 8.0.3 (backup files). All offline; no network at runtime.
+
+Files:
+- New: `src/kv.ts` (SQLite + localStorage stores; localStorage write rolls back on failure), `src/migrate.ts` (verified, idempotent copy), `src/backup.ts` (format, validation, CSV), `src/files.ts` (Documents/CNTR + share sheet; safety copy; file picker), `tests/storage.test.ts` (11 unit tests).
+- Changed: `src/storage.ts` (in-memory cache, ordered write-through, retry + warning, `initStorage`, `replaceAllData`, last-backup date), `src/state.ts` (`initState()` instead of loading at import), `src/main.ts` (async `start()`, startup-error screen, Backup actions), `src/ui/dom.ts` (`showMessage`, confirm sheet title/tone), `src/ui/icons.ts` (3 icons), `index.html` (Settings → Backup group + data-loss note, file input, warning banner), `src/style.css` (`[hidden]`, banner, note, startup error), `tsconfig.json` (`allowImportingTsExtensions`, for Node-runnable modules), `package.json` (`npm test`, 3 deps), `.github/workflows/build-apk.yml` (runs `npm test`), `capacitor.config.json` (SQLite: no encryption, iOS `Library/CapacitorDatabase`), `AndroidManifest.xml` (READ/WRITE_EXTERNAL_STORAGE maxSdk 29, `requestLegacyExternalStorage` for Android 10), `ios/App/App/Info.plist` (`UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`: backups visible in Files), `npx cap sync` changes (`capacitor.build.gradle`, `capacitor.settings.gradle`, `ios/App/Podfile`), docs (README, ARCHITECTURE, PRODUCT, CHANGELOG).
+
+Migration behaviour: first launch on the phone copies the 7 legacy keys to SQLite, reads back and compares, then sets `cntrMeta.migratedFromLocalStorage` (in the DB) and `cntrMeta.usingDatabase` (in localStorage). Legacy localStorage is never modified or deleted (stays as a stale copy). If the DB cannot open and migration never succeeded, the app runs on localStorage with a warning and retries next launch. If the DB fails after it has been used, a "Try again" screen is shown (never the stale copy).
+
+Owner decision on offline caveats: commit as is (Android Auto Backup `allowBackup="true"` and the default `INTERNET` permission kept; the app makes no network requests).
+
+Verified (fresh run on the final code, rerun before commit with the same results):
+- `npx tsc --noEmit` 0; `npm run build` 0; `npm test` 11/11; `npx cap sync` found 5 plugins on Android and iOS (CocoaPods/xcodebuild not installed here: pod install skipped).
+- E2E (`e2e.mjs`, headless Edge, scratchpad) **31/31**: browser build (persistence across reload, JSON + CSV export, 4 kinds of malformed backup rejected with data untouched, restore, storage-full warning + retry, offline with zero non-local requests) and a **simulated Android bridge** (migration + verify, legacy untouched, restart reads SQLite not the stale copy, no rerun/duplicates, DB write failure + retry, export to Documents/CNTR, "not saved" when Documents and share both fail, interrupted restore changes nothing, safety copy before restore, DB failure after use → Try again → recovers, first-migration failure → works on localStorage → migrates next launch, no network, no page errors).
+- Mutation checks: removing the migration verify, dropping failed writes, or allowing the stale fallback each makes the matching test fail.
+- Regression: functional 19/19 (3 of the old checks read localStorage synchronously right after a tap; with a 30 ms wait they pass: writes are now asynchronous, not lost), motion 5/5, picker 4/4, back 10/10, audit (tap targets/labels) clean, overflow clean.
+- Bundle scan: no runtime network use (only Vite's same-origin chunk preload and unused Capacitor HTTP / Filesystem download helpers).
+
+Not verified / remaining risks:
+- **No real device or emulator**: the native SQLite, Filesystem (Documents on Android 10 / 11+ / iOS) and Share calls were tested only against a fake bridge. The APK has not been built with the new plugins (CI builds it on push). iOS never built (no Xcode/CocoaPods).
+- Writes land a few ms after a tap (async native call); killing the app in that instant can lose that one tap.
+- Uninstall / Clear data / lost phone delete everything; only an exported backup kept off the phone survives (stated in Settings).
+- Android Auto Backup (`allowBackup="true"`, pre-existing) may copy the database to the user's Google account; that is an OS feature, not app sync. Left as it was.
+- The SQLite plugin bundles SQLCipher on Android, making the APK a few MB larger.
+- Browser build: restore into localStorage is rolled back on failure but is not a true transaction (development only).
+
 ## Known issues / blockers (unresolved)
 
 - **GitHub repository description and topics are not updated:** there is no `gh` CLI or API token on this machine. The owner must apply them; text is below.
 - White text on light product colours has low contrast (e.g. about 2:1 on yellow). Accepted by the owner for now.
 - Debug APKs are signed with a random key per CI run, so updating needs an uninstall, which wipes data. Needs a release keystore (owner).
-- Data lives only in WebView `localStorage`; there is no export/backup.
+- Data-loss risks that remain after the safe-storage work (see that section): native SQLite path tested only against a simulated bridge, never on a device; uninstall / clear data / lost phone still delete everything unless the user exported a backup.
 - Not tested on a real device (haptics, safe areas / edge-to-edge, performance). iOS never built.
 - No automated tests in the repo. The browser checks used so far live in a temporary session folder and are not portable.
 - Local machine has no JDK/Android SDK and no `gh`. APK builds are verified only via GitHub Actions and the public API (60 requests/hour).
@@ -161,7 +189,7 @@ Tooling note: in this shell, piping node+playwright output into `grep` swallows 
 2. Owner: apply the GitHub description and topics above (repo → About → ⚙).
 3. Owner: decide on deleting the merged `ui/revamp` and `fix/bugs-ui-docs` branches and the old local `agents/app-overview-explanation` worktree.
 4. Play Store prerequisites: release keystore as GitHub secrets, signed `.aab` in CI, privacy policy, store screenshots; owner starts the 12-tester / 14-day closed test.
-5. Move storage to `@capacitor/preferences` or SQLite and add export/backup.
+5. Safe storage (pushed on `feature/safe-storage`): owner tests the CI APK on a real phone (export, restore, airplane mode, restart). Note: CI debug APKs are signed with a different key each run, so installing needs an uninstall first, which wipes data; the migration from an older install therefore cannot be tested by updating a CI build. Merge into `main` only after the phone test.
 6. Add an automated test suite (e.g. Playwright, already installed locally by the owner) so the browser checks live in the repo.
 
 ## Verification log

@@ -19,6 +19,7 @@ It runs entirely on the device: no server, no account, no network needed.
 - **Saved reports**: save sales or event snapshots, rename or delete them, and compare any two side by side.
 - **Products**: add, edit (name, price, cost, colour), take off the counter without losing history, or delete permanently.
 - **Settings**: 8 currencies (IDR, USD, EUR, SGD, AUD, GBP, JPY, MYR) and an optional compact format (`Rp 1,5M`).
+- **Backup**: export all data to a JSON file (and sales to CSV), and restore from a backup after checking it.
 - **Offline by design**: the font and icons are bundled into the app.
 - Respects the system "reduce motion" setting.
 - **Android back** (button or gesture) steps back inside the app: it closes the open sheet or menu, then goes back a screen, then to Sell; on Sell it sends the app to the background.
@@ -29,7 +30,7 @@ It runs entirely on the device: no server, no account, no network needed.
 |---|---|
 | UI | TypeScript, [Preact](https://preactjs.com) components, plain CSS with design tokens |
 | Build | [Vite](https://vitejs.dev) 5, TypeScript 5 (strict, unused-code checks on) |
-| Native | [Capacitor](https://capacitorjs.com) 8 (Android; iOS project included), `@capacitor/haptics`, `@capacitor/app` |
+| Native | [Capacitor](https://capacitorjs.com) 8 (Android; iOS project included), `@capacitor/haptics`, `@capacitor/app`, `@capacitor-community/sqlite` (storage), `@capacitor/filesystem` + `@capacitor/share` (backup files) |
 | Assets | [Lucide](https://lucide.dev) SVG icons, Plus Jakarta Sans (bundled via Fontsource) |
 | CI | GitHub Actions builds a debug APK on every push |
 
@@ -39,7 +40,12 @@ Code layout (details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)):
 index.html          Screens and dialog shells
 src/main.ts         Controller: wires controls, owns render()
 src/state.ts        App state and the rules for changing it (no DOM)
-src/storage.ts      localStorage read/write
+src/storage.ts      Data in memory, written to SQLite on the phone (localStorage in a browser)
+src/kv.ts           The SQLite and localStorage stores
+src/migrate.ts      One-time copy of older localStorage data into SQLite
+src/backup.ts       Backup file format, validation, CSV
+src/files.ts        Saving backup files and picking one to restore
+tests/              Unit tests (`npm test`)
 src/reports.ts      Report calculations
 src/formatters.ts   Money formatting and parsing, colour helpers
 src/views/          Preact components for every screen
@@ -88,17 +94,19 @@ Or run `npx cap open android` and press Run in Android Studio.
 
 ## Data and backups
 
-- All data (products, sales, expenses, saved reports, settings) is stored in the app's WebView **`localStorage`**, on the device only. The keys are listed in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#storage).
-- There is **no sync, export or backup yet**. Uninstalling the app, or clearing its storage, deletes everything. The operating system may also clear WebView storage under storage pressure.
-- Saving a report is the only way to keep a snapshot of the live sales before clearing them.
+- CNTR works fully offline and has no server, account or sync. All data (products, sales, expenses, saved reports, settings) stays on the device.
+- On the phone, data is stored in an **SQLite database** in the app's private storage (`@capacitor-community/sqlite`), which the OS does not clear the way it can clear WebView storage. Older versions stored it in WebView `localStorage`; the first launch after updating copies it into the database, verifies the copy, and leaves the old copy untouched. Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#storage).
+- **Settings → Backup**: *Export backup* saves a JSON file of all data to `Documents/CNTR` and opens the share sheet so you can keep a copy elsewhere; *Export sales as CSV* is for spreadsheets; *Restore from backup* checks the whole file first, saves a copy of the current data, then replaces everything in one step.
+- **No storage survives uninstalling the app, clearing its data, or losing the phone.** Export a backup after every event and keep it off the phone.
 
 ## Testing
 
-There is no automated test suite yet. Before merging, at minimum:
+Before merging, at minimum:
 
-1. `npm run build` passes (it includes the TypeScript check).
-2. Run `npm run dev` and check the flows you touched in a phone-sized browser window (Sell, Reports, Event, Products, saved reports, Compare).
-3. For native changes, install the CI APK on a real device.
+1. `npm test` passes (unit tests for migration, backup validation and CSV; Node's built-in runner, no extra dependencies). CI runs it too.
+2. `npm run build` passes (it includes the TypeScript check).
+3. Run `npm run dev` and check the flows you touched in a phone-sized browser window (Sell, Reports, Event, Products, saved reports, Compare).
+4. For native changes, install the CI APK on a real device.
 
 ## Contributing
 

@@ -32,3 +32,6 @@ graphify-out/cost.json
 graphify-out/.graphify_python
 graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 *.graphify-bak
+
+# Impeccable: keep the shared config, not the per-machine hook cache
+.impeccable/hook.cache.json
