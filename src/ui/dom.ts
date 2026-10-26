@@ -6,7 +6,6 @@ const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) 
 export const el = {
   grid: byId<HTMLDivElement>('grid'),
   stats: byId<HTMLDivElement>('stats'),
-  headline: byId<HTMLDivElement>('headline'),
   toast: byId<HTMLDivElement>('toast'),
   reset: byId<HTMLButtonElement>('resetBtn'),
   optionsBtn: byId<HTMLButtonElement>('optionsBtn'),
@@ -25,6 +24,8 @@ export const el = {
   // Colour picker
   colorField: byId<HTMLDivElement>('colorField'),
   editColorHex: byId<HTMLSpanElement>('editColorHex'),
+  editPreviewName: byId<HTMLSpanElement>('editPreviewName'),
+  editPreviewPrice: byId<HTMLSpanElement>('editPreviewPrice'),
   editColorHexInput: byId<HTMLInputElement>('editColorHexInput'),
   colorPickerMenu: byId<HTMLDivElement>('colorPickerMenu'),
   pickerSurface: byId<HTMLDivElement>('pickerSurface'),
@@ -32,7 +33,6 @@ export const el = {
   hueSlider: byId<HTMLDivElement>('hueSlider'),
   hueThumb: byId<HTMLDivElement>('hueThumb'),
   hueValue: byId<HTMLSpanElement>('hueValue'),
-  pickerHexCard: byId<HTMLDivElement>('pickerHexCard'),
   // Report screens
   report: byId<HTMLDivElement>('reportCard'),
   eventReport: byId<HTMLDivElement>('eventCard'),
@@ -112,7 +112,6 @@ export function openConfirmModal(message: string, confirmLabel: string, onConfir
   const { confirmModalOverlay: overlay, confirmModalConfirmBtn: confirmBtn } = el;
   el.confirmModalMessage.textContent = message;
   confirmBtn.textContent = confirmLabel;
-  confirmBtn.classList.add('danger');
   overlay.classList.add('open');
 
   const close = () => {
@@ -193,8 +192,8 @@ export function openScreen(screenId: string) {
   document.querySelectorAll('.screen').forEach((screen) => screen.classList.toggle('active', screen.id === screenId));
   productListOrder = screenId === 'productHistoryScreen' ? state.productHistory.map((product) => product.name) : null;
 
-  const tab = document.querySelector(`.nav button[data-tab="${screenId}"]`) ? screenId : PARENT_TAB[screenId];
-  if (tab) document.querySelectorAll('.nav button').forEach((button) => button.classList.toggle('active', button.getAttribute('data-tab') === tab));
+  const tab = document.querySelector(`.tabbar .tab[data-tab="${screenId}"]`) ? screenId : PARENT_TAB[screenId];
+  if (tab) document.querySelectorAll('.tabbar .tab').forEach((button) => button.classList.toggle('active', button.getAttribute('data-tab') === tab));
   el.stats.style.display = screenId === 'salesScreen' ? '' : 'none';
   updateHeaderActions(screenId);
 }

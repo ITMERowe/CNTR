@@ -1,5 +1,5 @@
 // HSV colour picker used by the product editor.
-import { getContrastColor, normalizeHex } from '../formatters';
+import { inkFor, normalizeHex } from '../formatters';
 import type { HSV } from '../types';
 import { el } from './dom';
 
@@ -52,16 +52,12 @@ function hsvToRgb({ h, s, v }: HSV) {
 function applyCurrentColor() {
   const { r, g, b } = hsvToRgb(currentHSV);
   const hex = rgbToHex(r, g, b);
-  const text = getContrastColor(hex);
 
   el.editColorHex.textContent = hex;
-  el.editColorHex.style.color = text;
   el.editColorHexInput.value = hex;
-  el.colorField.style.background = hex;
-  for (const target of [el.colorPickerMenu, el.pickerHexCard]) {
-    target.style.setProperty('--picker-bg', hex);
-    target.style.setProperty('--picker-text', text);
-  }
+  // The colour field doubles as a live preview of the product tile.
+  el.colorField.style.setProperty('--tile', hex);
+  el.colorField.style.setProperty('--ink', inkFor(hex));
   el.hueValue.textContent = `${Math.round(currentHSV.h)}°`;
   el.pickerSurface.style.setProperty('--picker-hue', `hsl(${currentHSV.h},100%,50%)`);
   el.hueThumb.style.left = `${(currentHSV.h / 360) * 100}%`;

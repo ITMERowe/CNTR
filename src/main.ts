@@ -1,7 +1,9 @@
+import '@fontsource-variable/plus-jakarta-sans';
 import './style.css';
 import { Capacitor } from '@capacitor/core';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { h, render as renderView } from 'preact';
-import { escapeHtml, fmt, formatInputNumber, parseCurrencyInput } from './formatters';
+import { formatInputNumber, parseCurrencyInput } from './formatters';
 import { totals } from './reports';
 import {
   addExpense,
@@ -37,116 +39,71 @@ import {
   unlockBodyScroll,
   updateHeaderActions,
 } from './ui/dom';
+import { hydrateIcons } from './ui/icons';
 import { editProductByName, initProductEditor, openProductEditor } from './ui/productEditor';
 import { CompareView } from './views/Compare';
 import { EventReport } from './views/EventReport';
 import { ProductList, RecentSales, ReportChecklist, SavedReportList } from './views/Lists';
+import { SalesGrid, type TapPulse } from './views/SalesGrid';
+import { SalesHero } from './views/SalesHero';
 import { SalesReport } from './views/SalesReport';
 
-// ---- Sales counter tiles ----
+// ---- Sales counter ----
 
-/** Product + payment of the last tap, so render() can animate that counter. */
-let lastTap: { product: string; payment: string } | null = null;
+/** The last counter change, so only that counter animates. */
+let pulse: TapPulse | null = null;
+let pulseId = 0;
+const isNative = Capacitor.isNativePlatform();
 
-function makeTiles() {
-  el.grid.innerHTML = '';
+/** A short tap on the phone's motor; harmless no-op in the browser. */
+function haptic(style: ImpactStyle) {
+  if (isNative) Haptics.impact({ style }).catch(() => {});
+}
 
-  for (const product of state.products) {
-    const card = document.createElement('div');
-    card.className = 'tile';
-    card.style.setProperty('--tile', product.color);
-    card.dataset.product = product.name;
-    const quarter = (payment: string) => `
-          <div class="payment-quarter" data-payment="${payment}">
-            <span class="payment-label">${payment}</span>
-            <div class="payment-controls">
-              <button class="control-btn" type="button" data-payment="${payment}" data-action="minus" aria-label="Remove ${payment} sale"><span class="material-symbols-outlined control-icon">remove</span></button>
-              <div class="payment-value-wrap"><span class="payment-value" data-counter-for="${payment}">0</span></div>
-              <button class="control-btn" type="button" data-payment="${payment}" data-action="plus" aria-label="Add ${payment} sale"><span class="material-symbols-outlined control-icon">add</span></button>
-            </div>
-          </div>`;
-    card.innerHTML = `
-        <div class="tile-head">
-          <div class="product-meta">
-            <div class="product-name">${escapeHtml(product.name)}</div>
-            <div class="product-price">${fmt(product.price)}</div>
-          </div>
-          <button class="settings-btn" type="button" aria-label="Edit ${escapeHtml(product.name)}"><span class="material-symbols-outlined">edit</span></button>
-        </div>
-        <div class="tile-bottom">${quarter('Cash')}${quarter('QRIS')}</div>`;
+function addSale(product: Product, payment: string) {
+  recordSale(product, payment);
+  pulse = { product: product.name, payment, direction: 'up', id: ++pulseId };
+  haptic(ImpactStyle.Light);
+  render();
+  showToast(`${product.name} · ${payment}`);
+}
 
-    card.addEventListener('click', (event) => {
-      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
-      if (!button) return;
-      if (button.classList.contains('settings-btn')) {
-        openProductEditor(state.products.indexOf(product));
-        return;
-      }
-      const payment = button.dataset.payment ?? 'Cash';
-      rippleFrom(card, button);
-      if (button.dataset.action === 'plus') {
-        recordSale(product, payment);
-        lastTap = { product: product.name, payment };
-        render(true);
-        showToast(`${product.name} • ${payment}`);
-      } else if (removeLastSale(product.name, payment)) {
-        lastTap = { product: product.name, payment };
-        render(true);
-        showToast(`${product.name} removed`);
-      } else {
-        showToast('Nothing to remove');
-      }
-    });
-
-    el.grid.appendChild(card);
+function undoSale(product: Product, payment: string) {
+  if (!removeLastSale(product.name, payment)) {
+    showToast('Nothing to undo');
+    return;
   }
+  pulse = { product: product.name, payment, direction: 'down', id: ++pulseId };
+  haptic(ImpactStyle.Medium);
+  render();
+  showToast(`Removed one ${product.name}`);
 }
 
-function rippleFrom(card: HTMLElement, button: HTMLElement) {
-  const rect = card.getBoundingClientRect();
-  const buttonRect = button.getBoundingClientRect();
-  card.style.setProperty('--x', `${buttonRect.left - rect.left + buttonRect.width / 2}px`);
-  card.style.setProperty('--y', `${buttonRect.top - rect.top + buttonRect.height / 2}px`);
-  card.classList.add('ripple');
-  window.setTimeout(() => card.classList.remove('ripple'), 160);
-}
-
-function updateTiles(bump: boolean) {
+function salesCounts() {
   const counts = new Map<string, number>();
   for (const sale of state.sales) {
     const key = `${sale.payment}\u0000${sale.product}`;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
-  el.grid.querySelectorAll<HTMLElement>('.tile').forEach((tile) => {
-    tile.querySelectorAll<HTMLElement>('.payment-value[data-counter-for]').forEach((value) => {
-      value.textContent = `${counts.get(`${value.dataset.counterFor}\u0000${tile.dataset.product}`) ?? 0}`;
-    });
-  });
-
-  if (bump && lastTap) {
-    const { product, payment } = lastTap;
-    lastTap = null;
-    const tile = [...el.grid.querySelectorAll<HTMLElement>('.tile')].find((item) => item.dataset.product === product);
-    const quarter = tile?.querySelector<HTMLElement>(`.payment-quarter[data-payment="${payment}"]`);
-    if (quarter) {
-      quarter.classList.remove('bump');
-      void quarter.offsetWidth; // restart the animation
-      quarter.classList.add('bump');
-      window.setTimeout(() => quarter.classList.remove('bump'), 520);
-    }
-  }
+  return counts;
 }
 
 // ---- Rendering ----
 
-function render(bump = false) {
+function render() {
   const { revenue, profit } = totals(state.sales);
-  el.headline.textContent = `${fmt(revenue)} × ${state.sales.length}`;
-  el.stats.innerHTML = [['Revenue', revenue], ['Profit', profit]]
-    .map(([label, value]) => `<div class="stat ${bump ? 'bump' : ''}"><span class="label">${label}</span><span class="value">${fmt(value as number)}</span></div>`)
-    .join('');
-  if (bump) window.setTimeout(() => el.stats.querySelectorAll('.stat').forEach((stat) => stat.classList.remove('bump')), 220);
-  updateTiles(bump);
+  renderView(h(SalesHero, { revenue, profit, count: state.sales.length }), el.stats);
+  renderView(
+    h(SalesGrid, {
+      products: state.products,
+      counts: salesCounts(),
+      pulse,
+      onAdd: addSale,
+      onUndo: undoSale,
+      onEdit: (product: Product) => openProductEditor(state.products.indexOf(product)),
+    }),
+    el.grid,
+  );
 
   const preview = state.previewReport;
   const salesPreview = preview?.type === 'sales' ? preview : null;
@@ -175,7 +132,7 @@ function render(bump = false) {
     }),
     el.eventReport,
   );
-  renderView(h(RecentSales, { sales: state.sales.slice(-5).reverse() }), el.historyRecentSales);
+  renderView(h(RecentSales, { sales: state.sales.slice(-8).reverse(), colorFor: productColor }), el.historyRecentSales);
   renderProductList();
   for (const type of ['sales', 'event'] as const) {
     renderView(
@@ -203,10 +160,9 @@ function render(bump = false) {
   updateHeaderActions();
 }
 
-/** Re-renders after the product list changed (tiles are rebuilt too). */
+/** Re-renders after products, prices or currency changed. */
 function productsChanged() {
-  makeTiles();
-  render(true);
+  render();
 }
 
 // ---- Products screen ----
@@ -472,7 +428,7 @@ function resetActiveScreen() {
   }
   openConfirmModal(`Clear all ${state.sales.length} recorded sales? Save a report first if you need them.`, 'Clear', () => {
     clearSales();
-    render(true);
+    render();
     showToast('Sales cleared');
   });
 }
@@ -504,7 +460,7 @@ function goTo(screenId: string) {
 }
 
 function wireNavigation() {
-  document.querySelectorAll<HTMLButtonElement>('.nav button').forEach((button) => {
+  document.querySelectorAll<HTMLButtonElement>('.tabbar .tab').forEach((button) => {
     onClick(button, () => {
       const tab = button.dataset.tab ?? 'salesScreen';
       // Re-selecting a report tab leaves the saved-report preview and shows live data again.
@@ -612,15 +568,13 @@ function wireDialogs() {
   });
 }
 
+hydrateIcons();
 wireNavigation();
 wireHeader();
 wireSettings();
 wireDialogs();
 initProductEditor(productsChanged);
-makeTiles();
 openScreen(activeScreenId());
 render();
 
-if (Capacitor.isNativePlatform()) {
-  document.body.classList.add('capacitor-native');
-}
+if (isNative) document.body.classList.add('capacitor-native');

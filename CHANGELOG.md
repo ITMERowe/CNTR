@@ -1,5 +1,19 @@
 # Changelog
 
+## UI revamp (branch `ui/revamp`)
+
+### Changed
+- New visual system: VS Code-dark surfaces, white ink accent, product colours as the hero, 4/8px spacing, one set of motion tokens. Designed with the ui-ux-pro-max (POS: Swiss minimal, high contrast, large targets) and dataviz skills.
+- Sell tab: big revenue figure that counts up; tiles where each Cash/QRIS half is one large tap target with a separate undo; rolling counters; haptic feedback on the phone; text on each tile picks white or near-black for contrast.
+- Reports: hero revenue, profit and average-sale tiles, a Cash/QRIS split bar with a labelled legend, a sales-by-hour chart (busiest hour highlighted, tap a column to read it), product rows with unsold products collapsed into one line.
+- Event: net profit/deficit as the hero figure, revenue/profit/expenses tiles, empty state with an Import button.
+- Dialogs are bottom sheets; the tab bar has labels and an animated active indicator; Settings is grouped; History shows product colours and payment chips; the product editor's colour field is a live preview of the tile.
+- Subtle motion throughout (screen fade, staggered card/row entrance, bar growth, sheet slide, toast pop), all off with the system reduce-motion setting.
+
+### Fixed
+- Icons and the font no longer depend on the internet (they were loaded from Google Fonts, so offline the icons showed as words like "add" and "delete").
+- Tile text on light product colours (e.g. yellow, pink) now meets contrast; it was always white.
+
 ## Unreleased
 
 ### Fixed
