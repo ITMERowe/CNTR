@@ -4,7 +4,7 @@
 
 ### Changed
 - New visual system: VS Code-dark surfaces, white ink accent, product colours as the hero, 4/8px spacing, one set of motion tokens. Designed with the ui-ux-pro-max (POS: Swiss minimal, high contrast, large targets) and dataviz skills.
-- Sell tab: big revenue figure that counts up; tiles where each Cash/QRIS half is one large tap target with a separate undo; rolling counters; haptic feedback on the phone; tiles use a calm, deep tone of each product colour (same hue, less saturated) with white text and icons.
+- Sell tab: big revenue figure that counts up; tiles where each Cash/QRIS half is one large tap target with a separate undo; rolling counters; haptic feedback on the phone; tiles keep the original product colours with white text and icons.
 - Reports: hero revenue, profit and average-sale tiles, a Cash/QRIS split bar with a labelled legend, a sales-by-hour chart (busiest hour highlighted, tap a column to read it), product rows with unsold products collapsed into one line.
 - Event: net profit/deficit as the hero figure, revenue/profit/expenses tiles, empty state with an Import button.
 - Dialogs are bottom sheets; the tab bar has labels and an animated active indicator; Settings is grouped; History shows product colours and payment chips; the product editor's colour field is a live preview of the tile.
@@ -12,7 +12,6 @@
 
 ### Fixed
 - Icons and the font no longer depend on the internet (they were loaded from Google Fonts, so offline the icons showed as words like "add" and "delete").
-- Tile text is readable on every product colour: tiles now use a deeper tone of the colour, giving white text at least 6.5:1 contrast (before, white on light colours like yellow or pink was below 3:1).
 
 ## Unreleased
 

@@ -1,5 +1,5 @@
 // HSV colour picker used by the product editor.
-import { normalizeHex, tileTone } from '../formatters';
+import { normalizeHex } from '../formatters';
 import type { HSV } from '../types';
 import { el } from './dom';
 
@@ -56,7 +56,7 @@ function applyCurrentColor() {
   el.editColorHex.textContent = hex;
   el.editColorHexInput.value = hex;
   // The colour field doubles as a live preview of the product tile.
-  el.colorField.style.setProperty('--tile', tileTone(hex));
+  el.colorField.style.setProperty('--tile', hex);
   el.hueValue.textContent = `${Math.round(currentHSV.h)}°`;
   el.pickerSurface.style.setProperty('--picker-hue', `hsl(${currentHSV.h},100%,50%)`);
   el.hueThumb.style.left = `${(currentHSV.h / 360) * 100}%`;
@@ -98,11 +98,6 @@ function trackPointer(area: HTMLElement, update: (x: number, y: number) => void)
 
 export function initColorPicker() {
   el.colorField.addEventListener('click', () => el.colorPickerMenu.classList.add('open'));
-
-  // Presets show the tone a tile will actually get; picking one still stores the original colour.
-  el.colorPickerMenu.querySelectorAll<HTMLElement>('.color-preset').forEach((preset) => {
-    preset.style.background = tileTone(preset.style.getPropertyValue('--preset').trim());
-  });
 
   el.editColorHexInput.addEventListener('input', () => {
     const value = el.editColorHexInput.value.trim();
