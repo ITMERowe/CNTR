@@ -2,17 +2,18 @@
 
 Session-to-session context for CNTR. **Read this before starting work; update it at the end of each session, after milestones, and when a blocker or decision comes up.** If this file disagrees with the code, trust the code and fix this file.
 
-_Last updated: 2026-10-26, end of the safe-storage session: SQLite storage + backup/restore **committed and pushed** on branch `feature/safe-storage` (not merged; see "Safe storage session"). `main` = `a09eb61` (pushed)._
+_Last updated: 2026-10-26, end of the signing/tests/About session: work committed locally on branch `feature/signing-tests-about` (from `main` `3c0255d`), **not pushed** (waiting for the owner to add the signing secrets; see "Signing, tests, About session"). `main` = `3c0255d` (PR #2, CI run #21 → `CNTR_1.0.21.apk` on the owner's phone)._
 
 ## Goal
 
 - **Project:** CNTR, an offline sales counter for convention/pop-up booths (TypeScript + Preact + Vite, packaged with Capacitor 8 for Android). Owner wants it **published on Google Play**.
-- **Last task (latest session):** make data storage reliable and 100% offline: SQLite instead of localStorage, safe migration, JSON/CSV export, validated restore, failure handling, tests (see "Safe storage session").
+- **Last task (latest session):** release signing, browser tests in the repo, About screen, automatic backups, readable tile text, Sell revenue figure at 3/4 size (see "Signing, tests, About session").
+- **Before that:** make data storage reliable and 100% offline: SQLite instead of localStorage, safe migration, JSON/CSV export, validated restore, failure handling, tests (see "Safe storage session").
 - **Before that:** clean up, verify, commit, push, and merge everything into `main` (owner authorized the push and merge).
 - **Before that:** polish with all applicable skills, and make Android back (button/gesture) step back inside the app (see "Multi-skill polish + Android back").
 - **Earlier:** make the Sell and Event screens compact, so 4 tiles fit and amounts in the millions are not cut off.
 - **Task before that:** clean up the project locally and on GitHub; rewrite the README; add a license (owner chose **MIT**); prepare the GitHub description and topics.
-- **Standing design decisions from the owner:** VS Code-dark palette (`#1e1e1e` bg, `#252526` panels); product tiles use the **original product colours** with **white** text and icons.
+- **Standing design decisions from the owner:** VS Code-dark palette (`#1e1e1e` bg, `#252526` panels); product tiles use the **original product colours**; text and icons are white, or dark (`#1e1e1e`) on light colours where that has more contrast (owner chose this on 2026-10-26, replacing "always white"). Sell revenue figure is 3/4 the size of the report figures (owner's request).
 
 ## Current state (verified 2026-10-26)
 
@@ -141,7 +142,7 @@ Tooling note: in this shell, piping node+playwright output into `grep` swallows 
 - Not done: no DESIGN.md (run `/impeccable document` if wanted). No `.impeccable/config.json` (no image generation available). Live mode not configured.
 - Also rebuilt `graphify-out/` this session. The vendored graphify skill docs were left out of the graph, with the owner's approval.
 
-## Safe storage session (2026-10-26). Committed and pushed on branch `feature/safe-storage` (from `main` `a09eb61`); not merged
+## Safe storage session (2026-10-26). Merged into `main` via PR #2 (`3c0255d`)
 
 Decision: **SQLite** (`@capacitor-community/sqlite` 8.1.1) over `@capacitor/preferences`. Preferences is a small key-value store (Android rewrites one XML file per save; no multi-key atomicity), unsuitable for growing sales history. SQLite gives transactional writes, so a restore is all-or-nothing. Data model unchanged: one table `kv(key, value)` holding the same JSON strings as before, so backups, the browser build and migration all use one format. Also added `@capacitor/filesystem` 8.1.5 and `@capacitor/share` 8.0.3 (backup files). All offline; no network at runtime.
 
@@ -158,6 +159,7 @@ Verified (fresh run on the final code, rerun before commit with the same results
 - E2E (`e2e.mjs`, headless Edge, scratchpad) **31/31**: browser build (persistence across reload, JSON + CSV export, 4 kinds of malformed backup rejected with data untouched, restore, storage-full warning + retry, offline with zero non-local requests) and a **simulated Android bridge** (migration + verify, legacy untouched, restart reads SQLite not the stale copy, no rerun/duplicates, DB write failure + retry, export to Documents/CNTR, "not saved" when Documents and share both fail, interrupted restore changes nothing, safety copy before restore, DB failure after use → Try again → recovers, first-migration failure → works on localStorage → migrates next launch, no network, no page errors).
 - Mutation checks: removing the migration verify, dropping failed writes, or allowing the stale fallback each makes the matching test fail.
 - Regression: functional 19/19 (3 of the old checks read localStorage synchronously right after a tap; with a 30 ms wait they pass: writes are now asynchronous, not lost), motion 5/5, picker 4/4, back 10/10, audit (tap targets/labels) clean, overflow clean.
+- Commits `301ec8e` (feature) + `0da494f` (docs), pushed to `origin/feature/safe-storage` (verified). CI run 40350838170 (#20) **success**, including `npm test` and the native build with the SQLite/Filesystem/Share plugins: artifact `CNTR_1.0.20.apk` (13.4 MB). The owner then merged PR #2 on GitHub; CI run #21 on `main` (`3c0255d`) **success** → `CNTR_1.0.21.apk`, same code.
 - Bundle scan: no runtime network use (only Vite's same-origin chunk preload and unused Capacitor HTTP / Filesystem download helpers).
 
 Not verified / remaining risks:
@@ -168,14 +170,29 @@ Not verified / remaining risks:
 - The SQLite plugin bundles SQLCipher on Android, making the APK a few MB larger.
 - Browser build: restore into localStorage is rolled back on failure but is not a true transaction (development only).
 
+## Signing, tests, About session (2026-10-26). Committed locally on `feature/signing-tests-about`, not pushed
+
+Owner asked for items 1, 2, 3, 5, 6 of the suggestions (signing key, tests in repo, About, automatic backups, readable tile text), plus the Sell revenue figure at 3/4 size.
+
+1. **Release signing.** Key generated with OpenSSL (no JDK here): PKCS#12 `C:/Users/User/CNTR-signing/cntr-release.p12`, alias `cntr`, RSA 4096, valid to 2056, random password in `PASSWORD.txt`; `CNTR_KEYSTORE_BASE64.txt` holds the secret value; `README.txt` there lists the steps. The private key exists only inside the password-protected .p12. **Nothing of it is in the repo** (`.gitignore` now also ignores `*.p12` and `dist-apk/`). `android/app/build.gradle` signs `release` from env vars (`CNTR_KEYSTORE_FILE`, `CNTR_KEYSTORE_PASSWORD`, `CNTR_KEY_ALIAS`, `CNTR_KEY_PASSWORD`); without them the release build is unsigned. CI (`build-apk.yml`): with secret `CNTR_KEYSTORE_BASE64` set it builds `assembleRelease bundleRelease`, uploads `CNTR_1.0.N.apk` and `CNTR_1.0.N.aab`; otherwise `assembleDebug` with a warning. Key password and store password are the same value (OpenSSL PKCS#12).
+2. **Browser tests in the repo** (`tests/e2e/`, `npm run test:e2e`, run in CI after the build): `data-safety` (35 checks: the 31 from the storage session + 4 for automatic backups), `functional` (19), `interaction` (17: colour picker fit and drag cancel, undo/+ tap areas, About, Android back via a fake bridge), `layout` (22: overflow, 44px targets, labels, contrast, 4 tiles at 412x892, revenue at 3/4, at 320/360/412 and landscape), `motion` (5). `run.mjs` starts vite preview on port 4320 and stops it afterwards. Browser: Edge on Windows, Chrome on Linux CI (`CNTR_BROWSER` overrides). `playwright-core` added as an exact dev dependency (already installed through `@playwright/cli`; lockfile +1 line).
+3. **About screen** (`#aboutScreen`, sub-screen of Settings): version (`App.getInfo()` on the phone, package.json in the browser), MIT license, privacy statement, open-source licenses. Back arrow and Android back work.
+4. **Automatic backups** (see ARCHITECTURE "Automatic backups"): `Documents/CNTR/auto`, newest 20, before clear/delete and after saving a report; asks before going ahead if it fails. Settings note mentions it.
+5. **Tile text**: `needsDarkText()`; with the default colours Gacha, Cheki, Poster, Photocard and Keychain get dark text (white was 1.95-3.11:1, dark is 5.37-8.55:1); Sticker, Acrylic Stand and Tote Bag stay white. The layout test now checks tile text contrast on every tab and passes.
+6. **Sell revenue figure** at 0.75 of the shared hero size (`.hero .hero-figure`).
+7. **Fixed** (found by the new layout test): `.stack` grid items did not shrink, so at 320-360px the Event cards were wider than the screen with a long expense amount (add/delete buttons cut off); `.stack > * { min-width: 0 }` and expense names now wrap.
+
+Verified (fresh, final code): `npx tsc --noEmit` 0; `npm run build` 0; `npm test` 11/11; `npm run test:e2e` all 5 suites (35+19+17+22+5 = 98 checks) pass, and the preview server is stopped afterwards. Screenshots checked: tiles with dark text, About, editor preview, Event at 320px.
+Not verified: the release build itself (no JDK/Android SDK here; first verified by CI once the secrets exist); the e2e suite on Linux CI with Chrome (first run after push); automatic backups on a real phone.
+Owner action needed: add GitHub secrets `CNTR_KEYSTORE_BASE64`, `CNTR_KEYSTORE_PASSWORD`, `CNTR_KEY_ALIAS` (=`cntr`), and back up the `CNTR-signing` folder off this computer. Switching from the debug 1.0.21 to the first release build needs one last uninstall (export a backup first).
+
 ## Known issues / blockers (unresolved)
 
 - **GitHub repository description and topics are not updated:** there is no `gh` CLI or API token on this machine. The owner must apply them; text is below.
 - White text on light product colours has low contrast (e.g. about 2:1 on yellow). Accepted by the owner for now.
-- Debug APKs are signed with a random key per CI run, so updating needs an uninstall, which wipes data. Needs a release keystore (owner).
+- Release key created (`C:/Users/User/CNTR-signing`, outside the repo) and CI wired for it, but **the owner must add the 3 GitHub secrets**; until then CI still builds debug APKs that need an uninstall (which wipes data).
 - Data-loss risks that remain after the safe-storage work (see that section): native SQLite path tested only against a simulated bridge, never on a device; uninstall / clear data / lost phone still delete everything unless the user exported a backup.
 - Not tested on a real device (haptics, safe areas / edge-to-edge, performance). iOS never built.
-- No automated tests in the repo. The browser checks used so far live in a temporary session folder and are not portable.
 - Local machine has no JDK/Android SDK and no `gh`. APK builds are verified only via GitHub Actions and the public API (60 requests/hour).
 
 ## GitHub metadata to apply (owner)
@@ -185,11 +202,11 @@ Not verified / remaining risks:
 
 ## Next steps (priority order)
 
-1. Owner: install the newest `main` APK on a phone and check Android back (button and gesture), the compact tiles and tap accuracy.
+1. Owner: add the 3 signing secrets, then push `feature/signing-tests-about` (CI builds the first release-signed APK and runs the browser tests on Linux). Export a backup in 1.0.21, uninstall, install the release APK, restore. After that, updates install without uninstalling.
 2. Owner: apply the GitHub description and topics above (repo → About → ⚙).
 3. Owner: decide on deleting the merged `ui/revamp` and `fix/bugs-ui-docs` branches and the old local `agents/app-overview-explanation` worktree.
 4. Play Store prerequisites: release keystore as GitHub secrets, signed `.aab` in CI, privacy policy, store screenshots; owner starts the 12-tester / 14-day closed test.
-5. Safe storage (pushed on `feature/safe-storage`): owner tests the CI APK on a real phone (export, restore, airplane mode, restart). Note: CI debug APKs are signed with a different key each run, so installing needs an uninstall first, which wipes data; the migration from an older install therefore cannot be tested by updating a CI build. Merge into `main` only after the phone test.
+5. Safe storage (merged; `CNTR_1.0.21.apk` from `main` is on the owner's phone): owner tests it on the phone (export, restore, airplane mode, restart). Note: CI debug APKs are signed with a different key each run, so installing needs an uninstall first, which wipes data; the migration from an older install therefore cannot be tested by updating a CI build.
 6. Add an automated test suite (e.g. Playwright, already installed locally by the owner) so the browser checks live in the repo.
 
 ## Verification log

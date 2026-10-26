@@ -1,6 +1,21 @@
 # Changelog
 
-## Unreleased
+## Unreleased (branch `feature/signing-tests-about`)
+
+### Added
+- **About screen** (Settings → About): version, license, a privacy statement (no account, server or internet; data stays on the phone) and the open-source licenses.
+- **Automatic backups**: before clearing sales, clearing an event or deleting a report, and after saving a report, CNTR writes a backup to `Documents/CNTR/auto` (newest 20 kept). If that backup fails, it asks before going ahead.
+- **Release signing in CI**: with the release key in GitHub secrets, CI builds a release APK signed with one permanent key (installs as an update, keeping the data) and a Play `.aab`; without it, a debug APK as before.
+- Browser tests in the repo (`tests/e2e`, `npm run test:e2e`), run in CI with the unit tests.
+
+### Changed
+- Product tiles use dark text on light colours (yellow, pink, green, orange, beige) so names and counts are readable; dark colours keep white text. The product editor preview follows the same rule.
+- The Sell screen's revenue figure is 3/4 of its previous size, leaving more room for tiles.
+
+### Fixed
+- On narrow phones (320–360px) the Event screen's cards were wider than the screen when an expense had a long amount, cutting off the add and delete buttons.
+
+## Previously unreleased (merged to `main` via PR #2)
 
 ### Changed
 - **Data is now stored in SQLite on the phone** instead of WebView `localStorage`, which the OS may clear. The first launch after updating copies the existing data into the database, checks the copy, and leaves the old copy untouched; it runs once and cannot duplicate records.

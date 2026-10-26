@@ -32,7 +32,7 @@ It runs entirely on the device: no server, no account, no network needed.
 | Build | [Vite](https://vitejs.dev) 5, TypeScript 5 (strict, unused-code checks on) |
 | Native | [Capacitor](https://capacitorjs.com) 8 (Android; iOS project included), `@capacitor/haptics`, `@capacitor/app`, `@capacitor-community/sqlite` (storage), `@capacitor/filesystem` + `@capacitor/share` (backup files) |
 | Assets | [Lucide](https://lucide.dev) SVG icons, Plus Jakarta Sans (bundled via Fontsource) |
-| CI | GitHub Actions builds a debug APK on every push |
+| CI | GitHub Actions runs the tests and builds an APK on every push (release-signed when the key is in secrets) |
 
 Code layout (details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)):
 
@@ -45,7 +45,7 @@ src/kv.ts           The SQLite and localStorage stores
 src/migrate.ts      One-time copy of older localStorage data into SQLite
 src/backup.ts       Backup file format, validation, CSV
 src/files.ts        Saving backup files and picking one to restore
-tests/              Unit tests (`npm test`)
+tests/              Unit tests (`npm test`); browser tests in tests/e2e (`npm run test:e2e`)
 src/reports.ts      Report calculations
 src/formatters.ts   Money formatting and parsing, colour helpers
 src/views/          Preact components for every screen
@@ -77,7 +77,7 @@ Requires Android 7.0 (API 24) or newer; the app targets API 36.
 
 **From CI (no local Android tooling needed):** every push runs the **Build APK** workflow. Open the run under **Actions** and download the artifact `CNTR_1.0.<build>.apk` (you need to be signed in to GitHub). The last number is the CI run number and also the app's `versionCode`.
 
-> These are **debug** builds, each signed with a temporary key. Android will not install one over a different build, so uninstall first. **Uninstalling deletes the app's data.**
+> **Signing.** When the repository has the release key in its secrets (`CNTR_KEYSTORE_BASE64`, `CNTR_KEYSTORE_PASSWORD`, `CNTR_KEY_ALIAS`), CI builds a **release** APK signed with that one permanent key, plus `CNTR_1.0.<build>.aab` for Google Play. Each new release APK installs as an update and keeps the app's data. Without those secrets CI builds a **debug** APK signed with a temporary key: Android will not install it over a different build, so you must uninstall first, and **uninstalling deletes the app's data**. Switching from a debug build to the first release build also needs one uninstall.
 
 **Locally** (needs JDK 21 and the Android SDK 36, e.g. via Android Studio):
 
@@ -103,10 +103,11 @@ Or run `npx cap open android` and press Run in Android Studio.
 
 Before merging, at minimum:
 
-1. `npm test` passes (unit tests for migration, backup validation and CSV; Node's built-in runner, no extra dependencies). CI runs it too.
+1. `npm test` passes (unit tests for migration, backup validation and CSV; Node's built-in runner).
 2. `npm run build` passes (it includes the TypeScript check).
-3. Run `npm run dev` and check the flows you touched in a phone-sized browser window (Sell, Reports, Event, Products, saved reports, Compare).
-4. For native changes, install the CI APK on a real device.
+3. `npm run test:e2e` passes: browser tests of the built app in `tests/e2e/` (data safety including a simulated Android bridge for SQLite and backup files, core flows, Android back, layout and accessibility at 320-412px and landscape, motion). It serves `dist/` on port 4320 and uses Edge on Windows, Chrome elsewhere (`CNTR_BROWSER` overrides). CI runs both test commands on every push.
+4. Run `npm run dev` and check the flows you touched in a phone-sized browser window (Sell, Reports, Event, Products, saved reports, Compare).
+5. For native changes, install the CI APK on a real device.
 
 ## Contributing
 

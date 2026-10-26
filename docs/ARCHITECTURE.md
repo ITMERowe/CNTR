@@ -74,6 +74,11 @@ Data is a set of JSON values under these keys. On the phone they live in an SQLi
 - **Migration** (`migrate.ts`, first launch on the phone): copy the legacy `localStorage` keys into SQLite, read them back and compare, then set `cntrMeta.migratedFromLocalStorage`. The legacy copy is never changed or deleted. Rerunning is harmless: values are written by key, and once the flag is set it does nothing. If the database cannot be opened before migration ever succeeded, the app keeps running on `localStorage` (still the only, current copy) with a warning and retries next launch. Once the database has been used (`cntrMeta.usingDatabase` in `localStorage`), a database failure shows a "Try again" screen instead, because the old copy is stale.
 - **Backup** (`backup.ts`): `{ app: "CNTR", format: 1, exportedAt, data: { <key>: <parsed value> } }`. `parseBackup()` validates every record before anything changes and rejects the whole file on any problem. Restore saves a safety copy (`Documents/CNTR/cntr-before-restore-*.json`, else app-private storage), writes all keys in one SQLite transaction (keys missing from the backup are deleted), then reloads.
 - `cntrMeta.lastBackup` (when the last backup was exported) is not part of backups.
+- **Automatic backups** (`main.ts` `withAutoBackup()`, `files.ts` `saveAutoBackup()`): before clearing sales, clearing the live event or deleting a saved report, and after saving a report, a full backup is written to `Documents/CNTR/auto/cntr-auto-<timestamp>.json` (app-private storage if Documents is refused); the newest 20 are kept. If it fails before a destructive action, the user is asked before going ahead. Native only; the browser build writes nothing.
+
+## Tile colours
+
+Tiles take the product colour as `--tile`. `needsDarkText()` (`formatters.ts`) compares the WCAG contrast of white and `#1e1e1e` on that colour; when dark wins, the tile (and the product editor's preview) gets `.on-light`, which swaps the `--ink` tokens to dark.
 
 ## Rendering
 
