@@ -53,14 +53,24 @@ function readJson<T>(key: string, fallback: T): T {
 
   try {
     const parsed = JSON.parse(stored) as T;
-    return parsed;
+    return parsed ?? fallback;
   } catch {
     return fallback;
   }
 }
 
+// Corrupt or hand-edited storage must not crash startup, so list loaders only accept arrays.
+function readArray<T>(key: string): T[] {
+  const parsed = readJson<unknown>(key, []);
+  return Array.isArray(parsed) ? (parsed as T[]) : [];
+}
+
 function writeJson<T>(key: string, value: T) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Failed to save ${key}`, error);
+  }
 }
 
 export function loadImportedEventReport() {
@@ -96,7 +106,7 @@ export function saveImportedEventReport(report: { sales: SaleRecordShape[]; prod
 }
 
 export function loadProducts(): ProductShape[] {
-  return readJson<ProductShape[]>(PRODUCT_STORAGE_KEY, []);
+  return readArray<ProductShape>(PRODUCT_STORAGE_KEY);
 }
 
 export function saveProducts(products: ProductShape[]) {
@@ -104,7 +114,7 @@ export function saveProducts(products: ProductShape[]) {
 }
 
 export function loadProductHistory(): ProductShape[] {
-  return readJson<ProductShape[]>(PRODUCT_HISTORY_STORAGE_KEY, []);
+  return readArray<ProductShape>(PRODUCT_HISTORY_STORAGE_KEY);
 }
 
 export function saveProductHistory(products: ProductShape[]) {
@@ -112,10 +122,7 @@ export function saveProductHistory(products: ProductShape[]) {
 }
 
 export function loadSales(): SaleRecordShape[] {
-  const parsed = readJson<Array<{ product: string; price: number; cost: number; payment: string; timestamp: string }>>(
-    TX_STORAGE_KEY,
-    []
-  );
+  const parsed = readArray<{ product: string; price: number; cost: number; payment: string; timestamp: string }>(TX_STORAGE_KEY);
   return parsed.map((item) => ({ ...item, timestamp: new Date(item.timestamp) }));
 }
 
@@ -130,7 +137,7 @@ export function saveSales(sales: SaleRecordShape[]) {
 }
 
 export function loadEventCosts(): EventCostShape[] {
-  return readJson<Array<{ id: string; name: string; amount: number; category?: string }>>(EVENT_COST_STORAGE_KEY, []).map(
+  return readArray<{ id: string; name: string; amount: number; category?: string }>(EVENT_COST_STORAGE_KEY).map(
     (item) => ({ id: item.id, name: item.name, amount: item.amount })
   );
 }
@@ -140,25 +147,31 @@ export function saveEventCosts(eventCosts: EventCostShape[]) {
 }
 
 export function loadSavedReports(): SavedReportShape[] {
-  return readJson<SavedReportShape[]>(SAVED_REPORTS_KEY, []);
+  return readArray<SavedReportShape>(SAVED_REPORTS_KEY);
 }
 
 export function saveSavedReports(reports: SavedReportShape[]) {
   writeJson(SAVED_REPORTS_KEY, reports);
 }
 
+// Settings are read on every money format call, so keep the parsed value in memory.
+let cachedSettings: AppSettings | null = null;
+
 export function loadSettings(): AppSettings {
+  if (cachedSettings) return { ...cachedSettings };
   const stored = readJson<Partial<AppSettings>>(SETTINGS_KEY, {});
   const allowedCurrencies: AppSettings['currency'][] = ['IDR', 'USD', 'EUR', 'SGD', 'AUD', 'GBP', 'JPY', 'MYR'];
 
-  return {
+  cachedSettings = {
     currency: allowedCurrencies.includes(stored.currency as AppSettings['currency'])
       ? (stored.currency as AppSettings['currency'])
       : DEFAULT_SETTINGS.currency,
     compactMoney: Boolean(stored.compactMoney),
   };
+  return { ...cachedSettings };
 }
 
 export function saveSettings(settings: AppSettings) {
+  cachedSettings = null;
   writeJson(SETTINGS_KEY, settings);
 }

@@ -3,18 +3,14 @@ import { Capacitor } from '@capacitor/core';
 import { defaultProducts, ensureProductHistory, generateUUID, totals } from './data';
 import {
   chooseUniqueColor,
+  escapeHtml,
   fmt,
-  fmtCompact,
   formatInputNumber,
-  formatMoney,
   getContrastColor,
-  getUnusedPresetColor,
-  label,
   normalizeHex,
   parseCurrencyInput,
-  PRESET_COLORS,
 } from './formatters';
-import { DEFAULT_SETTINGS, loadSettings, saveSettings, type AppSettings } from './storage';
+import { loadSettings, saveSettings, type AppSettings } from './storage';
 import {
   loadEventCosts as readEventCosts,
   loadImportedEventReport as readImportedEventReport,
@@ -35,6 +31,12 @@ const products: Product[] = loadProducts();
 const productHistory: Product[] = loadProductHistory();
 
 function syncProductState() {
+  // Fresh install: seed the defaults before building history so they show up under Products too.
+  // Do NOT repopulate active products from history when the user intentionally removed all products.
+  if (products.length === 0 && productHistory.length === 0) {
+    products.push(...defaultProducts.map((product) => ({ ...product })));
+  }
+
   const uniqueProducts = products.reduce<Product[]>((acc, product) => {
     const index = acc.findIndex((item) => item.name === product.name);
     if (index >= 0) {
@@ -66,17 +68,10 @@ function syncProductState() {
 
   products.splice(0, products.length, ...uniqueProducts);
   productHistory.splice(0, productHistory.length, ...mergedHistory);
-
-  // If no active products and no history, seed with defaults.
-  // Do NOT repopulate active products from history when the user intentionally removed all products.
-  if (products.length === 0 && productHistory.length === 0) {
-    products.push(...defaultProducts.map((product) => ({ ...product })));
-  }
 }
 
 syncProductState();
 console.debug('startup: loaded products count=', products.length);
-const payments = ['Cash', 'QRIS'];
 const tx: SaleRecord[] = loadSales();
 const eventCosts: EventCost[] = loadEventCosts();
 let previewReport: SavedReport | null = null;
@@ -153,6 +148,15 @@ function deleteSavedReport(reportId: string) {
   render();
 }
 
+function confirmDeleteSavedReport(reportId: string, onDeleted?: () => void) {
+  const report = loadSavedReports().find((entry) => entry.id === reportId);
+  if (!report) return;
+  openConfirmModal(`Delete report '${report.name}'? This cannot be undone.`, 'Delete', () => {
+    deleteSavedReport(reportId);
+    onDeleted?.();
+  });
+}
+
 function renameSavedReport(reportId: string, nextName: string) {
   const trimmedName = nextName.trim();
   if (!trimmedName) return;
@@ -166,46 +170,32 @@ function renameSavedReport(reportId: string, nextName: string) {
   render();
 }
 
-function getCurrentEventSnapshot() {
-  const activeScreen = document.querySelector('.screen.active')?.id;
-
-  if (activeScreen === 'eventScreen') {
-    if (importedEventReport) {
-      return {
-        sales: importedEventReport.sales.map((sale) => ({ ...sale })),
-        products: importedEventReport.products.map((product) => ({ ...product })),
-        eventCosts: eventCosts.map((cost) => ({ ...cost })),
-      };
-    }
-
-    return {
-      sales: tx.map((sale) => ({ ...sale })),
-      products: products.map((product) => ({ ...product })),
-      eventCosts: eventCosts.map((cost) => ({ ...cost })),
-    };
+// The data the event screen is showing: a previewed saved event report, else the imported live event.
+function getEventView() {
+  const savedEventReport = previewReport && previewReport.type === 'event' ? previewReport : null;
+  if (savedEventReport) {
+    return { hasReport: true, sales: savedEventReport.sales, products: savedEventReport.products, eventCosts: savedEventReport.eventCosts };
   }
-
-  if (previewReport && previewReport.type === 'event') {
-    return {
-      sales: previewReport.sales.map((sale) => ({ ...sale })),
-      products: previewReport.products.map((product) => ({ ...product })),
-      eventCosts: previewReport.eventCosts.map((cost) => ({ ...cost })),
-    };
-  }
-
-  if (importedEventReport) {
-    return {
-      sales: importedEventReport.sales.map((sale) => ({ ...sale })),
-      products: importedEventReport.products.map((product) => ({ ...product })),
-      eventCosts: eventCosts.map((cost) => ({ ...cost })),
-    };
-  }
-
   return {
-    sales: tx.map((sale) => ({ ...sale })),
-    products: products.map((product) => ({ ...product })),
-    eventCosts: eventCosts.map((cost) => ({ ...cost })),
+    hasReport: Boolean(importedEventReport),
+    sales: importedEventReport ? importedEventReport.sales : [],
+    products: importedEventReport ? importedEventReport.products : [],
+    eventCosts,
   };
+}
+
+// Persist expense edits to whichever cost list the event screen is showing.
+function saveActiveEventCosts() {
+  if (previewReport && previewReport.type === 'event') {
+    const reports = loadSavedReports();
+    const target = reports.find((report) => report.id === previewReport!.id);
+    if (target) {
+      target.eventCosts = previewReport.eventCosts.map((cost) => ({ ...cost }));
+      saveSavedReports(reports);
+    }
+    return;
+  }
+  saveEventCosts();
 }
 
 function saveCurrentReport(name: string, type: 'sales' | 'event') {
@@ -213,14 +203,12 @@ function saveCurrentReport(name: string, type: 'sales' | 'event') {
   const reportName = name.trim() || `${type === 'event' ? 'Event report' : 'Report'} ${new Date().toLocaleString()}`;
 
   if (type === 'event') {
-    const snapshot = getCurrentEventSnapshot();
-    if (!previewReport) {
-      importedEventReport = {
-        sales: snapshot.sales,
-        products: snapshot.products,
-      };
-      saveImportedEventReport(importedEventReport);
-    }
+    const view = getEventView();
+    const snapshot = {
+      sales: view.sales.map((sale) => ({ ...sale })),
+      products: view.products.map((product) => ({ ...product })),
+      eventCosts: view.eventCosts.map((cost) => ({ ...cost })),
+    };
 
     reports.push({
       id: generateUUID(),
@@ -252,22 +240,23 @@ function saveCurrentReport(name: string, type: 'sales' | 'event') {
 }
 
 function addEventCost(name: string, amount: number) {
-  eventCosts.push({ id: generateUUID(), name, amount });
-  saveEventCosts();
+  getEventView().eventCosts.push({ id: generateUUID(), name, amount });
+  saveActiveEventCosts();
   render();
 }
 
 function removeEventCost(id: string) {
-  const index = eventCosts.findIndex((cost) => cost.id === id);
+  const costs = getEventView().eventCosts;
+  const index = costs.findIndex((cost) => cost.id === id);
   if (index >= 0) {
-    eventCosts.splice(index, 1);
-    saveEventCosts();
+    costs.splice(index, 1);
+    saveActiveEventCosts();
     render();
   }
 }
 
 function openExpenseModalForEdit(id: string) {
-  const cost = eventCosts.find((item) => item.id === id);
+  const cost = getEventView().eventCosts.find((item) => item.id === id);
   if (!cost) return;
 
   const overlay = document.getElementById('expenseModalOverlay') as HTMLDivElement | null;
@@ -284,19 +273,22 @@ function openExpenseModalForEdit(id: string) {
   title.textContent = 'Edit Expense';
   addBtn.textContent = 'Save changes';
   overlay.classList.add('open');
+  lockBodyScroll();
   updateExpenseButtonState();
 }
 
 let editingIndex = -1;
 let editingExpenseId: string | null = null;
 let editingHistoryIndex: number | null = null;
-let editingHistoryOldName: string | null = null;
 let productEditorReturnScreen = 'salesScreen';
 let animatedProduct: string | null = null;
 let animatedPayment: string | null = null;
 let _savedBodyScroll = 0;
+let _bodyScrollLocked = false;
 
 function lockBodyScroll() {
+  if (_bodyScrollLocked) return;
+  _bodyScrollLocked = true;
   _savedBodyScroll = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
   document.body.style.position = 'fixed';
   document.body.style.top = `-${_savedBodyScroll}px`;
@@ -306,6 +298,8 @@ function lockBodyScroll() {
 }
 
 function unlockBodyScroll() {
+  if (!_bodyScrollLocked) return;
+  _bodyScrollLocked = false;
   document.body.style.position = '';
   document.body.style.top = '';
   document.body.style.left = '';
@@ -386,7 +380,6 @@ const el = {
   importModalCancelBtn: document.getElementById('importModalCancelBtn') as HTMLButtonElement,
   importModalConfirmBtn: document.getElementById('importModalConfirmBtn') as HTMLButtonElement,
   importModalCloseBtn: document.getElementById('importModalCloseBtn') as HTMLButtonElement,
-  eventImportBtn: document.getElementById('eventImportBtn') as HTMLButtonElement,
   confirmModalOverlay: document.getElementById('confirmModalOverlay') as HTMLDivElement,
   confirmModalTitle: document.getElementById('confirmModalTitle') as HTMLHeadingElement,
   confirmModalMessage: document.getElementById('confirmModalMessage') as HTMLParagraphElement,
@@ -404,6 +397,7 @@ function openConfirmModal(message: string, confirmLabel = 'Delete', onConfirm?: 
   if (!overlay || !msg || !confirmBtn || !cancelBtn || !closeBtn) return;
   msg.textContent = message;
   confirmBtn.textContent = confirmLabel;
+  confirmBtn.classList.add('danger');
   overlay.classList.add('open');
 
   const cleanup = () => {
@@ -423,219 +417,168 @@ function openConfirmModal(message: string, confirmLabel = 'Delete', onConfirm?: 
   overlay.onclick = (ev) => { if (ev.target === overlay) cleanup(); };
 }
 
-function buildReportMarkup() {
-  const reportSales = previewReport && previewReport.type === 'sales' ? previewReport.sales : tx;
-  const reportProducts = previewReport && previewReport.type === 'sales' ? previewReport.products : products;
-  const isPreview = Boolean(previewReport && previewReport.type === 'sales');
-  const revenue = reportSales.reduce((sum, item) => sum + item.price, 0);
-  const profit = reportSales.reduce((sum, item) => sum + (item.price - item.cost), 0);
-  const cashSales = reportSales.filter((item) => item.payment === 'Cash').length;
-  const qrisSales = reportSales.filter((item) => item.payment === 'QRIS').length;
-  const cashRevenue = reportSales.reduce((sum, item) => item.payment === 'Cash' ? sum + item.price : sum, 0);
-  const qrisRevenue = reportSales.reduce((sum, item) => item.payment === 'QRIS' ? sum + item.price : sum, 0);
-  const reportSalesCount = reportSales.length;
-  const productTotals = reportSales.reduce<Record<string, { count: number; revenue: number; profit: number }>>((acc, item) => {
-    const key = item.product;
-    if (!acc[key]) acc[key] = { count: 0, revenue: 0, profit: 0 };
-    acc[key].count += 1;
-    acc[key].revenue += item.price;
-    acc[key].profit += item.price - item.cost;
-    return acc;
-  }, {});
+// Per-product totals for a set of sales. Products that were sold but are no longer in the
+// product list (e.g. deactivated) are still included so the breakdown matches the revenue.
+function buildProductBreakdown(sales: SaleRecord[], reportProducts: Product[]) {
+  const productTotals = new Map<string, { count: number; revenue: number; profit: number }>();
+  for (const sale of sales) {
+    const entry = productTotals.get(sale.product) ?? { count: 0, revenue: 0, profit: 0 };
+    entry.count += 1;
+    entry.revenue += sale.price;
+    entry.profit += sale.price - sale.cost;
+    productTotals.set(sale.product, entry);
+  }
 
-  const allProducts = reportProducts.map((product) => {
-    const sales = productTotals[product.name] || { count: 0, revenue: 0, profit: 0 };
-    return { name: product.name, count: sales.count, revenue: sales.revenue, profit: sales.profit, color: product.color };
-  }).sort((a, b) => b.count - a.count || b.revenue - a.revenue);
+  const known = new Set(reportProducts.map((product) => product.name));
+  const orphanProducts = [...productTotals.keys()]
+    .filter((name) => !known.has(name))
+    .map((name) => ({ name, color: productHistory.find((product) => product.name === name)?.color ?? '' }));
 
-  const topProducts = allProducts.slice(0, 5);
+  return [...reportProducts, ...orphanProducts].map((product) => {
+    const totalsForProduct = productTotals.get(product.name) ?? { count: 0, revenue: 0, profit: 0 };
+    return { name: product.name, color: product.color, ...totalsForProduct };
+  });
+}
 
-  const averageTicket = reportSalesCount ? revenue / reportSalesCount : 0;
-  const grossMargin = revenue ? (profit / revenue) * 100 : 0;
-  const bestProduct = topProducts[0];
-  const totalUnits = reportSalesCount;
+function plural(count: number, noun: string) {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
 
+function profitClass(value: number) {
+  return value < 0 ? 'profit is-negative' : value === 0 ? 'profit is-zero' : 'profit';
+}
+
+function summaryTile(label: string, value: string, hint: string, valueClass = 'value') {
   return `
-    <div class="report-shell">
-      <section class="report-hero">
-        <div class="report-hero-heading">
-          <div>
-            <h2 class="report-title">Sales Overview</h2>
-            <p class="report-subtitle">${reportSales.length ? 'A complete snapshot of revenue, profit, payment mix, and best-selling products for the day.' : 'Every sale you log will appear here with real-time summaries, trends, and insights.'}</p>
-          </div>
-        </div>
-        <div class="summary-grid">
           <div class="summary-tile">
-            <span class="label">Revenue</span>
-            <span class="value">${fmt(revenue)}</span>
-            <span class="hint">${reportSales.length} total sales</span>
-          </div>
-          <div class="summary-tile">
-            <span class="label">Profit</span>
-            <span class="value">${fmt(profit)}</span>
-            <span class="hint">${grossMargin.toFixed(1)}% margin</span>
-          </div>
-          <div class="summary-tile">
-            <span class="label">Cash</span>
-            <span class="value">${cashSales}</span>
-            <span class="hint">${fmt(cashRevenue)} by cash</span>
-          </div>
-          <div class="summary-tile">
-            <span class="label">QRIS</span>
-            <span class="value">${qrisSales}</span>
-            <span class="hint">${fmt(qrisRevenue)} by qris</span>
-          </div>
-        </div>
-      </section>
+            <span class="label">${label}</span>
+            <span class="${valueClass}">${value}</span>
+            <span class="hint">${hint}</span>
+          </div>`;
+}
 
-      <section class="report-section product-grid-section">
-        <div class="section-head">
-          <h2 class="report-title">Product distribution</h2>
-        </div>
-        ${allProducts.length ? `<div class="product-columns">${allProducts.map((item) => {
-          const share = totalUnits ? (item.count / totalUnits) * 100 : 0;
-          const fillColor = item.color || 'var(--accent)';
-          return `
+// One row layout for every per-product breakdown: name, profit and revenue on the left;
+// sales count and share of units sold on the right.
+function buildProductRows(rows: Array<{ name: string; color: string; count: number; revenue: number; profit: number }>, totalUnits: number) {
+  return `<div class="product-columns">${rows.map((item) => {
+    const share = totalUnits ? (item.count / totalUnits) * 100 : 0;
+    return `
             <div class="product-row">
               <div class="performance-item">
                 <div class="performance-top">
-                  <strong>${item.name}</strong>
+                  <strong>${escapeHtml(item.name)}</strong>
                 </div>
                 <div class="performance-details">
-                  <span class="profit">${fmt(item.profit)} Profit</span>
+                  <span class="${profitClass(item.profit)}">${fmt(item.profit)} profit</span>
+                  <span>${fmt(item.revenue)} revenue</span>
                 </div>
               </div>
               <div class="distribution-item">
                 <div class="distribution-line">
-                  <span class="distribution-sales">${item.count} sales</span>
+                  <span class="distribution-sales">${plural(item.count, 'sale')}</span>
                   <span class="distribution-value">${share.toFixed(0)}%</span>
                 </div>
                 <div class="distribution-track">
-                  <div class="distribution-fill" style="width:${share > 0 ? Math.max(6, share) : 0}%;background:${fillColor}"></div>
+                  <div class="distribution-fill" style="width:${share > 0 ? Math.max(4, share) : 0}%;background:${escapeHtml(item.color || 'var(--highlight)')}"></div>
                 </div>
               </div>
             </div>`;
-        }).join('')}</div>` : '<div class="empty-state">No distribution data yet.</div>'}
-      </section>
-
-    </div>`;
+  }).join('')}</div>`;
 }
 
-function buildEventMarkup() {
-  const activeSavedEventReport = previewReport && previewReport.type === 'event' ? previewReport : null;
-  const activeImportedReport = !activeSavedEventReport ? importedEventReport : null;
-  const hasReport = Boolean(activeSavedEventReport || activeImportedReport);
-  const reportCosts = activeSavedEventReport ? activeSavedEventReport.eventCosts : eventCosts;
-  const reportSales = activeSavedEventReport ? activeSavedEventReport.sales : (activeImportedReport ? activeImportedReport.sales : []);
-  const reportProducts = activeSavedEventReport ? activeSavedEventReport.products : (activeImportedReport ? activeImportedReport.products : []);
-  const totalCost = reportCosts.reduce((sum, cost) => sum + cost.amount, 0);
-  const revenue = reportSales.reduce((sum, sale) => sum + sale.price, 0);
-  const profit = reportSales.reduce((sum, sale) => sum + (sale.price - sale.cost), 0);
-  const netProfit = revenue - totalCost;
-  const reportCostCount = reportCosts.length;
-  const reportSalesCount = reportSales.length;
-  const grossMargin = revenue ? (profit / revenue) * 100 : 0;
-  const netProfitLabel = netProfit < 0 ? 'Deficit' : 'Net profit';
-  const netProfitValueClass = netProfit < 0 ? 'value deficit' : 'value profit';
-  const productTotals = reportSales.reduce<Record<string, { count: number; revenue: number; profit: number }>>((acc, item) => {
-    const key = item.product;
-    if (!acc[key]) acc[key] = { count: 0, revenue: 0, profit: 0 };
-    acc[key].count += 1;
-    acc[key].revenue += item.price;
-    acc[key].profit += item.price - item.cost;
-    return acc;
-  }, {});
+function buildReportMarkup() {
+  const reportSales = previewReport && previewReport.type === 'sales' ? previewReport.sales : tx;
+  const reportProducts = previewReport && previewReport.type === 'sales' ? previewReport.products : products;
+  const { revenue, profit, cash: cashRevenue, qris: qrisRevenue } = totals(reportSales);
+  const cashSales = reportSales.filter((item) => item.payment === 'Cash').length;
+  const qrisSales = reportSales.filter((item) => item.payment === 'QRIS').length;
 
-  const allProducts = reportProducts.map((product) => {
-    const sales = productTotals[product.name] || { count: 0, revenue: 0, profit: 0 };
-    return { name: product.name, count: sales.count, revenue: sales.revenue, profit: sales.profit, color: product.color };
-  }).filter((item) => item.count > 0).sort((a, b) => b.profit - a.profit || b.revenue - a.revenue || b.count - a.count);
-  const topProducts = allProducts.slice(0, 5);
-  const totalProfit = topProducts.reduce((sum, item) => sum + Math.abs(item.profit), 0) || 1;
+  const allProducts = buildProductBreakdown(reportSales, reportProducts)
+    .sort((a, b) => b.count - a.count || b.revenue - a.revenue);
+
+  const grossMargin = revenue ? (profit / revenue) * 100 : 0;
 
   return `
     <div class="report-shell">
       <section class="report-hero">
         <div class="report-hero-heading">
           <div>
-            <h2 class="report-title">Event Report</h2>
-            <p class="report-subtitle">${hasReport ? 'Track booth cost and revenue with profit and distribution metrics.' : 'Import a saved sales report to view event revenue and profit.'}</p>
+            <h2 class="report-title">Sales overview</h2>
+            <p class="report-subtitle">${reportSales.length ? 'Revenue, profit, payment mix and best-selling products.' : 'Every sale you record will appear here.'}</p>
+          </div>
+        </div>
+        <div class="summary-grid">
+          ${summaryTile('Revenue', fmt(revenue), plural(reportSales.length, 'sale'))}
+          ${summaryTile('Profit', fmt(profit), `${grossMargin.toFixed(1)}% margin`)}
+          ${summaryTile('Cash', String(cashSales), `${fmt(cashRevenue)} via cash`)}
+          ${summaryTile('QRIS', String(qrisSales), `${fmt(qrisRevenue)} via QRIS`)}
+        </div>
+      </section>
+
+      <section class="report-section">
+        <div class="section-head">
+          <h2 class="report-title">Product distribution</h2>
+        </div>
+        ${allProducts.length ? buildProductRows(allProducts, reportSales.length) : '<div class="empty-state">No products yet.</div>'}
+      </section>
+    </div>`;
+}
+
+function buildEventMarkup() {
+  const { hasReport, sales: reportSales, products: reportProducts, eventCosts: reportCosts } = getEventView();
+  const totalCost = reportCosts.reduce((sum, cost) => sum + cost.amount, 0);
+  const { revenue, profit } = totals(reportSales);
+  const netProfit = revenue - totalCost;
+  const grossMargin = revenue ? (profit / revenue) * 100 : 0;
+
+  const topProducts = buildProductBreakdown(reportSales, reportProducts)
+    .filter((item) => item.count > 0)
+    .sort((a, b) => b.profit - a.profit || b.revenue - a.revenue || b.count - a.count)
+    .slice(0, 5);
+
+  return `
+    <div class="report-shell">
+      <section class="report-hero">
+        <div class="report-hero-heading">
+          <div>
+            <h2 class="report-title">Event overview</h2>
+            <p class="report-subtitle">${hasReport ? 'Revenue and profit after event expenses.' : 'Import sales to see event revenue and profit.'}</p>
           </div>
         </div>
         ${hasReport ? `
         <div class="summary-grid">
-          <div class="summary-tile">
-            <span class="label">Revenue</span>
-            <span class="value">${fmt(revenue)}</span>
-            <span class="hint">${reportSalesCount} sales</span>
-          </div>
-          <div class="summary-tile">
-            <span class="label">Profit</span>
-            <span class="value">${fmt(profit)}</span>
-            <span class="hint">Margin ${grossMargin.toFixed(0)}%</span>
-          </div>
-          <div class="summary-tile">
-            <span class="label">Event cost</span>
-            <span class="value">${fmt(totalCost)}</span>
-            <span class="hint">${reportCostCount} items</span>
-          </div>
-          <div class="summary-tile">
-            <span class="label">${netProfitLabel}</span>
-            <span class="${netProfitValueClass}">${fmt(netProfit)}</span>
-            <span class="hint">Revenue − costs</span>
-          </div>
+          ${summaryTile('Revenue', fmt(revenue), plural(reportSales.length, 'sale'))}
+          ${summaryTile('Profit', fmt(profit), `${grossMargin.toFixed(1)}% margin`)}
+          ${summaryTile('Expenses', fmt(totalCost), plural(reportCosts.length, 'expense'))}
+          ${summaryTile(netProfit < 0 ? 'Deficit' : 'Net profit', fmt(netProfit), 'Revenue − expenses', netProfit < 0 ? 'value deficit' : 'value')}
         </div>
         ` : ''}
       </section>
 
       <section class="report-section">
         <div class="section-head">
-          <h2 class="report-title">Expense</h2>
-          <button class="control-btn add-expense-btn" id="openAddExpenseBtn" type="button" aria-expanded="false" title="Add Expense"><span class="material-symbols-outlined control-icon">add</span></button>
+          <h2 class="report-title">Expenses</h2>
+          <button class="control-btn add-expense-btn" id="openAddExpenseBtn" type="button" title="Add expense" aria-label="Add expense"><span class="material-symbols-outlined control-icon">add</span></button>
         </div>
-        <!-- Expense input moved to a modal overlay: #expenseModalOverlay -->
-        ${reportCostCount ? `<div class="cost-list">${reportCosts.map((cost) => `
+        ${reportCosts.length ? `<div class="cost-list">${reportCosts.map((cost) => `
           <div class="cost-item">
             <div>
-              <strong>${cost.name}</strong>
+              <strong>${escapeHtml(cost.name)}</strong>
             </div>
             <div class="cost-actions">
               <span class="cost-amount">${fmt(cost.amount)}</span>
-              <button class="history-item-delete edit-cost" data-id="${cost.id}" title="Edit cost"><span class="material-symbols-outlined">edit</span></button>
-              <button class="history-item-delete delete-cost" data-id="${cost.id}" title="Remove cost"><span class="material-symbols-outlined">delete</span></button>
+              <button class="history-item-delete edit-cost" type="button" data-id="${escapeHtml(cost.id)}" title="Edit expense" aria-label="Edit expense"><span class="material-symbols-outlined">edit</span></button>
+              <button class="history-item-delete delete-cost" type="button" data-id="${escapeHtml(cost.id)}" title="Delete expense" aria-label="Delete expense"><span class="material-symbols-outlined">delete</span></button>
             </div>
-          </div>`).join('')}</div>` : '<div class="empty-state">No event costs yet. Add booth cost, transportation, or staffing expenses.</div>'}
+          </div>`).join('')}</div>` : '<div class="empty-state">No expenses yet. Add booth rental, transport or staffing costs.</div>'}
       </section>
 
       <section class="report-section">
         <div class="section-head">
-          <h2 class="report-title">Sales</h2>
-          <button class="control-btn add-expense-btn" id="eventImportBtn" type="button" title="Import"><span class="material-symbols-outlined control-icon">upload</span></button>
+          <h2 class="report-title">Top products</h2>
+          <button class="control-btn add-expense-btn" id="eventImportBtn" type="button" title="Import sales" aria-label="Import sales"><span class="material-symbols-outlined control-icon">download</span></button>
         </div>
-        ${topProducts.length ? `<div class="event-product-columns">${topProducts.map((item) => {
-          const share = totalProfit ? (Math.abs(item.profit) / totalProfit) * 100 : 0;
-          const barWidth = Math.max(8, share);
-          return `
-            <div class="product-row event-product-row">
-              <div class="performance-item">
-                <div class="performance-top">
-                  <strong>${item.name}</strong>
-                </div>
-                <div class="performance-details">
-                  <span class="distribution-sales">${item.count} sales · ${fmt(item.revenue)} revenue</span>
-                </div>
-              </div>
-              <div class="distribution-item">
-                <div class="distribution-line">
-                  <span class="profit">${fmt(item.profit)} Profit</span>
-                  <span class="distribution-value">${share.toFixed(0)}%</span>
-                </div>
-                <div class="distribution-track">
-                  <div class="distribution-fill" style="width:${barWidth}%;background:${item.color || 'var(--highlight)'}"></div>
-                </div>
-              </div>
-            </div>`;
-        }).join('')}</div>` : '<div class="empty-state">No product sales yet for event revenue.</div>'}
+        ${topProducts.length ? buildProductRows(topProducts, reportSales.length) : '<div class="empty-state">No sales imported yet.</div>'}
       </section>
     </div>`;
 }
@@ -662,126 +605,80 @@ function resetExpenseModal() {
   if (overlay) overlay.classList.remove('open');
   // restore scrolling when closing the expense modal
   try { unlockBodyScroll(); } catch (e) { /* ignore */ }
-  if (title) title.textContent = 'Add Expense';
+  if (title) title.textContent = 'Add expense';
   if (nameInput) nameInput.value = '';
   if (amountInput) amountInput.value = '';
   if (addBtn) {
-    addBtn.textContent = 'Add Expense';
+    addBtn.textContent = 'Add expense';
     addBtn.disabled = true;
   }
 }
 
-function wireEventActions() {
+// Expense modal controls are static markup, so they are wired exactly once.
+function initExpenseModal() {
   const addCostBtn = document.getElementById('addCostBtn') as HTMLButtonElement | null;
   const costName = document.getElementById('eventCostName') as HTMLInputElement | null;
   const costAmount = document.getElementById('eventCostAmount') as HTMLInputElement | null;
-  const openAddExpenseBtn = document.getElementById('openAddExpenseBtn') as HTMLButtonElement | null;
-  const expensePopover = document.getElementById('expensePopover') as HTMLDivElement | null;
 
-  const updateExpenseButton = () => {
+  costName?.addEventListener('input', updateExpenseButtonState);
+  costAmount?.addEventListener('input', () => {
+    costAmount.value = formatInputNumber(costAmount.value, loadSettings().currency);
     updateExpenseButtonState();
-  };
-
-  if (openAddExpenseBtn && expensePopover) {
-    openAddExpenseBtn.onclick = (event) => {
-      event.stopPropagation();
-      const isOpen = expensePopover.classList.toggle('open');
-      expensePopover.hidden = !isOpen;
-      openAddExpenseBtn.setAttribute('aria-expanded', String(isOpen));
-      updateExpenseButton();
-    };
-  }
-
-  if (costName) {
-    costName.addEventListener('input', updateExpenseButton);
-  }
-
-  if (costAmount) {
-    costAmount.addEventListener('input', () => {
-      const nextValue = formatInputNumber(costAmount.value, loadSettings().currency);
-      costAmount.value = nextValue;
-      updateExpenseButton();
-    });
-  }
+  });
 
   if (addCostBtn && costName && costAmount) {
-    updateExpenseButton();
-    addCostBtn.onclick = () => {
+    addCostBtn.addEventListener('click', () => {
       const name = costName.value.trim();
       const amount = parseCurrencyInput(costAmount.value, loadSettings().currency);
       if (!name || Number.isNaN(amount) || amount <= 0) return;
 
       if (editingExpenseId) {
-        const cost = eventCosts.find((item) => item.id === editingExpenseId);
+        const cost = getEventView().eventCosts.find((item) => item.id === editingExpenseId);
         if (cost) {
           cost.name = name;
           cost.amount = amount;
-          saveEventCosts();
+          saveActiveEventCosts();
         }
+        resetExpenseModal();
+        render();
       } else {
+        resetExpenseModal();
         addEventCost(name, amount);
       }
-
-      resetExpenseModal();
-      if (openAddExpenseBtn) openAddExpenseBtn.setAttribute('aria-expanded', 'false');
-      if (el.eventReport) {
-        el.eventReport.innerHTML = buildEventMarkup();
-        wireEventActions();
-      }
-    };
-  }
-
-  // Wire the import button inside the event markup (it's rendered dynamically)
-  const eventImportBtnEl = document.getElementById('eventImportBtn') as HTMLButtonElement | null;
-  if (eventImportBtnEl) {
-    eventImportBtnEl.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openImportModal();
     });
   }
 
-  // Wire the expense modal triggers and close handlers
-  const expenseOverlay = document.getElementById('expenseModalOverlay') as HTMLDivElement | null;
-  const expenseClose = document.getElementById('expenseModalCloseBtn') as HTMLButtonElement | null;
-  const expenseCancel = document.getElementById('expenseModalCancelBtn') as HTMLButtonElement | null;
-
-  if (openAddExpenseBtn && expenseOverlay) {
-    openAddExpenseBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      resetExpenseModal();
-      expenseOverlay.classList.add('open');
-      lockBodyScroll();
-      updateExpenseButtonState();
-    });
-  }
-
-  if (expenseClose) expenseClose.addEventListener('click', () => { resetExpenseModal(); });
-  if (expenseCancel) expenseCancel.addEventListener('click', () => { resetExpenseModal(); });
-  if (expenseOverlay) expenseOverlay.addEventListener('click', (ev) => { if (ev.target === expenseOverlay) resetExpenseModal(); });
-
-  document.querySelectorAll('.edit-cost').forEach((button) => {
-    button.addEventListener('click', (event) => {
-      const target = event.currentTarget as HTMLElement;
-      const id = target.getAttribute('data-id');
-      if (id) openExpenseModalForEdit(id);
-    });
-  });
-
-  document.querySelectorAll('.delete-cost').forEach((button) => {
-    button.addEventListener('click', (event) => {
-      const target = event.currentTarget as HTMLElement;
-      const id = target.getAttribute('data-id');
-      if (id) removeEventCost(id);
-    });
-  });
+  el.expenseModalCloseBtn?.addEventListener('click', resetExpenseModal);
+  el.expenseModalCancelBtn?.addEventListener('click', resetExpenseModal);
+  el.expenseModalOverlay?.addEventListener('click', (ev) => { if (ev.target === el.expenseModalOverlay) resetExpenseModal(); });
 }
 
-function shade(hex: string, amt: number) {
-  const n = parseInt(hex.slice(1), 16);
-  const r = Math.max(0, Math.min(255, (n >> 16) + amt));
-  const g = Math.max(0, Math.min(255, ((n >> 8) & 255) + amt));
-  const b = Math.max(0, Math.min(255, (n & 255) + amt));
-  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+// The event card is re-rendered on every update, so its buttons are handled by delegation.
+function initEventCardActions() {
+  el.eventReport?.addEventListener('click', (event) => {
+    const target = (event.target as HTMLElement).closest('button');
+    if (!target) return;
+
+    if (target.id === 'openAddExpenseBtn') {
+      event.stopPropagation();
+      resetExpenseModal();
+      el.expenseModalOverlay.classList.add('open');
+      lockBodyScroll();
+      updateExpenseButtonState();
+      return;
+    }
+
+    if (target.id === 'eventImportBtn') {
+      event.stopPropagation();
+      openImportModal();
+      return;
+    }
+
+    const id = target.getAttribute('data-id');
+    if (!id) return;
+    if (target.classList.contains('edit-cost')) openExpenseModalForEdit(id);
+    else if (target.classList.contains('delete-cost')) removeEventCost(id);
+  });
 }
 
 function makeTiles() {
@@ -802,10 +699,10 @@ function makeTiles() {
     card.innerHTML = `
         <div class="tile-head">
           <div class="product-meta">
-            <div class="product-name">${p.name}</div>
+            <div class="product-name">${escapeHtml(p.name)}</div>
             <div class="product-price">${fmt(p.price)}</div>
           </div>
-          <button class="settings-btn" aria-label="Edit ${p.name}"><span class="material-symbols-outlined">edit</span></button>
+          <button class="settings-btn" aria-label="Edit ${escapeHtml(p.name)}"><span class="material-symbols-outlined">edit</span></button>
         </div>
         <div class="tile-bottom">
           <div class="payment-quarter">
@@ -878,9 +775,9 @@ function removeLastMatching(product: string, payment: string) {
   showToast('Nothing to remove');
 }
 
-function buildHistoryMarkup() {
-  const savedReports = loadSavedReports().filter((r) => r.type === 'sales');
-  const savedEventReports = loadSavedReports().filter((r) => r.type === 'event');
+function buildHistoryMarkup(allReports: SavedReport[] = loadSavedReports()) {
+  const savedReports = allReports.filter((r) => r.type === 'sales');
+  const savedEventReports = allReports.filter((r) => r.type === 'event');
   const recentPurchases = tx.slice(-5).reverse();
 
   const renderReportList = (reports: SavedReport[]) => {
@@ -888,13 +785,13 @@ function buildHistoryMarkup() {
     return reports
       .map(
         (report) => `
-          <div class="history-item" data-id="${report.id}" data-type="${report.type}" tabindex="0" role="button">
+          <div class="history-item" data-id="${escapeHtml(report.id)}" data-type="${report.type}" tabindex="0" role="button">
             <div>
-              <strong>${report.name}</strong>
+              <strong>${escapeHtml(report.name)}</strong>
               <div class="history-meta">${new Date(report.createdAt).toLocaleString()}</div>
             </div>
             <div class="history-item-actions">
-              <button class="icon-btn history-item-delete" type="button" title="Delete report" data-delete-id="${report.id}">
+              <button class="icon-btn history-item-delete" type="button" title="Delete report" data-delete-id="${escapeHtml(report.id)}">
                 <span class="material-symbols-outlined">delete</span>
               </button>
             </div>
@@ -913,7 +810,7 @@ function buildHistoryMarkup() {
           event.stopPropagation();
           const reportId = deleteBtn.getAttribute('data-delete-id');
           if (!reportId) return;
-          deleteSavedReport(reportId);
+          confirmDeleteSavedReport(reportId);
         });
       }
 
@@ -923,18 +820,8 @@ function buildHistoryMarkup() {
         const report = loadSavedReports().find((r) => r.id === reportId);
         if (!report) return;
         previewReport = report;
-        const targetTab = report.type === 'event' ? 'eventScreen' : 'reportsScreen';
-        const tabButton = document.querySelector(`.nav button[data-tab="${targetTab}"]`) as HTMLButtonElement | null;
-        if (tabButton) {
-          document.querySelectorAll('.nav button').forEach((x) => x.classList.remove('active'));
-          tabButton.classList.add('active');
-          openScreen(targetTab);
-          if (el.stats) el.stats.style.display = 'none';
-          hideScreenActions(targetTab);
-          render();
-        } else {
-          render();
-        }
+        openScreen(report.type === 'event' ? 'eventScreen' : 'reportsScreen');
+        render();
       });
 
       item.addEventListener('keydown', (event) => {
@@ -948,14 +835,14 @@ function buildHistoryMarkup() {
   };
 
   const renderPurchaseList = (purchases: SaleRecord[]) => {
-    if (!purchases.length) return '<div class="empty-state">No recent purchases yet.</div>';
+    if (!purchases.length) return '<div class="empty-state">No sales recorded yet.</div>';
     return purchases
       .map(
         (purchase) => `
           <div class="history-item">
             <div>
-              <strong>${purchase.product}</strong>
-              <div class="history-meta">${purchase.payment} · ${fmt(purchase.price)}</div>
+              <strong>${escapeHtml(purchase.product)}</strong>
+              <div class="history-meta">${escapeHtml(purchase.payment)} · ${fmt(purchase.price)}</div>
             </div>
             <span class="history-badge">${new Date(purchase.timestamp).toLocaleTimeString()}</span>
           </div>
@@ -974,30 +861,35 @@ function buildHistoryMarkup() {
 function renderProductHistory() {
   if (!el.productHistoryList) return;
   // Use preserved view order if user is currently on the product history screen
+  // Products created after the order was captured are appended so they never disappear from the list.
   const orderedHistory = productHistoryViewOrder
-    ? productHistoryViewOrder.map((name) => productHistory.find((p) => p.name === name)).filter(Boolean) as typeof productHistory
+    ? [
+        ...(productHistoryViewOrder.map((name) => productHistory.find((p) => p.name === name)).filter(Boolean) as typeof productHistory),
+        ...productHistory.filter((p) => !productHistoryViewOrder!.includes(p.name)),
+      ]
     : productHistory;
+  const activeNames = new Set(products.map((item) => item.name));
 
   const rows = orderedHistory.length
     ? orderedHistory
         .map((product) => {
-          const isActive = products.some((item) => item.name === product.name);
-          const productIndex = products.findIndex((item) => item.name === product.name);
+          const isActive = activeNames.has(product.name);
+          const name = escapeHtml(product.name);
           return `
-            <div class="product-history-item" style="--product-color: ${product.color};">
+            <div class="product-history-item" style="--product-color: ${escapeHtml(product.color)};">
               <div class="product-row product-row-compact">
                 <div class="product-history-main">
-                  <strong>${product.name}</strong>
-                  <span class="history-meta">Price ${fmt(product.price)} · Cost ${fmt(product.cost)}</span>
+                  <strong>${name}</strong>
+                  <span class="history-meta"><span class="nowrap">Price ${fmt(product.price)}</span> · <span class="nowrap">Cost ${fmt(product.cost)}</span></span>
                 </div>
                 <div class="product-history-actions">
-                  <button class="product-edit-btn" type="button" data-name="${product.name}" title="Edit ${product.name}">
+                  <button class="product-edit-btn" type="button" data-name="${name}" title="Edit ${name}">
                     <span class="material-symbols-outlined">edit</span>
                   </button>
-                  <button class="icon-btn product-delete-btn" type="button" data-name="${product.name}" title="Delete ${product.name}">
+                  <button class="icon-btn product-delete-btn" type="button" data-name="${name}" title="Delete ${name}">
                     <span class="material-symbols-outlined">delete</span>
                   </button>
-                  <button class="product-toggle-btn" type="button" data-name="${product.name}" data-active="${isActive}" aria-pressed="${isActive}">
+                  <button class="product-toggle-btn" type="button" data-name="${name}" data-active="${isActive}" aria-pressed="${isActive}">
                     <span class="toggle-label">${isActive ? 'Active' : 'Add'}</span>
                   </button>
                 </div>
@@ -1024,25 +916,7 @@ function renderProductHistory() {
         showToast(`${name} not found`);
         return;
       }
-
-      // Open editor in "add" mode but prefill with history data so inactive products can be edited
-      const hist = productHistory[historyIndex];
-      // Remember where the user came from so the back button returns correctly
-      const currentScreen = document.querySelector('.screen.active')?.id || 'salesScreen';
-      productEditorReturnScreen = currentScreen === 'productEditScreen' ? productEditorReturnScreen : currentScreen;
-      editingHistoryIndex = historyIndex;
-      editingHistoryOldName = hist.name;
-      editingIndex = -1;
-      const title = document.getElementById('productEditTitle') as HTMLHeadingElement;
-      if (title) title.textContent = 'Edit product';
-      el.editName.value = hist.name;
-      el.editPrice.value = formatInputNumber(String(hist.price), loadSettings().currency);
-      el.editCost.value = formatInputNumber(String(hist.cost), loadSettings().currency);
-      el.editColorHex.textContent = hist.color.toUpperCase();
-      el.editColorHexInput.value = hist.color.toUpperCase();
-      el.removeProductBtn.style.display = 'none';
-      updateColorInputs(el.editColorHex.textContent || '#F76495');
-      openScreen('productEditScreen');
+      openProductEditor(-1, historyIndex);
     });
   });
 
@@ -1114,25 +988,27 @@ function renderProductHistory() {
   });
 }
 
-function renderSavedSalesReportHistory() {
-  if (!el.salesReportHistoryList) return;
-  const savedReports = loadSavedReports().filter((report) => report.type === 'sales');
+function renderSavedReportHistory(type: 'sales' | 'event', allReports: SavedReport[] = loadSavedReports()) {
+  const list = type === 'sales' ? el.salesReportHistoryList : el.eventReportHistoryList;
+  if (!list) return;
+  const savedReports = allReports.filter((report) => report.type === type);
+  const targetScreen = type === 'sales' ? 'reportsScreen' : 'eventScreen';
 
   const rows = savedReports.length
     ? savedReports
         .map(
           (report) => `
-            <div class="sales-report-history-item" data-id="${report.id}" tabindex="0" role="button">
+            <div class="sales-report-history-item" data-id="${escapeHtml(report.id)}" tabindex="0" role="button">
               <div class="product-row product-row-compact">
                 <div class="product-history-main">
-                  <strong>${report.name}</strong>
+                  <strong>${escapeHtml(report.name)}</strong>
                   <span class="history-meta">${new Date(report.createdAt).toLocaleString()}</span>
                 </div>
                 <div class="product-history-actions">
-                  <button class="icon-btn sales-report-edit-btn" type="button" data-edit-id="${report.id}" title="Rename report">
+                  <button class="icon-btn sales-report-edit-btn" type="button" title="Rename report">
                     <span class="material-symbols-outlined">edit</span>
                   </button>
-                  <button class="icon-btn history-item-delete" type="button" data-delete-id="${report.id}" title="Delete report">
+                  <button class="icon-btn history-item-delete" type="button" title="Delete report">
                     <span class="material-symbols-outlined">delete</span>
                   </button>
                 </div>
@@ -1141,121 +1017,37 @@ function renderSavedSalesReportHistory() {
           `,
         )
         .join('')
-    : '<div class="empty-state">No saved sales reports yet.</div>';
+    : `<div class="empty-state">No saved ${type} reports yet.</div>`;
 
-  el.salesReportHistoryList.innerHTML = rows;
-  el.salesReportHistoryList.querySelectorAll<HTMLElement>('.sales-report-history-item').forEach((item) => {
+  list.innerHTML = rows;
+  list.querySelectorAll<HTMLElement>('.sales-report-history-item').forEach((item) => {
     const reportId = item.getAttribute('data-id');
     if (!reportId) return;
 
-    const editBtn = item.querySelector<HTMLButtonElement>('.sales-report-edit-btn');
-    if (editBtn) {
-      editBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        const report = loadSavedReports().find((entry) => entry.id === reportId);
-        if (!report) return;
-        renamingSavedReportId = reportId;
-        el.saveModalTitle.textContent = 'Rename report';
-        el.saveModalInput.value = report.name;
-        el.saveModalInput.placeholder = 'New report name';
-        el.saveModalSaveBtn.textContent = 'Rename';
-        el.saveModalSaveBtn.disabled = report.name.trim().length === 0;
-        el.saveModalOverlay.classList.add('open');
-        el.saveModalInput.focus();
-      });
-    }
+    item.querySelector<HTMLButtonElement>('.sales-report-edit-btn')?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const report = loadSavedReports().find((entry) => entry.id === reportId);
+      if (!report) return;
+      renamingSavedReportId = reportId;
+      el.saveModalTitle.textContent = 'Rename report';
+      el.saveModalInput.value = report.name;
+      el.saveModalInput.placeholder = 'New report name';
+      el.saveModalSaveBtn.textContent = 'Rename';
+      el.saveModalSaveBtn.disabled = report.name.trim().length === 0;
+      el.saveModalOverlay.classList.add('open');
+      el.saveModalInput.focus();
+    });
 
-    const deleteBtn = item.querySelector<HTMLButtonElement>('.history-item-delete');
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        deleteSavedReport(reportId);
-      });
-    }
+    item.querySelector<HTMLButtonElement>('.history-item-delete')?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      confirmDeleteSavedReport(reportId);
+    });
 
     item.addEventListener('click', () => {
       const report = loadSavedReports().find((entry) => entry.id === reportId);
       if (!report) return;
       previewReport = report;
-      openScreen('reportsScreen');
-      hideScreenActions('reportsScreen');
-      render();
-    });
-
-    item.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        item.click();
-      }
-    });
-  });
-}
-
-function renderSavedEventReportHistory() {
-  if (!el.eventReportHistoryList) return;
-  const savedReports = loadSavedReports().filter((report) => report.type === 'event');
-
-  const rows = savedReports.length
-    ? savedReports
-        .map(
-          (report) => `
-            <div class="sales-report-history-item" data-id="${report.id}" tabindex="0" role="button">
-              <div class="product-row product-row-compact">
-                <div class="product-history-main">
-                  <strong>${report.name}</strong>
-                  <span class="history-meta">${new Date(report.createdAt).toLocaleString()}</span>
-                </div>
-                <div class="product-history-actions">
-                  <button class="icon-btn sales-report-edit-btn" type="button" data-edit-id="${report.id}" title="Rename report">
-                    <span class="material-symbols-outlined">edit</span>
-                  </button>
-                  <button class="icon-btn history-item-delete" type="button" data-delete-id="${report.id}" title="Delete report">
-                    <span class="material-symbols-outlined">delete</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          `,
-        )
-        .join('')
-    : '<div class="empty-state">No saved event reports yet.</div>';
-
-  el.eventReportHistoryList.innerHTML = rows;
-  el.eventReportHistoryList.querySelectorAll<HTMLElement>('.sales-report-history-item').forEach((item) => {
-    const reportId = item.getAttribute('data-id');
-    if (!reportId) return;
-
-    const editBtn = item.querySelector<HTMLButtonElement>('.sales-report-edit-btn');
-    if (editBtn) {
-      editBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        const report = loadSavedReports().find((entry) => entry.id === reportId);
-        if (!report) return;
-        renamingSavedReportId = reportId;
-        el.saveModalTitle.textContent = 'Rename report';
-        el.saveModalInput.value = report.name;
-        el.saveModalInput.placeholder = 'New report name';
-        el.saveModalSaveBtn.textContent = 'Rename';
-        el.saveModalSaveBtn.disabled = report.name.trim().length === 0;
-        el.saveModalOverlay.classList.add('open');
-        el.saveModalInput.focus();
-      });
-    }
-
-    const deleteBtn = item.querySelector<HTMLButtonElement>('.history-item-delete');
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        deleteSavedReport(reportId);
-      });
-    }
-
-    item.addEventListener('click', () => {
-      const report = loadSavedReports().find((entry) => entry.id === reportId);
-      if (!report) return;
-      previewReport = report;
-      openScreen('eventScreen');
-      hideScreenActions('eventScreen');
+      openScreen(targetScreen);
       render();
     });
 
@@ -1306,7 +1098,7 @@ function buildCompareCard(report: SavedReport, label: string, comparisonReport?:
     <div class="compare-card">
       <div class="compare-card-header">
         ${label ? `<span class="compare-card-tag">${label}</span>` : ''}
-        <h3>${report.name}</h3>
+        <h3>${escapeHtml(report.name)}</h3>
       </div>
       <div class="compare-metric ${revenueWinner ? 'compare-metric-winner' : ''}"><span>Revenue</span><span>${fmt(revenue)}</span></div>
       <div class="compare-metric ${profitWinner ? 'compare-metric-winner' : ''}"><span>Profit</span><span>${fmt(profit)}</span></div>
@@ -1320,7 +1112,7 @@ function buildCompareCard(report: SavedReport, label: string, comparisonReport?:
               (item) => `
                 <div class="compare-product-row">
                   <div class="compare-product-name">
-                    <strong>${item.name}</strong>
+                    <strong>${escapeHtml(item.name)}</strong>
                   </div>
                   <div class="compare-product-side ${item.winner ? 'winner' : ''}">
                     <span class="report-side-value">${item.value}</span>
@@ -1375,9 +1167,9 @@ function buildEventCompareCard(report: SavedReport, label: string, comparisonRep
     <div class="compare-card">
       <div class="compare-card-header">
         ${label ? `<span class="compare-card-tag">${label}</span>` : ''}
-        <h3>${report.name}</h3>
+        <h3>${escapeHtml(report.name)}</h3>
       </div>
-      <div class="compare-metric ${costWinner ? 'compare-metric-winner' : ''}"><span>Event cost</span><span>${fmt(eventCost)}</span></div>
+      <div class="compare-metric ${costWinner ? 'compare-metric-winner' : ''}"><span>Expenses</span><span>${fmt(eventCost)}</span></div>
       <div class="compare-metric ${revenueWinner ? 'compare-metric-winner' : ''}"><span>Revenue</span><span>${fmt(revenue)}</span></div>
       <div class="compare-metric ${profitWinner ? 'compare-metric-winner' : ''}"><span>Profit</span><span>${fmt(profit)}</span></div>
       <div class="compare-metric ${netProfitWinner ? 'compare-metric-winner' : ''}"><span>${netMetricLabel}</span><span class="${netMetricValueClass}">${fmt(netProfit)}</span></div>
@@ -1388,7 +1180,7 @@ function buildEventCompareCard(report: SavedReport, label: string, comparisonRep
             .map(
               (item) => `
                 <div class="compare-expense-row ${item.winner ? 'compare-expense-winner' : ''}">
-                  <span class="compare-expense-name">${item.name}</span>
+                  <span class="compare-expense-name">${escapeHtml(item.name)}</span>
                   <span class="compare-expense-value">${fmt(item.value)}</span>
                 </div>
               `,
@@ -1404,7 +1196,7 @@ function buildEventCompareCard(report: SavedReport, label: string, comparisonRep
               (item) => `
                 <div class="compare-product-row">
                   <div class="compare-product-name">
-                    <strong>${item.name}</strong>
+                    <strong>${escapeHtml(item.name)}</strong>
                   </div>
                   <div class="compare-product-side ${item.winner ? 'winner' : ''}">
                     <span class="report-side-value">${item.value}</span>
@@ -1421,20 +1213,13 @@ function buildEventCompareCard(report: SavedReport, label: string, comparisonRep
 
 function renderCompareSalesPage() {
   if (!el.compareSalesCard) return;
-  const savedIds = compareConfirmedIds.length ? compareConfirmedIds : (() => {
-    try {
-      return JSON.parse(el.compareSalesCard.dataset.compareIds || '[]');
-    } catch {
-      return [] as string[];
-    }
-  })();
+  const savedIds = compareConfirmedIds.sales;
   const selected = loadSavedReports().filter((report) => report.type === 'sales' && savedIds.includes(report.id));
   if (selected.length < 2) {
     el.compareSalesCard.innerHTML = '<div class="empty-state">Select two saved sales reports to compare.</div>';
     return;
   }
 
-  el.compareSalesCard.dataset.compareIds = JSON.stringify(savedIds);
   const [left, right] = selected;
   const leftSummary = getReportSummary(left);
   const rightSummary = getReportSummary(right);
@@ -1491,20 +1276,13 @@ function renderCompareSalesPage() {
 
 function renderCompareEventPage() {
   if (!el.compareEventCard) return;
-  const savedIds = compareConfirmedIds.length ? compareConfirmedIds : (() => {
-    try {
-      return JSON.parse(el.compareEventCard.dataset.compareIds || '[]');
-    } catch {
-      return [] as string[];
-    }
-  })();
+  const savedIds = compareConfirmedIds.event;
   const selected = loadSavedReports().filter((report) => report.type === 'event' && savedIds.includes(report.id));
   if (selected.length < 2) {
     el.compareEventCard.innerHTML = '<div class="empty-state">Select two saved event reports to compare.</div>';
     return;
   }
 
-  el.compareEventCard.dataset.compareIds = JSON.stringify(savedIds);
   const [left, right] = selected;
   const leftSummary = getReportSummary(left);
   const rightSummary = getReportSummary(right);
@@ -1559,8 +1337,7 @@ function renderCompareEventPage() {
   `;
 }
 
-let compareReportIds: string[] = [];
-let compareConfirmedIds: string[] = [];
+const compareConfirmedIds: Record<'sales' | 'event', string[]> = { sales: [], event: [] };
 let compareDraftIds: string[] = [];
 let compareModalType: 'sales' | 'event' = 'sales';
 let productHistoryViewOrder: string[] | null = null;
@@ -1576,9 +1353,9 @@ function renderCompareSelectionList(type: 'sales' | 'event') {
   el.compareModalList.innerHTML = reports
     .map((report) => `
       <label class="import-item">
-        <input type="checkbox" value="${report.id}" ${compareDraftIds.includes(report.id) ? 'checked' : ''} />
+        <input type="checkbox" value="${escapeHtml(report.id)}" ${compareDraftIds.includes(report.id) ? 'checked' : ''} />
         <div>
-          <strong>${report.name}</strong>
+          <strong>${escapeHtml(report.name)}</strong>
           <small>${new Date(report.createdAt).toLocaleString()}</small>
         </div>
       </label>
@@ -1588,11 +1365,11 @@ function renderCompareSelectionList(type: 'sales' | 'event') {
 
 function openCompareModal(type: 'sales' | 'event') {
   compareModalType = type;
-  compareDraftIds = [...compareConfirmedIds];
-  compareReportIds = [...compareConfirmedIds];
+  compareDraftIds = [...compareConfirmedIds[type]];
   const title = type === 'sales' ? 'Compare sales' : 'Compare events';
   if (el.compareModalTitle) el.compareModalTitle.textContent = title;
   renderCompareSelectionList(type);
+  el.compareModalConfirmBtn.disabled = compareDraftIds.length !== 2;
   if (el.compareModalOverlay) {
     el.compareModalOverlay.classList.add('open');
   }
@@ -1618,23 +1395,14 @@ function confirmCompareSelection() {
   }
 
   compareDraftIds = checked;
-  compareConfirmedIds = [...checked];
-  compareReportIds = [...checked];
-  if (compareModalType === 'sales' && el.compareSalesCard) {
-    el.compareSalesCard.dataset.compareIds = JSON.stringify(checked);
-  }
-  if (compareModalType === 'event' && el.compareEventCard) {
-    el.compareEventCard.dataset.compareIds = JSON.stringify(checked);
-  }
+  compareConfirmedIds[compareModalType] = [...checked];
   closeCompareModal(false);
   if (compareModalType === 'sales') {
     renderCompareSalesPage();
     openScreen('compareSalesScreen');
-    hideScreenActions('compareSalesScreen');
   } else {
     renderCompareEventPage();
     openScreen('compareEventScreen');
-    hideScreenActions('compareEventScreen');
   }
   render();
 }
@@ -1648,16 +1416,16 @@ function render(bump = false) {
     .join('');
   setTimeout(() => document.querySelectorAll('.stat').forEach((x) => x.classList.remove('bump')), 220);
 
-  document.querySelectorAll('.tile').forEach((tile) => {
-    const product = tile.getAttribute('data-product') || '';
-    const cashCount = tx.filter((t) => t.product === product && t.payment === 'Cash').length;
-    const qrisCount = tx.filter((t) => t.product === product && t.payment === 'QRIS').length;
-    const cashValue = tile.querySelector('.payment-value[data-counter-for="Cash"]') as HTMLSpanElement | null;
-    const cashWrap = tile.querySelector('.payment-value-wrap') as HTMLDivElement | null;
-    const qrisValue = tile.querySelector('.payment-value[data-counter-for="QRIS"]') as HTMLSpanElement | null;
-    const qrisWrap = tile.querySelectorAll('.payment-value-wrap')[1] as HTMLDivElement | null;
-    if (cashValue) cashValue.textContent = `${cashCount}`;
-    if (qrisValue) qrisValue.textContent = `${qrisCount}`;
+  const counts = new Map<string, number>();
+  for (const sale of tx) {
+    const key = `${sale.payment}\u0000${sale.product}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  document.querySelectorAll<HTMLElement>('.tile').forEach((tile) => {
+    const product = tile.dataset.product || '';
+    tile.querySelectorAll<HTMLElement>('.payment-value[data-counter-for]').forEach((value) => {
+      value.textContent = `${counts.get(`${value.dataset.counterFor}\u0000${product}`) ?? 0}`;
+    });
   });
 
   if (bump && animatedProduct && animatedPayment) {
@@ -1683,14 +1451,12 @@ function render(bump = false) {
   }
 
   el.report.innerHTML = buildReportMarkup();
-  if (el.eventReport) {
-    el.eventReport.innerHTML = buildEventMarkup();
-    wireEventActions();
-  }
-  buildHistoryMarkup();
+  if (el.eventReport) el.eventReport.innerHTML = buildEventMarkup();
+  const savedReports = loadSavedReports();
+  buildHistoryMarkup(savedReports);
   renderProductHistory();
-  renderSavedSalesReportHistory();
-  renderSavedEventReportHistory();
+  renderSavedReportHistory('sales', savedReports);
+  renderSavedReportHistory('event', savedReports);
   updatePreviewHeaders();
 }
 
@@ -1712,9 +1478,9 @@ function renderImportList() {
         .map(
           (report) => `
               <label class="import-item">
-                <input type="checkbox" value="${report.id}" />
+                <input type="checkbox" value="${escapeHtml(report.id)}" />
                 <div>
-                  <strong>${report.name}</strong>
+                  <strong>${escapeHtml(report.name)}</strong>
                   <small>${new Date(report.createdAt).toLocaleString()}</small>
                 </div>
               </label>
@@ -1752,11 +1518,13 @@ function closeImportModal() {
 }
 
 function updatePreviewHeaders() {
+  const activeScreen = document.querySelector('.screen.active')?.id;
+  if (activeScreen) hideScreenActions(activeScreen);
   const isReportPreview = Boolean(previewReport && previewReport.type === 'sales');
   const isEventPreview = Boolean(previewReport && previewReport.type === 'event');
 
   if (el.reportPageTitle) el.reportPageTitle.textContent = isReportPreview ? previewReport!.name : 'Reports';
-  if (el.eventPageTitle) el.eventPageTitle.textContent = isEventPreview ? previewReport!.name : 'Event Report';
+  if (el.eventPageTitle) el.eventPageTitle.textContent = isEventPreview ? previewReport!.name : 'Event';
 
   if (el.reportBackBtn) el.reportBackBtn.style.display = isReportPreview ? 'inline-grid' : 'none';
   if (el.eventBackBtn) el.eventBackBtn.style.display = isEventPreview ? 'inline-grid' : 'none';
@@ -1764,61 +1532,20 @@ function updatePreviewHeaders() {
   if (el.eventDeleteBtn) el.eventDeleteBtn.style.display = isEventPreview ? 'inline-grid' : 'none';
 }
 
-if (el.reportBackBtn) {
-  el.reportBackBtn.addEventListener('click', () => {
-    previewReport = null;
-    document.querySelectorAll('.nav button').forEach((button) => button.classList.remove('active'));
-    const historyButton = document.querySelector('.nav button[data-tab="historyScreen"]') as HTMLButtonElement | null;
-    if (historyButton) historyButton.classList.add('active');
-    openScreen('historyScreen');
-    if (el.stats) el.stats.style.display = 'none';
-    hideScreenActions('historyScreen');
-    render();
-  });
+function returnToHistory() {
+  previewReport = null;
+  openScreen('historyScreen');
+  render();
 }
 
-if (el.eventBackBtn) {
-  el.eventBackBtn.addEventListener('click', () => {
-    previewReport = null;
-    document.querySelectorAll('.nav button').forEach((button) => button.classList.remove('active'));
-    const historyButton = document.querySelector('.nav button[data-tab="historyScreen"]') as HTMLButtonElement | null;
-    if (historyButton) historyButton.classList.add('active');
-    openScreen('historyScreen');
-    if (el.stats) el.stats.style.display = 'none';
-    hideScreenActions('historyScreen');
-    render();
-  });
-}
-
-if (el.reportDeleteBtn) {
-  el.reportDeleteBtn.addEventListener('click', () => {
-    if (!previewReport || previewReport.type !== 'sales') return;
-    deleteSavedReport(previewReport.id);
-    previewReport = null;
-    document.querySelectorAll('.nav button').forEach((button) => button.classList.remove('active'));
-    const historyButton = document.querySelector('.nav button[data-tab="historyScreen"]') as HTMLButtonElement | null;
-    if (historyButton) historyButton.classList.add('active');
-    openScreen('historyScreen');
-    if (el.stats) el.stats.style.display = 'none';
-    hideScreenActions('historyScreen');
-    render();
-  });
-}
-
-if (el.eventDeleteBtn) {
-  el.eventDeleteBtn.addEventListener('click', () => {
-    if (!previewReport || previewReport.type !== 'event') return;
-    deleteSavedReport(previewReport.id);
-    previewReport = null;
-    document.querySelectorAll('.nav button').forEach((button) => button.classList.remove('active'));
-    const historyButton = document.querySelector('.nav button[data-tab="historyScreen"]') as HTMLButtonElement | null;
-    if (historyButton) historyButton.classList.add('active');
-    openScreen('historyScreen');
-    if (el.stats) el.stats.style.display = 'none';
-    hideScreenActions('historyScreen');
-    render();
-  });
-}
+el.reportBackBtn?.addEventListener('click', returnToHistory);
+el.eventBackBtn?.addEventListener('click', returnToHistory);
+el.reportDeleteBtn?.addEventListener('click', () => {
+  if (previewReport?.type === 'sales') confirmDeleteSavedReport(previewReport.id, returnToHistory);
+});
+el.eventDeleteBtn?.addEventListener('click', () => {
+  if (previewReport?.type === 'event') confirmDeleteSavedReport(previewReport.id, returnToHistory);
+});
 
 function closeOptionsMenu() {
   el.optionsMenu.classList.remove('open');
@@ -1833,19 +1560,27 @@ function hideScreenActions(screenId: string) {
   el.optionsBtn.style.display = showOptions ? 'inline-grid' : 'none';
   const showAddProduct = screenId === 'salesScreen' || screenId === 'productHistoryScreen';
   el.openProductEdit.style.display = showAddProduct ? 'inline-grid' : 'none';
-  const showReset = screenId !== 'historyScreen' && screenId !== 'settingsScreen' && screenId !== 'productHistoryScreen';
+  const isPreview = Boolean(previewReport && ((screenId === 'reportsScreen' && previewReport.type === 'sales') || (screenId === 'eventScreen' && previewReport.type === 'event')));
+  const showReset = !isPreview && (screenId === 'salesScreen' || screenId === 'reportsScreen' || screenId === 'eventScreen');
   el.reset.style.display = showReset ? 'inline-grid' : 'none';
-  if (el.productHistoryAddBtn) {
-    el.productHistoryAddBtn.style.display = showAddProduct ? 'none' : 'none';
-  }
+  el.reset.title = screenId === 'eventScreen' ? 'Clear event' : 'Clear sales';
+  el.reset.setAttribute('aria-label', el.reset.title);
+  if (el.productHistoryAddBtn) el.productHistoryAddBtn.style.display = 'none';
   if (!showOptions) closeOptionsMenu();
 }
 
 function rebuildGrid() {
-  el.grid.innerHTML = '';
   makeTiles();
-  render();
 }
+
+// Sub-screens highlight the bottom-nav tab they belong to.
+const PARENT_TAB: Record<string, string> = {
+  compareSalesScreen: 'historyScreen',
+  compareEventScreen: 'historyScreen',
+  productHistoryScreen: 'settingsScreen',
+  salesReportHistoryScreen: 'settingsScreen',
+  eventReportHistoryScreen: 'settingsScreen',
+};
 
 function openScreen(screenId: string) {
   document.querySelectorAll('.screen').forEach((screen) => screen.classList.remove('active'));
@@ -1858,25 +1593,35 @@ function openScreen(screenId: string) {
 
   const screen = document.getElementById(screenId);
   if (screen) screen.classList.add('active');
+
+  // Screen chrome lives here so every navigation path gets the same header, stats bar and tab highlight.
+  const tab = document.querySelector(`.nav button[data-tab="${screenId}"]`) ? screenId : PARENT_TAB[screenId];
+  if (tab) document.querySelectorAll('.nav button').forEach((button) => button.classList.toggle('active', button.getAttribute('data-tab') === tab));
+  if (el.stats) el.stats.style.display = screenId === 'salesScreen' ? '' : 'none';
+  hideScreenActions(screenId);
 }
 
-function openProductEditor(index: number) {
+// index >= 0 edits an active product; historyIndex edits an inactive one; neither means "add".
+function openProductEditor(index: number, historyIndex: number | null = null) {
   const title = document.getElementById('productEditTitle') as HTMLHeadingElement;
   const currentScreen = document.querySelector('.screen.active')?.id || 'salesScreen';
   productEditorReturnScreen = currentScreen === 'productEditScreen' ? productEditorReturnScreen : currentScreen;
 
-  if (index >= 0) {
-    const product = products[index];
-    editingIndex = index;
+  editingIndex = index;
+  editingHistoryIndex = index < 0 ? historyIndex : null;
+  const source = index >= 0 ? products[index] : historyIndex !== null ? productHistory[historyIndex] : null;
+  const currency = loadSettings().currency;
+  closeColorPicker();
+
+  if (source) {
     title.textContent = 'Edit product';
-    el.editName.value = product.name;
-    el.editPrice.value = formatInputNumber(String(product.price), loadSettings().currency);
-    el.editCost.value = formatInputNumber(String(product.cost), loadSettings().currency);
-    el.editColorHex.textContent = product.color.toUpperCase();
-    el.editColorHexInput.value = product.color.toUpperCase();
-    el.removeProductBtn.style.display = 'grid';
+    el.editName.value = source.name;
+    el.editPrice.value = formatInputNumber(String(source.price), currency);
+    el.editCost.value = formatInputNumber(String(source.cost), currency);
+    el.editColorHex.textContent = source.color.toUpperCase();
+    el.editColorHexInput.value = source.color.toUpperCase();
+    el.removeProductBtn.style.display = index >= 0 ? 'grid' : 'none';
   } else {
-    editingIndex = -1;
     title.textContent = 'Add product';
     el.editName.value = '';
     el.editPrice.value = '';
@@ -1889,110 +1634,115 @@ function openProductEditor(index: number) {
 
   updateColorInputs(el.editColorHex.textContent || '#F76495');
   openScreen('productEditScreen');
+}
 
-  el.editPrice.addEventListener('input', () => {
-    el.editPrice.value = formatInputNumber(el.editPrice.value, loadSettings().currency);
-  });
-  el.editCost.addEventListener('input', () => {
-    el.editCost.value = formatInputNumber(el.editCost.value, loadSettings().currency);
-  });
+function closeProductEditor() {
+  editingIndex = -1;
+  editingHistoryIndex = null;
+  openScreen(productEditorReturnScreen);
+  render(true);
+}
 
-  el.removeProductBtn.onclick = () => {
-    if (editingIndex < 0) return;
+function renameSales(oldName: string, product: Product) {
+  tx.forEach((sale) => {
+    if (sale.product === oldName) {
+      sale.product = product.name;
+      sale.price = product.price;
+      sale.cost = product.cost;
+    }
+  });
+}
+
+el.editPrice.addEventListener('input', () => {
+  el.editPrice.value = formatInputNumber(el.editPrice.value, loadSettings().currency);
+});
+el.editCost.addEventListener('input', () => {
+  el.editCost.value = formatInputNumber(el.editCost.value, loadSettings().currency);
+});
+
+el.removeProductBtn.addEventListener('click', () => {
+  if (editingIndex < 0) return;
+  const removed = products[editingIndex];
+  openConfirmModal(`Remove '${removed.name}' and its recorded sales from the counter?`, 'Remove', () => {
     closeColorPicker();
-    const removed = products.splice(editingIndex, 1)[0];
+    const index = products.indexOf(removed);
+    if (index >= 0) products.splice(index, 1);
     for (let i = tx.length - 1; i >= 0; i--) {
       if (tx[i].product === removed.name) tx.splice(i, 1);
     }
     saveProducts();
     saveSales();
     showToast(`${removed.name} removed`);
-    editingIndex = -1;
     rebuildGrid();
-    render(true);
-    openScreen(productEditorReturnScreen);
-    hideScreenActions(productEditorReturnScreen);
-  };
+    closeProductEditor();
+  });
+});
 
-  el.saveProductBtn.onclick = () => {
-    const updatedName = el.editName.value.trim() || `Product ${products.length + 1}`;
-    const updatedPrice = parseCurrencyInput(el.editPrice.value, loadSettings().currency) || 0;
-    const updatedCost = parseCurrencyInput(el.editCost.value, loadSettings().currency) || 0;
-    const colorValue = (el.editColorHex.textContent || '#ffffff').trim();
-    const normalizedColor = colorValue.startsWith('#') ? colorValue : `#${colorValue}`;
+el.saveProductBtn.addEventListener('click', () => {
+  const currency = loadSettings().currency;
+  const updatedName = el.editName.value.trim() || `Product ${products.length + 1}`;
+  const updatedPrice = parseCurrencyInput(el.editPrice.value, currency) || 0;
+  const updatedCost = parseCurrencyInput(el.editCost.value, currency) || 0;
+  const colorValue = (el.editColorHex.textContent || '#ffffff').trim();
+  const normalizedColor = colorValue.startsWith('#') ? colorValue : `#${colorValue}`;
 
-    if (editingIndex >= 0) {
-      const product = products[editingIndex];
-      const oldProductName = product.name;
-      product.name = updatedName;
-      product.price = updatedPrice;
-      product.cost = updatedCost;
-      product.color = normalizedColor;
+  const editing = editingIndex >= 0 ? products[editingIndex] : editingHistoryIndex !== null ? productHistory[editingHistoryIndex] : null;
+  const originalName = editing?.name ?? null;
+  // Product names are the identity key for sales and history, so a clash would silently merge two products.
+  const clashesWithActive = products.some((p) => p.name === updatedName && p.name !== originalName);
+  const clashesWithHistory = editing !== null && updatedName !== originalName && productHistory.some((p) => p.name === updatedName);
+  if (clashesWithActive || clashesWithHistory) {
+    showToast(`A product named '${updatedName}' already exists`);
+    return;
+  }
 
-      tx.forEach((sale) => {
-        if (sale.product === oldProductName) {
-          sale.product = updatedName;
-          sale.price = updatedPrice;
-          sale.cost = updatedCost;
-        }
-      });
+  if (editingIndex >= 0) {
+    const product = products[editingIndex];
+    const oldProductName = product.name;
+    product.name = updatedName;
+    product.price = updatedPrice;
+    product.cost = updatedCost;
+    product.color = normalizedColor;
 
+    renameSales(oldProductName, product);
+    saveProducts();
+    saveSales();
+    ensureProductHistory(product, productHistory, oldProductName);
+    saveProductHistory(productHistory);
+    showToast(`${updatedName} saved`);
+  } else if (editingHistoryIndex !== null) {
+    // Editing an inactive product from history
+    const hist = productHistory[editingHistoryIndex];
+    const oldName = hist.name;
+    hist.name = updatedName;
+    hist.price = updatedPrice;
+    hist.cost = updatedCost;
+    hist.color = normalizedColor;
+
+    // If an active product with the old name exists, update it and related sales
+    const active = products.find((p) => p.name === oldName);
+    if (active) {
+      Object.assign(active, hist);
+      renameSales(oldName, active);
       saveProducts();
       saveSales();
-      ensureProductHistory(product, productHistory, oldProductName);
-      saveProductHistory(productHistory);
-      showToast(`${updatedName} saved`);
-    } else if (editingHistoryIndex !== null) {
-      // Editing an inactive product from history
-      const hist = productHistory[editingHistoryIndex];
-      const oldName = hist.name;
-      hist.name = updatedName;
-      hist.price = updatedPrice;
-      hist.cost = updatedCost;
-      hist.color = normalizedColor;
-
-      // If an active product with the old name exists, update it and related sales
-      const activeIdx = products.findIndex((p) => p.name === oldName);
-      if (activeIdx >= 0) {
-        const p = products[activeIdx];
-        p.name = updatedName;
-        p.price = updatedPrice;
-        p.cost = updatedCost;
-        p.color = normalizedColor;
-        tx.forEach((sale) => {
-          if (sale.product === oldName) {
-            sale.product = updatedName;
-            sale.price = updatedPrice;
-            sale.cost = updatedCost;
-          }
-        });
-        saveProducts();
-        saveSales();
-      }
-
-      saveProductHistory(productHistory);
-      showToast(`${updatedName} saved`);
-      editingHistoryIndex = null;
-      editingHistoryOldName = null;
-    } else {
-      const finalColor = chooseUniqueColor(products, normalizedColor);
-      if (finalColor !== normalizedColor) {
-        updateColorInputs(finalColor);
-      }
-      const newProduct = { name: updatedName, price: updatedPrice, cost: updatedCost, color: finalColor };
-      products.push(newProduct);
-      saveProducts();
-      ensureProductHistory(newProduct, productHistory);
-      saveProductHistory(productHistory);
-      showToast(`${updatedName} added`);
     }
 
-    rebuildGrid();
-    render(true);
-    openScreen(productEditorReturnScreen);
-    hideScreenActions(productEditorReturnScreen);
-  };
-}
+    saveProductHistory(productHistory);
+    showToast(`${updatedName} saved`);
+  } else {
+    const finalColor = chooseUniqueColor(products, normalizedColor);
+    const newProduct = { name: updatedName, price: updatedPrice, cost: updatedCost, color: finalColor };
+    products.push(newProduct);
+    saveProducts();
+    ensureProductHistory(newProduct, productHistory);
+    saveProductHistory(productHistory);
+    showToast(`${updatedName} added`);
+  }
+
+  rebuildGrid();
+  closeProductEditor();
+});
 
 let currentHSV: HSV = { h: 340, s: 0.68, v: 0.97 };
 
@@ -2157,39 +1907,32 @@ el.openProductEdit.addEventListener('click', () => {
 if (el.productMenuBtn) {
   el.productMenuBtn.addEventListener('click', () => {
     openScreen('productHistoryScreen');
-    hideScreenActions('productHistoryScreen');
     render();
   });
 }
 const openSalesReportMenuBtn = document.getElementById('openSalesReportMenuBtn') as HTMLButtonElement | null;
 if (openSalesReportMenuBtn) {
   openSalesReportMenuBtn.addEventListener('click', () => {
-    document.querySelectorAll('.nav button').forEach((button) => button.classList.remove('active'));
     openScreen('salesReportHistoryScreen');
-    hideScreenActions('salesReportHistoryScreen');
     render();
   });
 }
 if (el.salesReportHistoryBackBtn) {
   el.salesReportHistoryBackBtn.addEventListener('click', () => {
     openScreen('settingsScreen');
-    hideScreenActions('settingsScreen');
     render();
   });
 }
 const openEventReportMenuBtn = document.getElementById('openEventReportMenuBtn') as HTMLButtonElement | null;
 if (openEventReportMenuBtn) {
   openEventReportMenuBtn.addEventListener('click', () => {
-    document.querySelectorAll('.nav button').forEach((button) => button.classList.remove('active'));
     openScreen('eventReportHistoryScreen');
-    hideScreenActions('eventReportHistoryScreen');
     render();
   });
 }
 if (el.eventReportHistoryBackBtn) {
   el.eventReportHistoryBackBtn.addEventListener('click', () => {
     openScreen('settingsScreen');
-    hideScreenActions('settingsScreen');
     render();
   });
 }
@@ -2203,7 +1946,6 @@ if (el.productHistoryBackBtn) {
   el.productHistoryBackBtn.addEventListener('click', () => {
     const previousScreen = productEditorReturnScreen === 'productEditScreen' ? 'productHistoryScreen' : 'settingsScreen';
     openScreen(previousScreen);
-    hideScreenActions(previousScreen);
     render();
   });
 }
@@ -2224,21 +1966,17 @@ if (el.compareModalCloseBtn) {
 }
 if (el.compareSalesBackBtn) {
   el.compareSalesBackBtn.addEventListener('click', () => {
-    compareConfirmedIds = [];
-    compareReportIds = [];
+    compareConfirmedIds.sales = [];
     compareDraftIds = [];
     openScreen('historyScreen');
-    hideScreenActions('historyScreen');
     render();
   });
 }
 if (el.compareEventBackBtn) {
   el.compareEventBackBtn.addEventListener('click', () => {
-    compareConfirmedIds = [];
-    compareReportIds = [];
+    compareConfirmedIds.event = [];
     compareDraftIds = [];
     openScreen('historyScreen');
-    hideScreenActions('historyScreen');
     render();
   });
 }
@@ -2260,9 +1998,8 @@ if (el.productHistoryAddBtn) {
   el.productHistoryAddBtn.addEventListener('click', () => openProductEditor(-1));
 }
 el.closeEditBtn.addEventListener('click', () => {
-  openScreen(productEditorReturnScreen);
-  hideScreenActions(productEditorReturnScreen);
-  render();
+  closeColorPicker();
+  closeProductEditor();
 });
 
 el.editColorHexInput.addEventListener('input', () => {
@@ -2334,19 +2071,31 @@ function showToast(msg: string) {
 el.reset.addEventListener('click', () => {
   const activeScreen = document.querySelector('.screen.active') as HTMLElement | null;
   if (activeScreen?.id === 'eventScreen') {
-    importedEventReport = null;
-    saveImportedEventReport(null);
-    eventCosts.length = 0;
-    saveEventCosts();
-    render();
-    showToast('Event report cleared');
+    if (previewReport?.type === 'event') {
+      showToast('Saved reports cannot be cleared');
+      return;
+    }
+    openConfirmModal('Clear the imported event sales and all event expenses?', 'Clear', () => {
+      importedEventReport = null;
+      saveImportedEventReport(null);
+      eventCosts.length = 0;
+      saveEventCosts();
+      render();
+      showToast('Event report cleared');
+    });
     return;
   }
 
-  tx.length = 0;
-  saveSales();
-  render(true);
-  showToast('Sales cleared');
+  if (!tx.length) {
+    showToast('Nothing to clear');
+    return;
+  }
+  openConfirmModal(`Clear all ${tx.length} recorded sales? Save a report first if you need them.`, 'Clear', () => {
+    tx.length = 0;
+    saveSales();
+    render(true);
+    showToast('Sales cleared');
+  });
 });
 
 el.optionsBtn.addEventListener('click', (event) => {
@@ -2367,22 +2116,11 @@ el.optionsBtn.addEventListener('click', (event) => {
 
   document.querySelectorAll('.nav button').forEach((b) => {
     b.addEventListener('click', () => {
-      document.querySelectorAll('.nav button').forEach((x) => x.classList.remove('active'));
-      b.classList.add('active');
-      document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
-      const target = document.getElementById(b.getAttribute('data-tab') || '') as HTMLElement;
-      if (target) target.classList.add('active');
-      // Show top counters only on the sales screen
-      if (el.stats) {
-        if (target && target.id === 'salesScreen') el.stats.style.display = '';
-        else el.stats.style.display = 'none';
+      const tab = b.getAttribute('data-tab') || '';
+      if ((tab === 'reportsScreen' && previewReport?.type === 'sales') || (tab === 'eventScreen' && previewReport?.type === 'event')) {
+        previewReport = null;
       }
-      if (target) {
-        hideScreenActions(target.id);
-        if ((target.id === 'reportsScreen' && previewReport?.type === 'sales') || (target.id === 'eventScreen' && previewReport?.type === 'event')) {
-          previewReport = null;
-        }
-      }
+      openScreen(tab);
       render();
     });
   });
@@ -2426,7 +2164,6 @@ el.optionsBtn.addEventListener('click', (event) => {
     }
     saveCurrentReport(reportName, saveModalType);
     closeSaveModal();
-    render();
   });
 
   el.saveModalCancelBtn.addEventListener('click', closeSaveModal);
@@ -2480,9 +2217,13 @@ el.optionsBtn.addEventListener('click', (event) => {
       return;
     }
 
+    const importedProducts = new Map<string, Product>();
+    for (const product of [...selectedSalesReports.flatMap((report) => report.products), ...products]) {
+      importedProducts.set(product.name, { ...product });
+    }
     importedEventReport = {
       sales: mergedSales,
-      products: products.map((p) => ({ ...p })),
+      products: [...importedProducts.values()],
     };
     saveImportedEventReport(importedEventReport);
     previewReport = null;
@@ -2495,25 +2236,16 @@ el.optionsBtn.addEventListener('click', (event) => {
     if (event.key === 'Escape' && (el.saveModalOverlay.classList.contains('open') || el.importModalOverlay.classList.contains('open') || (el.expenseModalOverlay && el.expenseModalOverlay.classList.contains('open')))) {
       closeSaveModal();
       closeImportModal();
-      if (el.expenseModalOverlay) {
-        el.expenseModalOverlay.classList.remove('open');
-        try { unlockBodyScroll(); } catch (e) { /* ignore */ }
-      }
+      if (el.expenseModalOverlay?.classList.contains('open')) resetExpenseModal();
     }
   });
 
+  initExpenseModal();
+  initEventCardActions();
   makeTiles();
   render();
 
-// Ensure stats and action button visibility match the initial active screen
-(() => {
-  const active = document.querySelector('.screen.active') as HTMLElement | null;
-  if (el.stats) {
-    if (active && active.id === 'salesScreen') el.stats.style.display = '';
-    else el.stats.style.display = 'none';
-  }
-  if (active) hideScreenActions(active.id);
-})();
+openScreen(document.querySelector('.screen.active')?.id || 'salesScreen');
 
 if (Capacitor.isNativePlatform()) {
   document.body.classList.add('capacitor-native');
