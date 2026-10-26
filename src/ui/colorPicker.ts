@@ -78,7 +78,7 @@ export function closeColorPicker() {
   el.colorPickerMenu.classList.remove('open');
 }
 
-/** Calls `update` with the pointer position (0..1) relative to `area`, until the pointer is released. */
+/** Calls `update` with the pointer position (0..1) relative to `area`, until the pointer is released or cancelled. */
 function trackPointer(area: HTMLElement, update: (x: number, y: number) => void) {
   area.addEventListener('pointerdown', (event) => {
     const move = (e: PointerEvent) => {
@@ -89,10 +89,13 @@ function trackPointer(area: HTMLElement, update: (x: number, y: number) => void)
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
     };
     move(event);
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    // Android cancels the pointer on system gestures; without this the drag never ends.
+    window.addEventListener('pointercancel', up);
   });
 }
 

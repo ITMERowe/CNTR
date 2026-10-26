@@ -1,5 +1,6 @@
 import '@fontsource-variable/plus-jakarta-sans';
 import './style.css';
+import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { h, render as renderView } from 'preact';
@@ -39,6 +40,7 @@ import {
   unlockBodyScroll,
   updateHeaderActions,
 } from './ui/dom';
+import { closeColorPicker } from './ui/colorPicker';
 import { hydrateIcons } from './ui/icons';
 import { editProductByName, initProductEditor, openProductEditor } from './ui/productEditor';
 import { CompareView } from './views/Compare';
@@ -568,6 +570,18 @@ function wireDialogs() {
   });
 }
 
+/** Android back (button or gesture): close the top layer, else the screen's own back arrow, else go to Sell, else leave the app. */
+function goBack() {
+  const sheet = document.querySelector('.sheet-overlay.open');
+  const backBtn = document.querySelector<HTMLElement>('.screen.active .back-btn');
+  if (el.colorPickerMenu.classList.contains('open')) closeColorPicker();
+  else if (el.optionsMenu.classList.contains('open')) closeOptionsMenu();
+  else if (sheet) sheet.querySelector<HTMLElement>('[id$="CloseBtn"]')?.click();
+  else if (backBtn?.offsetParent) backBtn.click();
+  else if (activeScreenId() !== 'salesScreen') goTo('salesScreen');
+  else App.minimizeApp();
+}
+
 hydrateIcons();
 wireNavigation();
 wireHeader();
@@ -577,4 +591,7 @@ initProductEditor(productsChanged);
 openScreen(activeScreenId());
 render();
 
-if (isNative) document.body.classList.add('capacitor-native');
+if (isNative) {
+  document.body.classList.add('capacitor-native');
+  App.addListener('backButton', goBack);
+}
