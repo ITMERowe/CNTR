@@ -2,7 +2,17 @@
 
 Session-to-session context for CNTR. **Read this before starting work; update it at the end of each session, after milestones, and when a blocker or decision comes up.** If this file disagrees with the code, trust the code and fix this file.
 
-_Last updated: 2026-10-26, end of the signing/tests/About session: work committed locally on branch `feature/signing-tests-about` (from `main` `3c0255d`), **not pushed** (waiting for the owner to add the signing secrets; see "Signing, tests, About session"). `main` = `3c0255d` (PR #2, CI run #21 → `CNTR_1.0.21.apk` on the owner's phone)._
+_Last updated: 2026-10-26, end of the signing/tests/About session (the owner is starting a new conversation)._
+
+## Start here (next session)
+
+- **Checked out:** branch `feature/signing-tests-about` (`0631f5c` code + `f6081e4` docs + a HANDOFF commit), based on `main` `3c0255d`. **Committed locally, NOT pushed.**
+- **Waiting on the owner:** add the 3 GitHub secrets for release signing (`CNTR_KEYSTORE_BASE64`, `CNTR_KEYSTORE_PASSWORD`, `CNTR_KEY_ALIAS` = `cntr`; values in `C:/Users/User/CNTR-signing`, see its `README.txt`) and back that folder up off this computer. **Then push** the branch (owner approval for the push still needed; it was deferred until the secrets exist so the first CI build is release-signed).
+- **After the push, check CI:** run should show the release APK `CNTR_1.0.N.apk` + `CNTR_1.0.N.aab`, and the new "Browser tests" step (`npm run test:e2e`, Chrome on Ubuntu) must pass; both are untested on CI so far. Then the owner merges (they used a GitHub PR for #2; ask which way).
+- **On the phone (owner has `CNTR_1.0.21.apk`, a debug build):** export a backup in 1.0.21 → uninstall → install the first release APK → restore. That is the last forced uninstall.
+- **Uncommitted on purpose (owner's, machine-specific):** `.claude/settings.json`, `.claude/skills/playwright-cli/`, `.playwright/`. Do not commit.
+- **How to verify locally:** `npx tsc --noEmit`, `npm run build`, `npm test` (11 unit), `npm run test:e2e` (5 suites, 98 checks; serves `dist/` on port 4320, Edge on Windows). Last run: all pass.
+- **Tooling notes:** no JDK/Android SDK, Xcode or `gh` on this machine (APK builds only via CI; GitHub API read-only, 60 req/h). In Git Bash, piping node+playwright output into `grep` can swallow it: write to a file first.
 
 ## Goal
 
@@ -19,20 +29,23 @@ _Last updated: 2026-10-26, end of the signing/tests/About session: work committe
 
 | Branch | State |
 |---|---|
-| `main` | Everything: the earlier fixes plus the whole `ui/revamp` branch, merged in `ac94981` (pushed; remote verified). See "Merge session" for CI. |
+| `feature/signing-tests-about` | **Current branch.** Signing, e2e tests, About, automatic backups, dark tile text, smaller revenue figure. Local only, not pushed. |
+| `main` (`3c0255d`) | Everything up to safe storage: `ui/revamp` (merged `ac94981`) + `feature/safe-storage` (owner merged PR #2). CI run #21 → `CNTR_1.0.21.apk` (on the owner's phone). |
+| `feature/safe-storage` | Merged into `main` via PR #2. Safe to delete once the owner agrees. |
 | `ui/revamp` | Fully merged into `main`. Kept (not deleted); safe to delete once the owner agrees. |
 | `fix/bugs-ui-docs` | Fully merged into `main`; safe to delete (owner approval needed, not done). |
 | `agents/app-overview-explanation` | **Local only**, checked out as a worktree at `../CNTR.worktrees/app-overview-explanation`, at old commit `6edd319`. Not created in these sessions; left untouched. Owner to decide. |
 
 Architecture (details in `docs/ARCHITECTURE.md`):
 - `src/state.ts`: state and rules (no DOM).
-- `src/storage.ts`: localStorage.
+- `src/storage.ts`: in-memory data, written through to `src/kv.ts` (SQLite on the phone, localStorage in a browser); `src/migrate.ts` (one-time localStorage → SQLite), `src/backup.ts` (backup format/validation/CSV), `src/files.ts` (backup files, automatic backups).
 - `src/reports.ts`: report maths.
 - `src/ui/`: DOM chrome (`dom.ts`, `productEditor.ts`, `colorPicker.ts`, `icons.ts`).
 - `src/views/*.tsx`: Preact screens, including `SalesGrid.tsx` (tiles) and `SalesHero.tsx`.
 - `src/main.ts`: controller.
 - `src/style.css`: design tokens.
-- CI: `.github/workflows/build-apk.yml` runs on every branch push and uploads `CNTR_1.0.<run_number>.apk`.
+- Tests: `tests/storage.test.ts` (unit, `npm test`), `tests/e2e/*.test.mjs` (browser, `npm run test:e2e`).
+- CI: `.github/workflows/build-apk.yml` runs on every branch push: unit tests, build, browser tests (on the new branch), then `CNTR_1.0.<run_number>.apk` (release-signed + `.aab` when the signing secrets exist, else debug).
 
 ## Cleanup session: files changed (committed)
 
@@ -205,9 +218,9 @@ Owner action needed: add GitHub secrets `CNTR_KEYSTORE_BASE64`, `CNTR_KEYSTORE_P
 1. Owner: add the 3 signing secrets, then push `feature/signing-tests-about` (CI builds the first release-signed APK and runs the browser tests on Linux). Export a backup in 1.0.21, uninstall, install the release APK, restore. After that, updates install without uninstalling.
 2. Owner: apply the GitHub description and topics above (repo → About → ⚙).
 3. Owner: decide on deleting the merged `ui/revamp` and `fix/bugs-ui-docs` branches and the old local `agents/app-overview-explanation` worktree.
-4. Play Store prerequisites: release keystore as GitHub secrets, signed `.aab` in CI, privacy policy, store screenshots; owner starts the 12-tester / 14-day closed test.
-5. Safe storage (merged; `CNTR_1.0.21.apk` from `main` is on the owner's phone): owner tests it on the phone (export, restore, airplane mode, restart). Note: CI debug APKs are signed with a different key each run, so installing needs an uninstall first, which wipes data; the migration from an older install therefore cannot be tested by updating a CI build.
-6. Add an automated test suite (e.g. Playwright, already installed locally by the owner) so the browser checks live in the repo.
+4. Play Store: signing and the `.aab` are ready once the secrets exist. Still needed: a hosted privacy policy (the About screen text is the basis), store listing and screenshots, then the owner's 12-tester / 14-day closed test.
+5. Owner tests on the phone: storage persistence after restart, export/restore, automatic backups in `Documents/CNTR/auto`, airplane mode, About, dark tile text.
+6. Suggested but not chosen yet: backup reminder after saving a report; stock counts / sold-out; multi-day events; discounts/bundles (ask the owner first).
 
 ## Verification log
 
