@@ -13,6 +13,7 @@
   --line: rgba(255, 255, 255, 0.08);
   --line-strong: rgba(255, 255, 255, 0.14);
   --scrim: rgba(0, 0, 0, 0.62);
+  --selection: #264f78; /* VS Code editor selection */
 
   /* Text (all >= 4.5:1 on every surface) */
   --text: #e7e7e7;
@@ -112,6 +113,11 @@ p {
 :focus-visible {
   outline: 2px solid var(--text);
   outline-offset: 2px;
+}
+
+::selection {
+  background: var(--selection);
+  color: var(--text);
 }
 
 .icon {
@@ -235,7 +241,8 @@ p {
 }
 
 .hero-figure {
-  font-size: clamp(40px, 12vw, 52px);
+  /* Shrinks long amounts (--chars is set by the view) to fit the screen width. */
+  font-size: min(clamp(40px, 12vw, 52px), calc((min(100vw, 520px) - 40px) / (var(--chars, 1) * 0.6)));
   font-weight: 750;
   letter-spacing: -0.035em;
   line-height: 1.08;
@@ -374,10 +381,18 @@ p {
 }
 
 .btn-small {
+  position: relative;
   min-height: 36px;
   padding: 0 var(--s3);
   border-radius: var(--r-sm);
   font-size: 13px;
+}
+
+/* 44px hit area, same as .icon-btn-sm */
+.btn-small::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
 }
 
 .btn-small .icon {
@@ -429,7 +444,7 @@ p {
 
 .sales-grid {
   display: grid;
-  gap: var(--s3);
+  gap: var(--s2);
   padding: var(--s2) var(--s4) var(--s4);
 }
 
@@ -441,43 +456,50 @@ p {
   position: relative;
   background: var(--tile);
   color: var(--ink);
-  border-radius: var(--r-xl);
-  padding: var(--s4);
+  border-radius: var(--r-lg);
+  padding: var(--s3);
   animation: rise var(--dur-3) var(--ease-out) both;
   animation-delay: calc(min(var(--i, 0), 8) * 40ms);
 }
 
 .tile-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--s3);
-  margin-bottom: var(--s3);
+  margin-bottom: var(--s2);
 }
 
+/* Name and price share one line to keep tiles short. */
 .tile-meta {
   min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
 }
 
 .product-name {
-  font-size: 22px;
+  min-width: 0;
+  font-size: 18px;
   font-weight: 750;
   letter-spacing: -0.02em;
-  line-height: 1.15;
-  overflow-wrap: anywhere;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .product-price {
-  display: block;
-  margin-top: 2px;
+  flex-shrink: 0;
   font-size: 14px;
   font-weight: 600;
   opacity: 0.78;
 }
 
 .tile-edit {
-  width: 40px;
-  height: 40px;
+  position: relative;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
   border-radius: var(--r-md);
   display: grid;
@@ -489,6 +511,12 @@ p {
 .tile-edit:active {
   background: var(--ink-soft);
   transform: scale(0.94);
+}
+
+.tile-edit::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
 }
 
 .tile-edit .icon {
@@ -509,13 +537,13 @@ p {
 /* The whole half is one big tap target: quick to hit during a rush. */
 .pay-add {
   width: 100%;
-  min-height: 92px;
+  min-height: 80px;
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-rows: auto 1fr;
   align-items: start;
-  padding: var(--s3) var(--s3) var(--s2);
-  border-radius: var(--r-lg);
+  padding: var(--s2) var(--s2) var(--s2) var(--s3);
+  border-radius: var(--r-md);
   background: var(--ink-faint);
   text-align: left;
   transition: background-color var(--dur-tap) var(--ease-out), transform var(--dur-tap) var(--ease-out);
@@ -551,14 +579,14 @@ p {
   align-self: end;
   display: block;
   overflow: hidden;
-  height: 44px;
+  height: 30px;
 }
 
 .payment-value {
   display: block;
-  font-size: 38px;
+  font-size: 28px;
   font-weight: 750;
-  line-height: 44px;
+  line-height: 30px;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
@@ -574,9 +602,8 @@ p {
 .pay-plus {
   grid-column: 2;
   grid-row: 1;
-  width: 32px;
-  height: 32px;
-  margin: -2px -2px 0 0;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -585,8 +612,8 @@ p {
 }
 
 .pay-plus .icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   stroke-width: 2.6;
 }
 
@@ -594,8 +621,8 @@ p {
   position: absolute;
   right: var(--s2);
   bottom: var(--s2);
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -607,7 +634,7 @@ p {
 .pay-undo::after {
   content: '';
   position: absolute;
-  inset: -6px;
+  inset: -9px; /* 44px hit area; still clear of the + circle at 80px halves */
 }
 
 .pay-undo:active:not(:disabled) {
@@ -687,9 +714,10 @@ p {
 }
 
 .report-hero {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--s2) var(--s1) var(--s3);
+  padding: var(--s2) 0 var(--s3);
   animation: rise var(--dur-3) var(--ease-out) both;
 }
 
@@ -700,7 +728,6 @@ p {
 }
 
 .kpi-row-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--s2);
 }
 
@@ -737,7 +764,7 @@ p {
 }
 
 .kpi-row-3 .kpi-value {
-  font-size: 15px;
+  font-size: 17px;
 }
 
 .kpi-hint {
@@ -816,8 +843,14 @@ p {
   white-space: nowrap;
 }
 
+/* One amount per line, so neither is cut off on a phone */
 .list-sub-text {
   display: block;
+}
+
+.list-sub-text > span {
+  display: block;
+  overflow: hidden;
   text-overflow: ellipsis;
 }
 
@@ -1424,7 +1457,7 @@ p {
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 34px 0 var(--s3);
   font-weight: 650;
   cursor: pointer;
@@ -2021,14 +2054,10 @@ p {
   }
 
   .payment-value {
-    font-size: 32px;
+    font-size: 24px;
   }
 
-  .kpi-row-3 {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .kpi-row-3 .kpi:last-child {
-    grid-column: 1 / -1;
+  .kpi-row-3 .kpi-value {
+    font-size: 15px;
   }
 }

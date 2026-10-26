@@ -47,7 +47,8 @@ export function ProductList({ products, activeNames, onEdit, onDelete, onToggle 
             <div class="list-main">
               <strong class="list-title">{product.name}</strong>
               <span class="list-sub list-sub-text">
-                {fmt(product.price)} · cost {fmt(product.cost)}
+                <span>{fmt(product.price)}</span>
+                <span>cost {fmt(product.cost)}</span>
               </span>
             </div>
             <div class="list-actions">
