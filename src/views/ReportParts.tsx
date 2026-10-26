@@ -29,7 +29,7 @@ export function Hero({ label, value, meta, tone }: { label: string; value: strin
   return (
     <section class="report-hero">
       <span class="eyebrow">{label}</span>
-      <span class={tone === 'negative' ? 'hero-figure is-negative' : 'hero-figure'}>{value}</span>
+      <span class={tone === 'negative' ? 'hero-figure is-negative' : 'hero-figure'} style={{ '--chars': value.length }}>{value}</span>
       {meta && <span class="hero-meta">{meta}</span>}
     </section>
   );

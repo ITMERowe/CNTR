@@ -37,7 +37,7 @@ export function SalesHero({ revenue, profit, count }: { revenue: number; profit:
   return (
     <>
       <span class="eyebrow">Revenue</span>
-      <span class="hero-figure" aria-label={fmt(revenue)}>
+      <span class="hero-figure" aria-label={fmt(revenue)} style={{ '--chars': fmt(revenue).length }}>
         {fmt(shown)}
       </span>
       <span class="hero-meta">
