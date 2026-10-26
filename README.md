@@ -1,76 +1,111 @@
 # CNTR
 
-A fast, offline sales counter for booths at conventions and pop-up events. Tap **+** under Cash or QRIS to record a sale, and CNTR keeps running totals, product breakdowns, and an event profit report after your expenses.
+An offline sales counter for booths at conventions and pop-up events. Tap a product's Cash or QRIS button to record a sale; CNTR keeps running totals, a sales report, and an event report that subtracts your booth expenses.
 
-Built with TypeScript, Preact and Vite, packaged for Android (and iOS) with Capacitor 8. All data stays on the device in `localStorage`; there is no server and no account.
+It runs entirely on the device: no server, no account, no network needed.
+
+<p>
+  <img src="docs/screenshots/sell.png" alt="Sell screen with product tiles" width="200" />
+  <img src="docs/screenshots/reports.png" alt="Reports screen" width="200" />
+  <img src="docs/screenshots/event.png" alt="Event report screen" width="200" />
+  <img src="docs/screenshots/product-editor.png" alt="Product editor with colour picker" width="200" />
+</p>
 
 ## Features
 
-- **Sales counter**: one tile per product, with separate Cash and QRIS counters. Tap − to undo the last sale.
-- **Reports**: revenue, profit, margin, payment mix and per-product distribution for the current session.
-- **Event report**: import sales (live or from saved reports), add booth or transport expenses, and see net profit or deficit.
-- **Saved reports & compare**: save sales or event snapshots, rename or delete them, and compare any two side by side.
-- **Products**: add, edit, recolour, deactivate (keep history) or permanently delete products.
+- **Sell**: one tile per product. Each Cash and QRIS half is a single large tap target; a small − undoes the last sale of that kind. Revenue and profit are shown at the top. On a phone, every tap gives haptic feedback.
+- **Reports**: revenue, profit and margin, average sale, the Cash/QRIS split, sales by hour (busiest hour highlighted), and a per-product breakdown.
+- **Event**: import the live sales and/or saved sales reports, add expenses (booth rental, transport, ...), and see net profit or deficit.
+- **Saved reports**: save sales or event snapshots, rename or delete them, and compare any two side by side.
+- **Products**: add, edit (name, price, cost, colour), take off the counter without losing history, or delete permanently.
 - **Settings**: 8 currencies (IDR, USD, EUR, SGD, AUD, GBP, JPY, MYR) and an optional compact format (`Rp 1,5M`).
+- **Offline by design**: the font and icons are bundled into the app.
+- Respects the system "reduce motion" setting.
+- **Android back** (button or gesture) steps back inside the app: it closes the open sheet or menu, then goes back a screen, then to Sell; on Sell it sends the app to the background.
 
-## Quick start
+## Tech stack
 
-Requires **Node.js 22**.
+| Layer | Tools |
+|---|---|
+| UI | TypeScript, [Preact](https://preactjs.com) components, plain CSS with design tokens |
+| Build | [Vite](https://vitejs.dev) 5, TypeScript 5 (strict, unused-code checks on) |
+| Native | [Capacitor](https://capacitorjs.com) 8 (Android; iOS project included), `@capacitor/haptics`, `@capacitor/app` |
+| Assets | [Lucide](https://lucide.dev) SVG icons, Plus Jakarta Sans (bundled via Fontsource) |
+| CI | GitHub Actions builds a debug APK on every push |
+
+Code layout (details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)):
+
+```
+index.html          Screens and dialog shells
+src/main.ts         Controller: wires controls, owns render()
+src/state.ts        App state and the rules for changing it (no DOM)
+src/storage.ts      localStorage read/write
+src/reports.ts      Report calculations
+src/formatters.ts   Money formatting and parsing, colour helpers
+src/views/          Preact components for every screen
+src/ui/             Navigation, dialogs, product editor, colour picker, icons
+src/style.css       Styles; design tokens at the top
+android/, ios/      Capacitor native projects
+```
+
+## Getting started
+
+Prerequisites: **Node.js 22** and npm.
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173 (also reachable from your phone on the same Wi-Fi)
+npm run dev        # http://localhost:5173 (also reachable from a phone on the same Wi-Fi)
 ```
 
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev server with hot reload |
-| `npm run build` | Type-check (`tsc --noEmit`) and build to `dist/` |
+| `npm run build` | Type-check (`tsc --noEmit`) and production build to `dist/` |
+| `npm run build:watch` | Re-run the full build when `src/` changes |
 | `npm run preview` | Serve the production build |
-| `npm run cap:sync` | Copy `dist/` into the native Android/iOS projects |
+| `npm run cap:sync` | Copy `dist/` and plugins into the native projects |
 
-## Install the APK on your phone
+## Android
 
-Every push to GitHub builds a debug APK automatically.
+Requires Android 7.0 (API 24) or newer; the app targets API 36.
 
-1. Open the repo on GitHub → **Actions** → **Build APK** → the newest run with a green check.
-2. Scroll to **Artifacts** and download **CNTR_1.0.N.apk** (you must be signed in to GitHub). `N` is the build number: higher means newer.
-3. Open it on your phone. Android will ask you to allow installs from that app (browser or Files). Allow it once.
-4. Requires Android 7.0 (API 24) or newer.
+**From CI (no local Android tooling needed):** every push runs the **Build APK** workflow. Open the run under **Actions** and download the artifact `CNTR_1.0.<build>.apk` (you need to be signed in to GitHub). The last number is the CI run number and also the app's `versionCode`.
 
-> **Updating:** each CI run signs the APK with a fresh debug key, so Android refuses to install a new build over an old one ("App not installed"). Uninstall the old version first. **Uninstalling deletes the app's saved data**, so save or note anything you need before updating. A fixed signing key would remove this step; see [Releasing](#releasing).
+> These are **debug** builds, each signed with a temporary key. Android will not install one over a different build, so uninstall first. **Uninstalling deletes the app's data.**
 
-## Build the APK locally
-
-Needs JDK 21 and the Android SDK 36 (easiest via Android Studio Otter 2025.2.1 or newer).
+**Locally** (needs JDK 21 and the Android SDK 36, e.g. via Android Studio):
 
 ```bash
 npm run build
 npx cap sync android
-cd android && ./gradlew assembleDebug        # Windows: gradlew.bat assembleDebug
-# → android/app/build/outputs/apk/debug/CNTR_1.0.1.apk (local builds are build 1)
+cd android && ./gradlew assembleDebug     # Windows: gradlew.bat assembleDebug
+# → android/app/build/outputs/apk/debug/CNTR_1.0.1.apk
 ```
 
-Or run `npx cap open android` and press Run in Android Studio with your phone connected over USB.
+Or run `npx cap open android` and press Run in Android Studio.
 
-## Project structure
+**iOS:** an iOS project is included (Capacitor 8, iOS 15+) but it has not been built or tested.
 
-```
-index.html            All screens and dialog shells (static markup)
-src/main.ts           Controller: wires controls, owns render(), dialogs
-src/state.ts          App state and the rules for changing it (no DOM)
-src/storage.ts        localStorage read/write, settings cache
-src/reports.ts        Report maths: totals, product breakdowns, compare rows
-src/formatters.ts     Money formatting/parsing, colour helpers
-src/ui/               Navigation chrome, product editor, colour picker
-src/views/            Preact components for every data-driven screen
-src/style.css         All styles (design tokens at the top)
-android/, ios/        Capacitor 8 native projects (Android target API 36)
-.github/workflows/    CI that builds the debug APK
-```
+## Data and backups
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how state, storage and rendering fit together, and [CHANGELOG.md](CHANGELOG.md) for recent changes.
+- All data (products, sales, expenses, saved reports, settings) is stored in the app's WebView **`localStorage`**, on the device only. The keys are listed in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#storage).
+- There is **no sync, export or backup yet**. Uninstalling the app, or clearing its storage, deletes everything. The operating system may also clear WebView storage under storage pressure.
+- Saving a report is the only way to keep a snapshot of the live sales before clearing them.
 
-## Releasing
+## Testing
 
-The CI build is a **debug** APK: fine for testing, not for the Play Store. To ship, create a release keystore, add it to the repo as GitHub Actions secrets, and add a signed `assembleRelease` step. The same keystore also makes updates install over the previous version without uninstalling.
+There is no automated test suite yet. Before merging, at minimum:
+
+1. `npm run build` passes (it includes the TypeScript check).
+2. Run `npm run dev` and check the flows you touched in a phone-sized browser window (Sell, Reports, Event, Products, saved reports, Compare).
+3. For native changes, install the CI APK on a real device.
+
+## Contributing
+
+Work on a branch and open a pull request against `main`. Keep the conventions in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#conventions): new UI as Preact components, colours and motion from the CSS tokens, and confirmation before destructive actions. Record notable changes in [CHANGELOG.md](CHANGELOG.md).
+
+## License
+
+[MIT](LICENSE) © 2026 ITMERowe.
+
+Third-party components keep their own licenses: Preact, Capacitor and Vite (MIT), Lucide icons (ISC), and Plus Jakarta Sans (SIL Open Font License 1.1).

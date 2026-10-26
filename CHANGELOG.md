@@ -1,6 +1,29 @@
 # Changelog
 
-## Unreleased
+## Unreleased (branch `ui/revamp`)
+
+### Changed
+- New visual system: VS Code-dark surfaces, white ink accent, product colours as the hero, 4/8px spacing, one set of motion tokens. Designed with the ui-ux-pro-max (POS: Swiss minimal, high contrast, large targets) and dataviz skills.
+- Sell tab: big revenue figure that counts up; tiles where each Cash/QRIS half is one large tap target with a separate undo; rolling counters; haptic feedback on the phone; tiles keep the original product colours with white text and icons.
+- Reports: hero revenue, profit and average-sale tiles, a Cash/QRIS split bar with a labelled legend, a sales-by-hour chart (busiest hour highlighted, tap a column to read it), product rows with unsold products collapsed into one line.
+- Event: net profit/deficit as the hero figure, revenue/profit/expenses tiles, empty state with an Import button.
+- Dialogs are bottom sheets; the tab bar has labels and an animated active indicator; Settings is grouped; History shows product colours and payment chips; the product editor's colour field is a live preview of the tile.
+- Subtle motion throughout (screen fade, staggered card/row entrance, bar growth, sheet slide, toast pop), all off with the system reduce-motion setting.
+- Android back (button or gesture) now steps back inside the app: it closes the colour picker, options menu or sheet first, then follows the screen's back arrow, then returns to Sell; on Sell it puts the app in the background. Before, it closed the app. Adds `@capacitor/app`.
+- Compact Sell tiles (4 fit on a 412×892 screen) and 2-column Event tiles.
+- Small buttons (undo, Import sales, currency picker) have 44px tap areas; Products shows price and cost on separate lines so neither is cut off.
+
+### Fixed
+- The colour picker kept following the finger after Android cancelled a drag (e.g. a system back swipe).
+- Very long amounts no longer push the page wider than the screen.
+- Icons and the font no longer depend on the internet (they were loaded from Google Fonts, so offline the icons showed as words like "add" and "delete").
+
+### Project
+- Added an MIT `LICENSE`; rewrote the README (features, setup, Android builds, data and backup limits, testing, license) with screenshots in `docs/screenshots/`.
+- Added `HANDOFF.md` for session-to-session context, and a rule in `CLAUDE.md`/`AGENTS.md` to read it first.
+- Removed the unused `@types/node` dev dependency, the unused `escapeHtml` helper and an unused CSS class.
+
+## 2026-10-26 (merged to `main`)
 
 ### Fixed
 - Closing or opening the expense dialog no longer jumps the page to the top, and its handlers no longer pile up on every sale (they were re-attached on each render).
