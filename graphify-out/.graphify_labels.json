@@ -41,15 +41,8 @@
   "39": "Running Custom Playwright Code",
   "40": "Cookies",
   "41": "Browser Automation with playwright-cli",
-  "42": "Test generation (plan → generate → heal)",
+  "42": "3. Heal",
   "43": "Browser Session Management",
   "44": "Tracing",
-  "45": "Unreleased",
-  "46": "playwright-cli/SKILL.md",
-  "47": "Video Recording",
-  "48": "Advanced Mocking with run-code",
-  "49": "Attaching Screenshots and Videos to Pull Requests",
-  "50": "3. Heal",
-  "51": "0. How generation works",
-  "52": "1. Planning"
+  "45": "Unreleased"
 }

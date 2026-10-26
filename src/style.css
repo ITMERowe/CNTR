@@ -438,7 +438,7 @@ p {
 }
 
 .tile {
-  /* --tile is the calm tone of the product colour (tileTone), so white ink always reads */
+  /* --tile is the product colour; text and icons on it are always white */
   --ink: #ffffff;
   --ink-soft: rgba(255, 255, 255, 0.16);
   --ink-faint: rgba(255, 255, 255, 0.09);
@@ -1539,7 +1539,7 @@ p {
   min-height: 112px;
   padding: var(--s4);
   border-radius: var(--r-xl);
-  background: var(--tile, #913755);
+  background: var(--tile, #f76495);
   color: #ffffff;
   cursor: pointer;
   transition: background-color var(--dur-2) var(--ease-out), color var(--dur-2), transform var(--dur-tap) var(--ease-out);
