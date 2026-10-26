@@ -1,6 +1,7 @@
 import { loadSettings } from './storage';
+import type { Currency } from './types';
 
-const CURRENCY_SYMBOLS: Record<'IDR' | 'USD' | 'EUR' | 'SGD' | 'AUD' | 'GBP' | 'JPY' | 'MYR', string> = {
+const CURRENCY_SYMBOLS: Record<Currency, string> = {
   IDR: 'Rp',
   USD: '$',
   EUR: '€',
@@ -11,7 +12,7 @@ const CURRENCY_SYMBOLS: Record<'IDR' | 'USD' | 'EUR' | 'SGD' | 'AUD' | 'GBP' | '
   MYR: 'RM',
 };
 
-const CURRENCY_LOCALES: Record<'IDR' | 'USD' | 'EUR' | 'SGD' | 'AUD' | 'GBP' | 'JPY' | 'MYR', string> = {
+const CURRENCY_LOCALES: Record<Currency, string> = {
   IDR: 'id-ID',
   USD: 'en-US',
   EUR: 'de-DE',
@@ -22,100 +23,72 @@ const CURRENCY_LOCALES: Record<'IDR' | 'USD' | 'EUR' | 'SGD' | 'AUD' | 'GBP' | '
   MYR: 'ms-MY',
 };
 
-function getCurrencySeparators(currency: 'IDR' | 'USD' | 'EUR' | 'SGD' | 'AUD' | 'GBP' | 'JPY' | 'MYR') {
-  const decimalMap: Record<typeof currency, string> = {
-    IDR: ',',
-    USD: '.',
-    EUR: ',',
-    SGD: '.',
-    AUD: '.',
-    GBP: '.',
-    JPY: '.',
-    MYR: '.',
-  };
+// Separators must match what Intl.NumberFormat produces for CURRENCY_LOCALES.
+const CURRENCY_SEPARATORS: Record<Currency, { group: string; decimal: string }> = {
+  IDR: { group: '.', decimal: ',' },
+  USD: { group: ',', decimal: '.' },
+  EUR: { group: '.', decimal: ',' },
+  SGD: { group: ',', decimal: '.' },
+  AUD: { group: ',', decimal: '.' },
+  GBP: { group: ',', decimal: '.' },
+  JPY: { group: ',', decimal: '.' },
+  MYR: { group: ',', decimal: '.' },
+};
 
-  const groupMap: Record<typeof currency, string> = {
-    IDR: '.',
-    USD: ',',
-    EUR: '.',
-    SGD: ',',
-    AUD: ',',
-    GBP: ',',
-    JPY: ',',
-    MYR: ',',
-  };
+// Building an Intl.NumberFormat is slow and this runs for every amount on screen.
+const numberFormats = new Map<Currency, Intl.NumberFormat>();
 
-  return {
-    group: groupMap[currency] || ',',
-    decimal: decimalMap[currency] || '.',
-  };
+function formatNumeric(value: number, currency: Currency) {
+  let format = numberFormats.get(currency);
+  if (!format) {
+    format = new Intl.NumberFormat(CURRENCY_LOCALES[currency], { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    numberFormats.set(currency, format);
+  }
+  return format.format(value);
 }
 
-function formatNumeric(value: number, currency: 'IDR' | 'USD' | 'EUR' | 'SGD' | 'AUD' | 'GBP' | 'JPY' | 'MYR') {
-  return new Intl.NumberFormat(CURRENCY_LOCALES[currency] || 'en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
+const escapeForRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-export function parseCurrencyInput(rawValue: string, currency: 'IDR' | 'USD' | 'EUR' | 'SGD' | 'AUD' | 'GBP' | 'JPY' | 'MYR' = loadSettings().currency) {
-  const sanitized = (rawValue ?? '').replace(/\s+/g, '').trim();
+export function parseCurrencyInput(rawValue: string, currency: Currency = loadSettings().currency) {
+  const sanitized = (rawValue ?? '').replace(/\s+/g, '');
   if (!sanitized) return 0;
 
-  const symbol = CURRENCY_SYMBOLS[currency] || 'Rp';
-  const symbolText = symbol.replace(/[$€£¥]/g, '\\$&');
-  const withoutSymbol = sanitized.replace(new RegExp(`^${symbolText}`), '');
-
-  const { group, decimal } = getCurrencySeparators(currency);
-  // Escape separators for RegExp
-  const escapeForRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const escapedGroup = escapeForRegExp(group);
-  const escapedDecimal = escapeForRegExp(decimal);
-  const withoutGroup = withoutSymbol.replace(new RegExp(escapedGroup, 'g'), '');
-  const normalized = withoutGroup.replace(new RegExp(escapedDecimal, 'g'), '.').replace(/[^0-9.\-]/g, '');
+  const withoutSymbol = sanitized.replace(new RegExp(`^${escapeForRegExp(CURRENCY_SYMBOLS[currency])}`), '');
+  const { group, decimal } = CURRENCY_SEPARATORS[currency];
+  const normalized = withoutSymbol
+    .replace(new RegExp(escapeForRegExp(group), 'g'), '')
+    .replace(new RegExp(escapeForRegExp(decimal), 'g'), '.')
+    .replace(/[^0-9.\-]/g, '');
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export function formatInputNumber(rawValue: string, currency: 'IDR' | 'USD' | 'EUR' | 'SGD' | 'AUD' | 'GBP' | 'JPY' | 'MYR' = loadSettings().currency) {
-  const sanitized = (rawValue ?? '').replace(/[^0-9]/g, '');
-  if (!sanitized) return '';
+/** Formats digits typed into an amount field, e.g. "25000" -> "Rp 25.000". */
+export function formatInputNumber(rawValue: string, currency: Currency = loadSettings().currency) {
+  const digits = (rawValue ?? '').replace(/[^0-9]/g, '');
+  if (!digits) return '';
 
-  const numberValue = Number(sanitized);
+  const numberValue = Number(digits);
   if (!Number.isFinite(numberValue)) return '';
-
-  const formatted = formatNumeric(numberValue, currency);
-  const symbol = CURRENCY_SYMBOLS[currency] || 'Rp';
-  return `${symbol} ${formatted}`;
+  return `${CURRENCY_SYMBOLS[currency]} ${formatNumeric(numberValue, currency)}`;
 }
 
-export function formatMoney(
-  n: number,
-  currency: 'IDR' | 'USD' | 'EUR' | 'SGD' | 'AUD' | 'GBP' | 'JPY' | 'MYR' = loadSettings().currency,
-  compact = loadSettings().compactMoney,
-) {
-  const symbol = CURRENCY_SYMBOLS[currency] || 'Rp';
+export function formatMoney(n: number, currency: Currency, compact: boolean) {
+  const symbol = CURRENCY_SYMBOLS[currency];
   const sign = n < 0 ? '-' : '';
   const abs = Math.abs(n);
 
   if (compact && abs >= 1000) {
-    const unit = abs >= 1000000 ? 1000000 : 1000;
-    const suffix = abs >= 1000000 ? 'M' : 'K';
-    const value = abs / unit;
-
-    let precision = 1;
-    if (value >= 100) precision = 0;
-    else if (value >= 10) precision = 1;
-    else if (value >= 1) precision = 2;
-    else precision = 3;
-
-    const formatted = Number(value.toFixed(precision));
-    return `${sign}${symbol} ${formatNumeric(formatted, currency)}${suffix}`;
+    const isMillions = abs >= 1000000;
+    const value = abs / (isMillions ? 1000000 : 1000);
+    const precision = value >= 100 ? 0 : value >= 10 ? 1 : 2;
+    return `${sign}${symbol} ${formatNumeric(Number(value.toFixed(precision)), currency)}${isMillions ? 'M' : 'K'}`;
   }
 
   return `${sign}${symbol} ${formatNumeric(abs, currency)}`;
 }
 
+/** Formats an amount with the user's currency and compact-money setting. */
 export const fmt = (n: number) => {
   const settings = loadSettings();
   return formatMoney(n, settings.currency, settings.compactMoney);
@@ -123,7 +96,7 @@ export const fmt = (n: number) => {
 
 const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
-// Escape user-entered text before interpolating it into innerHTML templates.
+// Escape user-entered text before interpolating it into innerHTML templates (Preact views escape automatically).
 export function escapeHtml(value: unknown) {
   return String(value ?? '').replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch]);
 }
@@ -143,14 +116,10 @@ export function normalizeHex(value: string) {
   return `#${hex.toUpperCase()}`;
 }
 
-export function getUnusedPresetColor(products: Array<{ color: string }>) {
-  const used = new Set(products.map((product) => normalizeHex(product.color).toUpperCase()));
-  return PRESET_COLORS.find((hex) => !used.has(hex.toUpperCase())) || null;
-}
-
+/** Returns `candidate` unless another product already uses it, then the first unused preset. */
 export function chooseUniqueColor(products: Array<{ color: string }>, candidate: string) {
   const normalized = normalizeHex(candidate);
-  const isTaken = products.some((product) => normalizeHex(product.color).toUpperCase() === normalized.toUpperCase());
-  if (!isTaken) return normalized;
-  return getUnusedPresetColor(products) || normalized;
+  const used = new Set(products.map((product) => normalizeHex(product.color)));
+  if (!used.has(normalized)) return normalized;
+  return PRESET_COLORS.find((hex) => !used.has(hex)) || normalized;
 }
