@@ -112,7 +112,14 @@ Not verified:
 
 ## Commits and push
 
-See the bottom of this section. It is updated after committing.
+Pushed to `origin/ui/revamp` (verified: branch in sync; `LICENSE`, `README.md`, `HANDOFF.md` and screenshots served from GitHub):
+- `dbe0249` Remove unused code and the unused `@types/node` dependency.
+- `33ac2d6` Add MIT license, rewrite README, add session handoff. CI **success**: run 40323977225 → `CNTR_1.0.17.apk`.
+- A follow-up commit recording this section (`[skip ci]`, no code changes).
+
+Not pushed to `main`: everything above reaches `main` when `ui/revamp` is merged. GitHub reads the license from the default branch only, so the repo still shows "No license" until then.
+
+GitHub metadata, verified via the public API after pushing: description is still `counting app`, topics are empty, license `null`. Nothing here could change them.
 
 Useful commands:
 - `npm run dev`
