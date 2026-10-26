@@ -1,0 +1,80 @@
+// Event maths: days, totals and History edits. Pure and type-only imports, so Node can test it directly.
+import type { EventCost, PastEvent, Product, SaleRecord } from './types.ts';
+
+const time = (value: Date | string) => new Date(value).getTime();
+
+/** The sales of each day: one list per day, `dayBreaks.length + 1` in all. */
+export function splitDays(sales: SaleRecord[], dayBreaks: string[]): SaleRecord[][] {
+  const breaks = dayBreaks.map(time);
+  const days: SaleRecord[][] = breaks.map(() => []);
+  days.push([]);
+  for (const sale of sales) {
+    const index = breaks.findIndex((end) => time(sale.timestamp) < end);
+    days[index < 0 ? breaks.length : index].push(sale);
+  }
+  return days;
+}
+
+// Days are split by time, so a phone clock set back must not move a sale into an ended day, or keep today's
+// sales out of the day being ended. Both stamps are pushed just past what they must follow.
+
+/** When to stamp a new sale: now, but always after the last End day. */
+export function saleTime(now: Date, dayBreaks: string[]): Date {
+  return new Date(Math.max(now.getTime(), ...dayBreaks.map((end) => time(end) + 1)));
+}
+
+/** When to stamp End day: now, but always after every sale and earlier End day. */
+export function breakTime(now: Date, sales: SaleRecord[], dayBreaks: string[]): string {
+  return new Date(Math.max(now.getTime(), ...sales.map((sale) => time(sale.timestamp) + 1), ...dayBreaks.map((end) => time(end) + 1))).toISOString();
+}
+
+/** The sales after the last End day. */
+export function todaySales(sales: SaleRecord[], dayBreaks: string[]): SaleRecord[] {
+  const days = splitDays(sales, dayBreaks);
+  return days[days.length - 1];
+}
+
+/** Net profit = product profit (revenue − product cost) − expenses. */
+export function eventSummary(sales: SaleRecord[], expenses: EventCost[]) {
+  const revenue = sales.reduce((sum, sale) => sum + sale.price, 0);
+  const productProfit = sales.reduce((sum, sale) => sum + sale.price - sale.cost, 0);
+  const expenseTotal = expenses.reduce((sum, cost) => sum + cost.amount, 0);
+  return { revenue, productProfit, expenses: expenseTotal, net: productProfit - expenseTotal, count: sales.length };
+}
+
+export const formatDay = (value: Date | string) => new Date(value).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+
+export function defaultEventName(sales: SaleRecord[], now: Date): string {
+  const first = sales.reduce<Date | null>((min, sale) => (!min || time(sale.timestamp) < min.getTime() ? new Date(sale.timestamp) : min), null);
+  return `Event ${formatDay(first ?? now)}`;
+}
+
+/** One product per name sold: the latest sale's price and cost, the colour from `known` ('' if unknown). */
+export function snapshotProducts(sales: SaleRecord[], known: Product[]): Product[] {
+  const byName = new Map<string, Product>();
+  for (const sale of [...sales].sort((a, b) => time(a.timestamp) - time(b.timestamp))) {
+    byName.set(sale.product, { name: sale.product, price: sale.price, cost: sale.cost, color: known.find((product) => product.name === sale.product)?.color ?? '' });
+  }
+  return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Adds (+1) or removes (−1) one sale of `product`/`payment` on `day`. Returns a new event; the input is unchanged. */
+export function adjustCount(event: PastEvent, day: number, product: string, payment: string, delta: 1 | -1): PastEvent {
+  const daySales = splitDays(event.sales, event.dayBreaks)[day] ?? [];
+  const matches = daySales.filter((sale) => sale.product === product && (delta === 1 || sale.payment === payment));
+  const latest = matches.reduce<SaleRecord | null>((last, sale) => (!last || time(sale.timestamp) >= time(last.timestamp) ? sale : last), null);
+
+  if (delta === -1) {
+    if (!latest) return event;
+    const index = event.sales.indexOf(latest);
+    return { ...event, sales: event.sales.filter((_, i) => i !== index) };
+  }
+
+  const priced = latest ?? event.products.find((item) => item.name === product);
+  if (!priced) return event;
+  // Inside the day: just before its End day, or after everything else for the last day.
+  const end = event.dayBreaks[day];
+  const latestTime = Math.max(time(event.startedAt), ...event.dayBreaks.map(time), ...event.sales.map((sale) => time(sale.timestamp)));
+  const timestamp = new Date(end !== undefined ? time(end) - 1 : latestTime + 1);
+  return { ...event, sales: [...event.sales, { product, price: priced.price, cost: priced.cost, payment, timestamp }] };
+}

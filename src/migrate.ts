@@ -1,8 +1,13 @@
 // One-time copy of the old localStorage data into the database. Type-only imports, so Node can test it directly.
 import type { KvStore } from './kv';
 
-/** Every key the app has ever stored data under. */
-export const DATA_KEYS = ['cntrProducts', 'cntrProductHistory', 'cntrSales', 'cntrEventCosts', 'cntrSavedReports', 'cntrImportedEventReport', 'cntrSettings'];
+/**
+ * Every key the app's data lives under. Old saved reports (`cntrSavedReports`, `cntrImportedEventReport`) were
+ * dropped when events replaced them: they are no longer read, backed up or restored, but never deleted.
+ */
+export const DATA_KEYS = ['cntrProducts', 'cntrProductHistory', 'cntrSales', 'cntrEventCosts', 'cntrLiveEvent', 'cntrEvents', 'cntrSettings'];
+/** Old saved reports: no longer read or restored; kept once in an automatic backup when events arrive (main.ts). */
+export const DROPPED_KEYS = ['cntrSavedReports', 'cntrImportedEventReport'];
 export const MIGRATED_FLAG = 'cntrMeta.migratedFromLocalStorage';
 
 export type MigrationResult = 'already-done' | 'nothing-to-copy' | 'copied';

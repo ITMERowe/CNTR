@@ -1,10 +1,10 @@
+import { eventSummary, formatDay } from '../events';
 import { fmt } from '../formatters';
-import type { Product, ReportType, SaleRecord, SavedReport } from '../types';
+import type { PastEvent, Product, SaleRecord } from '../types';
 import { Icon } from './Icon';
-import { EmptyState } from './ReportParts';
+import { EmptyState, profitClass } from './ReportParts';
 
 const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-const formatDate = (iso: string) => new Date(iso).toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 export function RecentSales({ sales, colorFor }: { sales: SaleRecord[]; colorFor: (name: string) => string }) {
   if (!sales.length) return <EmptyState icon="inbox" title="No sales yet" text="Sales you record on the Sell tab show up here." />;
@@ -78,119 +78,64 @@ export function ProductList({ products, activeNames, onEdit, onDelete, onToggle 
   );
 }
 
-interface SavedReportListProps {
-  reports: SavedReport[];
-  type: ReportType;
-  onOpen: (id: string) => void;
-  onRename: (id: string) => void;
-  onDelete: (id: string) => void;
-}
-
-export function SavedReportList({ reports, type, onOpen, onRename, onDelete }: SavedReportListProps) {
-  if (!reports.length) {
-    return (
-      <EmptyState
-        icon={type === 'sales' ? 'file-chart' : 'event'}
-        title={`No saved ${type} reports`}
-        text={type === 'sales' ? 'Save one from the Reports tab menu.' : 'Save one from the Event tab menu.'}
-      />
-    );
-  }
+/** Past events, newest first: name, dates and days, net profit. */
+export function EventList({ events, onOpen }: { events: PastEvent[]; onOpen: (id: string) => void }) {
+  if (!events.length) return <EmptyState icon="event" title="No past events yet" text="Press End event on the Event tab when an event is over; it moves here." />;
   return (
     <>
-      {reports.map((report, index) => (
-        <div
-          class="list-row list-row-link sales-report-history-item"
-          key={report.id}
-          data-id={report.id}
-          tabIndex={0}
-          role="button"
-          style={{ '--i': index }}
-          onClick={() => onOpen(report.id)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              onOpen(report.id);
-            }
-          }}
-        >
-          <span class="row-icon" aria-hidden="true">
-            <Icon name={type === 'sales' ? 'file-chart' : 'event'} />
-          </span>
-          <div class="list-main">
-            <strong class="list-title">{report.name}</strong>
-            <span class="list-sub">
-              {formatDate(report.createdAt)} · {report.sales.length} sales
+      {[...events].reverse().map((event, index) => {
+        const { net } = eventSummary(event.sales, event.expenses);
+        const first = formatDay(event.startedAt);
+        const last = formatDay(event.endedAt);
+        const days = event.dayBreaks.length + 1;
+        return (
+          <div
+            class="list-row list-row-link event-row"
+            key={event.id}
+            data-id={event.id}
+            tabIndex={0}
+            role="button"
+            style={{ '--i': index }}
+            onClick={() => onOpen(event.id)}
+            onKeyDown={(keyEvent) => {
+              if (keyEvent.key === 'Enter' || keyEvent.key === ' ') {
+                keyEvent.preventDefault();
+                onOpen(event.id);
+              }
+            }}
+          >
+            <span class="row-icon" aria-hidden="true">
+              <Icon name="event" />
             </span>
+            <div class="list-main">
+              <strong class="list-title">{event.name}</strong>
+              <span class="list-sub">
+                {first === last ? first : `${first} – ${last}`} · {days === 1 ? '1 day' : `${days} days`}
+              </span>
+            </div>
+            <span class={`list-value ${profitClass(net)}`}>{fmt(net)}</span>
           </div>
-          <div class="list-actions">
-            <button
-              class="icon-btn icon-btn-sm sales-report-edit-btn"
-              type="button"
-              title="Rename report"
-              aria-label={`Rename ${report.name}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                onRename(report.id);
-              }}
-            >
-              <Icon name="pencil" />
-            </button>
-            <button
-              class="icon-btn icon-btn-sm icon-btn-danger history-item-delete"
-              type="button"
-              title="Delete report"
-              aria-label={`Delete ${report.name}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                onDelete(report.id);
-              }}
-            >
-              <Icon name="trash" />
-            </button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 }
 
-interface ReportChecklistProps {
-  reports: SavedReport[];
-  checked: string[];
-  emptyText: string;
-  /** Optional extra first row (the live counter) with value "current-live". */
-  live?: { title: string; subtitle: string };
-}
-
-/** Checkbox list of saved reports; the dialogs read the checked inputs when confirmed. */
-export function ReportChecklist({ reports, checked, emptyText, live }: ReportChecklistProps) {
+/** Checkbox list of past events; the compare dialog reads the checked inputs when confirmed. */
+export function EventChecklist({ events, checked }: { events: PastEvent[]; checked: string[] }) {
+  if (!events.length) return <p class="card-note">No past events yet.</p>;
   return (
     <>
-      {live && (
-        <label class="check-row">
-          <input type="checkbox" id="importCurrentLiveReport" value="current-live" checked={false} />
+      {[...events].reverse().map((event) => (
+        <label class="check-row" key={event.id}>
+          <input type="checkbox" value={event.id} checked={checked.includes(event.id)} />
           <span class="check-box" aria-hidden="true" />
           <span class="check-text">
-            <strong>{live.title}</strong>
-            <small>{live.subtitle}</small>
+            <strong>{event.name}</strong>
+            <small>{formatDay(event.startedAt)}</small>
           </span>
         </label>
-      )}
-      {reports.length ? (
-        reports.map((report) => (
-          <label class="check-row" key={report.id}>
-            <input type="checkbox" value={report.id} checked={checked.includes(report.id)} />
-            <span class="check-box" aria-hidden="true" />
-            <span class="check-text">
-              <strong>{report.name}</strong>
-              <small>{formatDate(report.createdAt)}</small>
-            </span>
-          </label>
-        ))
-      ) : (
-        <p class="card-note">{emptyText}</p>
-      )}
+      ))}
     </>
   );
 }

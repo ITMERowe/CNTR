@@ -31,12 +31,12 @@ function useCountUp(value: number, duration = 420) {
   return shown;
 }
 
-/** Live totals at the top of the Sell screen. */
-export function SalesHero({ revenue, profit, count }: { revenue: number; profit: number; count: number }) {
+/** Today's totals at the top of the Sell screen; after End day the label says which day. */
+export function SalesHero({ revenue, profit, count, day }: { revenue: number; profit: number; count: number; day: number }) {
   const shown = useCountUp(revenue);
   return (
     <>
-      <span class="eyebrow">Revenue</span>
+      <span class="eyebrow">{day > 1 ? `Day ${day} revenue` : 'Revenue'}</span>
       <span class="hero-figure" aria-label={fmt(revenue)} style={{ '--chars': fmt(revenue).length }}>
         {fmt(shown)}
       </span>

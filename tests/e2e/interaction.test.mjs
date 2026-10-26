@@ -102,7 +102,16 @@ for (const width of [320, 360, 393, 412]) {
     ['Products -> Settings', async () => {}, 'settingsScreen'],
     ['About -> Settings', async () => { await page.click('#openAboutMenuBtn'); }, 'settingsScreen'],
     ['open sheet closes', async () => { await tab('eventScreen'); await page.click('#openAddExpenseBtn'); }, 'eventScreen'],
-    ['options menu closes', async () => { await page.click('#optionsBtn'); }, 'eventScreen'],
+    ['name sheet closes', async () => { await page.click('#eventNameBtn'); }, 'eventScreen'],
+    ['past event -> History', async () => {
+      await tab('salesScreen'); await page.click('.tile .pay-add'); await tab('eventScreen');
+      await page.click('#endEventBtn'); await page.click('#saveModalSaveBtn'); await page.click('#confirmModalConfirmBtn'); await sleep(300);
+      // No Filesystem plugin in this fake bridge, so the automatic backup fails and asks; continue.
+      if (await page.evaluate(() => document.querySelector('#confirmModalTitle').textContent === 'Backup failed')) await page.click('#confirmModalConfirmBtn');
+      await sleep(200); await tab('historyScreen'); await page.click('#pastEventList .event-row');
+    }, 'historyScreen'],
+    ['editing a past event -> cancels the edit, stays on the event', async () => { await page.click('#pastEventList .event-row'); await page.click('#pastEventEditBtn'); }, 'pastEventScreen'],
+    ['past event (after cancel) -> History', async () => {}, 'historyScreen'],
     ['other tab -> Sell', async () => {}, 'salesScreen'],
     ['Sell -> app goes to the background', async () => {}, 'salesScreen [minimized]'],
   ];

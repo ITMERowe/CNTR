@@ -1,4 +1,4 @@
-// Core flows: selling, expenses, products, reset, compare, saved reports, corrupt storage.
+// Core flows: selling, expenses, products, corrupt storage. The event flow is in events.test.mjs.
 import { URL, checks, launch, run, sleep } from './lib.mjs';
 
 const { check, done } = checks();
@@ -33,6 +33,7 @@ const exp = await run(page, `
   amount.value = '150000'; amount.dispatchEvent(new Event('input'));
   const formatted = amount.value;
   document.getElementById('addCostBtn').click();
+  await new Promise((r) => setTimeout(r, 30));
   const costs = JSON.parse(localStorage.cntrEventCosts);
   const closed = !document.getElementById('expenseModalOverlay').classList.contains('open');
   return { open1, formatted, costs: costs.length, amt: costs[0]?.amount, closed, bodyPos: document.body.style.position };
@@ -84,6 +85,7 @@ const hist = await run(page, `
   // deactivate Cheki
   document.getElementById('openProductsMenuBtn').click();
   document.querySelector('.product-toggle-btn[data-name="Cheki"]').click();
+  await new Promise((r) => setTimeout(r, 30));
   return JSON.parse(localStorage.cntrProducts).some(p => p.name === 'Cheki');
 `);
 check('deactivate product', hist === false);
@@ -107,6 +109,7 @@ const addAfter = await run(page, `
   document.getElementById('openProductEdit').click();
   document.getElementById('editName').value = 'Brand New';
   document.getElementById('saveProductBtn').click();
+  await new Promise((r) => setTimeout(r, 30));
   const history = JSON.parse(localStorage.cntrProductHistory).map(p => p.name);
   return { history, active: JSON.parse(localStorage.cntrProducts).map(p => p.name) };
 `);
@@ -118,71 +121,13 @@ const orphan = await run(page, `
   tile.querySelector('[data-payment="Cash"][data-action="plus"]').click();
   document.getElementById('openProductsMenuBtn').click();
   document.querySelector('.product-toggle-btn[data-name="Poster"]').click();
-  document.querySelector('.tabbar .tab[data-tab="reportsScreen"]').click();
-  return [...document.querySelectorAll('#reportCard .rank-name')].map(n => n.textContent).includes('Poster');
+  document.querySelector('.tabbar .tab[data-tab="eventScreen"]').click();
+  return [...document.querySelectorAll('#eventCard .rank-name')].map(n => n.textContent).includes('Poster');
 `);
 check('deactivated product still in sales breakdown', orphan);
 
-// 9. Reset asks for confirmation; cancel keeps sales
-const reset = await run(page, `
-  document.querySelector('.tabbar .tab[data-tab="salesScreen"]').click();
-  const before = JSON.parse(localStorage.cntrSales).length;
-  document.getElementById('resetBtn').click();
-  const modal = document.getElementById('confirmModalOverlay').classList.contains('open');
-  document.getElementById('confirmModalCancelBtn').click();
-  const afterCancel = JSON.parse(localStorage.cntrSales).length;
-  document.getElementById('resetBtn').click();
-  document.getElementById('confirmModalConfirmBtn').click();
-  await new Promise((r) => setTimeout(r, 50)); // clearing waits for the automatic backup
-  return { before, modal, afterCancel, afterConfirm: JSON.parse(localStorage.cntrSales).length };
-`);
-check('reset confirms; cancel keeps, confirm clears', reset.modal && reset.before > 0 && reset.afterCancel === reset.before && reset.afterConfirm === 0, JSON.stringify(reset));
-
-// 10. Save + compare sales vs events keep separate selections; preview event expense edits go to that report
-const cmp = await run(page, `
-  const reports = [1,2].map(i => ({ id: 's'+i, name: 'S'+i, createdAt: new Date().toISOString(), type: 'sales', products: [], sales: [], eventCosts: [] }))
-    .concat([1,2].map(i => ({ id: 'e'+i, name: 'E'+i, createdAt: new Date().toISOString(), type: 'event', products: [], sales: [], eventCosts: [{ id: 'c'+i, name: 'Booth', amount: 1000*i }] })));
-  localStorage.cntrSavedReports = JSON.stringify(reports);
-  return true;
-`);
-await load();
-const cmp2 = await run(page, `
-  const pick = (type, ids) => {
-    document.getElementById(type === 'sales' ? 'compareSalesBtn' : 'compareEventsBtn').click();
-    document.querySelectorAll('#compareModalList input').forEach(i => { i.checked = ids.includes(i.value); }); document.getElementById("compareModalList").dispatchEvent(new Event("change"));
-    document.getElementById('compareModalConfirmBtn').click();
-  };
-  document.querySelector('.tabbar .tab[data-tab="historyScreen"]').click();
-  pick('event', ['e1','e2']);
-  const eventCards = document.querySelectorAll('#compareEventCard .compare-card').length;
-  pick('sales', ['s1','s2']);
-  const salesCards = document.querySelectorAll('#compareSalesCard .compare-card').length;
-  const eventStill = document.querySelectorAll('#compareEventCard .compare-card').length;
-  return { eventCards, salesCards, eventStill };
-`);
-check('sales & event compare selections independent', cmp2.eventCards === 2 && cmp2.salesCards === 2 && cmp2.eventStill === 2, JSON.stringify(cmp2));
-
-const prev = await run(page, `
-  document.getElementById('openEventReportMenuBtn').click();
-  document.querySelector('#eventReportHistoryList .sales-report-history-item[data-id="e1"]').click();
-  document.querySelector('.delete-cost').click();
-  const saved = JSON.parse(localStorage.cntrSavedReports).find(r => r.id === 'e1');
-  return { savedCosts: saved.eventCosts.length, live: JSON.parse(localStorage.cntrEventCosts || '[]').length, shown: document.querySelectorAll('#eventCard .cost-item').length };
-`);
-check('expense delete in previewed event report updates that report', prev.savedCosts === 0 && prev.shown === 0, JSON.stringify(prev));
-
-// 11. Report delete asks for confirmation
-const del = await run(page, `
-  document.getElementById('eventDeleteBtn').click();
-  const modal = document.getElementById('confirmModalOverlay').classList.contains('open');
-  document.getElementById('confirmModalConfirmBtn').click();
-  await new Promise((r) => setTimeout(r, 50)); // deleting waits for the automatic backup
-  return { modal, left: JSON.parse(localStorage.cntrSavedReports).map(r => r.id).join(), screen: document.querySelector('.screen.active').id };
-`);
-check('report delete confirms then returns to history', del.modal && !del.left.includes('e1') && del.screen === 'historyScreen', JSON.stringify(del));
-
 // 12. Corrupt storage doesn't crash startup
-await run(page, `localStorage.cntrSales = '{"oops":1}'; localStorage.cntrSavedReports = 'null';`);
+await run(page, `localStorage.cntrSales = '{"oops":1}'; localStorage.cntrEvents = 'null'; localStorage.cntrLiveEvent = '[]';`);
 errors.length = 0;
 await load();
 const tiles = await run(page, `return document.querySelectorAll('.tile').length`);

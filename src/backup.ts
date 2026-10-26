@@ -1,5 +1,7 @@
 // Backup files: build, validate and turn into CSV. Type-only imports, so Node can test it directly.
+import { splitDays } from './events.ts';
 import { DATA_KEYS } from './migrate.ts'; // explicit extension so `node --test` can load it
+import type { SaleRecord } from './types.ts';
 
 export const BACKUP_APP = 'CNTR';
 export const BACKUP_FORMAT = 1;
@@ -16,16 +18,16 @@ export interface BackupFile {
 export interface BackupSummary {
   exportedAt: string;
   sales: number;
-  savedReports: number;
+  events: number;
   products: number;
 }
 
 export type ParsedBackup = { ok: true; values: Map<string, string>; summary: BackupSummary } | { ok: false; error: string };
 
 /** Builds a backup from the stored JSON strings. Unparseable values are kept as strings rather than dropped. */
-export function buildBackup(stored: Map<string, string>, now = new Date()): BackupFile {
+export function buildBackup(stored: Map<string, string>, now = new Date(), keys = DATA_KEYS): BackupFile {
   const data: Record<string, unknown> = {};
-  for (const key of DATA_KEYS) {
+  for (const key of keys) {
     const value = stored.get(key);
     if (value === undefined) continue;
     try {
@@ -60,12 +62,19 @@ function checkList(list: unknown, check: (item: unknown) => boolean, label: stri
   return bad >= 0 ? `${label}: item ${bad + 1} is damaged or incomplete` : null;
 }
 
-function checkReport(report: unknown, index: number): string | null {
-  const label = `Saved report ${index + 1}`;
-  if (!isObject(report) || !isString(report.id) || !isString(report.name) || !isString(report.createdAt) || (report.type !== 'sales' && report.type !== 'event')) {
+const isDateString = (value: unknown) => isString(value) && !Number.isNaN(Date.parse(value as string));
+
+function checkLiveEvent(value: unknown): string | null {
+  const ok = isObject(value) && isString(value.id) && isDateString(value.startedAt) && (value.name === null || isString(value.name)) && Array.isArray(value.dayBreaks) && value.dayBreaks.every(isDateString);
+  return ok ? null : 'Current event is damaged or incomplete';
+}
+
+function checkEvent(event: unknown, index: number): string | null {
+  const label = `Event ${index + 1}`;
+  if (!isObject(event) || !isString(event.id) || !isString(event.name) || !isDateString(event.startedAt) || !isDateString(event.endedAt) || !Array.isArray(event.dayBreaks) || !event.dayBreaks.every(isDateString)) {
     return `${label} is damaged or incomplete`;
   }
-  return checkList(report.products, checkProduct, `${label} products`) ?? checkList(report.sales, checkSale, `${label} sales`) ?? checkList(report.eventCosts, checkCost, `${label} expenses`);
+  return checkList(event.products, checkProduct, `${label} products`) ?? checkList(event.sales, checkSale, `${label} sales`) ?? checkList(event.expenses, checkCost, `${label} expenses`);
 }
 
 const CHECKS: Record<string, (value: unknown) => string | null> = {
@@ -73,8 +82,8 @@ const CHECKS: Record<string, (value: unknown) => string | null> = {
   cntrProductHistory: (value) => checkList(value, checkProduct, 'Product history'),
   cntrSales: (value) => checkList(value, checkSale, 'Sales'),
   cntrEventCosts: (value) => checkList(value, checkCost, 'Expenses'),
-  cntrSavedReports: (value) => (Array.isArray(value) ? value.map(checkReport).find(Boolean) ?? null : 'Saved reports is not a list'),
-  cntrImportedEventReport: (value) => (value === null ? null : isObject(value) ? checkList(value.sales, checkSale, 'Event sales') ?? checkList(value.products, checkProduct, 'Event products') : 'Event data is damaged'),
+  cntrLiveEvent: checkLiveEvent,
+  cntrEvents: (value) => (Array.isArray(value) ? value.map(checkEvent).find(Boolean) ?? null : 'Events is not a list'),
   cntrSettings: (value) => (isObject(value) ? null : 'Settings are damaged'),
 };
 
@@ -103,7 +112,7 @@ export function parseBackup(text: string): ParsedBackup {
   return {
     ok: true,
     values,
-    summary: { exportedAt: isString(file.exportedAt) ? (file.exportedAt as string) : '', sales: count('cntrSales'), savedReports: count('cntrSavedReports'), products: count('cntrProductHistory') || count('cntrProducts') },
+    summary: { exportedAt: isString(file.exportedAt) ? (file.exportedAt as string) : '', sales: count('cntrSales'), events: count('cntrEvents'), products: count('cntrProductHistory') || count('cntrProducts') },
   };
 }
 
@@ -112,16 +121,20 @@ const csvCell = (value: string | number) => {
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 
-/** Every recorded sale (current sales and saved reports) as CSV. Starts with a BOM so Excel reads UTF-8. */
+/** Every recorded sale (the live event, then past events) as CSV, with day numbers. Starts with a BOM so Excel reads UTF-8. */
 export function salesCsv(backup: BackupFile): string {
-  type Sale = { product: string; payment: string; price: number; cost: number; timestamp: string };
-  const rows: (string | number)[][] = [['Report', 'Report type', 'Time', 'Product', 'Payment', 'Price', 'Cost']];
-  const add = (report: string, type: string, sales: unknown) => {
-    if (!Array.isArray(sales)) return;
-    for (const sale of sales as Sale[]) rows.push([report, type, sale.timestamp, sale.product, sale.payment, sale.price, sale.cost]);
+  type StoredSale = Omit<SaleRecord, 'timestamp'> & { timestamp: string };
+  type StoredEvent = { name: string | null; dayBreaks: string[]; sales: StoredSale[] };
+  const rows: (string | number)[][] = [['Event', 'Day', 'Time', 'Product', 'Payment', 'Price', 'Cost']];
+  const add = (name: string, dayBreaks: string[], sales: StoredSale[]) => {
+    const days = splitDays(sales.map((sale) => ({ ...sale, timestamp: new Date(sale.timestamp) })), dayBreaks);
+    days.forEach((day, index) => {
+      for (const sale of day) rows.push([name, index + 1, sale.timestamp.toISOString(), sale.product, sale.payment, sale.price, sale.cost]);
+    });
   };
-  add('Current sales', 'live', backup.data.cntrSales);
-  const reports = Array.isArray(backup.data.cntrSavedReports) ? (backup.data.cntrSavedReports as { name: string; type: string; sales: unknown }[]) : [];
-  for (const report of reports) add(report.name, report.type, report.sales);
+  const live = isObject(backup.data.cntrLiveEvent) ? (backup.data.cntrLiveEvent as StoredEvent) : null;
+  if (Array.isArray(backup.data.cntrSales)) add(live?.name || 'Current event', live?.dayBreaks ?? [], backup.data.cntrSales as StoredSale[]);
+  const events = Array.isArray(backup.data.cntrEvents) ? (backup.data.cntrEvents as StoredEvent[]) : [];
+  for (const event of events) add(event.name ?? '', event.dayBreaks, event.sales);
   return '﻿' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
 }

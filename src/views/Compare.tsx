@@ -1,6 +1,6 @@
 import { fmt } from '../formatters';
-import { compareProductCounts, getReportSummary } from '../reports';
-import type { ReportType, SavedReport } from '../types';
+import { compareProductCounts, getEventSummary } from '../reports';
+import type { PastEvent } from '../types';
 import { EmptyState } from './ReportParts';
 
 interface Row {
@@ -39,16 +39,15 @@ function RowList({ title, rows }: { title: string; rows: Row[] }) {
   );
 }
 
-/** One report's column. Winners are the better value of `report` versus `other`. */
-function CompareCard({ label, type, report, other, products }: { label: string; type: ReportType; report: SavedReport; other: SavedReport; products: Row[] }) {
-  const mine = getReportSummary(report);
-  const theirs = getReportSummary(other);
-  const net = mine.revenue - mine.expenses;
+/** One event's column. Winners are the better value of `event` versus `other`. */
+function CompareCard({ label, event, other, products }: { label: string; event: PastEvent; other: PastEvent; products: Row[] }) {
+  const mine = getEventSummary(event);
+  const theirs = getEventSummary(other);
 
-  const expenseRows = [...new Set([...report.eventCosts, ...other.eventCosts].map((cost) => cost.name))]
+  const expenseRows = [...new Set([...event.expenses, ...other.expenses].map((cost) => cost.name))]
     .map((name) => {
-      const value = report.eventCosts.find((cost) => cost.name === name)?.amount ?? 0;
-      const otherValue = other.eventCosts.find((cost) => cost.name === name)?.amount ?? 0;
+      const value = event.expenses.find((cost) => cost.name === name)?.amount ?? 0;
+      const otherValue = other.expenses.find((cost) => cost.name === name)?.amount ?? 0;
       return { name, amount: value, value: fmt(value), winner: value < otherValue };
     })
     .sort((a, b) => b.amount - a.amount);
@@ -57,32 +56,22 @@ function CompareCard({ label, type, report, other, products }: { label: string; 
     <div class="compare-card">
       <div class="compare-card-head">
         <span class="compare-badge">{label}</span>
-        <h3 class="compare-name">{report.name}</h3>
+        <h3 class="compare-name">{event.name}</h3>
       </div>
-      {type === 'sales' ? (
-        <>
-          <Metric label="Revenue" value={fmt(mine.revenue)} winner={mine.revenue > theirs.revenue} />
-          <Metric label="Profit" value={fmt(mine.profit)} winner={mine.profit > theirs.profit} />
-          <Metric label="Margin" value={`${mine.margin.toFixed(1)}%`} winner={mine.margin > theirs.margin} />
-          <Metric label="Sales" value={String(mine.salesCount)} winner={mine.salesCount > theirs.salesCount} />
-        </>
-      ) : (
-        <>
-          <Metric label={net < 0 ? 'Deficit' : 'Net profit'} value={fmt(net)} winner={net > theirs.revenue - theirs.expenses} negative={net < 0} />
-          <Metric label="Revenue" value={fmt(mine.revenue)} winner={mine.revenue > theirs.revenue} />
-          <Metric label="Profit" value={fmt(mine.profit)} winner={mine.profit > theirs.profit} />
-          <Metric label="Expenses" value={fmt(mine.expenses)} winner={mine.expenses < theirs.expenses} />
-          <RowList title="Expenses" rows={expenseRows} />
-        </>
-      )}
+      <Metric label={mine.net < 0 ? 'Deficit' : 'Net profit'} value={fmt(mine.net)} winner={mine.net > theirs.net} negative={mine.net < 0} />
+      <Metric label="Revenue" value={fmt(mine.revenue)} winner={mine.revenue > theirs.revenue} />
+      <Metric label="Profit" value={fmt(mine.profit)} winner={mine.profit > theirs.profit} />
+      <Metric label="Expenses" value={fmt(mine.expenses)} winner={mine.expenses < theirs.expenses} />
+      <Metric label="Sales" value={String(mine.salesCount)} winner={mine.salesCount > theirs.salesCount} />
+      <RowList title="Expenses" rows={expenseRows} />
       <RowList title="Units sold" rows={products} />
     </div>
   );
 }
 
-export function CompareView({ type, reports }: { type: ReportType; reports: SavedReport[] }) {
-  const [left, right] = reports;
-  if (!left || !right) return <EmptyState icon="chart" title="Nothing to compare" text={`Select two saved ${type} reports to compare.`} />;
+export function CompareView({ events }: { events: PastEvent[] }) {
+  const [left, right] = events;
+  if (!left || !right) return <EmptyState icon="chart" title="Nothing to compare" text="Select two past events to compare." />;
 
   const counts = compareProductCounts(left, right);
   const rowsFor = (side: 'left' | 'right') =>
@@ -93,8 +82,8 @@ export function CompareView({ type, reports }: { type: ReportType; reports: Save
 
   return (
     <div class="compare">
-      <CompareCard label="A" type={type} report={left} other={right} products={rowsFor('left')} />
-      <CompareCard label="B" type={type} report={right} other={left} products={rowsFor('right')} />
+      <CompareCard label="A" event={left} other={right} products={rowsFor('left')} />
+      <CompareCard label="B" event={right} other={left} products={rowsFor('right')} />
     </div>
   );
 }

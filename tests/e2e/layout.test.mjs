@@ -4,7 +4,7 @@ import { URL, checks, launch, sleep } from './lib.mjs';
 
 const { check, done } = checks();
 const browser = await launch();
-const TABS = ['salesScreen', 'reportsScreen', 'eventScreen', 'historyScreen', 'settingsScreen'];
+const TABS = ['salesScreen', 'eventScreen', 'historyScreen', 'settingsScreen'];
 
 function scan() {
   const visible = (e) => e.offsetParent && getComputedStyle(e).visibility !== 'hidden';
@@ -49,14 +49,23 @@ for (const [width, height] of [[320, 700], [360, 800], [412, 892], [892, 412]]) 
   });
   await page.reload();
   await sleep(600);
-  for (let i = 0; i < 6; i++) await page.click('.tile .pay-add');
-  for (const tab of TABS) {
-    await page.click(`.tabbar .tab[data-tab="${tab}"]`);
+  const sellSome = async () => { await page.click('.tabbar .tab[data-tab="salesScreen"]'); for (let i = 0; i < 6; i++) await page.click('.tile .pay-add'); };
+  const confirm = async () => { await page.click('#confirmModalConfirmBtn'); await sleep(300); };
+  const assess = async (label) => {
     await sleep(450);
     const r = await page.evaluate(scan);
     const wider = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
     const problems = [...r.overflow, ...r.small, ...r.unlabeled, ...r.contrast];
-    check(`${width}x${height} ${tab}: no overflow, tap targets >= 44px, labels, contrast`, !wider && !problems.length, problems.join(' | ') || '');
+    check(`${width}x${height} ${label}: no overflow, tap targets >= 44px, labels, contrast`, !wider && !problems.length, problems.join(' | ') || '');
+  };
+  // Two days of sales with a long expense, so the day cards show.
+  await sellSome();
+  await page.click('.tabbar .tab[data-tab="eventScreen"]');
+  await page.click('#endDayBtn'); await confirm();
+  await sellSome();
+  for (const tab of TABS) {
+    await page.click(`.tabbar .tab[data-tab="${tab}"]`);
+    await assess(tab);
   }
   if (width === 412) {
     await page.click('.tabbar .tab[data-tab="salesScreen"]');
@@ -65,12 +74,34 @@ for (const [width, height] of [[320, 700], [360, 800], [412, 892], [892, 412]]) 
       const nav = document.querySelector('.tabbar').getBoundingClientRect().top;
       return { tiles: [...document.querySelectorAll('.tile')].filter((t) => t.getBoundingClientRect().bottom <= nav).length, sell: parseFloat(getComputedStyle(document.querySelector('.hero .hero-figure')).fontSize) };
     });
-    await page.click('.tabbar .tab[data-tab="reportsScreen"]');
+    await page.click('.tabbar .tab[data-tab="eventScreen"]');
     await sleep(300);
-    const report = await page.evaluate(() => parseFloat(getComputedStyle([...document.querySelectorAll('.report-hero .hero-figure')].find((e) => e.offsetParent)).fontSize));
+    // The report figure's normal size: a long amount (here a big deficit) is allowed to shrink it to fit.
+    const report = await page.evaluate(() => {
+      const figure = [...document.querySelectorAll('.report-hero .hero-figure')].find((e) => e.offsetParent);
+      const probe = figure.cloneNode();
+      probe.textContent = 'Rp 1';
+      probe.style.setProperty('--chars', '4');
+      figure.after(probe);
+      const size = parseFloat(getComputedStyle(probe).fontSize);
+      probe.remove();
+      return size;
+    });
     check('412x892: 4 tiles fit above the tab bar', fit.tiles >= 4, `${fit.tiles} tiles`);
     check('Sell revenue figure is 3/4 of the report figure', Math.abs(fit.sell / report - 0.75) < 0.01, `${fit.sell}px vs ${report}px`);
   }
+  // End the event, then the History list, the past event and its edit mode.
+  await page.click('.tabbar .tab[data-tab="eventScreen"]');
+  await page.click('#endEventBtn');
+  await page.fill('#saveModalInput', 'A very long convention name that goes on and on, Day 1 and 2');
+  await page.click('#saveModalSaveBtn'); await confirm();
+  await page.click('.tabbar .tab[data-tab="historyScreen"]');
+  await assess('History with a past event');
+  await page.click('#pastEventList .event-row');
+  await assess('past event view');
+  await page.click('#pastEventEditBtn');
+  await assess('past event edit mode');
+  await page.click('#pastEventCancelBtn');
   await page.close();
 }
 

@@ -7,11 +7,6 @@ export const el = {
   grid: byId<HTMLDivElement>('grid'),
   stats: byId<HTMLDivElement>('stats'),
   toast: byId<HTMLDivElement>('toast'),
-  reset: byId<HTMLButtonElement>('resetBtn'),
-  optionsBtn: byId<HTMLButtonElement>('optionsBtn'),
-  optionsMenu: byId<HTMLDivElement>('optionsMenu'),
-  saveReportOption: byId<HTMLButtonElement>('saveReportOption'),
-  saveEventReportOption: byId<HTMLButtonElement>('saveEventReportOption'),
   openProductEdit: byId<HTMLButtonElement>('openProductEdit'),
   // Product editor
   productEditTitle: byId<HTMLHeadingElement>('productEditTitle'),
@@ -34,36 +29,29 @@ export const el = {
   hueThumb: byId<HTMLDivElement>('hueThumb'),
   hueValue: byId<HTMLSpanElement>('hueValue'),
   // Report screens
-  report: byId<HTMLDivElement>('reportCard'),
   eventReport: byId<HTMLDivElement>('eventCard'),
-  reportPageTitle: byId<HTMLHeadingElement>('reportPageTitle'),
-  eventPageTitle: byId<HTMLHeadingElement>('eventPageTitle'),
-  reportBackBtn: byId<HTMLButtonElement>('reportBackBtn'),
-  eventBackBtn: byId<HTMLButtonElement>('eventBackBtn'),
-  reportDeleteBtn: byId<HTMLButtonElement>('reportDeleteBtn'),
-  eventDeleteBtn: byId<HTMLButtonElement>('eventDeleteBtn'),
   historyRecentSales: byId<HTMLDivElement>('historyRecentPurchase'),
-  compareSalesBtn: byId<HTMLButtonElement>('compareSalesBtn'),
+  pastEventList: byId<HTMLDivElement>('pastEventList'),
+  pastEventCard: byId<HTMLDivElement>('pastEventCard'),
+  pastEventTitle: byId<HTMLHeadingElement>('pastEventTitle'),
+  pastEventBackBtn: byId<HTMLButtonElement>('pastEventBackBtn'),
+  pastEventEditBtn: byId<HTMLButtonElement>('pastEventEditBtn'),
+  pastEventDeleteBtn: byId<HTMLButtonElement>('pastEventDeleteBtn'),
+  pastEventEditBar: byId<HTMLDivElement>('pastEventEditBar'),
+  pastEventSaveBtn: byId<HTMLButtonElement>('pastEventSaveBtn'),
+  pastEventCancelBtn: byId<HTMLButtonElement>('pastEventCancelBtn'),
   compareEventsBtn: byId<HTMLButtonElement>('compareEventsBtn'),
-  compareSalesCard: byId<HTMLDivElement>('compareSalesCard'),
   compareEventCard: byId<HTMLDivElement>('compareEventCard'),
-  compareSalesBackBtn: byId<HTMLButtonElement>('compareSalesBackBtn'),
   compareEventBackBtn: byId<HTMLButtonElement>('compareEventBackBtn'),
   // Settings and its sub-screens
   currencySelect: byId<HTMLSelectElement>('currencySelect'),
   compactMoneyToggle: byId<HTMLInputElement>('compactMoneyToggle'),
   openProductsMenuBtn: byId<HTMLButtonElement>('openProductsMenuBtn'),
-  openSalesReportMenuBtn: byId<HTMLButtonElement>('openSalesReportMenuBtn'),
-  openEventReportMenuBtn: byId<HTMLButtonElement>('openEventReportMenuBtn'),
   openAboutMenuBtn: byId<HTMLButtonElement>('openAboutMenuBtn'),
   aboutBackBtn: byId<HTMLButtonElement>('aboutBackBtn'),
   aboutVersion: byId<HTMLSpanElement>('aboutVersion'),
-  salesReportHistoryBackBtn: byId<HTMLButtonElement>('salesReportHistoryBackBtn'),
-  eventReportHistoryBackBtn: byId<HTMLButtonElement>('eventReportHistoryBackBtn'),
   productHistoryBackBtn: byId<HTMLButtonElement>('productHistoryBackBtn'),
   productHistoryList: byId<HTMLDivElement>('productHistoryList'),
-  salesReportHistoryList: byId<HTMLDivElement>('salesReportHistoryList'),
-  eventReportHistoryList: byId<HTMLDivElement>('eventReportHistoryList'),
   // Backup
   exportBackupBtn: byId<HTMLButtonElement>('exportBackupBtn'),
   exportCsvBtn: byId<HTMLButtonElement>('exportCsvBtn'),
@@ -74,6 +62,7 @@ export const el = {
   // Save / rename dialog
   saveModalOverlay: byId<HTMLDivElement>('saveModalOverlay'),
   saveModalTitle: byId<HTMLHeadingElement>('saveModalTitle'),
+  saveModalText: byId<HTMLParagraphElement>('saveModalText'),
   saveModalInput: byId<HTMLInputElement>('saveModalInput'),
   saveModalSaveBtn: byId<HTMLButtonElement>('saveModalSaveBtn'),
   saveModalCancelBtn: byId<HTMLButtonElement>('saveModalCancelBtn'),
@@ -85,12 +74,6 @@ export const el = {
   compareModalConfirmBtn: byId<HTMLButtonElement>('compareModalConfirmBtn'),
   compareModalCancelBtn: byId<HTMLButtonElement>('compareModalCancelBtn'),
   compareModalCloseBtn: byId<HTMLButtonElement>('compareModalCloseBtn'),
-  // Import dialog
-  importModalOverlay: byId<HTMLDivElement>('importModalOverlay'),
-  importSavedReportsList: byId<HTMLDivElement>('importSavedReportsList'),
-  importModalCancelBtn: byId<HTMLButtonElement>('importModalCancelBtn'),
-  importModalConfirmBtn: byId<HTMLButtonElement>('importModalConfirmBtn'),
-  importModalCloseBtn: byId<HTMLButtonElement>('importModalCloseBtn'),
   // Expense dialog
   expenseModalOverlay: byId<HTMLDivElement>('expenseModalOverlay'),
   expenseModalTitle: byId<HTMLHeadingElement>('expenseModalTitle'),
@@ -166,37 +149,20 @@ export function unlockBodyScroll() {
   savedBodyScroll = 0;
 }
 
-export function closeOptionsMenu() {
-  el.optionsMenu.classList.remove('open');
-}
-
 export function activeScreenId() {
   return document.querySelector('.screen.active')?.id ?? 'salesScreen';
 }
 
 /** Shows the header buttons that make sense for `screenId`. */
 export function updateHeaderActions(screenId = activeScreenId()) {
-  const preview = state.previewReport;
-  const isPreview = Boolean(preview && ((screenId === 'reportsScreen' && preview.type === 'sales') || (screenId === 'eventScreen' && preview.type === 'event')));
-  const showOptions = screenId === 'reportsScreen' || screenId === 'eventScreen';
-  const showAddProduct = screenId === 'salesScreen' || screenId === 'productHistoryScreen';
-  const showReset = !isPreview && (screenId === 'salesScreen' || screenId === 'reportsScreen' || screenId === 'eventScreen');
-
-  el.optionsBtn.style.display = showOptions ? 'inline-grid' : 'none';
-  el.openProductEdit.style.display = showAddProduct ? 'inline-grid' : 'none';
-  el.reset.style.display = showReset ? 'inline-grid' : 'none';
-  el.reset.title = screenId === 'eventScreen' ? 'Clear event' : 'Clear sales';
-  el.reset.setAttribute('aria-label', el.reset.title);
-  if (!showOptions) closeOptionsMenu();
+  el.openProductEdit.style.display = screenId === 'salesScreen' || screenId === 'productHistoryScreen' ? 'inline-grid' : 'none';
 }
 
 // Sub-screens highlight the bottom-nav tab they belong to.
 const PARENT_TAB: Record<string, string> = {
-  compareSalesScreen: 'historyScreen',
+  pastEventScreen: 'historyScreen',
   compareEventScreen: 'historyScreen',
   productHistoryScreen: 'settingsScreen',
-  salesReportHistoryScreen: 'settingsScreen',
-  eventReportHistoryScreen: 'settingsScreen',
   aboutScreen: 'settingsScreen',
 };
 

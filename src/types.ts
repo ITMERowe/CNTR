@@ -1,7 +1,5 @@
 export type Currency = 'IDR' | 'USD' | 'EUR' | 'SGD' | 'AUD' | 'GBP' | 'JPY' | 'MYR';
 
-export type ReportType = 'sales' | 'event';
-
 export interface Product {
   name: string;
   price: number;
@@ -29,28 +27,26 @@ export interface EventCost {
   amount: number;
 }
 
-export interface SavedReport {
+/** The live event's name and day breaks; its sales and expenses are the live `cntrSales` and `cntrEventCosts`. */
+export interface LiveEventMeta {
+  id: string;
+  /** null: show the default name ("Event <date of the first sale>"). */
+  name: string | null;
+  startedAt: string;
+  /** ISO times End day was pressed. */
+  dayBreaks: string[];
+}
+
+/** A finished event in History. `products` is a snapshot of what it sold (colours and prices for edits). */
+export interface PastEvent {
   id: string;
   name: string;
-  createdAt: string;
-  type: ReportType;
+  startedAt: string;
+  endedAt: string;
+  dayBreaks: string[];
   products: Product[];
   sales: SaleRecord[];
-  eventCosts: EventCost[];
-}
-
-/** Sales imported into the live event screen. */
-export interface ImportedEventReport {
-  sales: SaleRecord[];
-  products: Product[];
-}
-
-/** What the event screen is showing: a previewed saved event report, or the live imported event. */
-export interface EventView {
-  hasReport: boolean;
-  sales: SaleRecord[];
-  products: Product[];
-  eventCosts: EventCost[];
+  expenses: EventCost[];
 }
 
 export interface AppSettings {

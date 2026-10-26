@@ -1,13 +1,13 @@
 import { localStorageStore, openSqliteStore, type KvStore } from './kv';
 import { DATA_KEYS, migrateFromLegacy } from './migrate';
-import type { AppSettings, Currency, EventCost, ImportedEventReport, Product, SaleRecord, SavedReport } from './types';
+import type { AppSettings, Currency, EventCost, LiveEventMeta, PastEvent, Product, SaleRecord } from './types';
 
 export const PRODUCT_STORAGE_KEY = 'cntrProducts';
 export const PRODUCT_HISTORY_STORAGE_KEY = 'cntrProductHistory';
 export const TX_STORAGE_KEY = 'cntrSales';
 export const EVENT_COST_STORAGE_KEY = 'cntrEventCosts';
-export const SAVED_REPORTS_KEY = 'cntrSavedReports';
-export const IMPORTED_EVENT_REPORT_KEY = 'cntrImportedEventReport';
+export const LIVE_EVENT_KEY = 'cntrLiveEvent';
+export const PAST_EVENTS_KEY = 'cntrEvents';
 export const SETTINGS_KEY = 'cntrSettings';
 
 export const CURRENCIES: Currency[] = ['IDR', 'USD', 'EUR', 'SGD', 'AUD', 'GBP', 'JPY', 'MYR'];
@@ -52,6 +52,8 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
 function flush(): Promise<void> {
   flushing ??= (async () => {
     try {
+      // Let the rest of this tick's writes join the batch, so a multi-key change (e.g. End event) is all-or-nothing.
+      await Promise.resolve();
       while (pending.size) {
         const batch = new Map(pending);
         pending.clear();
@@ -122,9 +124,9 @@ export async function initStorage(isNative: boolean): Promise<StorageStartup> {
   return { ok: true, usingDatabase };
 }
 
-/** The stored JSON strings for every data key, including changes still being written. */
-export function storedValues() {
-  return new Map([...cache].filter(([key]) => DATA_KEYS.includes(key)));
+/** The stored JSON strings for every data key (or `keys`), including changes still being written. */
+export function storedValues(keys = DATA_KEYS) {
+  return new Map([...cache].filter(([key]) => keys.includes(key)));
 }
 
 /** Replaces all data in one step (keys missing from `values` are deleted). The caller reloads the app afterwards. */
@@ -167,22 +169,6 @@ function serializeSales(sales: SaleRecord[]) {
   }));
 }
 
-export function loadImportedEventReport(): ImportedEventReport | null {
-  const parsed = readJson<{ sales?: unknown; products?: unknown } | null>(IMPORTED_EVENT_REPORT_KEY, null);
-  if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.sales) || !Array.isArray(parsed.products)) {
-    return null;
-  }
-  return { sales: reviveSales(parsed.sales as StoredSale[]), products: parsed.products as Product[] };
-}
-
-export function saveImportedEventReport(report: ImportedEventReport | null) {
-  if (report === null) {
-    persist(IMPORTED_EVENT_REPORT_KEY, null);
-    return;
-  }
-  writeJson(IMPORTED_EVENT_REPORT_KEY, { ...report, sales: serializeSales(report.sales) });
-}
-
 export function loadProducts(): Product[] {
   return readArray<Product>(PRODUCT_STORAGE_KEY);
 }
@@ -216,12 +202,21 @@ export function saveEventCosts(eventCosts: EventCost[]) {
   writeJson(EVENT_COST_STORAGE_KEY, eventCosts);
 }
 
-export function loadSavedReports(): SavedReport[] {
-  return readArray<SavedReport>(SAVED_REPORTS_KEY);
+export function loadLiveEvent(): LiveEventMeta | null {
+  const parsed = readJson<LiveEventMeta | null>(LIVE_EVENT_KEY, null);
+  return parsed && typeof parsed === 'object' && Array.isArray(parsed.dayBreaks) ? parsed : null;
 }
 
-export function saveSavedReports(reports: SavedReport[]) {
-  writeJson(SAVED_REPORTS_KEY, reports);
+export function saveLiveEvent(meta: LiveEventMeta) {
+  writeJson(LIVE_EVENT_KEY, meta);
+}
+
+export function loadPastEvents(): PastEvent[] {
+  return readArray<PastEvent & { sales: StoredSale[] }>(PAST_EVENTS_KEY).map((event) => ({ ...event, sales: reviveSales(event.sales) }));
+}
+
+export function savePastEvents(events: PastEvent[]) {
+  writeJson(PAST_EVENTS_KEY, events.map((event) => ({ ...event, sales: serializeSales(event.sales) })));
 }
 
 // When the last backup was exported. Not part of the backup itself, so a restore does not change it.

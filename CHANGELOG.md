@@ -2,9 +2,19 @@
 
 ## Unreleased (branch `feature/signing-tests-about`)
 
+### Changed (events)
+- **Reports and Event are one always-live Event screen.** Every sale counts at once; no Save report, Save event report, Import sales or Clear buttons. 4 tabs: Event, Sell, History, Settings.
+- **Multi-day events**: End day freezes the day (day cards on the Event screen; the Sell counters and revenue restart for the new day); End event names the event and moves it to History.
+- **History** lists past events. Open one to view it, edit it (rename, fix Cash/QRIS counts per product per day, change expenses; saved after an automatic backup), delete it, or compare two.
+- Net profit everywhere (including Compare) is product profit − expenses; it used to be revenue − expenses on the Event and Compare screens.
+- Old saved reports are no longer shown (dropped, not deleted); the first launch saves one automatic backup that still contains them. Restoring an older backup restores its live sales and expenses.
+- Changing a product's price no longer reprices sales from ended days.
+- CSV export: one row per sale with the event name and day number.
+- A multi-key change (End event) is saved in one all-or-nothing write.
+
 ### Added
 - **About screen** (Settings → About): version, license, a privacy statement (no account, server or internet; data stays on the phone) and the open-source licenses.
-- **Automatic backups**: before clearing sales, clearing an event or deleting a report, and after saving a report, CNTR writes a backup to `Documents/CNTR/auto` (newest 20 kept). If that backup fails, it asks before going ahead.
+- **Automatic backups**: before ending an event, saving an edit to a past event or deleting one, CNTR writes a backup to `Documents/CNTR/auto` (newest 20 kept). If that backup fails, it asks before going ahead.
 - **Release signing in CI**: with the release key in GitHub secrets, CI builds a release APK signed with one permanent key (installs as an update, keeping the data) and a Play `.aab`; without it, a debug APK as before.
 - Browser tests in the repo (`tests/e2e`, `npm run test:e2e`), run in CI with the unit tests.
 

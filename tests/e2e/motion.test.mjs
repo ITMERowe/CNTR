@@ -24,9 +24,8 @@ for (const reduced of [false, true]) {
     await new Promise(r => setTimeout(r, 600));
     const heroEnd = hero();
     const overlay = document.getElementById('saveModalOverlay');
-    document.querySelector('.tabbar .tab[data-tab="reportsScreen"]').click();
-    document.getElementById('optionsBtn').click();
-    document.getElementById('saveReportOption').click();
+    document.querySelector('.tabbar .tab[data-tab="eventScreen"]').click();
+    document.getElementById('eventNameBtn').click();
     const sheet = overlay.querySelector('.sheet');
     await new Promise(r => setTimeout(r, 40));
     const sheetMidTransform = getComputedStyle(sheet).transform;

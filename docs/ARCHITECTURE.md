@@ -25,9 +25,8 @@ src/
   views/               Preact components
     SalesGrid.tsx      Sell tab tiles (counters, undo, haptic-triggering callbacks)
     SalesHero.tsx      Revenue total at the top of the Sell tab (count-up animation)
-    SalesReport.tsx    Reports tab
-    EventReport.tsx    Event tab (expenses, top products)
-    Lists.tsx          Recent sales, Products, saved-report lists, report checklists
+    EventScreen.tsx    Event tab (live) and a past event in History (read-only or editing)
+    Lists.tsx          Recent sales, Products, past-event list, compare checklist
     Compare.tsx        Compare sales / compare events
     ReportParts.tsx    Shared pieces: hero figure, KPI tiles, payment split, hourly chart, product rows, empty states
     Icon.tsx           SVG icon component
@@ -42,16 +41,18 @@ Dependencies point one way: `views/` and `ui/` read `state.ts`; `state.ts` never
 | `Product` | `name`, `price`, `cost`, `color`. **The name is the identity key**: sales, history and reports all refer to products by name. |
 | `SaleRecord` | One tap of **+**: product name, price and cost *at the time*, payment (`Cash`/`QRIS`), timestamp. |
 | `EventCost` | An event expense: `id`, `name`, `amount`. |
-| `SavedReport` | A frozen snapshot (`type: 'sales' \| 'event'`) of products, sales and expenses. |
-| `EventView` | What the event screen shows: a previewed saved event report, else the live imported event. |
+| `LiveEventMeta` | The live event's `id`, `name` (null = default "Event <date>"), `startedAt` and `dayBreaks` (times End day was pressed). Its sales and expenses are the live `cntrSales` / `cntrEventCosts`. |
+| `PastEvent` | A finished event: name, dates, `dayBreaks`, a `products` snapshot (colours and prices for edits), `sales`, `expenses`. |
+
+Event maths live in `src/events.ts` (pure, Node-tested): `splitDays()` (a sale belongs to the first day whose break is after it), `todaySales()`, `eventSummary()` (net = product profit − expenses), `adjustCount()` (History edits), `snapshotProducts()`. Every screen, Compare and the CSV use them, so totals always agree.
 
 Because names are identity, the product editor refuses a rename that would collide with an existing product (it would merge them). Renaming a product also renames its recorded sales.
 
 ## State
 
-`state.ts` exports one mutable `state` object: `products`, `productHistory`, `sales` (live), `eventCosts` (live), `importedEventReport`, and `previewReport` (a saved report being viewed). Change it only through the functions in `state.ts` (`recordSale`, `addExpense`, `importEventSales`, `saveCurrentReport`, ...): they apply the rules and persist the result. Then call `render()`.
+`state.ts` exports one mutable `state` object: `products`, `productHistory`, `sales` and `eventCosts` (the live event's), `liveEvent` (its name and day breaks) and `pastEvents`. Change it only through the functions in `state.ts` (`recordSale`, `addExpense`, `endDay`, `endEvent`, `replacePastEvent`, ...): they apply the rules and persist the result. Then call `render()`.
 
-`getEventView()` is the single answer to "what is the event screen showing?". Saving an event report and editing expenses both go through it, so they always act on what is on screen.
+The Sell tab shows `todayLiveSales()` (after the last End day); `removeLastSale()` never reaches an ended day. Editing a past event works on a copy (`draft` in `main.ts`); Save replaces the stored event after an automatic backup, Cancel or Android back drops it.
 
 ## Storage
 
@@ -61,20 +62,22 @@ Data is a set of JSON values under these keys. On the phone they live in an SQLi
 |---|---|
 | `cntrProducts` | Active products (the tiles on the sales screen) |
 | `cntrProductHistory` | Every product ever created, including deactivated ones |
-| `cntrSales` | Live sales for the current session |
-| `cntrEventCosts` | Live event expenses |
-| `cntrImportedEventReport` | Sales + products imported into the live event screen |
-| `cntrSavedReports` | All saved sales and event reports |
+| `cntrSales` | The live event's sales (all days) |
+| `cntrEventCosts` | The live event's expenses |
+| `cntrLiveEvent` | The live event's name, start and day breaks (`LiveEventMeta`); created on first launch from the existing sales |
+| `cntrEvents` | Past events (`PastEvent[]`), oldest first |
 | `cntrSettings` | Currency and compact-money preference |
 
 - List loaders only accept arrays, so corrupt data falls back to empty instead of crashing startup.
 - Settings are cached in memory (`fmt()` runs for every amount on screen); `saveSettings()` invalidates the cache.
-- Saved reports are re-read from storage when needed rather than cached, so a mutated copy never leaks between screens.
+- Old saved reports (`cntrSavedReports`, `cntrImportedEventReport`) were dropped when events replaced them: no longer read, backed up or restored, but never deleted. The first launch with events writes one automatic backup that still includes them (`cntr-auto-<timestamp>-saved-reports.json`). Restoring an old backup brings back its live sales and expenses as the live event.
+- **Days are split by time**, so `saleTime()` / `breakTime()` stamp a sale after the last End day and an End day after every sale, even if the phone's clock was set back. Editing a product's price applies to today's live sales only; ended days stay frozen.
+- **Writes made in the same tick go into one all-or-nothing batch** (`flush()` waits one microtask), so End event, which writes `cntrEvents`, `cntrSales`, `cntrEventCosts` and `cntrLiveEvent`, can never be half-applied.
 - **Reads are synchronous** from an in-memory copy loaded by `initStorage()` before the app starts (`main.ts` `start()`, then `initState()`). **Writes** update that copy at once and are written to the store in order, a few milliseconds later. A failed write (e.g. disk full) is kept, retried every 5 s, and shown in a warning banner until it succeeds; it is never dropped.
 - **Migration** (`migrate.ts`, first launch on the phone): copy the legacy `localStorage` keys into SQLite, read them back and compare, then set `cntrMeta.migratedFromLocalStorage`. The legacy copy is never changed or deleted. Rerunning is harmless: values are written by key, and once the flag is set it does nothing. If the database cannot be opened before migration ever succeeded, the app keeps running on `localStorage` (still the only, current copy) with a warning and retries next launch. Once the database has been used (`cntrMeta.usingDatabase` in `localStorage`), a database failure shows a "Try again" screen instead, because the old copy is stale.
 - **Backup** (`backup.ts`): `{ app: "CNTR", format: 1, exportedAt, data: { <key>: <parsed value> } }`. `parseBackup()` validates every record before anything changes and rejects the whole file on any problem. Restore saves a safety copy (`Documents/CNTR/cntr-before-restore-*.json`, else app-private storage), writes all keys in one SQLite transaction (keys missing from the backup are deleted), then reloads.
 - `cntrMeta.lastBackup` (when the last backup was exported) is not part of backups.
-- **Automatic backups** (`main.ts` `withAutoBackup()`, `files.ts` `saveAutoBackup()`): before clearing sales, clearing the live event or deleting a saved report, and after saving a report, a full backup is written to `Documents/CNTR/auto/cntr-auto-<timestamp>.json` (app-private storage if Documents is refused); the newest 20 are kept. If it fails before a destructive action, the user is asked before going ahead. Native only; the browser build writes nothing.
+- **Automatic backups** (`main.ts` `withAutoBackup()`, `files.ts` `saveAutoBackup()`): before ending an event, saving an edit to a past event or deleting one, a full backup is written to `Documents/CNTR/auto/cntr-auto-<timestamp>.json` (app-private storage if Documents is refused); the newest 20 are kept. If it fails before a destructive action, the user is asked before going ahead. Native only; the browser build writes nothing.
 
 ## Tile colours
 
@@ -82,24 +85,24 @@ Tiles take the product colour as `--tile`. `needsDarkText()` (`formatters.ts`) c
 
 ## Rendering
 
-`render()` in `main.ts` is the single refresh. It renders each Preact view (revenue hero, sales tiles, reports, lists) into its container (`renderView(h(SalesReport, props), el.report)`). Preact diffs against the previous render, so calling it after every change is cheap.
+`render()` in `main.ts` is the single refresh. It renders each Preact view (revenue hero, sales tiles, reports, lists) into its container (`renderView(h(EventScreen, props), el.eventReport)`). Preact diffs against the previous render, so calling it after every change is cheap.
 
 - **Views are pure**: they receive data and callbacks as props and never read `state` or `localStorage` themselves.
 - **Sales tiles** are the `SalesGrid` component. A counter's element is re-keyed when its value changes, which restarts its CSS roll animation; `pulse` says which counter changed and in which direction.
-- **Dialogs** are bottom sheets: static shells in `index.html` opened by toggling `.open`. Their lists (compare, import) are Preact `ReportChecklist`s, and the confirm handlers read the checked inputs.
+- **Dialogs** are bottom sheets: static shells in `index.html` opened by toggling `.open`. The compare list is a Preact `EventChecklist`, and the confirm handler reads the checked inputs. The name sheet (`saveModal*`) is shared by rename, End event and rename-while-editing.
 - **Haptics** (`@capacitor/haptics`) fire on add/undo, on the native app only.
 
 ## Navigation
 
 `openScreen(id)` in `ui/dom.ts` is the only way to change screens. Besides toggling the `.screen.active` section it highlights the bottom-nav tab (sub-screens map to their parent via `PARENT_TAB`), shows the revenue hero only on the Sell screen, and sets the header buttons for that screen. Add new screens to `index.html` as a `<section class="screen">` and, if they are a sub-screen, to `PARENT_TAB`.
 
-**Android back** (`@capacitor/app` `backButton`, native only) runs `goBack()` in `main.ts`: it closes the colour picker, the options menu or an open sheet (by clicking its `…CloseBtn`), else clicks the active screen's visible `.back-btn`, else opens Sell, else minimises the app. A new sub-screen therefore needs a `.back-btn` for back to work there.
+**Android back** (`@capacitor/app` `backButton`, native only) runs `goBack()` in `main.ts`: it closes the colour picker or an open sheet (by clicking its `…CloseBtn`), else cancels an edit of a past event, else clicks the active screen's visible `.back-btn`, else opens Sell, else minimises the app. A new sub-screen therefore needs a `.back-btn` for back to work there.
 
 ## Conventions
 
 - **New UI is a Preact component** in `views/`. Pass data and callbacks as props; Preact escapes text, so never use `dangerouslySetInnerHTML` for user input.
 - **Wire static elements once** at startup; never attach listeners inside `render()`.
-- **Confirm destructive actions** with `openConfirmModal()` (clear sales, delete report, remove product).
+- **Confirm destructive actions** with `openConfirmModal()` (End day, End event, delete an event, remove a product).
 - **Styling** uses the tokens at the top of `src/style.css`: surfaces (`--bg`, `--surface-1..3`, VS Code dark palette), text (`--text`, `--text-2`, `--text-3`, all >= 4.5:1), meaning (`--positive`, `--negative`, `--cash`, `--qris`), radii, a 4/8px spacing scale and motion. Never hard-code a colour in a component.
 - **Product colours** are shown exactly as chosen; text and icons on a tile are always white. Light colours (e.g. yellow) give white text low contrast, so prefer mid-to-dark colours for products.
 - **Motion** uses only the motion tokens (`--dur-tap` 120ms, `--dur-1` 200ms, `--dur-2` 280ms, `--dur-3` 420ms; `--ease-out` to enter, `--ease-in` to exit) and animates only `transform`/`opacity`. `prefers-reduced-motion` turns it all off.

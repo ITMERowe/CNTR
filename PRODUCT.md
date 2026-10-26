@@ -14,7 +14,7 @@ Small booth sellers, mainly in Indonesia (IDR currency, QRIS payments), selling 
 
 ## Product Purpose
 
-CNTR is an offline sales counter. The seller taps a product's Cash or QRIS half to record a sale. The app keeps running totals and a sales report, and its event report subtracts booth expenses to show whether the event paid off. CNTR succeeds when a sale never waits on the app and the seller leaves knowing their net result.
+CNTR is an offline sales counter. The seller taps a product's Cash or QRIS half to record a sale. The app keeps one always-live event, split into days when the seller presses End day, and subtracts booth expenses to show whether the event paid off. CNTR succeeds when a sale never waits on the app and the seller leaves knowing their net result.
 
 ## Positioning
 
@@ -28,11 +28,11 @@ CNTR is built for these three things, which a generic POS or a notes app does no
 - Used standing at a booth, often in a rush, on a phone held in one hand.
 - The owner's reference phone is about 412×892 CSS px. Layouts must also work down to 320px.
 - Each sale is either cash or QRIS (a digital payment). Sellers check the split to match the cash box.
-- One session per event: sell live, import the sales into the event report, add expenses, then save or compare reports.
+- One live event at a time: sell, optionally End day each evening, add expenses, End event when it is over; past events stay in History to view, fix, or compare.
 
 ## Capabilities and Constraints
 
-- **Screens:** Sell (product tiles), Reports, Event, History and saved reports, Compare, Products, Settings.
+- **Screens:** Sell (product tiles), Event (live), History (past events, edit), Compare, Products, Settings.
 - **Settings:** 8 currencies (IDR, USD, EUR, SGD, AUD, GBP, JPY, MYR) and an optional compact money format.
 - **Storage:** data lives only on the device, in an SQLite database on the phone (WebView `localStorage` in a browser). No sync or cloud. Settings → Backup exports a JSON backup (and sales CSV) to a local file and restores from one.
 - **Offline assets:** the font (Plus Jakarta Sans) and the Lucide icons are bundled. Nothing may load from the network.

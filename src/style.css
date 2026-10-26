@@ -394,66 +394,6 @@ p {
   min-height: 54px;
 }
 
-.btn-small {
-  position: relative;
-  min-height: 36px;
-  padding: 0 var(--s3);
-  border-radius: var(--r-sm);
-  font-size: 13px;
-}
-
-/* 44px hit area, same as .icon-btn-sm */
-.btn-small::after {
-  content: '';
-  position: absolute;
-  inset: -4px 0;
-}
-
-.btn-small .icon {
-  width: 16px;
-  height: 16px;
-}
-
-/* ---------- Options menu ---------- */
-
-.menu {
-  position: absolute;
-  top: calc(100% + var(--s2));
-  right: 0;
-  min-width: 200px;
-  padding: var(--s1);
-  background: var(--surface-2);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-md);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
-  transform-origin: top right;
-  opacity: 0;
-  transform: scale(0.96) translateY(-4px);
-  visibility: hidden;
-  transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out), visibility 0s linear var(--dur-1);
-  z-index: 10;
-}
-
-.menu.open {
-  opacity: 1;
-  transform: none;
-  visibility: visible;
-  transition-delay: 0s;
-}
-
-.menu button {
-  width: 100%;
-  min-height: 44px;
-  padding: 0 var(--s3);
-  border-radius: var(--r-sm);
-  text-align: left;
-  font-weight: 600;
-}
-
-.menu button:active {
-  background: var(--surface-3);
-}
-
 /* ---------- Sales grid (Sell screen) ---------- */
 
 .sales-grid {
@@ -1238,38 +1178,6 @@ p {
 
 /* ---------- Compare ---------- */
 
-.segmented {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s2);
-  animation: rise var(--dur-3) var(--ease-out) both;
-}
-
-.segment {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--s2);
-  min-height: 52px;
-  border-radius: var(--r-md);
-  background: var(--surface-1);
-  border: 1px solid var(--line);
-  font-weight: 650;
-  font-size: 14px;
-  transition: background-color var(--dur-tap), transform var(--dur-tap) var(--ease-out);
-}
-
-.segment:active {
-  background: var(--surface-2);
-  transform: scale(0.97);
-}
-
-.segment .icon {
-  width: 18px;
-  height: 18px;
-  color: var(--text-2);
-}
-
 .compare {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1838,6 +1746,236 @@ p {
   grid-column: 1 / -1;
 }
 
+/* ---------- Events ---------- */
+
+.event-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.event-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+  min-height: 44px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: left;
+}
+
+/* Event names wrap rather than being cut off: they are how events are told apart */
+.event-name-text,
+.event-row .list-title,
+.event-row .list-sub {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.event-row .list-sub {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+
+.event-row .list-value {
+  flex: none;
+}
+
+.event-name .icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+}
+
+.chip-live {
+  flex: none;
+  color: var(--positive);
+}
+
+.day-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.day-card {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 56px;
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.day-card:last-child {
+  border-bottom: 0;
+}
+
+.day-main,
+.day-figures {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.day-main {
+  flex: 1;
+}
+
+.day-figures {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.day-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-weight: 700;
+}
+
+.day-sub,
+.day-profit {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.day-revenue {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.day-profit {
+  white-space: nowrap;
+}
+
+.day-profit.is-positive {
+  color: var(--positive);
+}
+
+.day-profit.is-negative {
+  color: var(--negative);
+}
+
+.event-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s3);
+}
+
+/* History edit: per product Cash/QRIS steppers */
+.count-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.count-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--s2);
+  row-gap: var(--s2);
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.count-row:last-child {
+  border-bottom: 0;
+}
+
+.count-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 650;
+}
+
+.count-row .stepper {
+  grid-column: 1 / -1;
+}
+
+.stepper {
+  display: grid;
+  grid-template-columns: 1fr 44px 40px 44px;
+  align-items: center;
+  gap: var(--s1);
+}
+
+.stepper-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text-2);
+}
+
+.stepper-label::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.pay-cash .stepper-label::before {
+  background: var(--cash);
+}
+
+.pay-qris .stepper-label::before {
+  background: var(--qris);
+}
+
+.stepper-value {
+  text-align: center;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.step-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  transition: transform var(--dur-tap) var(--ease-out), opacity var(--dur-1);
+}
+
+.step-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.step-btn:disabled {
+  opacity: 0.38;
+}
+
+.step-btn .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Save / Cancel stays reachable above the tab bar while editing */
+.edit-bar {
+  position: sticky;
+  bottom: var(--s2);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s3);
+  margin-top: var(--s3);
+  padding: var(--s3);
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  z-index: 2;
+}
+
 /* ---------- Data safety ---------- */
 
 .storage-alert {
@@ -1973,7 +2111,7 @@ p {
   bottom: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
   padding: var(--s1) var(--s2) env(safe-area-inset-bottom);
   background: rgba(30, 30, 30, 0.9);

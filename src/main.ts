@@ -4,37 +4,39 @@ import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { h, render as renderView } from 'preact';
+import { generateUUID } from './data';
 import { formatInputNumber, parseCurrencyInput } from './formatters';
 import { version as packageVersion } from '../package.json';
 import { buildBackup, parseBackup, salesCsv } from './backup';
+import { DATA_KEYS, DROPPED_KEYS } from './migrate';
 import { pickTextFile, saveAutoBackup, saveFile, saveSafetyCopy } from './files';
+import { adjustCount } from './events';
 import { plural, totals } from './reports';
 import {
   addExpense,
-  clearLiveEvent,
-  clearSales,
+  deletePastEvent,
   deleteProduct,
-  deleteSavedReport,
-  findSavedReport,
-  getEventView,
-  importEventSales,
-  loadSavedReports,
+  endDay,
+  endEvent,
+  findPastEvent,
+  initState,
+  liveDayCount,
+  liveEventName,
   productColor,
   recordSale,
   removeExpense,
   removeLastSale,
-  renameSavedReport,
-  saveCurrentReport,
-  initState,
+  renameLiveEvent,
+  replacePastEvent,
   saveProducts,
   state,
+  todayLiveSales,
   updateExpense,
 } from './state';
 import { initStorage, loadLastBackup, loadSettings, onStorageProblem, replaceAllData, saveLastBackup, saveSettings, storedValues } from './storage';
-import type { Currency, Product, ReportType } from './types';
+import type { Currency, PastEvent, Product } from './types';
 import {
   activeScreenId,
-  closeOptionsMenu,
   el,
   getProductListOrder,
   lockBodyScroll,
@@ -49,11 +51,10 @@ import { closeColorPicker } from './ui/colorPicker';
 import { hydrateIcons } from './ui/icons';
 import { editProductByName, initProductEditor, openProductEditor } from './ui/productEditor';
 import { CompareView } from './views/Compare';
-import { EventReport } from './views/EventReport';
-import { ProductList, RecentSales, ReportChecklist, SavedReportList } from './views/Lists';
+import { EventScreen } from './views/EventScreen';
+import { EventChecklist, EventList, ProductList, RecentSales } from './views/Lists';
 import { SalesGrid, type TapPulse } from './views/SalesGrid';
 import { SalesHero } from './views/SalesHero';
-import { SalesReport } from './views/SalesReport';
 
 // ---- Sales counter ----
 
@@ -86,9 +87,10 @@ function undoSale(product: Product, payment: string) {
   showToast(`Removed one ${product.name}`);
 }
 
+/** Today's counts per product and payment (the Sell tab starts from zero after End day). */
 function salesCounts() {
   const counts = new Map<string, number>();
-  for (const sale of state.sales) {
+  for (const sale of todayLiveSales()) {
     const key = `${sale.payment}\u0000${sale.product}`;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
@@ -97,9 +99,14 @@ function salesCounts() {
 
 // ---- Rendering ----
 
+/** The past event open in History, and its unsaved edit copy while editing. */
+let viewingId: string | null = null;
+let draft: PastEvent | null = null;
+
 function render() {
-  const { revenue, profit } = totals(state.sales);
-  renderView(h(SalesHero, { revenue, profit, count: state.sales.length }), el.stats);
+  const today = todayLiveSales();
+  const { revenue, profit } = totals(today);
+  renderView(h(SalesHero, { revenue, profit, count: today.length, day: liveDayCount() }), el.stats);
   renderView(
     h(SalesGrid, {
       products: state.products,
@@ -112,59 +119,67 @@ function render() {
     el.grid,
   );
 
-  const preview = state.previewReport;
-  const salesPreview = preview?.type === 'sales' ? preview : null;
-  const eventPreview = preview?.type === 'event' ? preview : null;
-  const savedReports = loadSavedReports();
-
   renderView(
-    h(SalesReport, {
-      sales: salesPreview ? salesPreview.sales : state.sales,
-      products: salesPreview ? salesPreview.products : state.products,
+    h(EventScreen, {
+      name: liveEventName(),
+      sales: state.sales,
+      dayBreaks: state.liveEvent.dayBreaks,
+      expenses: state.eventCosts,
+      products: state.products,
       colorFor: productColor,
-    }),
-    el.report,
-  );
-  renderView(
-    h(EventReport, {
-      view: getEventView(),
-      colorFor: productColor,
+      live: true,
+      onRename: () => openNameSheet('rename-live'),
       onAddExpense: () => openExpenseModal(null),
       onEditExpense: (id: string) => openExpenseModal(id),
-      onDeleteExpense: (id: string) => {
-        removeExpense(id);
-        render();
-      },
-      onImport: openImportModal,
+      onDeleteExpense: deleteExpense,
+      onEndDay: confirmEndDay,
+      onEndEvent: () => openNameSheet('end-event'),
     }),
     el.eventReport,
   );
   renderView(h(RecentSales, { sales: state.sales.slice(-8).reverse(), colorFor: productColor }), el.historyRecentSales);
+  renderView(h(EventList, { events: state.pastEvents, onOpen: openPastEvent }), el.pastEventList);
+  el.compareEventsBtn.disabled = state.pastEvents.length < 2;
+  renderPastEvent();
   renderProductList();
-  for (const type of ['sales', 'event'] as const) {
-    renderView(
-      h(SavedReportList, {
-        type,
-        reports: savedReports.filter((report) => report.type === type),
-        onOpen: (id: string) => openSavedReport(id),
-        onRename: (id: string) => openRenameModal(id),
-        onDelete: (id: string) => confirmDeleteSavedReport(id),
-      }),
-      type === 'sales' ? el.salesReportHistoryList : el.eventReportHistoryList,
-    );
-  }
-
-  el.reportPageTitle.textContent = salesPreview ? salesPreview.name : 'Reports';
-  el.eventPageTitle.textContent = eventPreview ? eventPreview.name : 'Event';
-  for (const [button, visible] of [
-    [el.reportBackBtn, salesPreview],
-    [el.reportDeleteBtn, salesPreview],
-    [el.eventBackBtn, eventPreview],
-    [el.eventDeleteBtn, eventPreview],
-  ] as const) {
-    button.style.display = visible ? 'inline-grid' : 'none';
-  }
   updateHeaderActions();
+}
+
+/** The open past event: read-only, or its edit copy with count steppers while editing. */
+function renderPastEvent() {
+  const stored = viewingId ? findPastEvent(viewingId) : undefined;
+  const event = draft ?? stored;
+  el.pastEventEditBar.hidden = !draft;
+  el.pastEventEditBtn.hidden = el.pastEventDeleteBtn.hidden = el.pastEventBackBtn.hidden = Boolean(draft);
+  if (!event) {
+    renderView(null, el.pastEventCard);
+    return;
+  }
+  // The name shows (and wraps) just below; a long name would be cut off in the one-line title.
+  el.pastEventTitle.textContent = draft ? 'Edit event' : 'Past event';
+  // Coloured from the event's own snapshot: a product may since have been renamed or deleted.
+  const snapshotColor = (name: string) => event.products.find((product) => product.name === name)?.color || productColor(name);
+  renderView(
+    h(EventScreen, {
+      name: event.name,
+      sales: event.sales,
+      dayBreaks: event.dayBreaks,
+      expenses: event.expenses,
+      products: event.products,
+      colorFor: snapshotColor,
+      live: false,
+      ...(draft
+        ? {
+            onRename: () => openNameSheet('rename-draft'),
+            onAddExpense: () => openExpenseModal(null),
+            onEditExpense: (id: string) => openExpenseModal(id),
+            onDeleteExpense: deleteExpense,
+            edit: { onAdjust: adjustDraft },
+          }
+        : {}),
+    }),
+    el.pastEventCard,
+  );
 }
 
 /** Re-renders after products, prices or currency changed. */
@@ -218,99 +233,153 @@ function toggleProduct(name: string) {
   productsChanged();
 }
 
-// ---- Saved reports ----
+// ---- Live event: End day / End event ----
 
-function openSavedReport(id: string) {
-  const report = findSavedReport(id);
-  if (!report) return;
-  state.previewReport = report;
-  openScreen(report.type === 'event' ? 'eventScreen' : 'reportsScreen');
+function confirmEndDay() {
+  const day = liveDayCount();
+  openConfirmModal(
+    `End today? Today's sales are kept as Day ${day} and the Sell counters start again from zero.`,
+    'End day',
+    () => {
+      if (endDay()) showToast(`Day ${day} saved`);
+      render();
+    },
+    { title: 'End day?', danger: false },
+  );
+}
+
+function confirmEndEvent(name: string) {
+  openConfirmModal(
+    `Move '${name}' to History and start a new event?`,
+    'End event',
+    () =>
+      void withAutoBackup(() => {
+        endEvent(name);
+        render();
+        showToast('Moved to History');
+      }),
+    { title: 'End event?', danger: false },
+  );
+}
+
+// ---- Past events ----
+
+function openPastEvent(id: string) {
+  if (!findPastEvent(id)) return;
+  viewingId = id;
+  draft = null;
+  goTo('pastEventScreen');
+}
+
+function closePastEvent() {
+  viewingId = null;
+  draft = null;
+  goTo('historyScreen');
+}
+
+/** A deep copy to edit; Save replaces the stored event, Cancel drops it. */
+function startEditing() {
+  const event = viewingId ? findPastEvent(viewingId) : undefined;
+  if (!event) return;
+  draft = {
+    ...event,
+    dayBreaks: [...event.dayBreaks],
+    products: event.products.map((product) => ({ ...product })),
+    sales: event.sales.map((sale) => ({ ...sale, timestamp: new Date(sale.timestamp) })),
+    expenses: event.expenses.map((cost) => ({ ...cost })),
+  };
   render();
 }
 
-function confirmDeleteSavedReport(id: string, onDeleted?: () => void) {
-  const report = findSavedReport(id);
-  if (!report) return;
-  openConfirmModal(`Delete report '${report.name}'? This cannot be undone.`, 'Delete', () =>
+function cancelEditing() {
+  draft = null;
+  render();
+}
+
+function saveEditing() {
+  const edited = draft;
+  if (!edited) return;
+  void withAutoBackup(() => {
+    if (replacePastEvent(edited)) showToast('Event updated');
+    draft = null;
+    render();
+  });
+}
+
+function adjustDraft(day: number, product: string, payment: string, delta: 1 | -1) {
+  if (!draft) return;
+  draft = adjustCount(draft, day, product, payment, delta);
+  render();
+}
+
+function confirmDeletePastEvent() {
+  const event = viewingId ? findPastEvent(viewingId) : undefined;
+  if (!event) return;
+  openConfirmModal(`Delete event '${event.name}'? This cannot be undone.`, 'Delete', () =>
     void withAutoBackup(() => {
-      if (deleteSavedReport(id)) showToast('Report deleted');
-      onDeleted?.();
-      render();
+      if (deletePastEvent(event.id)) showToast('Event deleted');
+      closePastEvent();
     }),
   );
 }
 
-function returnToHistory() {
-  state.previewReport = null;
-  openScreen('historyScreen');
-  render();
-}
+// ---- Name sheet: rename the live event, name it when ending, rename while editing ----
 
-// ---- Save / rename dialog ----
-
-let saveModalType: ReportType = 'sales';
-let renamingReportId: string | null = null;
+type NameSheetMode = 'rename-live' | 'end-event' | 'rename-draft';
+let nameSheetMode: NameSheetMode = 'rename-live';
 
 function updateSaveModalButton() {
   el.saveModalSaveBtn.disabled = el.saveModalInput.value.trim().length === 0;
 }
 
-function showSaveModal(title: string, buttonLabel: string, value: string, placeholder: string) {
-  closeOptionsMenu();
-  el.saveModalTitle.textContent = title;
-  el.saveModalSaveBtn.textContent = buttonLabel;
-  el.saveModalInput.value = value;
-  el.saveModalInput.placeholder = placeholder;
+function openNameSheet(mode: NameSheetMode) {
+  nameSheetMode = mode;
+  const ending = mode === 'end-event';
+  el.saveModalTitle.textContent = ending ? 'End event' : 'Rename event';
+  el.saveModalText.textContent = ending ? 'Give the event its final name. It moves to History, where you can still view and edit it.' : 'Name this event so you can find it later.';
+  el.saveModalSaveBtn.textContent = ending ? 'Next' : 'Save';
+  el.saveModalInput.value = mode === 'rename-draft' ? (draft?.name ?? '') : liveEventName();
   updateSaveModalButton();
   el.saveModalOverlay.classList.add('open');
   el.saveModalInput.focus();
 }
 
-function openSaveModal(type: ReportType) {
-  saveModalType = type;
-  renamingReportId = null;
-  const date = new Date().toLocaleDateString();
-  showSaveModal(type === 'event' ? 'Save event report' : 'Save report', 'Save', '', type === 'event' ? `Event report ${date}` : `Report ${date}`);
-}
-
-function openRenameModal(id: string) {
-  const report = findSavedReport(id);
-  if (!report) return;
-  renamingReportId = id;
-  showSaveModal('Rename report', 'Rename', report.name, 'New report name');
-}
-
 function closeSaveModal() {
-  renamingReportId = null;
   el.saveModalInput.value = '';
   el.saveModalOverlay.classList.remove('open');
 }
 
 function submitSaveModal() {
   const name = el.saveModalInput.value.trim();
-  if (renamingReportId) {
-    if (renameSavedReport(renamingReportId, name)) showToast('Report renamed');
-  } else {
-    const savedName = saveCurrentReport(name, saveModalType);
-    showToast(`Saved ${saveModalType === 'event' ? 'event report' : 'report'}: ${savedName}`);
-    autoBackup().catch((error) => showMessage('Automatic backup failed', `The report is saved, but the automatic backup could not be written (${errorText(error)}). Export a backup from Settings.`));
-  }
+  if (!name) return;
   closeSaveModal();
+  if (nameSheetMode === 'end-event') {
+    confirmEndEvent(name);
+    return;
+  }
+  if (nameSheetMode === 'rename-draft') {
+    if (draft) draft = { ...draft, name };
+  } else if (renameLiveEvent(name)) {
+    showToast('Event renamed');
+  }
   render();
 }
 
-// ---- Expense dialog ----
+// ---- Expense dialog: the live event, or the past event being edited ----
 
 let editingExpenseId: string | null = null;
+
+const editingPastEvent = () => draft !== null && activeScreenId() === 'pastEventScreen';
+const activeExpenses = () => (editingPastEvent() ? draft!.expenses : state.eventCosts);
 
 function updateExpenseButtonState() {
   const amount = parseCurrencyInput(el.eventCostAmount.value, loadSettings().currency);
   el.addCostBtn.disabled = !el.eventCostName.value.trim() || !(amount > 0);
 }
 
-/** Opens the expense dialog to add (`id` null) or edit an expense on the event screen. */
+/** Opens the expense dialog to add (`id` null) or edit an expense. */
 function openExpenseModal(id: string | null) {
-  const cost = id ? getEventView().eventCosts.find((item) => item.id === id) : null;
+  const cost = id ? activeExpenses().find((item) => item.id === id) : null;
   if (id && !cost) return;
   editingExpenseId = cost?.id ?? null;
   el.expenseModalTitle.textContent = cost ? 'Edit expense' : 'Add expense';
@@ -332,32 +401,36 @@ function submitExpense() {
   const name = el.eventCostName.value.trim();
   const amount = parseCurrencyInput(el.eventCostAmount.value, loadSettings().currency);
   if (!name || !(amount > 0)) return;
-  if (editingExpenseId) updateExpense(editingExpenseId, name, amount);
-  else addExpense(name, amount);
+  if (editingPastEvent()) {
+    const expenses = editingExpenseId
+      ? draft!.expenses.map((cost) => (cost.id === editingExpenseId ? { ...cost, name, amount } : cost))
+      : [...draft!.expenses, { id: generateUUID(), name, amount }];
+    draft = { ...draft!, expenses };
+  } else if (editingExpenseId) {
+    updateExpense(editingExpenseId, name, amount);
+  } else {
+    addExpense(name, amount);
+  }
   closeExpenseModal();
+  render();
+}
+
+function deleteExpense(id: string) {
+  if (editingPastEvent()) draft = { ...draft!, expenses: draft!.expenses.filter((cost) => cost.id !== id) };
+  else removeExpense(id);
   render();
 }
 
 // ---- Compare dialog ----
 
-const compareSelection: Record<ReportType, string[]> = { sales: [], event: [] };
-let compareModalType: ReportType = 'sales';
+let compareSelection: string[] = [];
 
 function checkedValues(container: HTMLElement) {
   return [...container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked')].map((input) => input.value);
 }
 
-function openCompareModal(type: ReportType) {
-  compareModalType = type;
-  el.compareModalTitle.textContent = type === 'sales' ? 'Compare sales' : 'Compare events';
-  renderView(
-    h(ReportChecklist, {
-      reports: loadSavedReports().filter((report) => report.type === type),
-      checked: compareSelection[type],
-      emptyText: 'No saved reports yet.',
-    }),
-    el.compareModalList,
-  );
+function openCompareModal() {
+  renderView(h(EventChecklist, { events: state.pastEvents, checked: compareSelection }), el.compareModalList);
   el.compareModalConfirmBtn.disabled = checkedValues(el.compareModalList).length !== 2;
   el.compareModalOverlay.classList.add('open');
 }
@@ -366,93 +439,17 @@ function closeCompareModal() {
   el.compareModalOverlay.classList.remove('open');
 }
 
-function renderCompare(type: ReportType) {
-  const ids = compareSelection[type];
-  const reports = loadSavedReports().filter((report) => report.type === type && ids.includes(report.id));
-  renderView(h(CompareView, { type, reports }), type === 'sales' ? el.compareSalesCard : el.compareEventCard);
-}
-
 function confirmCompareSelection() {
   const checked = checkedValues(el.compareModalList);
   if (checked.length !== 2) {
-    showToast('Select exactly 2 reports');
+    showToast('Select exactly 2 events');
     return;
   }
-  compareSelection[compareModalType] = checked;
+  compareSelection = checked;
   closeCompareModal();
-  renderCompare(compareModalType);
-  openScreen(compareModalType === 'sales' ? 'compareSalesScreen' : 'compareEventScreen');
-  render();
-}
-
-// ---- Import dialog ----
-
-function openImportModal() {
-  renderView(
-    h(ReportChecklist, {
-      reports: loadSavedReports().filter((report) => report.type === 'sales'),
-      checked: [],
-      emptyText: 'No saved sales reports to import.',
-      live: { title: 'Current live sales', subtitle: 'Sales recorded on the counter right now.' },
-    }),
-    el.importSavedReportsList,
-  );
-  el.importModalConfirmBtn.disabled = true;
-  el.importModalOverlay.classList.add('open');
-}
-
-function closeImportModal() {
-  el.importModalOverlay.classList.remove('open');
-}
-
-function confirmImport() {
-  const selected = checkedValues(el.importSavedReportsList);
-  if (!selected.length) {
-    showToast('Select the live sales or at least one saved report');
-    return;
-  }
-  importEventSales(selected.includes('current-live'), selected.filter((id) => id !== 'current-live'));
-  closeImportModal();
-  render();
-}
-
-// ---- Header actions ----
-
-function resetActiveScreen() {
-  if (activeScreenId() === 'eventScreen') {
-    if (state.previewReport?.type === 'event') {
-      showToast('Saved reports cannot be cleared');
-      return;
-    }
-    openConfirmModal('Clear the imported event sales and all event expenses?', 'Clear', () =>
-      void withAutoBackup(() => {
-        clearLiveEvent();
-        render();
-        showToast('Event report cleared');
-      }),
-    );
-    return;
-  }
-
-  if (!state.sales.length) {
-    showToast('Nothing to clear');
-    return;
-  }
-  openConfirmModal(`Clear all ${state.sales.length} recorded sales? Save a report first if you need them.`, 'Clear', () =>
-    void withAutoBackup(() => {
-      clearSales();
-      render();
-      showToast('Sales cleared');
-    }),
-  );
-}
-
-function toggleOptionsMenu(event: Event) {
-  event.stopPropagation();
-  const screen = activeScreenId();
-  el.saveReportOption.style.display = screen === 'reportsScreen' ? 'block' : 'none';
-  el.saveEventReportOption.style.display = screen === 'eventScreen' ? 'block' : 'none';
-  el.optionsMenu.classList.toggle('open');
+  const events = state.pastEvents.filter((event) => checked.includes(event.id));
+  renderView(h(CompareView, { events }), el.compareEventCard);
+  goTo('compareEventScreen');
 }
 
 // ---- Wiring (static markup, attached once) ----
@@ -476,43 +473,26 @@ function goTo(screenId: string) {
 function wireNavigation() {
   document.querySelectorAll<HTMLButtonElement>('.tabbar .tab').forEach((button) => {
     onClick(button, () => {
-      const tab = button.dataset.tab ?? 'salesScreen';
-      // Re-selecting a report tab leaves the saved-report preview and shows live data again.
-      if ((tab === 'reportsScreen' && state.previewReport?.type === 'sales') || (tab === 'eventScreen' && state.previewReport?.type === 'event')) {
-        state.previewReport = null;
-      }
-      goTo(tab);
+      draft = null; // leaving an unsaved edit drops it
+      goTo(button.dataset.tab ?? 'salesScreen');
     });
   });
 
   onClick(el.openProductsMenuBtn, () => goTo('productHistoryScreen'));
-  onClick(el.openSalesReportMenuBtn, () => goTo('salesReportHistoryScreen'));
-  onClick(el.openEventReportMenuBtn, () => goTo('eventReportHistoryScreen'));
   onClick(el.openAboutMenuBtn, () => goTo('aboutScreen'));
-  for (const back of [el.productHistoryBackBtn, el.salesReportHistoryBackBtn, el.eventReportHistoryBackBtn, el.aboutBackBtn]) {
+  for (const back of [el.productHistoryBackBtn, el.aboutBackBtn]) {
     onClick(back, () => goTo('settingsScreen'));
   }
-  onClick(el.reportBackBtn, returnToHistory);
-  onClick(el.eventBackBtn, returnToHistory);
-  onClick(el.reportDeleteBtn, () => {
-    if (state.previewReport?.type === 'sales') confirmDeleteSavedReport(state.previewReport.id, returnToHistory);
-  });
-  onClick(el.eventDeleteBtn, () => {
-    if (state.previewReport?.type === 'event') confirmDeleteSavedReport(state.previewReport.id, returnToHistory);
-  });
-  onClick(el.compareSalesBackBtn, () => goTo('historyScreen'));
+  onClick(el.pastEventBackBtn, closePastEvent);
+  onClick(el.pastEventEditBtn, startEditing);
+  onClick(el.pastEventCancelBtn, cancelEditing);
+  onClick(el.pastEventSaveBtn, saveEditing);
+  onClick(el.pastEventDeleteBtn, confirmDeletePastEvent);
   onClick(el.compareEventBackBtn, () => goTo('historyScreen'));
 }
 
 function wireHeader() {
-  onClick(el.reset, resetActiveScreen);
-  onClick(el.optionsBtn, toggleOptionsMenu);
   onClick(el.openProductEdit, () => openProductEditor(-1));
-  onClick(el.saveReportOption, () => openSaveModal('sales'));
-  onClick(el.saveEventReportOption, () => openSaveModal('event'));
-  document.addEventListener('click', (event) => {
-    if (!el.optionsMenu.contains(event.target as Node)) closeOptionsMenu();
-  });
 }
 
 function wireSettings() {
@@ -554,8 +534,7 @@ function wireDialogs() {
   onBackdropClick(el.expenseModalOverlay, closeExpenseModal);
 
   // Compare
-  onClick(el.compareSalesBtn, () => openCompareModal('sales'));
-  onClick(el.compareEventsBtn, () => openCompareModal('event'));
+  onClick(el.compareEventsBtn, openCompareModal);
   onClick(el.compareModalConfirmBtn, confirmCompareSelection);
   onClick(el.compareModalCancelBtn, closeCompareModal);
   onClick(el.compareModalCloseBtn, closeCompareModal);
@@ -564,31 +543,21 @@ function wireDialogs() {
     el.compareModalConfirmBtn.disabled = checkedValues(el.compareModalList).length !== 2;
   });
 
-  // Import
-  onClick(el.importModalConfirmBtn, confirmImport);
-  onClick(el.importModalCancelBtn, closeImportModal);
-  onClick(el.importModalCloseBtn, closeImportModal);
-  onBackdropClick(el.importModalOverlay, closeImportModal);
-  el.importSavedReportsList.addEventListener('change', () => {
-    el.importModalConfirmBtn.disabled = checkedValues(el.importSavedReportsList).length === 0;
-  });
-
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     if (el.saveModalOverlay.classList.contains('open')) closeSaveModal();
-    if (el.importModalOverlay.classList.contains('open')) closeImportModal();
     if (el.compareModalOverlay.classList.contains('open')) closeCompareModal();
     if (el.expenseModalOverlay.classList.contains('open')) closeExpenseModal();
   });
 }
 
-/** Android back (button or gesture): close the top layer, else the screen's own back arrow, else go to Sell, else leave the app. */
+/** Android back (button or gesture): close the top layer, else cancel an edit, else the screen's own back arrow, else go to Sell, else leave the app. */
 function goBack() {
   const sheet = document.querySelector('.sheet-overlay.open');
   const backBtn = document.querySelector<HTMLElement>('.screen.active .back-btn');
   if (el.colorPickerMenu.classList.contains('open')) closeColorPicker();
-  else if (el.optionsMenu.classList.contains('open')) closeOptionsMenu();
   else if (sheet) sheet.querySelector<HTMLElement>('[id$="CloseBtn"]')?.click();
+  else if (draft && activeScreenId() === 'pastEventScreen') cancelEditing();
   else if (backBtn?.offsetParent) backBtn.click();
   else if (activeScreenId() !== 'salesScreen') goTo('salesScreen');
   else App.minimizeApp();
@@ -651,10 +620,10 @@ async function restoreBackup() {
     showMessage('Cannot restore this file', parsed.error);
     return;
   }
-  const { exportedAt, sales, savedReports, products } = parsed.summary;
+  const { exportedAt, sales, events, products } = parsed.summary;
   const from = exportedAt ? `from ${formatWhen(exportedAt)}` : '';
   openConfirmModal(
-    `Replace everything on this phone with the backup ${from}? It has ${plural(sales, 'current sale')}, ${plural(savedReports, 'saved report')} and ${plural(products, 'product')}. A copy of your current data is saved first.`,
+    `Replace everything on this phone with the backup ${from}? It has ${plural(sales, 'current sale')}, ${plural(events, 'past event')} and ${plural(products, 'product')}. A copy of your current data is saved first.`,
     'Restore',
     () => void applyRestore(parsed.values),
     { title: 'Restore backup?' },
@@ -682,6 +651,18 @@ async function applyRestore(values: Map<string, string>) {
 async function autoBackup() {
   const now = new Date();
   await saveAutoBackup(`cntr-auto-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2));
+}
+
+/** Once, when events replace saved reports: keep the old reports in an automatic backup, since exports no longer include them. */
+async function backUpDroppedReports() {
+  if (!DROPPED_KEYS.some((key) => storedValues(DROPPED_KEYS).has(key))) return;
+  const now = new Date();
+  const keys = [...DATA_KEYS, ...DROPPED_KEYS];
+  try {
+    await saveAutoBackup(`cntr-auto-${fileStamp(now)}-saved-reports.json`, JSON.stringify(buildBackup(storedValues(keys), now, keys), null, 2));
+  } catch (error) {
+    console.error('Could not back up the old saved reports', error); // they also stay in the database, untouched
+  }
 }
 
 /** Runs a destructive `action` after an automatic backup; if the backup fails, asks before going ahead. */
@@ -726,7 +707,7 @@ async function start() {
     showStartupError(startup.error);
     return;
   }
-  initState();
+  if (initState()) void backUpDroppedReports();
   hydrateIcons();
   // The installed app's version on the phone (e.g. 1.0.42 from CI); package.json in the browser.
   el.aboutVersion.textContent = isNative ? (await App.getInfo().catch(() => ({ version: packageVersion }))).version : `${packageVersion} (browser)`;

@@ -59,7 +59,7 @@ async function restoreWith(page, buffer, confirm = true) {
   const dlCsv = page.waitForEvent('download');
   await page.click('#exportCsvBtn');
   const csv = readFileSync(await (await dlCsv).path(), 'utf8');
-  check('A4 CSV export has header + 3 rows', csv.trim().split(/\r?\n/).length === 4 && csv.includes('Report,Report type'), `${csv.trim().split(/\r?\n/).length} lines`);
+  check('A4 CSV export has header + 3 rows', csv.trim().split(/\r?\n/).length === 4 && csv.includes('Event,Day'), `${csv.trim().split(/\r?\n/).length} lines`);
   await closeMessage(page);
 
   await page.click('.tabbar .tab[data-tab="salesScreen"]'); await sell(page, 2);
@@ -89,7 +89,7 @@ async function restoreWith(page, buffer, confirm = true) {
   // Offline: cut the network and use every feature; nothing may leave the machine.
   await ctx.setOffline(true);
   await sell(page, 2);
-  for (const tab of ['reportsScreen', 'eventScreen', 'historyScreen', 'settingsScreen', 'salesScreen']) await page.click(`.tabbar .tab[data-tab="${tab}"]`);
+  for (const tab of ['eventScreen', 'historyScreen', 'settingsScreen', 'salesScreen']) await page.click(`.tabbar .tab[data-tab="${tab}"]`);
   await toSettings(page); const dl2 = page.waitForEvent('download'); await page.click('#exportBackupBtn'); await dl2; await closeMessage(page);
   const foreign = requests.filter((u) => !u.startsWith(URL) && !u.startsWith('blob:') && !u.startsWith('data:'));
   check('A11 offline: everything works and no request leaves localhost', foreign.length === 0 && errors.length === 0, foreign.join(' ') || `${requests.length} local requests, ${errors.length} errors`);
@@ -130,6 +130,7 @@ function fakeNative() {
             else next[values[0]] = values[1];
           }
           put('__db', next);
+          put('__sets', [...get('__sets', []), options.set.map(({ values }) => values[0])]); // keys per write, to check batching
           return { changes: { changes: options.set.length } };
         }
         return { changes: { changes: 0 } };
@@ -218,23 +219,32 @@ function fakeNative() {
   await setFail({}); await page.click('.startup-error .btn'); await page.waitForTimeout(900);
   check('B14 "Try again" recovers once the database opens', (await heroSales(page)) === '6');
 
-  // Automatic backups before destructive actions.
+  // Automatic backups before destructive actions (End event).
   const autoFiles = () => page.evaluate(() => JSON.parse(sessionStorage.__files ?? '[]').filter((f) => f.path.startsWith('CNTR/auto/')));
-  await page.click('.tabbar .tab[data-tab="salesScreen"]');
-  const salesBeforeClear = JSON.parse((await db()).cntrSales).length;
-  await page.click('#resetBtn'); await page.click('#confirmModalConfirmBtn'); await page.waitForTimeout(500);
+  const endEvent = async () => {
+    await page.click('.tabbar .tab[data-tab="eventScreen"]');
+    await page.click('#endEventBtn'); await page.click('#saveModalSaveBtn'); await page.click('#confirmModalConfirmBtn'); await page.waitForTimeout(500);
+  };
+  const salesBeforeEnd = JSON.parse((await db()).cntrSales).length;
+  await page.evaluate(() => { sessionStorage.__sets = '[]'; });
+  await endEvent();
   const auto = (await autoFiles()).at(-1);
-  check('B18 clearing sales first writes an automatic backup holding those sales', auto?.dir === 'DOCUMENTS' && JSON.parse(auto.data).data.cntrSales.length === salesBeforeClear && JSON.parse((await db()).cntrSales).length === 0, `${auto?.path} (${salesBeforeClear} sales)`);
+  const after = await db();
+  check('B18 End event first writes an automatic backup holding the sales, then moves them to History', auto?.dir === 'DOCUMENTS' && JSON.parse(auto.data).data.cntrSales.length === salesBeforeEnd && JSON.parse(after.cntrSales).length === 0 && JSON.parse(after.cntrEvents)[0].sales.length === salesBeforeEnd, `${auto?.path} (${salesBeforeEnd} sales)`);
+  const sets = await page.evaluate(() => JSON.parse(sessionStorage.__sets ?? '[]'));
+  const together = sets.some((keys) => ['cntrEvents', 'cntrSales', 'cntrEventCosts', 'cntrLiveEvent'].every((key) => keys.includes(key)));
+  check('B22 End event is saved in one all-or-nothing write (never half moved)', together, JSON.stringify(sets));
+  await page.click('.tabbar .tab[data-tab="salesScreen"]');
   await sell(page, 2);
   await setFail({ 'fs:DOCUMENTS': true, 'fs:DATA': true });
-  await page.click('#resetBtn'); await page.click('#confirmModalConfirmBtn'); await page.waitForTimeout(500);
+  await endEvent();
   m = await message(page);
-  check('B19 if the automatic backup fails, it asks before clearing', m.title === 'Backup failed' && /Continue anyway/.test(m.text), m.text.slice(0, 60));
+  check('B19 if the automatic backup fails, it asks before ending the event', m.title === 'Backup failed' && /Continue anyway/.test(m.text), m.text.slice(0, 60));
   await page.click('#confirmModalCancelBtn'); await page.waitForTimeout(300);
   check('B20 cancelling then keeps the sales', JSON.parse((await db()).cntrSales).length === 2);
   await setFail({});
   await page.evaluate(() => { const files = JSON.parse(sessionStorage.__files ?? '[]'); for (let i = 0; i < 25; i++) files.push({ dir: 'DOCUMENTS', path: `CNTR/auto/cntr-auto-2000-01-01-0000${String(i).padStart(2, '0')}.json`, data: '{}' }); sessionStorage.__files = JSON.stringify(files); });
-  await page.click('#resetBtn'); await page.click('#confirmModalConfirmBtn'); await page.waitForTimeout(600);
+  await endEvent();
   const kept = (await autoFiles()).filter((f) => f.dir === 'DOCUMENTS');
   check('B21 only the newest 20 automatic backups are kept', kept.length === 20 && !kept.some((f) => f.path.includes('2000-01-01-000000')), `${kept.length} kept`);
 
@@ -255,6 +265,27 @@ function fakeNative() {
   await page.evaluate(() => { sessionStorage.__fail = '{}'; });
   await page.reload(); await page.waitForTimeout(900);
   check('B17 next launch migrates the up-to-date data (4 sales) into SQLite', (await heroSales(page)) === '4' && JSON.parse((await page.evaluate(() => JSON.parse(sessionStorage.__db))).cntrSales).length === 4);
+  await ctx.close();
+}
+
+{
+  // Updating from a version with saved reports: they are no longer shown or exported, so the first launch keeps a copy.
+  const { ctx, page } = await newPage(true);
+  await page.goto(URL);
+  const reports = JSON.stringify([{ id: 'r1', name: 'Old report', createdAt: '2026-10-25T10:00:00.000Z', type: 'sales', products: [], sales: [SALE(1)], eventCosts: [] }]);
+  // A 1.0.21 user: data already in SQLite (migrated earlier), including saved reports.
+  await page.evaluate(([s, r]) => {
+    localStorage.clear(); sessionStorage.clear();
+    localStorage['cntrMeta.usingDatabase'] = '1';
+    sessionStorage.__db = JSON.stringify({ cntrSales: s, cntrSavedReports: r, 'cntrMeta.migratedFromLocalStorage': '2026-10-26T00:00:00.000Z' });
+  }, [legacySales, reports]);
+  await page.reload(); await page.waitForTimeout(1200);
+  const files = await page.evaluate(() => JSON.parse(sessionStorage.__files ?? '[]').filter((f) => f.path.startsWith('CNTR/auto/')));
+  const kept = files.map((f) => JSON.parse(f.data).data).find((data) => data.cntrSavedReports);
+  check('B23 first launch with events backs up the old saved reports before they stop being exported', Boolean(kept) && kept.cntrSavedReports[0].name === 'Old report' && kept.cntrSales.length === 3, files.map((f) => f.path).join(' '));
+  await page.reload(); await page.waitForTimeout(900);
+  const again = await page.evaluate(() => JSON.parse(sessionStorage.__files ?? '[]').filter((f) => f.path.startsWith('CNTR/auto/')).length);
+  check('B24 that backup is taken once, not on every launch', again === files.length, `${files.length} then ${again}`);
   await ctx.close();
 }
 

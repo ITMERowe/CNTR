@@ -2,7 +2,7 @@
 
 Session-to-session context for CNTR. **Read this before starting work; update it at the end of each session, after milestones, and when a blocker or decision comes up.** If this file disagrees with the code, trust the code and fix this file.
 
-_Last updated: 2026-10-26, end of the signing/tests/About session (the owner is starting a new conversation)._
+_Last updated: 2026-10-27, events build session (merged Event screen, multi-day events, History edit). Built and tested; NOT committed._
 
 ## Start here (next session)
 
@@ -10,8 +10,9 @@ _Last updated: 2026-10-26, end of the signing/tests/About session (the owner is 
 - **Waiting on the owner:** add the 3 GitHub secrets for release signing (`CNTR_KEYSTORE_BASE64`, `CNTR_KEYSTORE_PASSWORD`, `CNTR_KEY_ALIAS` = `cntr`; values in `C:/Users/User/CNTR-signing`, see its `README.txt`) and back that folder up off this computer. **Then push** the branch (owner approval for the push still needed; it was deferred until the secrets exist so the first CI build is release-signed).
 - **After the push, check CI:** run should show the release APK `CNTR_1.0.N.apk` + `CNTR_1.0.N.aab`, and the new "Browser tests" step (`npm run test:e2e`, Chrome on Ubuntu) must pass; both are untested on CI so far. Then the owner merges (they used a GitHub PR for #2; ask which way).
 - **On the phone (owner has `CNTR_1.0.21.apk`, a debug build):** export a backup in 1.0.21 → uninstall → install the first release APK → restore. That is the last forced uninstall.
+- **Events build (2026-10-27): done in the working tree, UNCOMMITTED** (owner approval needed to commit). See "Task list: merged Event screen + multi-day events" below.
 - **Uncommitted on purpose (owner's, machine-specific):** `.claude/settings.json`, `.claude/skills/playwright-cli/`, `.playwright/`. Do not commit.
-- **How to verify locally:** `npx tsc --noEmit`, `npm run build`, `npm test` (11 unit), `npm run test:e2e` (5 suites, 98 checks; serves `dist/` on port 4320, Edge on Windows). Last run: all pass.
+- **How to verify locally:** `npx tsc --noEmit`, `npm run build`, `npm test` (22 unit), `npm run test:e2e` (6 suites, 134 checks; serves `dist/` on port 4320, Edge on Windows). Last run 2026-10-27 on the events code: all pass.
 - **Tooling notes:** no JDK/Android SDK, Xcode or `gh` on this machine (APK builds only via CI; GitHub API read-only, 60 req/h). In Git Bash, piping node+playwright output into `grep` can swallow it: write to a file first.
 
 ## Goal
@@ -199,7 +200,46 @@ Verified (fresh, final code): `npx tsc --noEmit` 0; `npm run build` 0; `npm test
 Not verified: the release build itself (no JDK/Android SDK here; first verified by CI once the secrets exist); the e2e suite on Linux CI with Chrome (first run after push); automatic backups on a real phone.
 Owner action needed: add GitHub secrets `CNTR_KEYSTORE_BASE64`, `CNTR_KEYSTORE_PASSWORD`, `CNTR_KEY_ALIAS` (=`cntr`), and back up the `CNTR-signing` folder off this computer. Switching from the debug 1.0.21 to the first release build needs one last uninstall (export a backup first).
 
+## Live Event screen (2026-10-26, next session). REMOVED 2026-10-27 (stashed, superseded by the merged Event design)
+
+Owner asked for the Event screen to update automatically, like Reports, to check net profit quickly.
+- `getEventView()` (`src/state.ts`): with nothing imported, the event uses the live counter's sales (hero shows once there are sales or expenses). An import stores only the saved reports' sales plus `includeLive`; when set, the live sales are added on every render instead of being copied once.
+- `ImportedEventReport.includeLive` (`types.ts`, read in `storage.ts`). Old stored imports have no flag: shown as before (frozen copy). "Clear event" returns to following the live counter.
+- Texts: import modal live row subtitle, Event empty state.
+- Test: `functional` 2b (2 checks). Verified: `tsc` 0, `npm test` 11/11, build 0, `npm run test:e2e` all 5 suites (35+21+17+22+5 = 100) pass.
+- Not committed yet (owner to approve). Not checked on a phone.
+
+## Task list: merged Event screen + multi-day events (planning; NO code written yet)
+
+Owner's brief (2026-10-27): merge Reports and Event into one screen; multi-day events; always show live data. Last time they used a plain counter, wrote the revenue down each evening, and asked ChatGPT for the total and profit: CNTR must do that itself. Agreed in chat: always one live event (the first tap starts "Event <date>"), renamable while live; optional **End day** (never pressed = one block; once pressed, frozen day cards + today live; no "new day?" prompt); **End event** = final name → History → fresh event; History: view, compare, edit (rename, fix product Cash/QRIS counts "a friend counted one I missed", add/edit/delete expenses, e.g. Rp 2.500.000 → 2.496.820). Restaurant-till "shift / Z report" pattern is the reference.
+
+Owner decisions (2026-10-27; the app is not live, the owner is the only tester):
+- [x] D1. Old saved reports are **dropped**, not converted (no migration of saved reports).
+- [x] D2. End-of-day cash count: left out for now.
+- [x] D3. No Undo for End day: editing past days covers mistakes.
+- [x] D4. Saved events stay renamable.
+- [x] The uncommitted "Live Event screen" change was removed (it was mostly import logic, which the merged screen drops). Kept recoverable as `git stash` entry "Live Event screen (superseded by merged Event design)".
+
+Steps for me, in order (tick as done; record verification here):
+- [x] 1. Write the design doc `docs/superpowers/specs/2026-10-27-events-design.md` from the brief above; builder-check subagent; bring back only owner-only questions; owner approves. **Written + builder-checked 2026-10-27; owner answered: End day = confirm only, no live editing; Sell tab shows today only. Owner APPROVED 2026-10-27** (Compare = 2 events; net profit = product profit − expenses; day-card profit before expenses, owner judges when testing; History − removes any one sale of that product/payment/day).
+- Owner instruction for the build: use all relevant skills, test along the way, loop until done. **Failsafe:** if session usage nears 50% before done, stop, report done/not done, update this task list and HANDOFF, and wait for the owner.
+- [x] 2. Implementation plan `docs/superpowers/plans/2026-10-27-events.md` (owner said start; executed inline).
+- [x] 3. Uncommitted "Live Event screen" change: removed (stashed), see decisions above.
+- [x] 4. Data model: live event = existing `cntrSales` + `cntrEventCosts` + new `cntrLiveEvent` (name, startedAt, dayBreaks); past events in `cntrEvents` (`PastEvent`). Event maths in `src/events.ts` (unit-tested, `tests/events.test.ts`).
+- [x] 5. Migration: nothing to copy (the live keys are reused); first launch only creates `cntrLiveEvent`. Old `cntrSavedReports` / `cntrImportedEventReport` are no longer read, backed up or restored, and never deleted. (No backup-first step needed since no data is changed.)
+- [x] 6. Backup/restore/CSV understand events; old backups restore their live sales/expenses (unit tests). CSV: Event, Day, Time, Product, Payment, Price, Cost.
+- [x] 7. Merged screen: name (tap to rename), live net-profit hero, Revenue/Profit/Expenses, day cards (only after first End day), expenses, top products, End day, End event (name prompt). Remove Save report, Save event report, Import sales, clear buttons; 5 tabs → 4.
+- [x] 8. History: list past events, view (same layout, frozen), compare 2, edit (rename, Cash/QRIS counts per product per day, expenses); automatic backup before each saved edit.
+- [x] 9. Android back on the new screens/sheets (edit mode: back = Cancel); options menu and Clear button removed.
+- [x] 10. Browser tests (new `tests/e2e/events.test.mjs`, 24 checks; data-safety B22 checks End event is one write): new flow end to end (sell → End day → sell → End event → History → edit → compare), migration via fake bridge, layout at 320/360/412 + landscape, tap targets, contrast; remove tests of removed features.
+- [x] 11. Verify fresh (2026-10-27, after review fixes: tsc 0, npm test 22/22, build 0, test:e2e 38+26+15+20+30+5 = 134 pass; screenshots checked at 412×892). Whole-change review (fresh Opus reviewer): 0 critical; 4 important fixed with RED→GREEN tests (old saved reports backed up once on first launch; clock set back can't move sales between days; price edits don't reprice ended days; past event starts at its first sale). Deferred minors are listed under Known issues. Ledger: `.superpowers/sdd/2026-10-27-events/progress.md` (git-ignored locally). `npx tsc --noEmit`, `npm test`, `npm run build`, `npm run test:e2e`; screenshots at 412×892.
+- [x] 12. Docs (README + new screenshots incl. history.png, reports.png removed; ARCHITECTURE, PRODUCT, CHANGELOG; graphify update done): README (+ screenshots), ARCHITECTURE, CHANGELOG, PRODUCT if needed, this file; `graphify update .`.
+- [ ] 13. Commit (ask owner), push only with owner approval; owner tests on the phone (migration of real data: export a backup first).
+
 ## Known issues / blockers (unresolved)
+
+- **Events build, deferred minors (from the review):** Save then Cancel while the automatic backup runs still saves the edit; deleting a product deletes its sales from ended days of the live event (pre-existing); restoring a 1.0.21 backup empties History without saying so (a safety copy is taken); CSV calls an unnamed live event "Current event" (screen: "Event <date>"); an empty Day 1 card shows today's date; History +1 on the last day can be stamped after the event's end (hour chart only).
+- **Events build, not verified:** real phone (SQLite with the new keys, the one-time saved-reports backup, End day/End event, edit), iOS. Day-card profit before expenses is the owner's to judge when testing.
 
 - **GitHub repository description and topics are not updated:** there is no `gh` CLI or API token on this machine. The owner must apply them; text is below.
 - White text on light product colours has low contrast (e.g. about 2:1 on yellow). Accepted by the owner for now.
