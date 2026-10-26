@@ -2,13 +2,14 @@
 
 Session-to-session context for CNTR. **Read this before starting work; update it at the end of each session, after milestones, and when a blocker or decision comes up.** If this file disagrees with the code, trust the code and fix this file.
 
-_Last updated: 2026-10-26, end of the polish session (on branch `ui/revamp`; changes **uncommitted**, see "Latest session")._
+_Last updated: 2026-10-26, end of the merge session: `ui/revamp` is **merged into `main` and pushed** (see "Merge session")._
 
 ## Goal
 
 - **Project:** CNTR, an offline sales counter for convention/pop-up booths (TypeScript + Preact + Vite, packaged with Capacitor 8 for Android). Owner wants it **published on Google Play**.
-- **Last task (latest session):** polish with all applicable skills, and make Android back (button/gesture) step back inside the app (see "Multi-skill polish + Android back").
-- **Before that:** make the Sell and Event screens compact, so 4 tiles fit and amounts in the millions are not cut off.
+- **Last task (latest session):** clean up, verify, commit, push, and merge everything into `main` (owner authorized the push and merge).
+- **Before that:** polish with all applicable skills, and make Android back (button/gesture) step back inside the app (see "Multi-skill polish + Android back").
+- **Earlier:** make the Sell and Event screens compact, so 4 tiles fit and amounts in the millions are not cut off.
 - **Task before that:** clean up the project locally and on GitHub; rewrite the README; add a license (owner chose **MIT**); prepare the GitHub description and topics.
 - **Standing design decisions from the owner:** VS Code-dark palette (`#1e1e1e` bg, `#252526` panels); product tiles use the **original product colours** with **white** text and icons.
 
@@ -16,8 +17,8 @@ _Last updated: 2026-10-26, end of the polish session (on branch `ui/revamp`; cha
 
 | Branch | State |
 |---|---|
-| `main` (`3b5bf59`) | Bug fixes, docs, Capacitor 8 (Android API 36), Preact restructure, CI fixes, APK naming. CI APK build: **success**. |
-| `ui/revamp` | UI revamp (`d5506d6`..`9c08b1e`, CI **success**, `CNTR_1.0.16.apk`) **plus this session's cleanup commit**. Pushed, **not merged** into `main`. See "Commits and push" for the cleanup commit's CI status. The working tree also has **uncommitted** compact-layout changes (see "Latest session"). |
+| `main` | Everything: the earlier fixes plus the whole `ui/revamp` branch, merged in `ac94981` (pushed; remote verified). See "Merge session" for CI. |
+| `ui/revamp` | Fully merged into `main`. Kept (not deleted); safe to delete once the owner agrees. |
 | `fix/bugs-ui-docs` | Fully merged into `main`; safe to delete (owner approval needed, not done). |
 | `agents/app-overview-explanation` | **Local only**, checked out as a worktree at `../CNTR.worktrees/app-overview-explanation`, at old commit `6edd319`. Not created in these sessions; left untouched. Owner to decide. |
 
@@ -68,9 +69,9 @@ Deliberately **not** changed:
 - **Cleanup lives on `ui/revamp`**, so the README describes the code that exists on that branch; it reaches `main` when `ui/revamp` is merged.
 - Earlier decisions still stand: Preact; bundled fonts and icons (offline); Cash/QRIS colours `#C08024`/`#4D8DF0` validated on `#252526` (re-validate if changed); original tile colours; Gradle 8.14.3 / AGP 8.13.0.
 
-## Latest session (2026-10-26): compact layout. **UNCOMMITTED** on `ui/revamp`
+## Compact layout session (2026-10-26). Committed in `96bd03b`, merged to `main`
 
-All of this is in the working tree only: not committed, not pushed, and no CI APK yet. Files: `src/style.css`, `src/views/ReportParts.tsx`, `src/views/SalesHero.tsx`, `HANDOFF.md`, `graphify-out/*`.
+Now committed (`96bd03b`) and merged to `main`. Files: `src/style.css`, `src/views/ReportParts.tsx`, `src/views/SalesHero.tsx`, `HANDOFF.md`, `graphify-out/*`.
 
 Owner's phone is about **412×892 CSS px** (1280×2772 physical). Use that size for layout checks.
 
@@ -99,7 +100,7 @@ Not verified:
 
 Test scripts live in this session's scratchpad (`shot.mjs`, `event.mjs`, `fix.mjs`), not in the repo. They import `playwright-core` from an older session's scratchpad (`...\67ae2af9-914b-4f40-abfd-0726aac79ea7\scratchpad\ci-check\node_modules`), because `playwright` is not installed in the project. To see Event data in the browser, you must click **Import sales**, tick "current-live" and confirm.
 
-## Polish pass (2026-10-26, impeccable `polish`). **UNCOMMITTED** on `ui/revamp`
+## Polish pass (2026-10-26, impeccable `polish`). Committed in `96bd03b`, merged to `main`
 
 The impeccable skill is now installed. A polish pass across all 21 screens/states, with screenshots at 412 and 320px, found three defects. All other screens (Sell, Reports, Event, History, compare, modals, colour picker, saved reports) needed no change.
 1. **Products list cut off the cost** ("cost Rp 12...." at 412px). Price and cost now sit on their own lines (`Lists.tsx` spans + `.list-sub-text > span` in `style.css`). At 412px everything shows in full; at 320px the cost still gets "…" (the edit/delete/switch buttons take the width; accepted).
@@ -113,7 +114,7 @@ Not verified: real phone.
 Owner requests still open:
 - The `ui-ux-pro-max` polish offered earlier was replaced by the impeccable polish above.
 
-## Multi-skill polish + Android back (2026-10-26). **UNCOMMITTED** on `ui/revamp`
+## Multi-skill polish + Android back (2026-10-26). Committed in `a13e3af` + `96bd03b`, merged to `main`
 
 Skills used: ui-ux-pro-max (touch targets, contrast, 375px/landscape checklist), dataviz (charts), impeccable `audit` checklist, superpowers `verification-before-completion`. The owner has since written `PRODUCT.md` (impeccable product context).
 
@@ -130,7 +131,7 @@ Known, accepted: white text on light tile colours (contrast 1.95–3.1:1; owner 
 Not verified: real Android device (the back gesture on a phone, predictive back animation on Android 14+, haptics); large system font size (Android text zoom was not emulated).
 Tooling note: in this shell, piping node+playwright output into `grep` swallows it; write the output to a file and read that instead. Scripts are in this session's scratchpad (`audit.mjs`, `overflow.mjs`, `back.mjs`, `check.mjs`, `shots.mjs`); server: `npx vite preview --port 4318`.
 
-## Impeccable init (2026-10-26). **UNCOMMITTED** on `ui/revamp`
+## Impeccable init (2026-10-26). `PRODUCT.md` committed in `049b3a6`, merged to `main`
 
 - Created `PRODUCT.md` from the repo plus the owner's answers:
   - users are any small booth seller (a public Play Store app, mainly Indonesia);
@@ -156,10 +157,9 @@ Tooling note: in this shell, piping node+playwright output into `grep` swallows 
 
 ## Next steps (priority order)
 
-0. Compact-layout, polish and Android back changes: the owner reviews them on a phone (especially the back gesture), then commits and pushes to `ui/revamp` when asked (the CI APK then builds).
-1. Owner: apply the GitHub description and topics above (repo → About → ⚙).
-2. Owner: install the newest `ui/revamp` APK on a phone; give feedback; then merge `ui/revamp` → `main` (https://github.com/ITMERowe/CNTR/pull/new/ui/revamp).
-3. Owner: decide on deleting the merged `fix/bugs-ui-docs` branch and the old local `agents/app-overview-explanation` worktree.
+1. Owner: install the newest `main` APK on a phone and check Android back (button and gesture), the compact tiles and tap accuracy.
+2. Owner: apply the GitHub description and topics above (repo → About → ⚙).
+3. Owner: decide on deleting the merged `ui/revamp` and `fix/bugs-ui-docs` branches and the old local `agents/app-overview-explanation` worktree.
 4. Play Store prerequisites: release keystore as GitHub secrets, signed `.aab` in CI, privacy policy, store screenshots; owner starts the 12-tester / 14-day closed test.
 5. Move storage to `@capacitor/preferences` or SQLite and add export/backup.
 6. Add an automated test suite (e.g. Playwright, already installed locally by the owner) so the browser checks live in the repo.
@@ -191,9 +191,37 @@ Pushed to `origin/ui/revamp` (verified: branch in sync; `LICENSE`, `README.md`, 
 - `33ac2d6` Add MIT license, rewrite README, add session handoff. CI **success**: run 40323977225 → `CNTR_1.0.17.apk`.
 - A follow-up commit recording this section (`[skip ci]`, no code changes).
 
-Not pushed to `main`: everything above reaches `main` when `ui/revamp` is merged. GitHub reads the license from the default branch only, so the repo still shows "No license" until then.
+All of the above is now on `main` too (see "Merge session").
 
-GitHub metadata, verified via the public API after pushing: description is still `counting app`, topics are empty, license `null`. Nothing here could change them.
+## Merge session (2026-10-26): cleanup, verify, merge into `main`
+
+Owner's task: clean up locally and on GitHub, verify, push, and merge into `main` (push and merge explicitly authorized).
+
+Cleanup findings:
+- No dead code: `tsc --noUnusedLocals --noUnusedParameters` is clean; exports that nothing imports (e.g. `formatMoney`, storage keys, `profitClass`) are all used inside their own file, so they were left as they are (removing `export` would be churn).
+- Dependencies: all used. `@capacitor/app` added for Android back; `@playwright/cli` (committed earlier) is the owner's tooling, kept.
+- No build artifacts, keystores or secrets tracked; `.gitignore` unchanged (still correct). Diff scan: no secrets.
+- Docs were stale: README screenshots showed the old, taller tiles (re-rendered `sell`, `reports`, `event`; `product-editor` was identical); README and `docs/ARCHITECTURE.md` now describe Android back and `@capacitor/app`; CHANGELOG entries added.
+- Left uncommitted on purpose (owner's machine-specific or untracked work): `.claude/settings.json` (local graphify paths), `.claude/skills/playwright-cli/`, `.playwright/`.
+
+Commits (on `ui/revamp`, pushed, then merged):
+- `a13e3af` Handle Android back and fix a stuck colour-picker drag.
+- `96bd03b` Compact Sell and Event layout, 44px tap targets, small polish.
+- `049b3a6` Update docs and screenshots for Android back and the compact layout (also adds `PRODUCT.md`, refreshes `graphify-out/`).
+- `ac94981` Merge branch `ui/revamp` into `main` (`--no-ff`, same as the earlier `fix/bugs-ui-docs` merge). `origin/main` had not moved (`3b5bf59`) and `main` is not branch-protected (public API: `"protected": false`), so no PR was needed and no conflicts arose.
+- This HANDOFF update: a `[skip ci]` commit on `main`.
+
+Verification (all fresh, final code):
+- `npx tsc --noEmit` and `npm run build`: pass on `ui/revamp` and again on merged `main` (`main` tree is identical to `ui/revamp`).
+- Browser suites, headless Edge against `vite preview` (port 4318): functional **19/19** (rerun on merged `main`: 19/19), motion/reduced-motion **5/5**, colour-picker fit **4/4**, Android back **10/10** cases (rerun on `main`), tap-target/contrast/label audit at 412×892, 375×812 and 892×412 (only the accepted white-on-tile contrast), overflow scan at 320/360/412: none.
+- `npx cap sync android`: pass.
+- CI: `ui/revamp` `049b3a6` run 40341818197 **success** (`CNTR_1.0.18.apk`); `main` `ac94981` run 40342530089 **success** (`CNTR_1.0.19.apk`).
+- Remote verified: `origin/main` = `ac94981`; raw GitHub serves `LICENSE`, `README.md`, `HANDOFF.md`, `PRODUCT.md` and the screenshots from `main`, and `package.json` there includes `@capacitor/app`. GitHub now detects the license as **MIT**.
+
+Still not done / blockers:
+- GitHub description is still `counting app` and topics are empty: no `gh` or API token here; owner applies the text below.
+- No branches deleted (`ui/revamp`, `fix/bugs-ui-docs` are both merged): owner decision.
+- Not verified on a real phone; no lint or test suite in the repo (tests live in session scratchpads).
 
 Useful commands:
 - `npm run dev`
