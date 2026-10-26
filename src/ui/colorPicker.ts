@@ -1,5 +1,5 @@
 // HSV colour picker used by the product editor.
-import { getContrastColor, normalizeHex } from '../formatters';
+import { normalizeHex } from '../formatters';
 import type { HSV } from '../types';
 import { el } from './dom';
 
@@ -52,16 +52,11 @@ function hsvToRgb({ h, s, v }: HSV) {
 function applyCurrentColor() {
   const { r, g, b } = hsvToRgb(currentHSV);
   const hex = rgbToHex(r, g, b);
-  const text = getContrastColor(hex);
 
   el.editColorHex.textContent = hex;
-  el.editColorHex.style.color = text;
   el.editColorHexInput.value = hex;
-  el.colorField.style.background = hex;
-  for (const target of [el.colorPickerMenu, el.pickerHexCard]) {
-    target.style.setProperty('--picker-bg', hex);
-    target.style.setProperty('--picker-text', text);
-  }
+  // The colour field doubles as a live preview of the product tile.
+  el.colorField.style.setProperty('--tile', hex);
   el.hueValue.textContent = `${Math.round(currentHSV.h)}°`;
   el.pickerSurface.style.setProperty('--picker-hue', `hsl(${currentHSV.h},100%,50%)`);
   el.hueThumb.style.left = `${(currentHSV.h / 360) * 100}%`;
@@ -83,7 +78,7 @@ export function closeColorPicker() {
   el.colorPickerMenu.classList.remove('open');
 }
 
-/** Calls `update` with the pointer position (0..1) relative to `area`, until the pointer is released. */
+/** Calls `update` with the pointer position (0..1) relative to `area`, until the pointer is released or cancelled. */
 function trackPointer(area: HTMLElement, update: (x: number, y: number) => void) {
   area.addEventListener('pointerdown', (event) => {
     const move = (e: PointerEvent) => {
@@ -94,10 +89,13 @@ function trackPointer(area: HTMLElement, update: (x: number, y: number) => void)
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
     };
     move(event);
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    // Android cancels the pointer on system gestures; without this the drag never ends.
+    window.addEventListener('pointercancel', up);
   });
 }
 

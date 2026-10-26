@@ -1,20 +1,26 @@
 import { fmt } from '../formatters';
 import type { Product, ReportType, SaleRecord, SavedReport } from '../types';
-import { Icon } from './ReportParts';
+import { Icon } from './Icon';
+import { EmptyState } from './ReportParts';
 
-export function RecentSales({ sales }: { sales: SaleRecord[] }) {
-  if (!sales.length) return <div class="empty-state">No sales recorded yet.</div>;
+const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const formatDate = (iso: string) => new Date(iso).toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+export function RecentSales({ sales, colorFor }: { sales: SaleRecord[]; colorFor: (name: string) => string }) {
+  if (!sales.length) return <EmptyState icon="inbox" title="No sales yet" text="Sales you record on the Sell tab show up here." />;
   return (
     <>
       {sales.map((sale, index) => (
-        <div class="history-item" key={`${new Date(sale.timestamp).getTime()}-${index}`}>
-          <div>
-            <strong>{sale.product}</strong>
-            <div class="history-meta">
-              {sale.payment} · {fmt(sale.price)}
-            </div>
+        <div class="list-row" key={`${new Date(sale.timestamp).getTime()}-${index}`} style={{ '--i': index }}>
+          <span class="swatch swatch-lg" style={{ background: colorFor(sale.product) || 'var(--surface-3)' }} aria-hidden="true" />
+          <div class="list-main">
+            <strong class="list-title">{sale.product}</strong>
+            <span class="list-sub">
+              <span class={`pay-chip pay-${sale.payment.toLowerCase()}`}>{sale.payment}</span>
+              {formatTime(new Date(sale.timestamp))}
+            </span>
           </div>
-          <span class="history-badge">{new Date(sale.timestamp).toLocaleTimeString()}</span>
+          <span class="list-value">{fmt(sale.price)}</span>
         </div>
       ))}
     </>
@@ -30,31 +36,40 @@ interface ProductListProps {
 }
 
 export function ProductList({ products, activeNames, onEdit, onDelete, onToggle }: ProductListProps) {
-  if (!products.length) return <div class="empty-state">No products have been created yet.</div>;
+  if (!products.length) return <EmptyState icon="package" title="No products yet" text="Tap + at the top to add your first product." />;
   return (
     <>
-      {products.map((product) => {
+      {products.map((product, index) => {
         const isActive = activeNames.has(product.name);
         return (
-          <div class="product-history-item" key={product.name} style={{ '--product-color': product.color }}>
-            <div class="product-row product-row-compact">
-              <div class="product-history-main">
-                <strong>{product.name}</strong>
-                <span class="history-meta">
-                  <span class="nowrap">Price {fmt(product.price)}</span> · <span class="nowrap">Cost {fmt(product.cost)}</span>
-                </span>
-              </div>
-              <div class="product-history-actions">
-                <button class="product-edit-btn" type="button" data-name={product.name} title={`Edit ${product.name}`} aria-label={`Edit ${product.name}`} onClick={() => onEdit(product.name)}>
-                  <Icon name="edit" />
-                </button>
-                <button class="icon-btn product-delete-btn" type="button" data-name={product.name} title={`Delete ${product.name}`} aria-label={`Delete ${product.name}`} onClick={() => onDelete(product.name)}>
-                  <Icon name="delete" />
-                </button>
-                <button class="product-toggle-btn" type="button" data-name={product.name} aria-pressed={isActive} onClick={() => onToggle(product.name)}>
-                  <span class="toggle-label">{isActive ? 'Active' : 'Add'}</span>
-                </button>
-              </div>
+          <div class={isActive ? 'list-row' : 'list-row is-inactive'} key={product.name} style={{ '--i': index }}>
+            <span class="swatch swatch-lg" style={{ background: product.color }} aria-hidden="true" />
+            <div class="list-main">
+              <strong class="list-title">{product.name}</strong>
+              <span class="list-sub list-sub-text">
+                <span>{fmt(product.price)}</span>
+                <span>cost {fmt(product.cost)}</span>
+              </span>
+            </div>
+            <div class="list-actions">
+              <button class="icon-btn icon-btn-sm product-edit-btn" type="button" data-name={product.name} title={`Edit ${product.name}`} aria-label={`Edit ${product.name}`} onClick={() => onEdit(product.name)}>
+                <Icon name="pencil" />
+              </button>
+              <button class="icon-btn icon-btn-sm icon-btn-danger product-delete-btn" type="button" data-name={product.name} title={`Delete ${product.name}`} aria-label={`Delete ${product.name}`} onClick={() => onDelete(product.name)}>
+                <Icon name="trash" />
+              </button>
+              <button
+                class="product-toggle-btn"
+                type="button"
+                data-name={product.name}
+                role="switch"
+                aria-checked={isActive}
+                aria-label={`${product.name} on counter`}
+                title={isActive ? 'On the counter' : 'Hidden from the counter'}
+                onClick={() => onToggle(product.name)}
+              >
+                <span class="switch-track" aria-hidden="true" />
+              </button>
             </div>
           </div>
         );
@@ -72,16 +87,25 @@ interface SavedReportListProps {
 }
 
 export function SavedReportList({ reports, type, onOpen, onRename, onDelete }: SavedReportListProps) {
-  if (!reports.length) return <div class="empty-state">No saved {type} reports yet.</div>;
+  if (!reports.length) {
+    return (
+      <EmptyState
+        icon={type === 'sales' ? 'file-chart' : 'event'}
+        title={`No saved ${type} reports`}
+        text={type === 'sales' ? 'Save one from the Reports tab menu.' : 'Save one from the Event tab menu.'}
+      />
+    );
+  }
   return (
     <>
-      {reports.map((report) => (
+      {reports.map((report, index) => (
         <div
-          class="sales-report-history-item"
+          class="list-row list-row-link sales-report-history-item"
           key={report.id}
           data-id={report.id}
           tabIndex={0}
           role="button"
+          style={{ '--i': index }}
           onClick={() => onOpen(report.id)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' || event.key === ' ') {
@@ -90,37 +114,40 @@ export function SavedReportList({ reports, type, onOpen, onRename, onDelete }: S
             }
           }}
         >
-          <div class="product-row product-row-compact">
-            <div class="product-history-main">
-              <strong>{report.name}</strong>
-              <span class="history-meta">{new Date(report.createdAt).toLocaleString()}</span>
-            </div>
-            <div class="product-history-actions">
-              <button
-                class="icon-btn sales-report-edit-btn"
-                type="button"
-                title="Rename report"
-                aria-label="Rename report"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onRename(report.id);
-                }}
-              >
-                <Icon name="edit" />
-              </button>
-              <button
-                class="icon-btn history-item-delete"
-                type="button"
-                title="Delete report"
-                aria-label="Delete report"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onDelete(report.id);
-                }}
-              >
-                <Icon name="delete" />
-              </button>
-            </div>
+          <span class="row-icon" aria-hidden="true">
+            <Icon name={type === 'sales' ? 'file-chart' : 'event'} />
+          </span>
+          <div class="list-main">
+            <strong class="list-title">{report.name}</strong>
+            <span class="list-sub">
+              {formatDate(report.createdAt)} · {report.sales.length} sales
+            </span>
+          </div>
+          <div class="list-actions">
+            <button
+              class="icon-btn icon-btn-sm sales-report-edit-btn"
+              type="button"
+              title="Rename report"
+              aria-label={`Rename ${report.name}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onRename(report.id);
+              }}
+            >
+              <Icon name="pencil" />
+            </button>
+            <button
+              class="icon-btn icon-btn-sm icon-btn-danger history-item-delete"
+              type="button"
+              title="Delete report"
+              aria-label={`Delete ${report.name}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete(report.id);
+              }}
+            >
+              <Icon name="trash" />
+            </button>
           </div>
         </div>
       ))}
@@ -141,26 +168,28 @@ export function ReportChecklist({ reports, checked, emptyText, live }: ReportChe
   return (
     <>
       {live && (
-        <label class="import-item">
+        <label class="check-row">
           <input type="checkbox" id="importCurrentLiveReport" value="current-live" checked={false} />
-          <div>
+          <span class="check-box" aria-hidden="true" />
+          <span class="check-text">
             <strong>{live.title}</strong>
             <small>{live.subtitle}</small>
-          </div>
+          </span>
         </label>
       )}
       {reports.length ? (
         reports.map((report) => (
-          <label class="import-item" key={report.id}>
+          <label class="check-row" key={report.id}>
             <input type="checkbox" value={report.id} checked={checked.includes(report.id)} />
-            <div>
+            <span class="check-box" aria-hidden="true" />
+            <span class="check-text">
               <strong>{report.name}</strong>
-              <small>{new Date(report.createdAt).toLocaleString()}</small>
-            </div>
+              <small>{formatDate(report.createdAt)}</small>
+            </span>
           </label>
         ))
       ) : (
-        <div class="empty-state">{emptyText}</div>
+        <p class="card-note">{emptyText}</p>
       )}
     </>
   );

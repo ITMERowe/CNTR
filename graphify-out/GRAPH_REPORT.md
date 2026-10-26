@@ -1,25 +1,25 @@
 # Graph Report - CNTR  (2026-10-26)
 
 ## Corpus Check
-- 71 files · ~60,420 words
+- 77 files · ~73,725 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 632 nodes · 1036 edges · 46 communities (39 shown, 7 thin omitted)
-- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 38 edges (avg confidence: 0.66)
+- 695 nodes · 1152 edges · 54 communities (45 shown, 9 thin omitted)
+- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 42 edges (avg confidence: 0.66)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `ade8d411`
+- Built from commit: `98731f11`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- types.ts
+- ReportParts.tsx
 - storage.ts
-- package.json
+- dependencies
 - main.ts
-- formatters.ts
+- productEditor.ts
 - compilerOptions
 - .application
 - What You Must Do When Invoked
@@ -52,19 +52,27 @@
 - 3. Heal
 - Browser Session Management
 - Tracing
-- Unreleased
+- 2026-10-26 (merged to `main`)
+- HANDOFF
+- Product
+- Commands
+- Video Recording
+- playwright-cli/SKILL.md
+- Advanced Mocking with run-code
+- Attaching Screenshots and Videos to Pull Requests
+- element-attributes.md
 
 ## God Nodes (most connected - your core abstractions)
-1. `render()` - 28 edges
-2. `fmt()` - 17 edges
+1. `render()` - 31 edges
+2. `fmt()` - 19 edges
 3. `wireDialogs()` - 17 edges
-4. `compilerOptions` - 16 edges
-5. `Browser Automation with playwright-cli` - 16 edges
-6. `loadSettings()` - 15 edges
-7. `showToast()` - 15 edges
-8. `saveEditedProduct()` - 13 edges
-9. `Running Custom Playwright Code` - 13 edges
-10. `loadSavedReports` - 12 edges
+4. `loadSettings()` - 16 edges
+5. `showToast()` - 16 edges
+6. `compilerOptions` - 16 edges
+7. `Browser Automation with playwright-cli` - 16 edges
+8. `HANDOFF` - 15 edges
+9. `openProductEditor()` - 13 edges
+10. `saveEditedProduct()` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Graphify-first token-efficient workflow` --semantically_similar_to--> `AGENTS.md Graphify required workflow`  [INFERRED] [semantically similar]
@@ -85,27 +93,27 @@
 - **APK build pipeline** — _github_workflows_build_apk_build_apk, _github_workflows_build_apk_capacitor_sync, _github_workflows_build_apk_gradle_assembledebug, _github_workflows_build_apk_cntr_debug_apk [EXTRACTED 1.00]
 - **Graphify-first agent instructions** — _claude_claude_graphify_first_workflow, agents_graphify_required_workflow, claude_graphify_rules, claude_graphify_knowledge_graph [INFERRED 0.95]
 
-## Communities (46 total, 7 thin omitted)
+## Communities (54 total, 9 thin omitted)
 
-### Community 0 - "types.ts"
-Cohesion: 0.13
-Nodes (34): fmt(), buildProductBreakdown(), compareProductCounts(), getReportSummary(), marginPercent(), plural(), ProductTotals, totalCost() (+26 more)
+### Community 0 - "ReportParts.tsx"
+Cohesion: 0.08
+Nodes (55): fmt(), buildProductBreakdown(), compareProductCounts(), getReportSummary(), marginPercent(), plural(), ProductTotals, totalCost() (+47 more)
 
 ### Community 1 - "storage.ts"
-Cohesion: 0.11
-Nodes (28): CURRENCIES, DEFAULT_SETTINGS, EVENT_COST_STORAGE_KEY, IMPORTED_EVENT_REPORT_KEY, loadEventCosts(), loadImportedEventReport(), loadProductHistory(), loadProducts() (+20 more)
+Cohesion: 0.12
+Nodes (27): CURRENCIES, DEFAULT_SETTINGS, EVENT_COST_STORAGE_KEY, IMPORTED_EVENT_REPORT_KEY, loadEventCosts(), loadImportedEventReport(), loadProductHistory(), loadProducts() (+19 more)
 
-### Community 2 - "package.json"
-Cohesion: 0.06
-Nodes (32): @capacitor/android, @capacitor/cli, @capacitor/core, @capacitor/ios, chokidar-cli, dependencies, @capacitor/android, @capacitor/core (+24 more)
+### Community 2 - "dependencies"
+Cohesion: 0.05
+Nodes (39): @capacitor/android, @capacitor/app, @capacitor/cli, @capacitor/core, @capacitor/haptics, @capacitor/ios, chokidar-cli, @fontsource-variable/plus-jakarta-sans (+31 more)
 
 ### Community 3 - "main.ts"
 Cohesion: 0.07
-Nodes (93): defaultProducts, ensureProductHistory(), generateUUID(), escapeHtml(), formatInputNumber(), checkedValues(), closeCompareModal(), closeExpenseModal() (+85 more)
+Nodes (82): defaultProducts, generateUUID(), addSale(), checkedValues(), closeCompareModal(), closeExpenseModal(), closeImportModal(), closeSaveModal() (+74 more)
 
-### Community 4 - "formatters.ts"
+### Community 4 - "productEditor.ts"
 Cohesion: 0.13
-Nodes (24): chooseUniqueColor(), CURRENCY_LOCALES, CURRENCY_SEPARATORS, CURRENCY_SYMBOLS, escapeForRegExp(), formatMoney(), formatNumeric(), getContrastColor() (+16 more)
+Nodes (35): ensureProductHistory(), chooseUniqueColor(), CURRENCY_LOCALES, CURRENCY_SEPARATORS, CURRENCY_SYMBOLS, escapeForRegExp(), formatInputNumber(), formatMoney() (+27 more)
 
 ### Community 5 - "compilerOptions"
 Cohesion: 0.09
@@ -184,16 +192,16 @@ Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
 ### Community 39 - "Running Custom Playwright Code"
-Cohesion: 0.04
-Nodes (40): Examples, Inspecting Element Attributes, Debugging Playwright Tests, Running Playwright Tests, Attaching Screenshots and Videos to Pull Requests, From a local session, From CI, Limits (+32 more)
+Cohesion: 0.15
+Nodes (13): Clipboard, Complex Workflows, Error Handling, File Downloads, Frames and Iframes, Geolocation, JavaScript Execution, Media Emulation (+5 more)
 
 ### Community 40 - "Cookies"
 Cohesion: 0.06
 Nodes (35): Advanced: Multiple Cookies or Custom Options, Advanced: Multiple Operations, Authentication State Reuse, Clear All Cookies, Clear All localStorage, Clear sessionStorage, Common Patterns, Cookies (+27 more)
 
 ### Community 41 - "Browser Automation with playwright-cli"
-Cohesion: 0.07
-Nodes (27): Attaching screenshots and videos to pull requests, Browser Automation with playwright-cli, Browser Sessions, Commands, Core, DevTools, Emulation, Example: Debugging with DevTools (+19 more)
+Cohesion: 0.13
+Nodes (15): Attaching screenshots and videos to pull requests, Browser Automation with playwright-cli, Browser Sessions, Example: Debugging with DevTools, Example: Form submission, Example: Interactive session, Example: Multi-tab workflow, Installation (+7 more)
 
 ### Community 42 - "3. Heal"
 Cohesion: 0.09
@@ -207,29 +215,53 @@ Nodes (20): 1. Name Browser Sessions Semantically, 2. Always Clean Up, 3. Delete
 Cohesion: 0.12
 Nodes (16): 1. Start Tracing Before the Problem, 2. Clean Up Old Traces, Analyzing Performance, Basic Usage, Best Practices, Capturing Evidence, Debugging Failed Actions, Limitations (+8 more)
 
-### Community 45 - "Unreleased"
-Cohesion: 0.33
-Nodes (5): Build, Changed, Changelog, Fixed, Unreleased
+### Community 45 - "2026-10-26 (merged to `main`)"
+Cohesion: 0.20
+Nodes (9): 2026-10-26 (merged to `main`), Build, Changed, Changed, Changelog, Fixed, Fixed, Project (+1 more)
+
+### Community 46 - "HANDOFF"
+Cohesion: 0.12
+Nodes (15): Cleanup session: files changed (committed), Commits and push, Current state (verified 2026-10-26), Decisions, GitHub metadata to apply (owner), Goal, HANDOFF, Impeccable init (2026-10-26). **UNCOMMITTED** on `ui/revamp` (+7 more)
+
+### Community 47 - "Product"
+Cohesion: 0.17
+Nodes (11): Accessibility & Inclusion, Brand Commitments, Capabilities and Constraints, Evidence on Hand, Operating Context, Platform, Positioning, Product (+3 more)
+
+### Community 48 - "Commands"
+Cohesion: 0.17
+Nodes (12): Commands, Core, DevTools, Emulation, Keyboard, Mouse, Navigation, Network (+4 more)
+
+### Community 49 - "Video Recording"
+Cohesion: 0.20
+Nodes (10): 1. Use Descriptive Filenames, 2. Record entire hero scripts., 3. Attach the recording to the pull request, Basic Recording, Best Practices, Cursor, Target Highlight and Click Point, Limitations, Overlay API Summary (+2 more)
+
+### Community 51 - "Advanced Mocking with run-code"
+Cohesion: 0.22
+Nodes (8): Advanced Mocking with run-code, CLI Route Commands, Conditional Response Based on Request, Delayed Response, Modify Real Response, Request Mocking, Simulate Network Failures, URL Patterns
+
+### Community 52 - "Attaching Screenshots and Videos to Pull Requests"
+Cohesion: 0.40
+Nodes (5): Attaching Screenshots and Videos to Pull Requests, From a local session, From CI, Limits, When to attach
 
 ## Knowledge Gaps
-- **288 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+283 more)
+- **320 isolated node(s):** `name`, `private`, `license`, `version`, `type` (+315 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Browser Automation with playwright-cli` connect `Browser Automation with playwright-cli` to `Running Custom Playwright Code`?**
-  _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Why does `Test generation (plan → generate → heal)` connect `3. Heal` to `Running Custom Playwright Code`?**
+- **Why does `Browser Automation with playwright-cli` connect `Browser Automation with playwright-cli` to `Commands`, `playwright-cli/SKILL.md`?**
   _High betweenness centrality (0.017) - this node is a cross-community bridge._
-- **Are the 6 inferred relationships involving `render()` (e.g. with `openImportModal()` and `productColor()`) actually correct?**
-  _`render()` has 6 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `Test generation (plan → generate → heal)` connect `3. Heal` to `playwright-cli/SKILL.md`?**
+  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+- **Are the 9 inferred relationships involving `render()` (e.g. with `addSale()` and `openImportModal()`) actually correct?**
+  _`render()` has 9 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 10 inferred relationships involving `wireDialogs()` (e.g. with `closeCompareModal()` and `closeExpenseModal()`) actually correct?**
   _`wireDialogs()` has 10 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `name`, `private`, `version` to the rest of the system?**
-  _288 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `types.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.1273532668881506 - nodes in this community are weakly interconnected._
+- **What connects `name`, `private`, `license` to the rest of the system?**
+  _320 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `ReportParts.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.07857769973661106 - nodes in this community are weakly interconnected._
 - **Should `storage.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.11330049261083744 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.1164021164021164 - nodes in this community are weakly interconnected._

@@ -29,7 +29,14 @@ export function openProductEditor(index: number, historyIndex: number | null = n
   el.editCost.value = source ? formatInputNumber(String(source.cost), currency) : '';
   el.removeProductBtn.style.display = index >= 0 ? 'grid' : 'none';
   setPickerColor(source?.color ?? chooseUniqueColor(state.products, '#F76495'));
+  updatePreview();
   openScreen('productEditScreen');
+}
+
+/** Mirrors the name and price into the tile preview on the colour field. */
+function updatePreview() {
+  el.editPreviewName.textContent = el.editName.value.trim() || 'Product name';
+  el.editPreviewPrice.textContent = el.editPrice.value || formatInputNumber('0', loadSettings().currency);
 }
 
 /** Opens the editor for a product by name, whether it is active or only in history. */
@@ -116,8 +123,10 @@ export function initProductEditor(changed: () => void) {
   for (const input of [el.editPrice, el.editCost]) {
     input.addEventListener('input', () => {
       input.value = formatInputNumber(input.value, loadSettings().currency);
+      updatePreview();
     });
   }
+  el.editName.addEventListener('input', updatePreview);
   el.removeProductBtn.addEventListener('click', removeEditedProduct);
   el.saveProductBtn.addEventListener('click', saveEditedProduct);
   el.closeEditBtn.addEventListener('click', closeProductEditor);
