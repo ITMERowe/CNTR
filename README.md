@@ -21,6 +21,7 @@ It runs entirely on the device: no server, no account, no network needed.
 - **Settings**: 8 currencies (IDR, USD, EUR, SGD, AUD, GBP, JPY, MYR) and an optional compact format (`Rp 1,5M`).
 - **Offline by design**: the font and icons are bundled into the app.
 - Respects the system "reduce motion" setting.
+- **Android back** (button or gesture) steps back inside the app: it closes the open sheet or menu, then goes back a screen, then to Sell; on Sell it sends the app to the background.
 
 ## Tech stack
 
@@ -28,7 +29,7 @@ It runs entirely on the device: no server, no account, no network needed.
 |---|---|
 | UI | TypeScript, [Preact](https://preactjs.com) components, plain CSS with design tokens |
 | Build | [Vite](https://vitejs.dev) 5, TypeScript 5 (strict, unused-code checks on) |
-| Native | [Capacitor](https://capacitorjs.com) 8 (Android; iOS project included), `@capacitor/haptics` |
+| Native | [Capacitor](https://capacitorjs.com) 8 (Android; iOS project included), `@capacitor/haptics`, `@capacitor/app` |
 | Assets | [Lucide](https://lucide.dev) SVG icons, Plus Jakarta Sans (bundled via Fontsource) |
 | CI | GitHub Actions builds a debug APK on every push |
 
