@@ -1,4 +1,4 @@
-import { fmt, INK_DARK, inkFor } from '../formatters';
+import { fmt, tileTone } from '../formatters';
 import type { Product } from '../types';
 import { Icon } from './Icon';
 
@@ -35,14 +35,8 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit }: Pr
   return (
     <>
       {products.map((product, index) => {
-        const ink = inkFor(product.color);
         return (
-          <article
-            class={ink === INK_DARK ? 'tile ink-dark' : 'tile ink-light'}
-            key={product.name}
-            data-product={product.name}
-            style={{ '--tile': product.color, '--ink': ink, '--i': index }}
-          >
+          <article class="tile" key={product.name} data-product={product.name} style={{ '--tile': tileTone(product.color), '--i': index }}>
             <div class="tile-head">
               <div class="tile-meta">
                 <h2 class="product-name">{product.name}</h2>

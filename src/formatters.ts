@@ -101,24 +101,44 @@ export function escapeHtml(value: unknown) {
   return String(value ?? '').replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch]);
 }
 
-function relativeLuminance(hex: string) {
+// ---- OKLCH helpers: adjust lightness/chroma while keeping the hue ----
+
+const toLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const toGamma = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+
+function hexToOklch(hex: string) {
   const n = parseInt(normalizeHex(hex).slice(1), 16);
-  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((channel) => {
-    const c = channel / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => toLinear(v / 255));
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+  const A = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+  const B = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+  return { L, C: Math.hypot(A, B), h: Math.atan2(B, A) };
 }
 
-export const INK_DARK = '#0b0b0c';
-export const INK_LIGHT = '#ffffff';
+function oklchToHex(L: number, C: number, h: number) {
+  const A = C * Math.cos(h);
+  const B = C * Math.sin(h);
+  const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+  const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+  const s = (L - 0.0894841775 * A - 1.291485548 * B) ** 3;
+  const rgb = [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ];
+  return `#${rgb.map((c) => Math.round(Math.min(1, Math.max(0, toGamma(c))) * 255).toString(16).padStart(2, '0')).join('').toUpperCase()}`;
+}
 
-/** White or near-black, whichever has the higher WCAG contrast on `hex`. */
-export function inkFor(hex: string) {
-  const l = relativeLuminance(hex);
-  const contrastWithWhite = 1.05 / (l + 0.05);
-  const contrastWithDark = (l + 0.05) / (relativeLuminance(INK_DARK) + 0.05);
-  return contrastWithWhite >= contrastWithDark ? INK_LIGHT : INK_DARK;
+/**
+ * The calm, deep version of a product colour used for tile surfaces: same hue, lightness capped
+ * and chroma reduced so white text always reads clearly and bright picks don't shout.
+ */
+export function tileTone(hex: string) {
+  const { L, C, h } = hexToOklch(hex);
+  return oklchToHex(Math.min(Math.max(L, 0.38), 0.47), Math.min(C * 0.72, 0.125), h);
 }
 
 export const PRESET_COLORS = ['#F76495', '#FF4D4D', '#F9B234', '#51C43F', '#30C7FF', '#4F6EFF', '#B85DFF'];

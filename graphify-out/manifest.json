@@ -340,8 +340,8 @@
     "semantic_hash": ""
   },
   "src/formatters.ts": {
-    "mtime": 1793006594.107341,
-    "ast_hash": "f4a464522f3e0fc55736e34b37110538",
+    "mtime": 1793007459.696759,
+    "ast_hash": "3eba70adbf1e1c69789f4b9fc4fae906",
     "semantic_hash": ""
   },
   "src/storage.ts": {
@@ -460,8 +460,8 @@
     "semantic_hash": ""
   },
   "src/ui/colorPicker.ts": {
-    "mtime": 1793006615.0642517,
-    "ast_hash": "c8eadc29ad13ad3193969b03b4e175a5",
+    "mtime": 1793007515.200182,
+    "ast_hash": "af6bc65f4deb6485e75ec7c2bc9fb890",
     "semantic_hash": ""
   },
   "src/ui/dom.ts": {
@@ -485,8 +485,8 @@
     "semantic_hash": ""
   },
   "src/views/Lists.tsx": {
-    "mtime": 1793007085.1949902,
-    "ast_hash": "4c86941b12e31ce59fe15fa14f4eb2dd",
+    "mtime": 1793007446.3355372,
+    "ast_hash": "82685d2fa01629a5f52bc669cd5711f7",
     "semantic_hash": ""
   },
   "src/views/ReportParts.tsx": {
@@ -500,13 +500,13 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1793007317.0963645,
-    "ast_hash": "fc6fdbb887da5422ae073c8033c8b0ed",
+    "mtime": 1793007571.6988459,
+    "ast_hash": "aa0b621b7beba5d74d227e2c9c5e7876",
     "semantic_hash": ""
   },
   "docs/ARCHITECTURE.md": {
-    "mtime": 1793007317.0943635,
-    "ast_hash": "d65b1f75445a150f78217b03cbd7eb6b",
+    "mtime": 1793007571.6968381,
+    "ast_hash": "538586fd5e64d8f680d0687aa8ddaa88",
     "semantic_hash": ""
   },
   "src/ui/icons.ts": {
@@ -520,8 +520,8 @@
     "semantic_hash": ""
   },
   "src/views/SalesGrid.tsx": {
-    "mtime": 1793006594.970135,
-    "ast_hash": "b6262430fbee53ec77e99398031fd534",
+    "mtime": 1793007446.3325334,
+    "ast_hash": "88f56d9a7967ce7676ee5411b02d55c8",
     "semantic_hash": ""
   },
   "src/views/SalesHero.tsx": {
