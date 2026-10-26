@@ -110,10 +110,10 @@ export function formatMoney(
     else precision = 3;
 
     const formatted = Number(value.toFixed(precision));
-    return `${symbol} ${sign}${formatNumeric(formatted, currency)}${suffix}`;
+    return `${sign}${symbol} ${formatNumeric(formatted, currency)}${suffix}`;
   }
 
-  return `${symbol} ${sign}${formatNumeric(abs, currency)}`;
+  return `${sign}${symbol} ${formatNumeric(abs, currency)}`;
 }
 
 export const fmt = (n: number) => {
@@ -121,12 +121,12 @@ export const fmt = (n: number) => {
   return formatMoney(n, settings.currency, settings.compactMoney);
 };
 
-export const fmtCompact = (n: number) => {
-  const settings = loadSettings();
-  return formatMoney(n, settings.currency, settings.compactMoney);
-};
+const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
-export const label = (p: number) => p >= 1000 ? `${p / 1000}k` : `${p}`;
+// Escape user-entered text before interpolating it into innerHTML templates.
+export function escapeHtml(value: unknown) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch]);
+}
 
 export function getContrastColor(hex: string) {
   const n = parseInt(hex.slice(1), 16);
