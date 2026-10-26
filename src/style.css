@@ -115,6 +115,10 @@ p {
   outline-offset: 2px;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 ::selection {
   background: var(--selection);
   color: var(--text);
@@ -1800,6 +1804,39 @@ p {
   grid-template-columns: 1fr 1fr;
   gap: var(--s3);
   margin-top: var(--s1);
+}
+
+/* A message sheet has only its OK button */
+.sheet-actions > [hidden] + .btn {
+  grid-column: 1 / -1;
+}
+
+/* ---------- Data safety ---------- */
+
+.storage-alert {
+  margin: 0 var(--s4) var(--s3);
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--negative);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.group-note {
+  padding: var(--s2) var(--s1) 0;
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+.startup-error {
+  display: grid;
+  gap: var(--s4);
+  align-content: center;
+  min-height: 100%;
+  padding: var(--s6);
+  text-align: center;
 }
 
 .checklist {

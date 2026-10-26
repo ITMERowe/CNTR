@@ -26,6 +26,7 @@
       </header>
 
       <main class="content">
+        <p class="storage-alert" id="storageAlert" role="alert" hidden></p>
         <section class="screen active" id="salesScreen">
           <div class="sales-grid" id="grid"></div>
         </section>
@@ -130,6 +131,16 @@
                   <button class="group-row group-link" id="openSalesReportMenuBtn" type="button"><span class="group-icon"><i data-icon="file-chart"></i></span><span class="group-row-label">Saved sales reports</span><i data-icon="chevron-right"></i></button>
                   <button class="group-row group-link" id="openEventReportMenuBtn" type="button"><span class="group-icon"><i data-icon="event"></i></span><span class="group-row-label">Saved event reports</span><i data-icon="chevron-right"></i></button>
                 </div>
+              </section>
+              <section class="group">
+                <h2 class="group-title">Backup</h2>
+                <div class="group-body">
+                  <button class="group-row group-link" id="exportBackupBtn" type="button"><span class="group-icon"><i data-icon="backup"></i></span><span class="group-row-label">Export backup<small id="lastBackupText">No backup yet</small></span><i data-icon="chevron-right"></i></button>
+                  <button class="group-row group-link" id="exportCsvBtn" type="button"><span class="group-icon"><i data-icon="csv"></i></span><span class="group-row-label">Export sales as CSV<small>For a spreadsheet; cannot be restored</small></span><i data-icon="chevron-right"></i></button>
+                  <button class="group-row group-link" id="restoreBackupBtn" type="button"><span class="group-icon"><i data-icon="restore"></i></span><span class="group-row-label">Restore from backup<small>Replaces all data on this phone</small></span><i data-icon="chevron-right"></i></button>
+                </div>
+                <p class="group-note">Your data is stored only on this phone and never needs internet. Uninstalling CNTR, clearing its data, or losing the phone deletes it. Export a backup after every event and keep a copy somewhere else.</p>
+                <input type="file" id="restoreFileInput" hidden />
               </section>
               <section class="group">
                 <div class="group-body">

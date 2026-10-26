@@ -2,21 +2,32 @@
 // and call these functions, then re-render.
 import { defaultProducts, generateUUID } from './data';
 import * as storage from './storage';
-import type { EventView, ImportedEventReport, Product, ReportType, SaleRecord, SavedReport } from './types';
+import type { EventCost, EventView, ImportedEventReport, Product, ReportType, SaleRecord, SavedReport } from './types';
 
+// Filled by initState() once storage has loaded.
 export const state = {
   /** Active products (tiles on the sales screen). */
-  products: storage.loadProducts(),
+  products: [] as Product[],
   /** Every product ever created, including deactivated ones. */
-  productHistory: storage.loadProductHistory(),
+  productHistory: [] as Product[],
   /** Live sales for the current session. */
-  sales: storage.loadSales(),
+  sales: [] as SaleRecord[],
   /** Live event expenses. */
-  eventCosts: storage.loadEventCosts(),
-  importedEventReport: storage.loadImportedEventReport(),
+  eventCosts: [] as EventCost[],
+  importedEventReport: null as ImportedEventReport | null,
   /** A saved report currently being viewed on the Reports or Event screen. */
   previewReport: null as SavedReport | null,
 };
+
+/** Loads the state from storage; call once, after initStorage(). */
+export function initState() {
+  state.products = storage.loadProducts();
+  state.productHistory = storage.loadProductHistory();
+  state.sales = storage.loadSales();
+  state.eventCosts = storage.loadEventCosts();
+  state.importedEventReport = storage.loadImportedEventReport();
+  syncProductState();
+}
 
 /** Keeps the last entry for each product name. */
 function dedupeByName(list: Product[]) {
@@ -47,8 +58,6 @@ function syncProductState() {
   products.splice(0, products.length, ...uniqueProducts);
   productHistory.splice(0, productHistory.length, ...mergedHistory);
 }
-
-syncProductState();
 
 export function saveProducts() {
   syncProductState();

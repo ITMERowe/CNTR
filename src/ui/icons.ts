@@ -1,13 +1,16 @@
 // Bundled SVG icons (Lucide), so icons render offline. Static markup uses <i data-icon="name">,
 // replaced once at startup by hydrateIcons(); Preact views use views/Icon.tsx.
 import {
+  ArchiveRestore,
   ArrowLeft,
   Banknote,
   ChartColumn,
   ChevronRight,
+  DatabaseBackup,
   Download,
   EllipsisVertical,
   FileChartColumn,
+  FileSpreadsheet,
   HandCoins,
   History,
   Inbox,
@@ -27,6 +30,9 @@ import {
 
 export const ICONS = {
   'arrow-left': ArrowLeft,
+  backup: DatabaseBackup,
+  csv: FileSpreadsheet,
+  restore: ArchiveRestore,
   banknote: Banknote,
   chart: ChartColumn,
   'chevron-right': ChevronRight,

@@ -5,6 +5,11 @@
   "plugins": {
     "SystemBars": {
       "insetsHandling": "native"
+    },
+    "CapacitorSQLite": {
+      "iosDatabaseLocation": "Library/CapacitorDatabase",
+      "iosIsEncryption": false,
+      "androidIsEncryption": false
     }
   }
 }
