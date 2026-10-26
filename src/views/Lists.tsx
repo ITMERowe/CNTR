@@ -1,4 +1,4 @@
-import { fmt } from '../formatters';
+import { fmt, tileTone } from '../formatters';
 import type { Product, ReportType, SaleRecord, SavedReport } from '../types';
 import { Icon } from './Icon';
 import { EmptyState } from './ReportParts';
@@ -12,7 +12,7 @@ export function RecentSales({ sales, colorFor }: { sales: SaleRecord[]; colorFor
     <>
       {sales.map((sale, index) => (
         <div class="list-row" key={`${new Date(sale.timestamp).getTime()}-${index}`} style={{ '--i': index }}>
-          <span class="swatch swatch-lg" style={{ background: colorFor(sale.product) || 'var(--text-3)' }} aria-hidden="true" />
+          <span class="swatch swatch-lg" style={{ background: colorFor(sale.product) ? tileTone(colorFor(sale.product)) : 'var(--surface-3)' }} aria-hidden="true" />
           <div class="list-main">
             <strong class="list-title">{sale.product}</strong>
             <span class="list-sub">
@@ -43,7 +43,7 @@ export function ProductList({ products, activeNames, onEdit, onDelete, onToggle 
         const isActive = activeNames.has(product.name);
         return (
           <div class={isActive ? 'list-row' : 'list-row is-inactive'} key={product.name} style={{ '--i': index }}>
-            <span class="swatch swatch-lg" style={{ background: product.color }} aria-hidden="true" />
+            <span class="swatch swatch-lg" style={{ background: tileTone(product.color) }} aria-hidden="true" />
             <div class="list-main">
               <strong class="list-title">{product.name}</strong>
               <span class="list-sub list-sub-text">

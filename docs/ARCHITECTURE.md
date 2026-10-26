@@ -88,7 +88,7 @@ Everything lives in `localStorage` as JSON (`src/storage.ts`):
 - **Wire static elements once** at startup; never attach listeners inside `render()`.
 - **Confirm destructive actions** with `openConfirmModal()` (clear sales, delete report, remove product).
 - **Styling** uses the tokens at the top of `src/style.css`: surfaces (`--bg`, `--surface-1..3`, VS Code dark palette), text (`--text`, `--text-2`, `--text-3`, all >= 4.5:1), meaning (`--positive`, `--negative`, `--cash`, `--qris`), radii, a 4/8px spacing scale and motion. Never hard-code a colour in a component.
-- **Text on product colours** uses `inkFor(hex)` (white or near-black, whichever has the higher WCAG contrast).
+- **Product colours on large surfaces** (tiles, editor preview, product squares, presets) use `tileTone(hex)`: the same hue in OKLCH with lightness capped at 0.47 and chroma reduced, so text and icons on them are always white (>= 6.5:1 for every default and preset). Small marks (chart dots and bars) use the original colour. The stored product colour is never changed.
 - **Motion** uses only the motion tokens (`--dur-tap` 120ms, `--dur-1` 200ms, `--dur-2` 280ms, `--dur-3` 420ms; `--ease-out` to enter, `--ease-in` to exit) and animates only `transform`/`opacity`. `prefers-reduced-motion` turns it all off.
 - **Charts** follow the dataviz rules: thin bars with 4px rounded data-ends, a hairline baseline, values in text colour (never series colour), a written fallback instead of a one-bar chart. `--cash`/`--qris` were validated as a colour-blind-safe pair on the card surface; re-validate if you change either or the surface.
 - **Icons**: add new ones to `ICONS` in `ui/icons.ts` (Lucide), never an icon font or emoji.

@@ -48,19 +48,6 @@
       "norm_label": "producttotals"
     },
     {
-      "label": "EventCost",
-      "file_type": "code",
-      "source_file": "src/types.ts",
-      "source_location": "L26",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_types_eventcost",
-      "community": 0,
-      "community_name": "ReportParts.tsx",
-      "norm_label": "eventcost"
-    },
-    {
       "label": "EventView",
       "file_type": "code",
       "source_file": "src/types.ts",
@@ -206,6 +193,19 @@
     {
       "label": "Props",
       "file_type": "code",
+      "source_file": "src/views/SalesGrid.tsx",
+      "source_location": "L15",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_views_salesgrid_props",
+      "community": 0,
+      "community_name": "ReportParts.tsx",
+      "norm_label": "props"
+    },
+    {
+      "label": "Props",
+      "file_type": "code",
       "source_file": "src/views/SalesReport.tsx",
       "source_location": "L6",
       "_callable": true,
@@ -243,6 +243,45 @@
       "norm_label": "appsettings"
     },
     {
+      "label": "Currency",
+      "file_type": "code",
+      "source_file": "src/types.ts",
+      "source_location": "L1",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_types_currency",
+      "community": 1,
+      "community_name": "storage.ts",
+      "norm_label": "currency"
+    },
+    {
+      "label": "EventCost",
+      "file_type": "code",
+      "source_file": "src/types.ts",
+      "source_location": "L26",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_types_eventcost",
+      "community": 1,
+      "community_name": "storage.ts",
+      "norm_label": "eventcost"
+    },
+    {
+      "label": "HSV",
+      "file_type": "code",
+      "source_file": "src/types.ts",
+      "source_location": "L20",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_types_hsv",
+      "community": 1,
+      "community_name": "storage.ts",
+      "norm_label": "hsv"
+    },
+    {
       "label": "ImportedEventReport",
       "file_type": "code",
       "source_file": "src/types.ts",
@@ -269,45 +308,6 @@
       "norm_label": "mainactivity"
     },
     {
-      "label": "Currency",
-      "file_type": "code",
-      "source_file": "src/types.ts",
-      "source_location": "L1",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_types_currency",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "currency"
-    },
-    {
-      "label": "HSV",
-      "file_type": "code",
-      "source_file": "src/types.ts",
-      "source_location": "L20",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_types_hsv",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "hsv"
-    },
-    {
-      "label": "Props",
-      "file_type": "code",
-      "source_file": "src/views/SalesGrid.tsx",
-      "source_location": "L15",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_views_salesgrid_props",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "props"
-    },
-    {
       "label": "TapPulse",
       "file_type": "code",
       "source_file": "src/views/SalesGrid.tsx",
@@ -317,7 +317,7 @@
       "_origin": "ast",
       "id": "src_views_salesgrid_tappulse",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "tappulse"
     },
     {
@@ -539,6 +539,18 @@
       "norm_label": "icon()"
     },
     {
+      "label": "formatDate()",
+      "file_type": "code",
+      "source_file": "src/views/Lists.tsx",
+      "source_location": "L7",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_views_lists_formatdate",
+      "community": 0,
+      "community_name": "ReportParts.tsx",
+      "norm_label": "formatdate()"
+    },
+    {
       "label": "formatTime()",
       "file_type": "code",
       "source_file": "src/views/Lists.tsx",
@@ -551,18 +563,6 @@
       "norm_label": "formattime()"
     },
     {
-      "label": "ProductList()",
-      "file_type": "code",
-      "source_file": "src/views/Lists.tsx",
-      "source_location": "L38",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_views_lists_productlist",
-      "community": 0,
-      "community_name": "ReportParts.tsx",
-      "norm_label": "productlist()"
-    },
-    {
       "label": "RecentSales()",
       "file_type": "code",
       "source_file": "src/views/Lists.tsx",
@@ -573,6 +573,30 @@
       "community": 0,
       "community_name": "ReportParts.tsx",
       "norm_label": "recentsales()"
+    },
+    {
+      "label": "ReportChecklist()",
+      "file_type": "code",
+      "source_file": "src/views/Lists.tsx",
+      "source_location": "L166",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_views_lists_reportchecklist",
+      "community": 0,
+      "community_name": "ReportParts.tsx",
+      "norm_label": "reportchecklist()"
+    },
+    {
+      "label": "SavedReportList()",
+      "file_type": "code",
+      "source_file": "src/views/Lists.tsx",
+      "source_location": "L88",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_views_lists_savedreportlist",
+      "community": 0,
+      "community_name": "ReportParts.tsx",
+      "norm_label": "savedreportlist()"
     },
     {
       "label": "Card()",
@@ -911,6 +935,18 @@
       "norm_label": "savesavedreports()"
     },
     {
+      "label": "saveSettings()",
+      "file_type": "code",
+      "source_file": "src/storage.ts",
+      "source_location": "L129",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_storage_savesettings",
+      "community": 1,
+      "community_name": "storage.ts",
+      "norm_label": "savesettings()"
+    },
+    {
       "label": "serializeSales()",
       "file_type": "code",
       "source_file": "src/storage.ts",
@@ -935,6 +971,18 @@
       "norm_label": "writejson()"
     },
     {
+      "label": "ensureProductHistory()",
+      "file_type": "code",
+      "source_file": "src/data.ts",
+      "source_location": "L15",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_data_ensureproducthistory",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "ensureproducthistory()"
+    },
+    {
       "label": "generateUUID()",
       "file_type": "code",
       "source_file": "src/data.ts",
@@ -945,6 +993,30 @@
       "community": 3,
       "community_name": "main.ts",
       "norm_label": "generateuuid()"
+    },
+    {
+      "label": "formatInputNumber()",
+      "file_type": "code",
+      "source_file": "src/formatters.ts",
+      "source_location": "L67",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_formatters_formatinputnumber",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "formatinputnumber()"
+    },
+    {
+      "label": "parseCurrencyInput()",
+      "file_type": "code",
+      "source_file": "src/formatters.ts",
+      "source_location": "L52",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_formatters_parsecurrencyinput",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "parsecurrencyinput()"
     },
     {
       "label": "addSale()",
@@ -1113,6 +1185,18 @@
       "community": 3,
       "community_name": "main.ts",
       "norm_label": "opencomparemodal()"
+    },
+    {
+      "label": "openExpenseModal()",
+      "file_type": "code",
+      "source_file": "src/main.ts",
+      "source_location": "L302",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_main_openexpensemodal",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "openexpensemodal()"
     },
     {
       "label": "openImportModal()",
@@ -1319,6 +1403,18 @@
       "norm_label": "undosale()"
     },
     {
+      "label": "updateExpenseButtonState()",
+      "file_type": "code",
+      "source_file": "src/main.ts",
+      "source_location": "L296",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_main_updateexpensebuttonstate",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "updateexpensebuttonstate()"
+    },
+    {
       "label": "updateSaveModalButton()",
       "file_type": "code",
       "source_file": "src/main.ts",
@@ -1427,6 +1523,18 @@
       "norm_label": "dedupebyname()"
     },
     {
+      "label": "deleteProduct()",
+      "file_type": "code",
+      "source_file": "src/state.ts",
+      "source_location": "L92",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_state_deleteproduct",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "deleteproduct()"
+    },
+    {
       "label": "deleteSavedReport()",
       "file_type": "code",
       "source_file": "src/state.ts",
@@ -1523,6 +1631,18 @@
       "norm_label": "removelastsale()"
     },
     {
+      "label": "renameSales()",
+      "file_type": "code",
+      "source_file": "src/state.ts",
+      "source_location": "L81",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_state_renamesales",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "renamesales()"
+    },
+    {
       "label": "renameSavedReport()",
       "file_type": "code",
       "source_file": "src/state.ts",
@@ -1571,6 +1691,42 @@
       "norm_label": "saveeventcosts()"
     },
     {
+      "label": "saveProductHistory()",
+      "file_type": "code",
+      "source_file": "src/state.ts",
+      "source_location": "L58",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_state_saveproducthistory",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "saveproducthistory()"
+    },
+    {
+      "label": "saveProducts()",
+      "file_type": "code",
+      "source_file": "src/state.ts",
+      "source_location": "L53",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_state_saveproducts",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "saveproducts()"
+    },
+    {
+      "label": "saveSales()",
+      "file_type": "code",
+      "source_file": "src/state.ts",
+      "source_location": "L63",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_state_savesales",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "savesales()"
+    },
+    {
       "label": "setImportedEventReport()",
       "file_type": "code",
       "source_file": "src/state.ts",
@@ -1607,16 +1763,28 @@
       "norm_label": "updateexpense()"
     },
     {
-      "label": "saveSettings()",
+      "label": "loadSettings()",
       "file_type": "code",
       "source_file": "src/storage.ts",
-      "source_location": "L129",
+      "source_location": "L118",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_storage_savesettings",
+      "id": "src_storage_loadsettings",
       "community": 3,
       "community_name": "main.ts",
-      "norm_label": "savesettings()"
+      "norm_label": "loadsettings()"
+    },
+    {
+      "label": "getPickerColor()",
+      "file_type": "code",
+      "source_file": "src/ui/colorPicker.ts",
+      "source_location": "L73",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_ui_colorpicker_getpickercolor",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "getpickercolor()"
     },
     {
       "label": "activeScreenId()",
@@ -1739,6 +1907,18 @@
       "norm_label": "updateheaderactions()"
     },
     {
+      "label": "closeProductEditor()",
+      "file_type": "code",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L54",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_ui_producteditor_closeproducteditor",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "closeproducteditor()"
+    },
+    {
       "label": "editProductByName()",
       "file_type": "code",
       "source_file": "src/ui/productEditor.ts",
@@ -1751,63 +1931,87 @@
       "norm_label": "editproductbyname()"
     },
     {
-      "label": "formatDate()",
+      "label": "initProductEditor()",
       "file_type": "code",
-      "source_file": "src/views/Lists.tsx",
-      "source_location": "L7",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L120",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_views_lists_formatdate",
+      "id": "src_ui_producteditor_initproducteditor",
       "community": 3,
       "community_name": "main.ts",
-      "norm_label": "formatdate()"
+      "norm_label": "initproducteditor()"
     },
     {
-      "label": "ReportChecklist()",
+      "label": "onChange()",
       "file_type": "code",
-      "source_file": "src/views/Lists.tsx",
-      "source_location": "L166",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L13",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_views_lists_reportchecklist",
+      "id": "src_ui_producteditor_onchange",
       "community": 3,
       "community_name": "main.ts",
-      "norm_label": "reportchecklist()"
+      "norm_label": "onchange()"
     },
     {
-      "label": "SavedReportList()",
+      "label": "openProductEditor()",
       "file_type": "code",
-      "source_file": "src/views/Lists.tsx",
-      "source_location": "L88",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L16",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_views_lists_savedreportlist",
+      "id": "src_ui_producteditor_openproducteditor",
       "community": 3,
       "community_name": "main.ts",
-      "norm_label": "savedreportlist()"
+      "norm_label": "openproducteditor()"
     },
     {
-      "label": "ensureProductHistory()",
+      "label": "removeEditedProduct()",
       "file_type": "code",
-      "source_file": "src/data.ts",
-      "source_location": "L15",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L62",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_data_ensureproducthistory",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "ensureproducthistory()"
+      "id": "src_ui_producteditor_removeeditedproduct",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "removeeditedproduct()"
+    },
+    {
+      "label": "saveEditedProduct()",
+      "file_type": "code",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L75",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_ui_producteditor_saveeditedproduct",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "saveeditedproduct()"
+    },
+    {
+      "label": "updatePreview()",
+      "file_type": "code",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L37",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_ui_producteditor_updatepreview",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "updatepreview()"
     },
     {
       "label": "chooseUniqueColor()",
       "file_type": "code",
       "source_file": "src/formatters.ts",
-      "source_location": "L132",
+      "source_location": "L152",
       "_callable": true,
       "_origin": "ast",
       "id": "src_formatters_chooseuniquecolor",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "chooseuniquecolor()"
     },
     {
@@ -1819,7 +2023,7 @@
       "_origin": "ast",
       "id": "src_formatters_escapeforregexp",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "escapeforregexp()"
     },
     {
@@ -1831,20 +2035,8 @@
       "_origin": "ast",
       "id": "src_formatters_escapehtml",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "escapehtml()"
-    },
-    {
-      "label": "formatInputNumber()",
-      "file_type": "code",
-      "source_file": "src/formatters.ts",
-      "source_location": "L67",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_formatters_formatinputnumber",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "formatinputnumber()"
     },
     {
       "label": "formatMoney()",
@@ -1855,7 +2047,7 @@
       "_origin": "ast",
       "id": "src_formatters_formatmoney",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "formatmoney()"
     },
     {
@@ -1867,152 +2059,80 @@
       "_origin": "ast",
       "id": "src_formatters_formatnumeric",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "formatnumeric()"
     },
     {
-      "label": "inkFor()",
+      "label": "hexToOklch()",
       "file_type": "code",
       "source_file": "src/formatters.ts",
-      "source_location": "L117",
+      "source_location": "L109",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_formatters_inkfor",
+      "id": "src_formatters_hextooklch",
       "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "inkfor()"
+      "community_name": "formatters.ts",
+      "norm_label": "hextooklch()"
     },
     {
       "label": "normalizeHex()",
       "file_type": "code",
       "source_file": "src/formatters.ts",
-      "source_location": "L126",
+      "source_location": "L146",
       "_callable": true,
       "_origin": "ast",
       "id": "src_formatters_normalizehex",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "normalizehex()"
     },
     {
-      "label": "parseCurrencyInput()",
+      "label": "oklchToHex()",
       "file_type": "code",
       "source_file": "src/formatters.ts",
-      "source_location": "L52",
+      "source_location": "L121",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_formatters_parsecurrencyinput",
+      "id": "src_formatters_oklchtohex",
       "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "parsecurrencyinput()"
+      "community_name": "formatters.ts",
+      "norm_label": "oklchtohex()"
     },
     {
-      "label": "relativeLuminance()",
+      "label": "tileTone()",
       "file_type": "code",
       "source_file": "src/formatters.ts",
-      "source_location": "L104",
+      "source_location": "L139",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_formatters_relativeluminance",
+      "id": "src_formatters_tiletone",
       "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "relativeluminance()"
+      "community_name": "formatters.ts",
+      "norm_label": "tiletone()"
     },
     {
-      "label": "openExpenseModal()",
+      "label": "toGamma()",
       "file_type": "code",
-      "source_file": "src/main.ts",
-      "source_location": "L302",
+      "source_file": "src/formatters.ts",
+      "source_location": "L107",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_main_openexpensemodal",
+      "id": "src_formatters_togamma",
       "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "openexpensemodal()"
+      "community_name": "formatters.ts",
+      "norm_label": "togamma()"
     },
     {
-      "label": "updateExpenseButtonState()",
+      "label": "toLinear()",
       "file_type": "code",
-      "source_file": "src/main.ts",
-      "source_location": "L296",
+      "source_file": "src/formatters.ts",
+      "source_location": "L106",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_main_updateexpensebuttonstate",
+      "id": "src_formatters_tolinear",
       "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "updateexpensebuttonstate()"
-    },
-    {
-      "label": "deleteProduct()",
-      "file_type": "code",
-      "source_file": "src/state.ts",
-      "source_location": "L92",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_state_deleteproduct",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "deleteproduct()"
-    },
-    {
-      "label": "renameSales()",
-      "file_type": "code",
-      "source_file": "src/state.ts",
-      "source_location": "L81",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_state_renamesales",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "renamesales()"
-    },
-    {
-      "label": "saveProductHistory()",
-      "file_type": "code",
-      "source_file": "src/state.ts",
-      "source_location": "L58",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_state_saveproducthistory",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "saveproducthistory()"
-    },
-    {
-      "label": "saveProducts()",
-      "file_type": "code",
-      "source_file": "src/state.ts",
-      "source_location": "L53",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_state_saveproducts",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "saveproducts()"
-    },
-    {
-      "label": "saveSales()",
-      "file_type": "code",
-      "source_file": "src/state.ts",
-      "source_location": "L63",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_state_savesales",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "savesales()"
-    },
-    {
-      "label": "loadSettings()",
-      "file_type": "code",
-      "source_file": "src/storage.ts",
-      "source_location": "L118",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_storage_loadsettings",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "loadsettings()"
+      "community_name": "formatters.ts",
+      "norm_label": "tolinear()"
     },
     {
       "label": "applyCurrentColor()",
@@ -2023,7 +2143,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_applycurrentcolor",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "applycurrentcolor()"
     },
     {
@@ -2035,32 +2155,20 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_clamp",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "clamp()"
     },
     {
       "label": "closeColorPicker()",
       "file_type": "code",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L78",
+      "source_location": "L77",
       "_callable": true,
       "_origin": "ast",
       "id": "src_ui_colorpicker_closecolorpicker",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "closecolorpicker()"
-    },
-    {
-      "label": "getPickerColor()",
-      "file_type": "code",
-      "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L74",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_colorpicker_getpickercolor",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "getpickercolor()"
     },
     {
       "label": "hexToRgb()",
@@ -2071,7 +2179,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_hextorgb",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "hextorgb()"
     },
     {
@@ -2083,19 +2191,19 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_hsvtorgb",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "hsvtorgb()"
     },
     {
       "label": "initColorPicker()",
       "file_type": "code",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L100",
+      "source_location": "L99",
       "_callable": true,
       "_origin": "ast",
       "id": "src_ui_colorpicker_initcolorpicker",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "initcolorpicker()"
     },
     {
@@ -2107,7 +2215,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_rgbtohex",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "rgbtohex()"
     },
     {
@@ -2119,116 +2227,44 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_rgbtohsv",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "rgbtohsv()"
     },
     {
       "label": "setPickerColor()",
       "file_type": "code",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L68",
+      "source_location": "L67",
       "_callable": true,
       "_origin": "ast",
       "id": "src_ui_colorpicker_setpickercolor",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "setpickercolor()"
     },
     {
       "label": "trackPointer()",
       "file_type": "code",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L83",
+      "source_location": "L82",
       "_callable": true,
       "_origin": "ast",
       "id": "src_ui_colorpicker_trackpointer",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "trackpointer()"
     },
     {
-      "label": "closeProductEditor()",
+      "label": "ProductList()",
       "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L54",
+      "source_file": "src/views/Lists.tsx",
+      "source_location": "L38",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_ui_producteditor_closeproducteditor",
+      "id": "src_views_lists_productlist",
       "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "closeproducteditor()"
-    },
-    {
-      "label": "initProductEditor()",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L120",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_producteditor_initproducteditor",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "initproducteditor()"
-    },
-    {
-      "label": "onChange()",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L13",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_producteditor_onchange",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "onchange()"
-    },
-    {
-      "label": "openProductEditor()",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L16",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_producteditor_openproducteditor",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "openproducteditor()"
-    },
-    {
-      "label": "removeEditedProduct()",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L62",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_producteditor_removeeditedproduct",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "removeeditedproduct()"
-    },
-    {
-      "label": "saveEditedProduct()",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L75",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_producteditor_saveeditedproduct",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "saveeditedproduct()"
-    },
-    {
-      "label": "updatePreview()",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L37",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_producteditor_updatepreview",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "updatepreview()"
+      "community_name": "formatters.ts",
+      "norm_label": "productlist()"
     },
     {
       "label": "SalesGrid()",
@@ -2239,7 +2275,7 @@
       "_origin": "ast",
       "id": "src_views_salesgrid_salesgrid",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "salesgrid()"
     },
     {
@@ -2336,17 +2372,6 @@
       "community": 0,
       "community_name": "ReportParts.tsx",
       "norm_label": "reports.ts"
-    },
-    {
-      "label": "types.ts",
-      "file_type": "code",
-      "source_file": "src/types.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "src_types",
-      "community": 0,
-      "community_name": "ReportParts.tsx",
-      "norm_label": "types.ts"
     },
     {
       "label": "icons.ts",
@@ -2567,6 +2592,17 @@
       "community": 1,
       "community_name": "storage.ts",
       "norm_label": "tx_storage_key"
+    },
+    {
+      "label": "types.ts",
+      "file_type": "code",
+      "source_file": "src/types.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_types",
+      "community": 1,
+      "community_name": "storage.ts",
+      "norm_label": "types.ts"
     },
     {
       "label": "ARCHITECTURE.md",
@@ -4048,6 +4084,28 @@
       "norm_label": "graphify reference: add a url and watch a folder"
     },
     {
+      "label": "data.ts",
+      "file_type": "code",
+      "source_file": "src/data.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_data",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "data.ts"
+    },
+    {
+      "label": "defaultProducts",
+      "file_type": "code",
+      "source_file": "src/data.ts",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "src_data_defaultproducts",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "defaultproducts"
+    },
+    {
       "label": "main.ts",
       "file_type": "code",
       "source_file": "src/main.ts",
@@ -4145,6 +4203,17 @@
       "community": 3,
       "community_name": "main.ts",
       "norm_label": "parent_tab"
+    },
+    {
+      "label": "productEditor.ts",
+      "file_type": "code",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_ui_producteditor",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "producteditor.ts"
     },
     {
       "label": ".codex/skills/graphify/references/hooks.md",
@@ -4422,248 +4491,6 @@
       "norm_label": "vite-env.d.ts"
     },
     {
-      "label": "element-attributes.md",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/element-attributes.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_element_attributes",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "element-attributes.md"
-    },
-    {
-      "label": "Examples",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/element-attributes.md",
-      "source_location": "L5",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_element_attributes_examples",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "examples"
-    },
-    {
-      "label": "Inspecting Element Attributes",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/element-attributes.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_element_attributes_inspecting_element_attributes",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "inspecting element attributes"
-    },
-    {
-      "label": "playwright-tests.md",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/playwright-tests.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_playwright_tests",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "playwright-tests.md"
-    },
-    {
-      "label": "Debugging Playwright Tests",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/playwright-tests.md",
-      "source_location": "L13",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_playwright_tests_debugging_playwright_tests",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "debugging playwright tests"
-    },
-    {
-      "label": "Running Playwright Tests",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/playwright-tests.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_playwright_tests_running_playwright_tests",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "running playwright tests"
-    },
-    {
-      "label": "pr-attachments.md",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/pr-attachments.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_pr_attachments",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "pr-attachments.md"
-    },
-    {
-      "label": "Attaching Screenshots and Videos to Pull Requests",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/pr-attachments.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_pr_attachments_attaching_screenshots_and_videos_to_pull_requests",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "attaching screenshots and videos to pull requests"
-    },
-    {
-      "label": "From a local session",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/pr-attachments.md",
-      "source_location": "L9",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_pr_attachments_from_a_local_session",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "from a local session"
-    },
-    {
-      "label": "From CI",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/pr-attachments.md",
-      "source_location": "L38",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_pr_attachments_from_ci",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "from ci"
-    },
-    {
-      "label": "Limits",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/pr-attachments.md",
-      "source_location": "L31",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_pr_attachments_limits",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "limits"
-    },
-    {
-      "label": "When to attach",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/pr-attachments.md",
-      "source_location": "L5",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_pr_attachments_when_to_attach",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "when to attach"
-    },
-    {
-      "label": "request-mocking.md",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_request_mocking",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "request-mocking.md"
-    },
-    {
-      "label": "Advanced Mocking with run-code",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
-      "source_location": "L37",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_request_mocking_advanced_mocking_with_run_code",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "advanced mocking with run-code"
-    },
-    {
-      "label": "CLI Route Commands",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
-      "source_location": "L5",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_request_mocking_cli_route_commands",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "cli route commands"
-    },
-    {
-      "label": "Conditional Response Based on Request",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
-      "source_location": "L41",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_request_mocking_conditional_response_based_on_request",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "conditional response based on request"
-    },
-    {
-      "label": "Delayed Response",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
-      "source_location": "L78",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_request_mocking_delayed_response",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "delayed response"
-    },
-    {
-      "label": "Modify Real Response",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
-      "source_location": "L56",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_request_mocking_modify_real_response",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "modify real response"
-    },
-    {
-      "label": "Request Mocking",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_request_mocking_request_mocking",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "request mocking"
-    },
-    {
-      "label": "Simulate Network Failures",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
-      "source_location": "L69",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_request_mocking_simulate_network_failures",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "simulate network failures"
-    },
-    {
-      "label": "URL Patterns",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
-      "source_location": "L28",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_request_mocking_url_patterns",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "url patterns"
-    },
-    {
-      "label": "running-code.md",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/running-code.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_running_code",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "running-code.md"
-    },
-    {
       "label": "Clipboard",
       "file_type": "document",
       "source_file": ".claude/skills/playwright-cli/references/running-code.md",
@@ -4807,182 +4634,6 @@
       "norm_label": "wait strategies"
     },
     {
-      "label": "session-management.md",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/session-management.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_session_management",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "session-management.md"
-    },
-    {
-      "label": "test-generation.md",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "test-generation.md"
-    },
-    {
-      "label": "video-recording.md",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_video_recording",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "video-recording.md"
-    },
-    {
-      "label": "1. Use Descriptive Filenames",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
-      "source_location": "L83",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_video_recording_1_use_descriptive_filenames",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "1. use descriptive filenames"
-    },
-    {
-      "label": "2. Record entire hero scripts.",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
-      "source_location": "L91",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_video_recording_2_record_entire_hero_scripts",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "2. record entire hero scripts."
-    },
-    {
-      "label": "3. Attach the recording to the pull request",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
-      "source_location": "L192",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_video_recording_3_attach_the_recording_to_the_pull_request",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "3. attach the recording to the pull request"
-    },
-    {
-      "label": "Basic Recording",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
-      "source_location": "L5",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_video_recording_basic_recording",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "basic recording"
-    },
-    {
-      "label": "Best Practices",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
-      "source_location": "L81",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_video_recording_best_practices",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "best practices"
-    },
-    {
-      "label": "Cursor, Target Highlight and Click Point",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
-      "source_location": "L31",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_video_recording_cursor_target_highlight_and_click_point",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "cursor, target highlight and click point"
-    },
-    {
-      "label": "Limitations",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
-      "source_location": "L213",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_video_recording_limitations",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "limitations"
-    },
-    {
-      "label": "Overlay API Summary",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
-      "source_location": "L181",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_video_recording_overlay_api_summary",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "overlay api summary"
-    },
-    {
-      "label": "Tracing vs Video",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
-      "source_location": "L204",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_video_recording_tracing_vs_video",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "tracing vs video"
-    },
-    {
-      "label": "Video Recording",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_video_recording_video_recording",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "video recording"
-    },
-    {
-      "label": "playwright-cli/SKILL.md",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/SKILL.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_skill",
-      "community": 39,
-      "community_name": "Running Custom Playwright Code",
-      "norm_label": "playwright-cli/skill.md"
-    },
-    {
-      "label": "data.ts",
-      "file_type": "code",
-      "source_file": "src/data.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "src_data",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "data.ts"
-    },
-    {
-      "label": "defaultProducts",
-      "file_type": "code",
-      "source_file": "src/data.ts",
-      "source_location": "L3",
-      "_origin": "ast",
-      "id": "src_data_defaultproducts",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "defaultproducts"
-    },
-    {
       "label": "formatters.ts",
       "file_type": "code",
       "source_file": "src/formatters.ts",
@@ -4990,7 +4641,7 @@
       "_origin": "ast",
       "id": "src_formatters",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "formatters.ts"
     },
     {
@@ -5001,7 +4652,7 @@
       "_origin": "ast",
       "id": "src_formatters_currency_locales",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "currency_locales"
     },
     {
@@ -5012,7 +4663,7 @@
       "_origin": "ast",
       "id": "src_formatters_currency_separators",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "currency_separators"
     },
     {
@@ -5023,7 +4674,7 @@
       "_origin": "ast",
       "id": "src_formatters_currency_symbols",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "currency_symbols"
     },
     {
@@ -5034,30 +4685,8 @@
       "_origin": "ast",
       "id": "src_formatters_html_escapes",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "html_escapes"
-    },
-    {
-      "label": "INK_DARK",
-      "file_type": "code",
-      "source_file": "src/formatters.ts",
-      "source_location": "L113",
-      "_origin": "ast",
-      "id": "src_formatters_ink_dark",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "ink_dark"
-    },
-    {
-      "label": "INK_LIGHT",
-      "file_type": "code",
-      "source_file": "src/formatters.ts",
-      "source_location": "L114",
-      "_origin": "ast",
-      "id": "src_formatters_ink_light",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "ink_light"
     },
     {
       "label": "numberFormats",
@@ -5067,18 +4696,18 @@
       "_origin": "ast",
       "id": "src_formatters_numberformats",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "numberformats"
     },
     {
       "label": "PRESET_COLORS",
       "file_type": "code",
       "source_file": "src/formatters.ts",
-      "source_location": "L124",
+      "source_location": "L144",
       "_origin": "ast",
       "id": "src_formatters_preset_colors",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "preset_colors"
     },
     {
@@ -5089,7 +4718,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "colorpicker.ts"
     },
     {
@@ -5100,19 +4729,8 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_currenthsv",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "currenthsv"
-    },
-    {
-      "label": "productEditor.ts",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "src_ui_producteditor",
-      "community": 4,
-      "community_name": "productEditor.ts",
-      "norm_label": "producteditor.ts"
     },
     {
       "label": "SalesGrid.tsx",
@@ -5122,7 +4740,7 @@
       "_origin": "ast",
       "id": "src_views_salesgrid",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "salesgrid.tsx"
     },
     {
@@ -5133,7 +4751,7 @@
       "_origin": "ast",
       "id": "src_views_salesgrid_payments",
       "community": 4,
-      "community_name": "productEditor.ts",
+      "community_name": "formatters.ts",
       "norm_label": "payments"
     },
     {
@@ -5830,72 +5448,6 @@
       "norm_label": "webmcp"
     },
     {
-      "label": "0. How generation works",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L14",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_0_how_generation_works",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "0. how generation works"
-    },
-    {
-      "label": "1.1 Prerequisite: workspace",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L146",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_1_1_prerequisite_workspace",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "1.1 prerequisite: workspace"
-    },
-    {
-      "label": "1.2 Prerequisite: seed test",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L162",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_1_2_prerequisite_seed_test",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "1.2 prerequisite: seed test"
-    },
-    {
-      "label": "1.3 Explore the app",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L203",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_1_3_explore_the_app",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "1.3 explore the app"
-    },
-    {
-      "label": "1.4 Write the spec file",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L234",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_1_4_write_the_spec_file",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "1.4 write the spec file"
-    },
-    {
-      "label": "1. Planning",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L142",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_1_planning",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "1. planning"
-    },
-    {
       "label": "2.1 Inputs",
       "file_type": "document",
       "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
@@ -5903,7 +5455,7 @@
       "_origin": "ast",
       "id": "claude_skills_playwright_cli_references_test_generation_2_1_inputs",
       "community": 42,
-      "community_name": "3. Heal",
+      "community_name": "Test generation (plan \u2192 generate \u2192 heal)",
       "norm_label": "2.1 inputs"
     },
     {
@@ -5914,7 +5466,7 @@
       "_origin": "ast",
       "id": "claude_skills_playwright_cli_references_test_generation_2_2_generate_one_scenario",
       "community": 42,
-      "community_name": "3. Heal",
+      "community_name": "Test generation (plan \u2192 generate \u2192 heal)",
       "norm_label": "2.2 generate one scenario"
     },
     {
@@ -5925,7 +5477,7 @@
       "_origin": "ast",
       "id": "claude_skills_playwright_cli_references_test_generation_2_3_generate_multiple_scenarios",
       "community": 42,
-      "community_name": "3. Heal",
+      "community_name": "Test generation (plan \u2192 generate \u2192 heal)",
       "norm_label": "2.3 generate multiple scenarios"
     },
     {
@@ -5936,7 +5488,7 @@
       "_origin": "ast",
       "id": "claude_skills_playwright_cli_references_test_generation_2_4_run_generated_tests",
       "community": 42,
-      "community_name": "3. Heal",
+      "community_name": "Test generation (plan \u2192 generate \u2192 heal)",
       "norm_label": "2.4 run generated tests"
     },
     {
@@ -5947,96 +5499,8 @@
       "_origin": "ast",
       "id": "claude_skills_playwright_cli_references_test_generation_2_generate",
       "community": 42,
-      "community_name": "3. Heal",
+      "community_name": "Test generation (plan \u2192 generate \u2192 heal)",
       "norm_label": "2. generate"
-    },
-    {
-      "label": "3.1 Find failing tests",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L370",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_3_1_find_failing_tests",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "3.1 find failing tests"
-    },
-    {
-      "label": "3.2 Debug one failure",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L378",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_3_2_debug_one_failure",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "3.2 debug one failure"
-    },
-    {
-      "label": "3.3 Apply the fix",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L401",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_3_3_apply_the_fix",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "3.3 apply the fix"
-    },
-    {
-      "label": "3.4 Reconcile with the spec",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L407",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_3_4_reconcile_with_the_spec",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "3.4 reconcile with the spec"
-    },
-    {
-      "label": "3.5 Iteration and giving up",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L420",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_3_5_iteration_and_giving_up",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "3.5 iteration and giving up"
-    },
-    {
-      "label": "3. Heal",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L366",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_3_heal",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "3. heal"
-    },
-    {
-      "label": "Add assertions manually",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L82",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_add_assertions_manually",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "add assertions manually"
-    },
-    {
-      "label": "Building a test file",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L40",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_building_a_test_file",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "building a test file"
     },
     {
       "label": "Cross-references",
@@ -6046,19 +5510,8 @@
       "_origin": "ast",
       "id": "claude_skills_playwright_cli_references_test_generation_cross_references",
       "community": 42,
-      "community_name": "3. Heal",
+      "community_name": "Test generation (plan \u2192 generate \u2192 heal)",
       "norm_label": "cross-references"
-    },
-    {
-      "label": "Explore before recording",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L71",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_explore_before_recording",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "explore before recording"
     },
     {
       "label": "Test generation (plan \u2192 generate \u2192 heal)",
@@ -6068,19 +5521,8 @@
       "_origin": "ast",
       "id": "claude_skills_playwright_cli_references_test_generation_test_generation_plan_generate_heal",
       "community": 42,
-      "community_name": "3. Heal",
+      "community_name": "Test generation (plan \u2192 generate \u2192 heal)",
       "norm_label": "test generation (plan \u2192 generate \u2192 heal)"
-    },
-    {
-      "label": "Use semantic locators",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
-      "source_location": "L59",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_test_generation_use_semantic_locators",
-      "community": 42,
-      "community_name": "3. Heal",
-      "norm_label": "use semantic locators"
     },
     {
       "label": "1. Name Browser Sessions Semantically",
@@ -6589,6 +6031,402 @@
       "norm_label": "unreleased"
     },
     {
+      "label": "element-attributes.md",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/element-attributes.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_element_attributes",
+      "community": 46,
+      "community_name": "playwright-cli/SKILL.md",
+      "norm_label": "element-attributes.md"
+    },
+    {
+      "label": "Examples",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/element-attributes.md",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_element_attributes_examples",
+      "community": 46,
+      "community_name": "playwright-cli/SKILL.md",
+      "norm_label": "examples"
+    },
+    {
+      "label": "Inspecting Element Attributes",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/element-attributes.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_element_attributes_inspecting_element_attributes",
+      "community": 46,
+      "community_name": "playwright-cli/SKILL.md",
+      "norm_label": "inspecting element attributes"
+    },
+    {
+      "label": "playwright-tests.md",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/playwright-tests.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_playwright_tests",
+      "community": 46,
+      "community_name": "playwright-cli/SKILL.md",
+      "norm_label": "playwright-tests.md"
+    },
+    {
+      "label": "Debugging Playwright Tests",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/playwright-tests.md",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_playwright_tests_debugging_playwright_tests",
+      "community": 46,
+      "community_name": "playwright-cli/SKILL.md",
+      "norm_label": "debugging playwright tests"
+    },
+    {
+      "label": "Running Playwright Tests",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/playwright-tests.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_playwright_tests_running_playwright_tests",
+      "community": 46,
+      "community_name": "playwright-cli/SKILL.md",
+      "norm_label": "running playwright tests"
+    },
+    {
+      "label": "request-mocking.md",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_request_mocking",
+      "community": 46,
+      "community_name": "playwright-cli/SKILL.md",
+      "norm_label": "request-mocking.md"
+    },
+    {
+      "label": "running-code.md",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/running-code.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_running_code",
+      "community": 46,
+      "community_name": "playwright-cli/SKILL.md",
+      "norm_label": "running-code.md"
+    },
+    {
+      "label": "session-management.md",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/session-management.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_session_management",
+      "community": 46,
+      "community_name": "playwright-cli/SKILL.md",
+      "norm_label": "session-management.md"
+    },
+    {
+      "label": "test-generation.md",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation",
+      "community": 46,
+      "community_name": "playwright-cli/SKILL.md",
+      "norm_label": "test-generation.md"
+    },
+    {
+      "label": "playwright-cli/SKILL.md",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/SKILL.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_skill",
+      "community": 46,
+      "community_name": "playwright-cli/SKILL.md",
+      "norm_label": "playwright-cli/skill.md"
+    },
+    {
+      "label": "1. Use Descriptive Filenames",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
+      "source_location": "L83",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_video_recording_1_use_descriptive_filenames",
+      "community": 47,
+      "community_name": "Video Recording",
+      "norm_label": "1. use descriptive filenames"
+    },
+    {
+      "label": "2. Record entire hero scripts.",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
+      "source_location": "L91",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_video_recording_2_record_entire_hero_scripts",
+      "community": 47,
+      "community_name": "Video Recording",
+      "norm_label": "2. record entire hero scripts."
+    },
+    {
+      "label": "3. Attach the recording to the pull request",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
+      "source_location": "L192",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_video_recording_3_attach_the_recording_to_the_pull_request",
+      "community": 47,
+      "community_name": "Video Recording",
+      "norm_label": "3. attach the recording to the pull request"
+    },
+    {
+      "label": "Basic Recording",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_video_recording_basic_recording",
+      "community": 47,
+      "community_name": "Video Recording",
+      "norm_label": "basic recording"
+    },
+    {
+      "label": "Best Practices",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
+      "source_location": "L81",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_video_recording_best_practices",
+      "community": 47,
+      "community_name": "Video Recording",
+      "norm_label": "best practices"
+    },
+    {
+      "label": "Cursor, Target Highlight and Click Point",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_video_recording_cursor_target_highlight_and_click_point",
+      "community": 47,
+      "community_name": "Video Recording",
+      "norm_label": "cursor, target highlight and click point"
+    },
+    {
+      "label": "Limitations",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
+      "source_location": "L213",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_video_recording_limitations",
+      "community": 47,
+      "community_name": "Video Recording",
+      "norm_label": "limitations"
+    },
+    {
+      "label": "Overlay API Summary",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
+      "source_location": "L181",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_video_recording_overlay_api_summary",
+      "community": 47,
+      "community_name": "Video Recording",
+      "norm_label": "overlay api summary"
+    },
+    {
+      "label": "Tracing vs Video",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
+      "source_location": "L204",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_video_recording_tracing_vs_video",
+      "community": 47,
+      "community_name": "Video Recording",
+      "norm_label": "tracing vs video"
+    },
+    {
+      "label": "Video Recording",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_video_recording_video_recording",
+      "community": 47,
+      "community_name": "Video Recording",
+      "norm_label": "video recording"
+    },
+    {
+      "label": "Advanced Mocking with run-code",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
+      "source_location": "L37",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_request_mocking_advanced_mocking_with_run_code",
+      "community": 48,
+      "community_name": "Advanced Mocking with run-code",
+      "norm_label": "advanced mocking with run-code"
+    },
+    {
+      "label": "CLI Route Commands",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_request_mocking_cli_route_commands",
+      "community": 48,
+      "community_name": "Advanced Mocking with run-code",
+      "norm_label": "cli route commands"
+    },
+    {
+      "label": "Conditional Response Based on Request",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_request_mocking_conditional_response_based_on_request",
+      "community": 48,
+      "community_name": "Advanced Mocking with run-code",
+      "norm_label": "conditional response based on request"
+    },
+    {
+      "label": "Delayed Response",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
+      "source_location": "L78",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_request_mocking_delayed_response",
+      "community": 48,
+      "community_name": "Advanced Mocking with run-code",
+      "norm_label": "delayed response"
+    },
+    {
+      "label": "Modify Real Response",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
+      "source_location": "L56",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_request_mocking_modify_real_response",
+      "community": 48,
+      "community_name": "Advanced Mocking with run-code",
+      "norm_label": "modify real response"
+    },
+    {
+      "label": "Request Mocking",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_request_mocking_request_mocking",
+      "community": 48,
+      "community_name": "Advanced Mocking with run-code",
+      "norm_label": "request mocking"
+    },
+    {
+      "label": "Simulate Network Failures",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
+      "source_location": "L69",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_request_mocking_simulate_network_failures",
+      "community": 48,
+      "community_name": "Advanced Mocking with run-code",
+      "norm_label": "simulate network failures"
+    },
+    {
+      "label": "URL Patterns",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
+      "source_location": "L28",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_request_mocking_url_patterns",
+      "community": 48,
+      "community_name": "Advanced Mocking with run-code",
+      "norm_label": "url patterns"
+    },
+    {
+      "label": "pr-attachments.md",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/pr-attachments.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_pr_attachments",
+      "community": 49,
+      "community_name": "Attaching Screenshots and Videos to Pull Requests",
+      "norm_label": "pr-attachments.md"
+    },
+    {
+      "label": "Attaching Screenshots and Videos to Pull Requests",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/pr-attachments.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_pr_attachments_attaching_screenshots_and_videos_to_pull_requests",
+      "community": 49,
+      "community_name": "Attaching Screenshots and Videos to Pull Requests",
+      "norm_label": "attaching screenshots and videos to pull requests"
+    },
+    {
+      "label": "From a local session",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/pr-attachments.md",
+      "source_location": "L9",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_pr_attachments_from_a_local_session",
+      "community": 49,
+      "community_name": "Attaching Screenshots and Videos to Pull Requests",
+      "norm_label": "from a local session"
+    },
+    {
+      "label": "From CI",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/pr-attachments.md",
+      "source_location": "L38",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_pr_attachments_from_ci",
+      "community": 49,
+      "community_name": "Attaching Screenshots and Videos to Pull Requests",
+      "norm_label": "from ci"
+    },
+    {
+      "label": "Limits",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/pr-attachments.md",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_pr_attachments_limits",
+      "community": 49,
+      "community_name": "Attaching Screenshots and Videos to Pull Requests",
+      "norm_label": "limits"
+    },
+    {
+      "label": "When to attach",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/pr-attachments.md",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_pr_attachments_when_to_attach",
+      "community": 49,
+      "community_name": "Attaching Screenshots and Videos to Pull Requests",
+      "norm_label": "when to attach"
+    },
+    {
+      "label": "video-recording.md",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/video-recording.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_video_recording",
+      "community": 49,
+      "community_name": "Attaching Screenshots and Videos to Pull Requests",
+      "norm_label": "video-recording.md"
+    },
+    {
       "label": "tsconfig.json",
       "file_type": "code",
       "source_file": "tsconfig.json",
@@ -6829,6 +6667,182 @@
       "community": 5,
       "community_name": "compilerOptions",
       "norm_label": "src"
+    },
+    {
+      "label": "3.1 Find failing tests",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L370",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_3_1_find_failing_tests",
+      "community": 50,
+      "community_name": "3. Heal",
+      "norm_label": "3.1 find failing tests"
+    },
+    {
+      "label": "3.2 Debug one failure",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L378",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_3_2_debug_one_failure",
+      "community": 50,
+      "community_name": "3. Heal",
+      "norm_label": "3.2 debug one failure"
+    },
+    {
+      "label": "3.3 Apply the fix",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L401",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_3_3_apply_the_fix",
+      "community": 50,
+      "community_name": "3. Heal",
+      "norm_label": "3.3 apply the fix"
+    },
+    {
+      "label": "3.4 Reconcile with the spec",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L407",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_3_4_reconcile_with_the_spec",
+      "community": 50,
+      "community_name": "3. Heal",
+      "norm_label": "3.4 reconcile with the spec"
+    },
+    {
+      "label": "3.5 Iteration and giving up",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L420",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_3_5_iteration_and_giving_up",
+      "community": 50,
+      "community_name": "3. Heal",
+      "norm_label": "3.5 iteration and giving up"
+    },
+    {
+      "label": "3. Heal",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L366",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_3_heal",
+      "community": 50,
+      "community_name": "3. Heal",
+      "norm_label": "3. heal"
+    },
+    {
+      "label": "0. How generation works",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_0_how_generation_works",
+      "community": 51,
+      "community_name": "0. How generation works",
+      "norm_label": "0. how generation works"
+    },
+    {
+      "label": "Add assertions manually",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L82",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_add_assertions_manually",
+      "community": 51,
+      "community_name": "0. How generation works",
+      "norm_label": "add assertions manually"
+    },
+    {
+      "label": "Building a test file",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L40",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_building_a_test_file",
+      "community": 51,
+      "community_name": "0. How generation works",
+      "norm_label": "building a test file"
+    },
+    {
+      "label": "Explore before recording",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L71",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_explore_before_recording",
+      "community": 51,
+      "community_name": "0. How generation works",
+      "norm_label": "explore before recording"
+    },
+    {
+      "label": "Use semantic locators",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L59",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_use_semantic_locators",
+      "community": 51,
+      "community_name": "0. How generation works",
+      "norm_label": "use semantic locators"
+    },
+    {
+      "label": "1.1 Prerequisite: workspace",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L146",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_1_1_prerequisite_workspace",
+      "community": 52,
+      "community_name": "1. Planning",
+      "norm_label": "1.1 prerequisite: workspace"
+    },
+    {
+      "label": "1.2 Prerequisite: seed test",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L162",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_1_2_prerequisite_seed_test",
+      "community": 52,
+      "community_name": "1. Planning",
+      "norm_label": "1.2 prerequisite: seed test"
+    },
+    {
+      "label": "1.3 Explore the app",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L203",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_1_3_explore_the_app",
+      "community": 52,
+      "community_name": "1. Planning",
+      "norm_label": "1.3 explore the app"
+    },
+    {
+      "label": "1.4 Write the spec file",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L234",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_1_4_write_the_spec_file",
+      "community": 52,
+      "community_name": "1. Planning",
+      "norm_label": "1.4 write the spec file"
+    },
+    {
+      "label": "1. Planning",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/test-generation.md",
+      "source_location": "L142",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_test_generation_1_planning",
+      "community": 52,
+      "community_name": "1. Planning",
+      "norm_label": "1. planning"
     },
     {
       "label": "Any",
@@ -7766,7 +7780,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/formatters.ts",
-      "source_location": "L133",
+      "source_location": "L153",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_formatters_chooseuniquecolor",
@@ -7826,11 +7840,35 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/formatters.ts",
-      "source_location": "L118",
+      "source_location": "L110",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "src_formatters_inkfor",
-      "target": "src_formatters_relativeluminance",
+      "source": "src_formatters_hextooklch",
+      "target": "src_formatters_normalizehex",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/formatters.ts",
+      "source_location": "L111",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_formatters_hextooklch",
+      "target": "src_formatters_tolinear",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/formatters.ts",
+      "source_location": "L132",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_formatters_oklchtohex",
+      "target": "src_formatters_togamma",
       "confidence_score": 1.0
     },
     {
@@ -7850,11 +7888,23 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/formatters.ts",
-      "source_location": "L105",
+      "source_location": "L140",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "src_formatters_relativeluminance",
-      "target": "src_formatters_normalizehex",
+      "source": "src_formatters_tiletone",
+      "target": "src_formatters_hextooklch",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/formatters.ts",
+      "source_location": "L141",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_formatters_tiletone",
+      "target": "src_formatters_oklchtohex",
       "confidence_score": 1.0
     },
     {
@@ -9734,11 +9784,11 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L60",
+      "source_location": "L59",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker_applycurrentcolor",
-      "target": "src_formatters_inkfor",
+      "target": "src_formatters_tiletone",
       "confidence_score": 1.0
     },
     {
@@ -9757,8 +9807,20 @@
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L105",
+      "source_location": "L104",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_ui_colorpicker_initcolorpicker",
+      "target": "src_formatters_tiletone"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/ui/colorPicker.ts",
+      "source_location": "L109",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker_initcolorpicker",
@@ -9770,7 +9832,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L108",
+      "source_location": "L112",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker_initcolorpicker",
@@ -9782,7 +9844,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L126",
+      "source_location": "L130",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker_initcolorpicker",
@@ -9794,7 +9856,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L69",
+      "source_location": "L68",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker_setpickercolor",
@@ -9806,7 +9868,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L70",
+      "source_location": "L69",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker_setpickercolor",
@@ -9818,7 +9880,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L71",
+      "source_location": "L70",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker_setpickercolor",
@@ -9830,7 +9892,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L87",
+      "source_location": "L86",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker_trackpointer",
@@ -9842,7 +9904,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L88",
+      "source_location": "L87",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker_trackpointer",
@@ -10419,11 +10481,35 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/Lists.tsx",
+      "source_location": "L46",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_views_lists_productlist",
+      "target": "src_formatters_tiletone"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/views/Lists.tsx",
       "source_location": "L50",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_lists_productlist",
       "target": "src_formatters_fmt"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/views/Lists.tsx",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_views_lists_recentsales",
+      "target": "src_formatters_tiletone"
     },
     {
       "relation": "calls",
@@ -10563,11 +10649,11 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/SalesGrid.tsx",
-      "source_location": "L38",
+      "source_location": "L39",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_salesgrid_salesgrid",
-      "target": "src_formatters_inkfor"
+      "target": "src_formatters_tiletone"
     },
     {
       "relation": "calls",
@@ -10575,7 +10661,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/SalesGrid.tsx",
-      "source_location": "L49",
+      "source_location": "L43",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_salesgrid_salesgrid",
@@ -10695,7 +10781,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/formatters.ts",
-      "source_location": "L136",
+      "source_location": "L156",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_formatters_chooseuniquecolor",
@@ -11982,7 +12068,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker",
-      "target": "src_formatters_inkfor",
+      "target": "src_formatters_normalizehex",
       "confidence_score": 1.0
     },
     {
@@ -11994,7 +12080,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker",
-      "target": "src_formatters_normalizehex",
+      "target": "src_formatters_tiletone",
       "confidence_score": 1.0
     },
     {
@@ -12542,6 +12628,18 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/views/Lists.tsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_views_lists",
+      "target": "src_formatters_tiletone",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/views/Lists.tsx",
       "source_location": "L2",
       "weight": 1.0,
       "_origin": "ast",
@@ -12702,19 +12800,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_salesgrid",
-      "target": "src_formatters_ink_dark",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/views/SalesGrid.tsx",
-      "source_location": "L1",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "src_views_salesgrid",
-      "target": "src_formatters_inkfor",
+      "target": "src_formatters_tiletone",
       "confidence_score": 1.0
     },
     {
@@ -17356,51 +17442,62 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/formatters.ts",
-      "source_location": "L104",
+      "source_location": "L106",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_formatters",
-      "target": "src_formatters_relativeluminance",
+      "target": "src_formatters_tolinear",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/formatters.ts",
-      "source_location": "L113",
+      "source_location": "L107",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_formatters",
-      "target": "src_formatters_ink_dark",
+      "target": "src_formatters_togamma",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/formatters.ts",
-      "source_location": "L114",
+      "source_location": "L109",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_formatters",
-      "target": "src_formatters_ink_light",
+      "target": "src_formatters_hextooklch",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/formatters.ts",
-      "source_location": "L117",
+      "source_location": "L121",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_formatters",
-      "target": "src_formatters_inkfor",
+      "target": "src_formatters_oklchtohex",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/formatters.ts",
-      "source_location": "L124",
+      "source_location": "L139",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_formatters",
+      "target": "src_formatters_tiletone",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/formatters.ts",
+      "source_location": "L144",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_formatters",
@@ -17411,22 +17508,11 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/formatters.ts",
-      "source_location": "L126",
+      "source_location": "L146",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_formatters",
       "target": "src_formatters_normalizehex",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/formatters.ts",
-      "source_location": "L132",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "src_formatters",
-      "target": "src_formatters_chooseuniquecolor",
       "confidence_score": 1.0
     },
     {
@@ -17438,6 +17524,17 @@
       "_origin": "ast",
       "source": "src_formatters",
       "target": "src_formatters_currency_locales",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/formatters.ts",
+      "source_location": "L152",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_formatters",
+      "target": "src_formatters_chooseuniquecolor",
       "confidence_score": 1.0
     },
     {
@@ -18797,17 +18894,6 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L100",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "src_ui_colorpicker",
-      "target": "src_ui_colorpicker_initcolorpicker",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/ui/colorPicker.ts",
       "source_location": "L19",
       "weight": 1.0,
       "_origin": "ast",
@@ -18863,7 +18949,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L68",
+      "source_location": "L67",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker",
@@ -18874,7 +18960,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L74",
+      "source_location": "L73",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker",
@@ -18885,7 +18971,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L78",
+      "source_location": "L77",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker",
@@ -18907,11 +18993,22 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L83",
+      "source_location": "L82",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_ui_colorpicker",
       "target": "src_ui_colorpicker_trackpointer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/ui/colorPicker.ts",
+      "source_location": "L99",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_ui_colorpicker",
+      "target": "src_ui_colorpicker_initcolorpicker",
       "confidence_score": 1.0
     },
     {
@@ -20737,5 +20834,5 @@
       "source_file": "AGENTS.md"
     }
   ],
-  "built_at_commit": "3b5bf59f450d6b005f6125bd6921b84b2e6df9e3"
+  "built_at_commit": "d5506d61f4e78d7f14f5d326e05afe8591b4f0fa"
 }

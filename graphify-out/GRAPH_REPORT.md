@@ -1,16 +1,16 @@
 # Graph Report - CNTR  (2026-10-26)
 
 ## Corpus Check
-- 75 files · ~62,774 words
+- 75 files · ~63,080 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 670 nodes · 1130 edges · 46 communities (39 shown, 7 thin omitted)
+- 671 nodes · 1137 edges · 53 communities (46 shown, 7 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 41 edges (avg confidence: 0.66)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `3b5bf59f`
+- Built from commit: `d5506d61`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -19,7 +19,7 @@
 - storage.ts
 - dependencies
 - main.ts
-- productEditor.ts
+- formatters.ts
 - compilerOptions
 - .application
 - What You Must Do When Invoked
@@ -49,10 +49,17 @@
 - Running Custom Playwright Code
 - Cookies
 - Browser Automation with playwright-cli
-- 3. Heal
+- Test generation (plan → generate → heal)
 - Browser Session Management
 - Tracing
 - Unreleased
+- playwright-cli/SKILL.md
+- Video Recording
+- Advanced Mocking with run-code
+- Attaching Screenshots and Videos to Pull Requests
+- 3. Heal
+- 0. How generation works
+- 1. Planning
 
 ## God Nodes (most connected - your core abstractions)
 1. `render()` - 31 edges
@@ -85,15 +92,15 @@
 - **APK build pipeline** — _github_workflows_build_apk_build_apk, _github_workflows_build_apk_capacitor_sync, _github_workflows_build_apk_gradle_assembledebug, _github_workflows_build_apk_cntr_debug_apk [EXTRACTED 1.00]
 - **Graphify-first agent instructions** — _claude_claude_graphify_first_workflow, agents_graphify_required_workflow, claude_graphify_rules, claude_graphify_knowledge_graph [INFERRED 0.95]
 
-## Communities (46 total, 7 thin omitted)
+## Communities (53 total, 7 thin omitted)
 
 ### Community 0 - "ReportParts.tsx"
-Cohesion: 0.10
-Nodes (46): fmt(), buildProductBreakdown(), compareProductCounts(), getReportSummary(), marginPercent(), plural(), ProductTotals, totalCost() (+38 more)
+Cohesion: 0.09
+Nodes (48): fmt(), buildProductBreakdown(), compareProductCounts(), getReportSummary(), marginPercent(), plural(), ProductTotals, totalCost() (+40 more)
 
 ### Community 1 - "storage.ts"
-Cohesion: 0.11
-Nodes (29): CURRENCIES, DEFAULT_SETTINGS, EVENT_COST_STORAGE_KEY, IMPORTED_EVENT_REPORT_KEY, loadEventCosts(), loadImportedEventReport(), loadProductHistory(), loadProducts() (+21 more)
+Cohesion: 0.09
+Nodes (33): CURRENCIES, DEFAULT_SETTINGS, EVENT_COST_STORAGE_KEY, IMPORTED_EVENT_REPORT_KEY, loadEventCosts(), loadImportedEventReport(), loadProductHistory(), loadProducts() (+25 more)
 
 ### Community 2 - "dependencies"
 Cohesion: 0.05
@@ -101,11 +108,11 @@ Nodes (38): @capacitor/android, @capacitor/cli, @capacitor/core, @capacitor/hapt
 
 ### Community 3 - "main.ts"
 Cohesion: 0.07
-Nodes (76): generateUUID(), addSale(), checkedValues(), closeCompareModal(), closeExpenseModal(), closeImportModal(), closeSaveModal(), compareSelection (+68 more)
+Nodes (92): defaultProducts, ensureProductHistory(), generateUUID(), formatInputNumber(), parseCurrencyInput(), addSale(), checkedValues(), closeCompareModal() (+84 more)
 
-### Community 4 - "productEditor.ts"
-Cohesion: 0.08
-Nodes (52): defaultProducts, ensureProductHistory(), chooseUniqueColor(), CURRENCY_LOCALES, CURRENCY_SEPARATORS, CURRENCY_SYMBOLS, escapeForRegExp(), formatInputNumber() (+44 more)
+### Community 4 - "formatters.ts"
+Cohesion: 0.10
+Nodes (31): chooseUniqueColor(), CURRENCY_LOCALES, CURRENCY_SEPARATORS, CURRENCY_SYMBOLS, escapeForRegExp(), formatMoney(), formatNumeric(), hexToOklch() (+23 more)
 
 ### Community 5 - "compilerOptions"
 Cohesion: 0.09
@@ -184,8 +191,8 @@ Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
 ### Community 39 - "Running Custom Playwright Code"
-Cohesion: 0.04
-Nodes (40): Examples, Inspecting Element Attributes, Debugging Playwright Tests, Running Playwright Tests, Attaching Screenshots and Videos to Pull Requests, From a local session, From CI, Limits (+32 more)
+Cohesion: 0.15
+Nodes (13): Clipboard, Complex Workflows, Error Handling, File Downloads, Frames and Iframes, Geolocation, JavaScript Execution, Media Emulation (+5 more)
 
 ### Community 40 - "Cookies"
 Cohesion: 0.06
@@ -195,9 +202,9 @@ Nodes (35): Advanced: Multiple Cookies or Custom Options, Advanced: Multiple Ope
 Cohesion: 0.07
 Nodes (27): Attaching screenshots and videos to pull requests, Browser Automation with playwright-cli, Browser Sessions, Commands, Core, DevTools, Emulation, Example: Debugging with DevTools (+19 more)
 
-### Community 42 - "3. Heal"
-Cohesion: 0.09
-Nodes (23): 0. How generation works, 1.1 Prerequisite: workspace, 1.2 Prerequisite: seed test, 1.3 Explore the app, 1.4 Write the spec file, 1. Planning, 2.1 Inputs, 2.2 Generate one scenario (+15 more)
+### Community 42 - "Test generation (plan → generate → heal)"
+Cohesion: 0.29
+Nodes (7): 2.1 Inputs, 2.2 Generate one scenario, 2.3 Generate multiple scenarios, 2.4 Run generated tests, 2. Generate, Cross-references, Test generation (plan → generate → heal)
 
 ### Community 43 - "Browser Session Management"
 Cohesion: 0.10
@@ -211,25 +218,53 @@ Nodes (16): 1. Start Tracing Before the Problem, 2. Clean Up Old Traces, Analyzi
 Cohesion: 0.22
 Nodes (8): Build, Changed, Changed, Changelog, Fixed, Fixed, UI revamp (branch `ui/revamp`), Unreleased
 
+### Community 46 - "playwright-cli/SKILL.md"
+Cohesion: 0.24
+Nodes (4): Examples, Inspecting Element Attributes, Debugging Playwright Tests, Running Playwright Tests
+
+### Community 47 - "Video Recording"
+Cohesion: 0.20
+Nodes (10): 1. Use Descriptive Filenames, 2. Record entire hero scripts., 3. Attach the recording to the pull request, Basic Recording, Best Practices, Cursor, Target Highlight and Click Point, Limitations, Overlay API Summary (+2 more)
+
+### Community 48 - "Advanced Mocking with run-code"
+Cohesion: 0.25
+Nodes (8): Advanced Mocking with run-code, CLI Route Commands, Conditional Response Based on Request, Delayed Response, Modify Real Response, Request Mocking, Simulate Network Failures, URL Patterns
+
+### Community 49 - "Attaching Screenshots and Videos to Pull Requests"
+Cohesion: 0.29
+Nodes (5): Attaching Screenshots and Videos to Pull Requests, From a local session, From CI, Limits, When to attach
+
+### Community 50 - "3. Heal"
+Cohesion: 0.33
+Nodes (6): 3.1 Find failing tests, 3.2 Debug one failure, 3.3 Apply the fix, 3.4 Reconcile with the spec, 3.5 Iteration and giving up, 3. Heal
+
+### Community 51 - "0. How generation works"
+Cohesion: 0.40
+Nodes (5): 0. How generation works, Add assertions manually, Building a test file, Explore before recording, Use semantic locators
+
+### Community 52 - "1. Planning"
+Cohesion: 0.40
+Nodes (5): 1.1 Prerequisite: workspace, 1.2 Prerequisite: seed test, 1.3 Explore the app, 1.4 Write the spec file, 1. Planning
+
 ## Knowledge Gaps
-- **296 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+291 more)
+- **295 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+290 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Browser Automation with playwright-cli` connect `Browser Automation with playwright-cli` to `Running Custom Playwright Code`?**
+- **Why does `Browser Automation with playwright-cli` connect `Browser Automation with playwright-cli` to `playwright-cli/SKILL.md`?**
   _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **Why does `Test generation (plan → generate → heal)` connect `3. Heal` to `Running Custom Playwright Code`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+- **Why does `Test generation (plan → generate → heal)` connect `Test generation (plan → generate → heal)` to `3. Heal`, `0. How generation works`, `1. Planning`, `playwright-cli/SKILL.md`?**
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **Are the 9 inferred relationships involving `render()` (e.g. with `addSale()` and `openImportModal()`) actually correct?**
   _`render()` has 9 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 10 inferred relationships involving `wireDialogs()` (e.g. with `closeCompareModal()` and `closeExpenseModal()`) actually correct?**
   _`wireDialogs()` has 10 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `private`, `version` to the rest of the system?**
-  _296 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _295 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ReportParts.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.09860859044162129 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09000584453535944 - nodes in this community are weakly interconnected._
 - **Should `storage.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.10574712643678161 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09411764705882353 - nodes in this community are weakly interconnected._
