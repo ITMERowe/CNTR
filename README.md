@@ -6,8 +6,9 @@ Built with TypeScript, Preact and Vite, packaged for Android (and iOS) with Capa
 
 ## Features
 
-- **Sales counter**: one tile per product, with separate Cash and QRIS counters. Tap − to undo the last sale.
-- **Reports**: revenue, profit, margin, payment mix and per-product distribution for the current session.
+- **Sales counter**: one tile per product; each Cash/QRIS half is a single big tap target, with a small − to undo. Counters roll, the revenue total counts up, and the phone gives a light haptic tap on every sale.
+- **Reports**: revenue, profit, margin, average sale, Cash/QRIS mix, sales by hour (busiest hour highlighted) and a per-product breakdown.
+- **Works offline**: the font and icons are bundled into the app; nothing is loaded from the internet.
 - **Event report**: import sales (live or from saved reports), add booth or transport expenses, and see net profit or deficit.
 - **Saved reports & compare**: save sales or event snapshots, rename or delete them, and compare any two side by side.
 - **Products**: add, edit, recolour, deactivate (keep history) or permanently delete products.

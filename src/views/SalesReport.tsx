@@ -1,7 +1,7 @@
 import { fmt } from '../formatters';
 import { buildProductBreakdown, marginPercent, plural, totals } from '../reports';
 import type { Product, SaleRecord } from '../types';
-import { ProductRows, ReportHero, SummaryTile } from './ReportParts';
+import { Card, EmptyState, Hero, HourChart, Kpi, PaymentSplit, ProductRows } from './ReportParts';
 
 interface Props {
   sales: SaleRecord[];
@@ -10,31 +10,42 @@ interface Props {
 }
 
 export function SalesReport({ sales, products, colorFor }: Props) {
-  const { revenue, profit, cash, qris } = totals(sales);
-  const cashSales = sales.filter((sale) => sale.payment === 'Cash').length;
-  const qrisSales = sales.filter((sale) => sale.payment === 'QRIS').length;
+  const { revenue, profit } = totals(sales);
   const rows = buildProductBreakdown(sales, products, colorFor).sort((a, b) => b.count - a.count || b.revenue - a.revenue);
+  const sold = rows.filter((row) => row.count > 0);
+  const unsold = rows.filter((row) => row.count === 0);
+  const average = sales.length ? Math.round(revenue / sales.length) : 0;
 
   return (
-    <div class="report-shell">
-      <ReportHero
-        title="Sales overview"
-        subtitle={sales.length ? 'Revenue, profit, payment mix and best-selling products.' : 'Every sale you record will appear here.'}
-      >
-        <div class="summary-grid">
-          <SummaryTile label="Revenue" value={fmt(revenue)} hint={plural(sales.length, 'sale')} />
-          <SummaryTile label="Profit" value={fmt(profit)} hint={`${marginPercent(revenue, profit).toFixed(1)}% margin`} />
-          <SummaryTile label="Cash" value={String(cashSales)} hint={`${fmt(cash)} via cash`} />
-          <SummaryTile label="QRIS" value={String(qrisSales)} hint={`${fmt(qris)} via QRIS`} />
-        </div>
-      </ReportHero>
+    <>
+      <Hero label="Revenue" value={fmt(revenue)} meta={sales.length ? `${plural(sales.length, 'sale')} recorded` : 'No sales recorded yet'} />
+      <div class="kpi-row">
+        <Kpi label="Profit" value={fmt(profit)} hint={`${marginPercent(revenue, profit).toFixed(1)}% margin`} tone={profit < 0 ? 'is-negative' : undefined} />
+        <Kpi label="Average sale" value={fmt(average)} hint={sales.length ? 'per transaction' : '–'} />
+      </div>
 
-      <section class="report-section">
-        <div class="section-head">
-          <h2 class="report-title">Product distribution</h2>
-        </div>
-        {rows.length ? <ProductRows rows={rows} totalUnits={sales.length} /> : <div class="empty-state">No products yet.</div>}
-      </section>
-    </div>
+      {sales.length > 0 && (
+        <Card title="Payment mix">
+          <PaymentSplit sales={sales} />
+        </Card>
+      )}
+
+      {sales.length > 0 && (
+        <Card title="Sales by hour">
+          <HourChart sales={sales} />
+        </Card>
+      )}
+
+      <Card title="Products">
+        {sold.length > 0 && <ProductRows rows={sold} totalUnits={sales.length} />}
+        {unsold.length > 0 && (
+          <p class={sold.length ? 'card-note unsold' : 'card-note'}>
+            {sold.length ? 'Not sold yet: ' : 'No sales yet for '}
+            {unsold.map((row) => row.name).join(', ')}
+          </p>
+        )}
+        {!rows.length && <EmptyState icon="package" title="No products yet" text="Add products from the Sell tab." />}
+      </Card>
+    </>
   );
 }

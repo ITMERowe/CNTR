@@ -101,12 +101,24 @@ export function escapeHtml(value: unknown) {
   return String(value ?? '').replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch]);
 }
 
-export function getContrastColor(hex: string) {
-  const n = parseInt(hex.slice(1), 16);
-  const r = (n >> 16) & 255;
-  const g = (n >> 8) & 255;
-  const b = n & 255;
-  return (r * 0.299 + g * 0.587 + b * 0.114) > 160 ? '#071f1d' : '#ffffff';
+function relativeLuminance(hex: string) {
+  const n = parseInt(normalizeHex(hex).slice(1), 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((channel) => {
+    const c = channel / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export const INK_DARK = '#0b0b0c';
+export const INK_LIGHT = '#ffffff';
+
+/** White or near-black, whichever has the higher WCAG contrast on `hex`. */
+export function inkFor(hex: string) {
+  const l = relativeLuminance(hex);
+  const contrastWithWhite = 1.05 / (l + 0.05);
+  const contrastWithDark = (l + 0.05) / (relativeLuminance(INK_DARK) + 0.05);
+  return contrastWithWhite >= contrastWithDark ? INK_LIGHT : INK_DARK;
 }
 
 export const PRESET_COLORS = ['#F76495', '#FF4D4D', '#F9B234', '#51C43F', '#30C7FF', '#4F6EFF', '#B85DFF'];
