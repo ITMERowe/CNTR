@@ -94,13 +94,6 @@ export const fmt = (n: number) => {
   return formatMoney(n, settings.currency, settings.compactMoney);
 };
 
-const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-
-// Escape user-entered text before interpolating it into innerHTML templates (Preact views escape automatically).
-export function escapeHtml(value: unknown) {
-  return String(value ?? '').replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch]);
-}
-
 export const PRESET_COLORS = ['#F76495', '#FF4D4D', '#F9B234', '#51C43F', '#30C7FF', '#4F6EFF', '#B85DFF'];
 
 export function normalizeHex(value: string) {
