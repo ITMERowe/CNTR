@@ -34,8 +34,8 @@ npm run dev        # http://localhost:5173 (also reachable from your phone on th
 Every push to GitHub builds a debug APK automatically.
 
 1. Open the repo on GitHub → **Actions** → **Build APK** → the newest run with a green check.
-2. Scroll to **Artifacts** and download **CNTR-Debug-APK** (you must be signed in to GitHub). It is a `.zip`.
-3. Extract it to get `app-debug.apk`, then open it on your phone. Android will ask you to allow installs from that app (browser or Files). Allow it once.
+2. Scroll to **Artifacts** and download **app-debug.apk** (you must be signed in to GitHub).
+3. Open it on your phone. Android will ask you to allow installs from that app (browser or Files). Allow it once.
 4. Requires Android 7.0 (API 24) or newer.
 
 > **Updating:** each CI run signs the APK with a fresh debug key, so Android refuses to install a new build over an old one ("App not installed"). Uninstall the old version first. **Uninstalling deletes the app's saved data**, so save or note anything you need before updating. A fixed signing key would remove this step; see [Releasing](#releasing).
