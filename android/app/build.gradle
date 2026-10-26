@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+// CI sets BUILD_NUMBER (the GitHub Actions run number) so every build gets a higher versionCode,
+// which Android and Google Play require for updates. Local builds use 1.
+def buildNumber = (System.getenv('BUILD_NUMBER') ?: '1').toInteger()
+
 android {
     namespace = "com.cntr.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +11,8 @@ android {
         applicationId = "com.cntr.app"
         minSdk = rootProject.ext.minSdkVersion
         targetSdk = rootProject.ext.targetSdkVersion
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = buildNumber
+        versionName = "1.0.${buildNumber}"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -20,6 +24,12 @@ android {
         release {
             minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    // Name APKs <app>_<version>.apk, e.g. CNTR_1.0.42.apk, instead of app-debug.apk.
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "CNTR_${variant.versionName}.apk"
         }
     }
 }
