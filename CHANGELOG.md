@@ -1,6 +1,6 @@
 # Changelog
 
-## UI revamp (branch `ui/revamp`)
+## Unreleased (branch `ui/revamp`)
 
 ### Changed
 - New visual system: VS Code-dark surfaces, white ink accent, product colours as the hero, 4/8px spacing, one set of motion tokens. Designed with the ui-ux-pro-max (POS: Swiss minimal, high contrast, large targets) and dataviz skills.
@@ -13,7 +13,12 @@
 ### Fixed
 - Icons and the font no longer depend on the internet (they were loaded from Google Fonts, so offline the icons showed as words like "add" and "delete").
 
-## Unreleased
+### Project
+- Added an MIT `LICENSE`; rewrote the README (features, setup, Android builds, data and backup limits, testing, license) with screenshots in `docs/screenshots/`.
+- Added `HANDOFF.md` for session-to-session context, and a rule in `CLAUDE.md`/`AGENTS.md` to read it first.
+- Removed the unused `@types/node` dev dependency, the unused `escapeHtml` helper and an unused CSS class.
+
+## 2026-10-26 (merged to `main`)
 
 ### Fixed
 - Closing or opening the expense dialog no longer jumps the page to the top, and its handlers no longer pile up on every sale (they were re-attached on each render).

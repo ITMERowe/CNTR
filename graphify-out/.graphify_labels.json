@@ -1,9 +1,9 @@
 {
   "0": "ReportParts.tsx",
   "1": "storage.ts",
-  "2": "dependencies",
+  "2": "package.json",
   "3": "main.ts",
-  "4": "formatters.ts",
+  "4": "productEditor.ts",
   "5": "compilerOptions",
   "6": ".application",
   "7": "What You Must Do When Invoked",
@@ -44,5 +44,6 @@
   "42": "3. Heal",
   "43": "Browser Session Management",
   "44": "Tracing",
-  "45": "Unreleased"
+  "45": "2026-10-26 (merged to `main`)",
+  "46": "HANDOFF"
 }

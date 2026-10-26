@@ -1,25 +1,25 @@
 # Graph Report - CNTR  (2026-10-26)
 
 ## Corpus Check
-- 75 files · ~62,630 words
+- 76 files · ~71,452 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 666 nodes · 1119 edges · 46 communities (39 shown, 7 thin omitted)
+- 673 nodes · 1125 edges · 47 communities (40 shown, 7 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 41 edges (avg confidence: 0.66)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `dd51acaf`
+- Built from commit: `9c08b1e9`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - ReportParts.tsx
 - storage.ts
-- dependencies
+- package.json
 - main.ts
-- formatters.ts
+- productEditor.ts
 - compilerOptions
 - .application
 - What You Must Do When Invoked
@@ -52,7 +52,8 @@
 - 3. Heal
 - Browser Session Management
 - Tracing
-- Unreleased
+- 2026-10-26 (merged to `main`)
+- HANDOFF
 
 ## God Nodes (most connected - your core abstractions)
 1. `render()` - 31 edges
@@ -85,27 +86,27 @@
 - **APK build pipeline** — _github_workflows_build_apk_build_apk, _github_workflows_build_apk_capacitor_sync, _github_workflows_build_apk_gradle_assembledebug, _github_workflows_build_apk_cntr_debug_apk [EXTRACTED 1.00]
 - **Graphify-first agent instructions** — _claude_claude_graphify_first_workflow, agents_graphify_required_workflow, claude_graphify_rules, claude_graphify_knowledge_graph [INFERRED 0.95]
 
-## Communities (46 total, 7 thin omitted)
+## Communities (47 total, 7 thin omitted)
 
 ### Community 0 - "ReportParts.tsx"
 Cohesion: 0.09
-Nodes (52): fmt(), buildProductBreakdown(), compareProductCounts(), getReportSummary(), marginPercent(), plural(), ProductTotals, totalCost() (+44 more)
+Nodes (49): fmt(), buildProductBreakdown(), compareProductCounts(), getReportSummary(), marginPercent(), plural(), ProductTotals, totalCost() (+41 more)
 
 ### Community 1 - "storage.ts"
-Cohesion: 0.10
-Nodes (30): CURRENCIES, DEFAULT_SETTINGS, EVENT_COST_STORAGE_KEY, IMPORTED_EVENT_REPORT_KEY, loadEventCosts(), loadImportedEventReport(), loadProductHistory(), loadProducts() (+22 more)
+Cohesion: 0.11
+Nodes (29): DEFAULT_SETTINGS, EVENT_COST_STORAGE_KEY, IMPORTED_EVENT_REPORT_KEY, loadEventCosts(), loadImportedEventReport(), loadProductHistory(), loadProducts(), loadSales() (+21 more)
 
-### Community 2 - "dependencies"
+### Community 2 - "package.json"
 Cohesion: 0.05
-Nodes (38): @capacitor/android, @capacitor/cli, @capacitor/core, @capacitor/haptics, @capacitor/ios, chokidar-cli, @fontsource-variable/plus-jakarta-sans, lucide (+30 more)
+Nodes (37): @capacitor/android, @capacitor/cli, @capacitor/core, @capacitor/haptics, @capacitor/ios, chokidar-cli, @fontsource-variable/plus-jakarta-sans, lucide (+29 more)
 
 ### Community 3 - "main.ts"
 Cohesion: 0.07
-Nodes (93): defaultProducts, ensureProductHistory(), generateUUID(), formatInputNumber(), parseCurrencyInput(), addSale(), checkedValues(), closeCompareModal() (+85 more)
+Nodes (79): defaultProducts, generateUUID(), addSale(), checkedValues(), closeCompareModal(), closeExpenseModal(), closeImportModal(), closeSaveModal() (+71 more)
 
-### Community 4 - "formatters.ts"
-Cohesion: 0.12
-Nodes (24): chooseUniqueColor(), CURRENCY_LOCALES, CURRENCY_SEPARATORS, CURRENCY_SYMBOLS, escapeForRegExp(), formatMoney(), formatNumeric(), HTML_ESCAPES (+16 more)
+### Community 4 - "productEditor.ts"
+Cohesion: 0.10
+Nodes (41): ensureProductHistory(), chooseUniqueColor(), CURRENCY_LOCALES, CURRENCY_SEPARATORS, CURRENCY_SYMBOLS, escapeForRegExp(), formatInputNumber(), formatMoney() (+33 more)
 
 ### Community 5 - "compilerOptions"
 Cohesion: 0.09
@@ -207,12 +208,16 @@ Nodes (20): 1. Name Browser Sessions Semantically, 2. Always Clean Up, 3. Delete
 Cohesion: 0.12
 Nodes (16): 1. Start Tracing Before the Problem, 2. Clean Up Old Traces, Analyzing Performance, Basic Usage, Best Practices, Capturing Evidence, Debugging Failed Actions, Limitations (+8 more)
 
-### Community 45 - "Unreleased"
+### Community 45 - "2026-10-26 (merged to `main`)"
+Cohesion: 0.20
+Nodes (9): 2026-10-26 (merged to `main`), Build, Changed, Changed, Changelog, Fixed, Fixed, Project (+1 more)
+
+### Community 46 - "HANDOFF"
 Cohesion: 0.22
-Nodes (8): Build, Changed, Changed, Changelog, Fixed, Fixed, UI revamp (branch `ui/revamp`), Unreleased
+Nodes (8): Current state (verified against the code on 2026-10-26), Decisions (and why), Files touched in the revamp (`ui/revamp` vs `main`), Goal, HANDOFF, Known issues / blockers (unresolved), Next steps (priority order), Verification log
 
 ## Knowledge Gaps
-- **295 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+290 more)
+- **302 isolated node(s):** `name`, `private`, `license`, `version`, `type` (+297 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -222,14 +227,14 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `Browser Automation with playwright-cli` connect `Browser Automation with playwright-cli` to `Running Custom Playwright Code`?**
   _High betweenness centrality (0.018) - this node is a cross-community bridge._
 - **Why does `Test generation (plan → generate → heal)` connect `3. Heal` to `Running Custom Playwright Code`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **Are the 9 inferred relationships involving `render()` (e.g. with `addSale()` and `openImportModal()`) actually correct?**
   _`render()` has 9 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 10 inferred relationships involving `wireDialogs()` (e.g. with `closeCompareModal()` and `closeExpenseModal()`) actually correct?**
   _`wireDialogs()` has 10 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `name`, `private`, `version` to the rest of the system?**
-  _295 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `name`, `private`, `license` to the rest of the system?**
+  _302 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ReportParts.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.08509615384615385 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09095716552088842 - nodes in this community are weakly interconnected._
 - **Should `storage.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.1032258064516129 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10574712643678161 - nodes in this community are weakly interconnected._
