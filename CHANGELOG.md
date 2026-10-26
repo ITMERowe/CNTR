@@ -9,8 +9,13 @@
 - Event: net profit/deficit as the hero figure, revenue/profit/expenses tiles, empty state with an Import button.
 - Dialogs are bottom sheets; the tab bar has labels and an animated active indicator; Settings is grouped; History shows product colours and payment chips; the product editor's colour field is a live preview of the tile.
 - Subtle motion throughout (screen fade, staggered card/row entrance, bar growth, sheet slide, toast pop), all off with the system reduce-motion setting.
+- Android back (button or gesture) now steps back inside the app: it closes the colour picker, options menu or sheet first, then follows the screen's back arrow, then returns to Sell; on Sell it puts the app in the background. Before, it closed the app. Adds `@capacitor/app`.
+- Compact Sell tiles (4 fit on a 412×892 screen) and 2-column Event tiles.
+- Small buttons (undo, Import sales, currency picker) have 44px tap areas; Products shows price and cost on separate lines so neither is cut off.
 
 ### Fixed
+- The colour picker kept following the finger after Android cancelled a drag (e.g. a system back swipe).
+- Very long amounts no longer push the page wider than the screen.
 - Icons and the font no longer depend on the internet (they were loaded from Google Fonts, so offline the icons showed as words like "add" and "delete").
 
 ### Project

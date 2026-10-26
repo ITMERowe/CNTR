@@ -1,7 +1,7 @@
 {
   "0": "ReportParts.tsx",
   "1": "storage.ts",
-  "2": "package.json",
+  "2": "dependencies",
   "3": "main.ts",
   "4": "productEditor.ts",
   "5": "compilerOptions",
@@ -45,5 +45,12 @@
   "43": "Browser Session Management",
   "44": "Tracing",
   "45": "2026-10-26 (merged to `main`)",
-  "46": "HANDOFF"
+  "46": "HANDOFF",
+  "47": "Product",
+  "48": "Commands",
+  "49": "Video Recording",
+  "50": "playwright-cli/SKILL.md",
+  "51": "Advanced Mocking with run-code",
+  "52": "Attaching Screenshots and Videos to Pull Requests",
+  "53": "element-attributes.md"
 }

@@ -2,12 +2,14 @@
 
 Session-to-session context for CNTR. **Read this before starting work; update it at the end of each session, after milestones, and when a blocker or decision comes up.** If this file disagrees with the code, trust the code and fix this file.
 
-_Last updated: 2026-10-26, end of the cleanup/README/license session (on branch `ui/revamp`)._
+_Last updated: 2026-10-26, end of the polish session (on branch `ui/revamp`; changes **uncommitted**, see "Latest session")._
 
 ## Goal
 
 - **Project:** CNTR, an offline sales counter for convention/pop-up booths (TypeScript + Preact + Vite, packaged with Capacitor 8 for Android). Owner wants it **published on Google Play**.
-- **Last task (this session):** clean up the project locally and on GitHub; rewrite the README; add a license (owner chose **MIT**); prepare the GitHub description and topics.
+- **Last task (latest session):** polish with all applicable skills, and make Android back (button/gesture) step back inside the app (see "Multi-skill polish + Android back").
+- **Before that:** make the Sell and Event screens compact, so 4 tiles fit and amounts in the millions are not cut off.
+- **Task before that:** clean up the project locally and on GitHub; rewrite the README; add a license (owner chose **MIT**); prepare the GitHub description and topics.
 - **Standing design decisions from the owner:** VS Code-dark palette (`#1e1e1e` bg, `#252526` panels); product tiles use the **original product colours** with **white** text and icons.
 
 ## Current state (verified 2026-10-26)
@@ -15,7 +17,7 @@ _Last updated: 2026-10-26, end of the cleanup/README/license session (on branch 
 | Branch | State |
 |---|---|
 | `main` (`3b5bf59`) | Bug fixes, docs, Capacitor 8 (Android API 36), Preact restructure, CI fixes, APK naming. CI APK build: **success**. |
-| `ui/revamp` | UI revamp (`d5506d6`..`9c08b1e`, CI **success**, `CNTR_1.0.16.apk`) **plus this session's cleanup commit**. Pushed, **not merged** into `main`. See "Commits and push" for the cleanup commit's CI status. |
+| `ui/revamp` | UI revamp (`d5506d6`..`9c08b1e`, CI **success**, `CNTR_1.0.16.apk`) **plus this session's cleanup commit**. Pushed, **not merged** into `main`. See "Commits and push" for the cleanup commit's CI status. The working tree also has **uncommitted** compact-layout changes (see "Latest session"). |
 | `fix/bugs-ui-docs` | Fully merged into `main`; safe to delete (owner approval needed, not done). |
 | `agents/app-overview-explanation` | **Local only**, checked out as a worktree at `../CNTR.worktrees/app-overview-explanation`, at old commit `6edd319`. Not created in these sessions; left untouched. Owner to decide. |
 
@@ -29,7 +31,7 @@ Architecture (details in `docs/ARCHITECTURE.md`):
 - `src/style.css`: design tokens.
 - CI: `.github/workflows/build-apk.yml` runs on every branch push and uploads `CNTR_1.0.<run_number>.apk`.
 
-## This session: files changed
+## Cleanup session: files changed (committed)
 
 Created:
 - `LICENSE`: MIT, "Copyright (c) 2026 ITMERowe" (owner approved MIT).
@@ -66,6 +68,77 @@ Deliberately **not** changed:
 - **Cleanup lives on `ui/revamp`**, so the README describes the code that exists on that branch; it reaches `main` when `ui/revamp` is merged.
 - Earlier decisions still stand: Preact; bundled fonts and icons (offline); Cash/QRIS colours `#C08024`/`#4D8DF0` validated on `#252526` (re-validate if changed); original tile colours; Gradle 8.14.3 / AGP 8.13.0.
 
+## Latest session (2026-10-26): compact layout. **UNCOMMITTED** on `ui/revamp`
+
+All of this is in the working tree only: not committed, not pushed, and no CI APK yet. Files: `src/style.css`, `src/views/ReportParts.tsx`, `src/views/SalesHero.tsx`, `HANDOFF.md`, `graphify-out/*`.
+
+Owner's phone is about **412×892 CSS px** (1280×2772 physical). Use that size for layout checks.
+
+1. **Sell tiles compact** (owner wanted at least 4 tiles visible). In `src/style.css`:
+   - name and price on one line (the name gets "…" if too long);
+   - Cash/QRIS halves `min-height: 80px` (were 92px); counts 28px (24px at ≤360px);
+   - +/− circles 26px and the edit button 32px; edit and undo keep larger tap areas through `::after { inset: -6px }`;
+   - tile padding 12px, radius `--r-lg`, grid gap 8px.
+   - Result: tiles are 144px (were about 194px). At 412×892 the 4th tile ends at 795px and the nav starts at 824px.
+   - 70px was tried first, but the undo button's tap area then overlapped the + circle (a low tap undid a sale). At 80px there is a 12px gap and no overlap (verified with `elementFromPoint`).
+2. **Event KPI cards**: `.kpi-row-3` is now a 2-column grid. Revenue and Profit are on the first row; Expenses wraps to the second row at the **same width**, with an empty space beside it. The owner rejected a full-width Expenses card as awkward. Values are 17px (15px at ≤360px).
+3. **Hero figure overflow (existing bug fixed)**: a long amount (e.g. `-Rp 124.500.000`) made the whole page wider than the screen. Fix:
+   - `.hero-figure` font-size `min(clamp(40px, 12vw, 52px), calc((min(100vw, 520px) - 40px) / (var(--chars, 1) * 0.6)))`;
+   - `--chars` (the text length) is set inline in `Hero` (`ReportParts.tsx`) and `SalesHero.tsx`;
+   - `.report-hero { min-width: 0 }`.
+   - Short amounts keep their old size. `0.6` is an estimated character width for Plus Jakarta Sans bold.
+
+Verified (headless Edge via `playwright-core`, `vite preview` on port 4317):
+- `npx tsc --noEmit` and `npm run build` pass.
+- At 412, 360 and 320px with a Rp 125.500.000 expense: no KPI value or hero cut off, and the page is no wider than the screen.
+- At 900px wide, `-Rp 1.124.500.000` fits at 47px.
+
+Not verified:
+- Real phone: tap accuracy with the smaller buttons, fonts.
+- A billion-rupiah KPI value at 320px would still be cut off with "…" (accepted; unlikely).
+
+Test scripts live in this session's scratchpad (`shot.mjs`, `event.mjs`, `fix.mjs`), not in the repo. They import `playwright-core` from an older session's scratchpad (`...\67ae2af9-914b-4f40-abfd-0726aac79ea7\scratchpad\ci-check\node_modules`), because `playwright` is not installed in the project. To see Event data in the browser, you must click **Import sales**, tick "current-live" and confirm.
+
+## Polish pass (2026-10-26, impeccable `polish`). **UNCOMMITTED** on `ui/revamp`
+
+The impeccable skill is now installed. A polish pass across all 21 screens/states, with screenshots at 412 and 320px, found three defects. All other screens (Sell, Reports, Event, History, compare, modals, colour picker, saved reports) needed no change.
+1. **Products list cut off the cost** ("cost Rp 12...." at 412px). Price and cost now sit on their own lines (`Lists.tsx` spans + `.list-sub-text > span` in `style.css`). At 412px everything shows in full; at 320px the cost still gets "…" (the edit/delete/switch buttons take the width; accepted).
+2. **Report hero was inset 4px** from the page title and the Sell hero: `.report-hero` horizontal padding is now 0.
+3. **Text selection used the browser default**: added `::selection` with VS Code's selection blue `#264f78`.
+
+Verified: `npx tsc --noEmit` and `npm run build` pass. A scan of all 5 tabs at 320, 360 and 412px found no overflowing text and no page wider than the screen (scripts `shots.mjs` and `overflow.mjs` are in this session's scratchpad; they now import `playwright-core` from the project's own `node_modules`). The impeccable detector found only the existing `--ease-emphasis` overshoot curve (advisory; left as is).
+Note: an old `vite preview` is still holding port 4179 from an earlier session; this session used port 4318.
+Not verified: real phone.
+
+Owner requests still open:
+- The `ui-ux-pro-max` polish offered earlier was replaced by the impeccable polish above.
+
+## Multi-skill polish + Android back (2026-10-26). **UNCOMMITTED** on `ui/revamp`
+
+Skills used: ui-ux-pro-max (touch targets, contrast, 375px/landscape checklist), dataviz (charts), impeccable `audit` checklist, superpowers `verification-before-completion`. The owner has since written `PRODUCT.md` (impeccable product context).
+
+Changes:
+1. **Android back (button and gesture)** (`src/main.ts` `goBack()`, `@capacitor/app` ^8.1.2 added, `npx cap sync android` done; `android/app/capacitor.build.gradle` and `android/capacitor.settings.gradle` changed by the sync). Before, back closed the app. Order: colour picker → options menu → open sheet (its X button) → the screen's visible `.back-btn` → Sell tab → `App.minimizeApp()` (app goes to the background; data is kept). It runs only on native.
+2. **Colour picker drag stuck after `pointercancel`** (`src/ui/colorPicker.ts`): Android cancels the pointer on system gestures, and the drag then followed any later finger movement. It now ends on cancel.
+3. **44px tap areas** (`style.css`): undo `::after` inset −9px (was −6px; 38→44px; the + circle still ends 3px above it); `.btn-small` gets an invisible 44px hit area (Event "Import sales"); currency `select` is 44px tall (was 40).
+4. `--selection` token for the `::selection` colour (no raw hex outside `:root`).
+
+No change needed (checked): the Cash/QRIS palette passes the dataviz validator on `#252526` (CVD ΔE 27.8); the charts have text labels, aria, and tap-to-read; reduced motion handled; heading structure fine; colour picker uses `touch-action: none`.
+
+Verified (fresh run, final code): `npx tsc --noEmit` exit 0; `npm run build` exit 0. Audit at 412×892, 375×812 and 892×412 (landscape): no tap target under 44px, no unlabeled control, no page wider than the screen. Overflow scan at 320/360/412: none. Android back: simulated the native bridge in headless Edge (`back.mjs`); all 10 cases behave as listed above. Picker fix red-green: without the fix the colour changed after cancel (`#F1EAEC → #0E0005`); with it, it stays.
+Known, accepted: white text on light tile colours (contrast 1.95–3.1:1; owner decision). Products cost still gets "…" at 320px.
+Not verified: real Android device (the back gesture on a phone, predictive back animation on Android 14+, haptics); large system font size (Android text zoom was not emulated).
+Tooling note: in this shell, piping node+playwright output into `grep` swallows it; write the output to a file and read that instead. Scripts are in this session's scratchpad (`audit.mjs`, `overflow.mjs`, `back.mjs`, `check.mjs`, `shots.mjs`); server: `npx vite preview --port 4318`.
+
+## Impeccable init (2026-10-26). **UNCOMMITTED** on `ui/revamp`
+
+- Created `PRODUCT.md` from the repo plus the owner's answers:
+  - users are any small booth seller (a public Play Store app, mainly Indonesia);
+  - the edge is one-tap speed, working offline, and event profit;
+  - the platform is `web` (a custom design language, not Material).
+- Not done: no DESIGN.md (run `/impeccable document` if wanted). No `.impeccable/config.json` (no image generation available). Live mode not configured.
+- Also rebuilt `graphify-out/` this session. The vendored graphify skill docs were left out of the graph, with the owner's approval.
+
 ## Known issues / blockers (unresolved)
 
 - **GitHub repository description and topics are not updated:** there is no `gh` CLI or API token on this machine. The owner must apply them; text is below.
@@ -83,6 +156,7 @@ Deliberately **not** changed:
 
 ## Next steps (priority order)
 
+0. Compact-layout, polish and Android back changes: the owner reviews them on a phone (especially the back gesture), then commits and pushes to `ui/revamp` when asked (the CI APK then builds).
 1. Owner: apply the GitHub description and topics above (repo → About → ⚙).
 2. Owner: install the newest `ui/revamp` APK on a phone; give feedback; then merge `ui/revamp` → `main` (https://github.com/ITMERowe/CNTR/pull/new/ui/revamp).
 3. Owner: decide on deleting the merged `fix/bugs-ui-docs` branch and the old local `agents/app-overview-explanation` worktree.
