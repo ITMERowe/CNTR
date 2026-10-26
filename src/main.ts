@@ -5,7 +5,9 @@ import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { h, render as renderView } from 'preact';
 import { formatInputNumber, parseCurrencyInput } from './formatters';
-import { totals } from './reports';
+import { buildBackup, parseBackup, salesCsv } from './backup';
+import { pickTextFile, saveFile, saveSafetyCopy } from './files';
+import { plural, totals } from './reports';
 import {
   addExpense,
   clearLiveEvent,
@@ -22,11 +24,12 @@ import {
   removeLastSale,
   renameSavedReport,
   saveCurrentReport,
+  initState,
   saveProducts,
   state,
   updateExpense,
 } from './state';
-import { loadSettings, saveSettings } from './storage';
+import { initStorage, loadLastBackup, loadSettings, onStorageProblem, replaceAllData, saveLastBackup, saveSettings, storedValues } from './storage';
 import type { Currency, Product, ReportType } from './types';
 import {
   activeScreenId,
@@ -36,6 +39,7 @@ import {
   lockBodyScroll,
   openConfirmModal,
   openScreen,
+  showMessage,
   showToast,
   unlockBodyScroll,
   updateHeaderActions,
@@ -582,16 +586,131 @@ function goBack() {
   else App.minimizeApp();
 }
 
-hydrateIcons();
-wireNavigation();
-wireHeader();
-wireSettings();
-wireDialogs();
-initProductEditor(productsChanged);
-openScreen(activeScreenId());
-render();
+// ---- Backup ----
 
-if (isNative) {
-  document.body.classList.add('capacitor-native');
-  App.addListener('backButton', goBack);
+const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
+const pad = (n: number) => String(n).padStart(2, '0');
+const fileStamp = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+const formatWhen = (iso: string) => new Date(iso).toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+function updateLastBackupText() {
+  const last = loadLastBackup();
+  el.lastBackupText.textContent = last ? `Last backup ${formatWhen(last)}` : 'No backup yet';
 }
+
+/** Saves a file and reports where it went. Returns true if it was saved somewhere. */
+async function exportFile(name: string, text: string, mime: string, what: string) {
+  try {
+    const saved = await saveFile(name, text, mime);
+    if (!saved.location && !saved.shared) {
+      showMessage(`${what} not saved`, 'This phone did not allow saving to Documents. Export again and pick an app or folder to save the file in.');
+      return false;
+    }
+    showMessage(`${what} saved`, saved.location ? `Saved to ${saved.location} as ${name}. Keep a copy somewhere other than this phone too.` : `${name} was sent from the share sheet.`);
+    return true;
+  } catch (error) {
+    showMessage(`${what} failed`, `The file could not be saved (${errorText(error)}). The phone may be out of storage. Your data was not changed.`);
+    return false;
+  }
+}
+
+async function exportBackup() {
+  const now = new Date();
+  const ok = await exportFile(`cntr-backup-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2), 'application/json', 'Backup');
+  if (ok) {
+    saveLastBackup(now.toISOString());
+    updateLastBackupText();
+  }
+}
+
+function exportCsv() {
+  const now = new Date();
+  void exportFile(`cntr-sales-${fileStamp(now)}.csv`, salesCsv(buildBackup(storedValues(), now)), 'text/csv', 'Sales CSV');
+}
+
+async function restoreBackup() {
+  let text: string | null;
+  try {
+    text = await pickTextFile(el.restoreFileInput);
+  } catch (error) {
+    showMessage('Could not read the file', `${errorText(error)}. Nothing was changed.`);
+    return;
+  }
+  if (text === null) return;
+
+  const parsed = parseBackup(text);
+  if (!parsed.ok) {
+    showMessage('Cannot restore this file', parsed.error);
+    return;
+  }
+  const { exportedAt, sales, savedReports, products } = parsed.summary;
+  const from = exportedAt ? `from ${formatWhen(exportedAt)}` : '';
+  openConfirmModal(
+    `Replace everything on this phone with the backup ${from}? It has ${plural(sales, 'current sale')}, ${plural(savedReports, 'saved report')} and ${plural(products, 'product')}. A copy of your current data is saved first.`,
+    'Restore',
+    () => void applyRestore(parsed.values),
+    { title: 'Restore backup?' },
+  );
+}
+
+async function applyRestore(values: Map<string, string>) {
+  const now = new Date();
+  try {
+    await saveSafetyCopy(`cntr-before-restore-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2));
+  } catch (error) {
+    showMessage('Restore cancelled', `A copy of your current data could not be saved first (${errorText(error)}), so nothing was changed. Free up space and try again.`);
+    return;
+  }
+  try {
+    await replaceAllData(values);
+  } catch (error) {
+    showMessage('Restore failed', `Nothing was changed; your current data is still here (${errorText(error)}).`);
+    return;
+  }
+  location.reload(); // start fresh from the restored data
+}
+
+function wireBackup() {
+  updateLastBackupText();
+  onClick(el.exportBackupBtn, () => void exportBackup());
+  onClick(el.exportCsvBtn, exportCsv);
+  onClick(el.restoreBackupBtn, () => void restoreBackup());
+  onStorageProblem((message) => {
+    el.storageAlert.hidden = !message;
+    el.storageAlert.textContent = message ?? '';
+  });
+}
+
+/** Shown instead of the app when its data cannot be loaded; the data is left untouched. */
+function showStartupError(message: string) {
+  const box = Object.assign(document.createElement('div'), { className: 'startup-error', role: 'alert' });
+  const text = Object.assign(document.createElement('p'), { textContent: message });
+  const retry = Object.assign(document.createElement('button'), { className: 'btn btn-primary', type: 'button', textContent: 'Try again' });
+  retry.addEventListener('click', () => location.reload());
+  box.append(text, retry);
+  document.body.replaceChildren(box);
+}
+
+async function start() {
+  if (isNative) {
+    document.body.classList.add('capacitor-native');
+    App.addListener('backButton', goBack);
+  }
+  const startup = await initStorage(isNative);
+  if (!startup.ok) {
+    showStartupError(startup.error);
+    return;
+  }
+  initState();
+  hydrateIcons();
+  wireNavigation();
+  wireHeader();
+  wireSettings();
+  wireDialogs();
+  wireBackup();
+  initProductEditor(productsChanged);
+  openScreen(activeScreenId());
+  render();
+}
+
+void start();

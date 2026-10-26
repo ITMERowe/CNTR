@@ -62,6 +62,13 @@ export const el = {
   productHistoryList: byId<HTMLDivElement>('productHistoryList'),
   salesReportHistoryList: byId<HTMLDivElement>('salesReportHistoryList'),
   eventReportHistoryList: byId<HTMLDivElement>('eventReportHistoryList'),
+  // Backup
+  exportBackupBtn: byId<HTMLButtonElement>('exportBackupBtn'),
+  exportCsvBtn: byId<HTMLButtonElement>('exportCsvBtn'),
+  restoreBackupBtn: byId<HTMLButtonElement>('restoreBackupBtn'),
+  restoreFileInput: byId<HTMLInputElement>('restoreFileInput'),
+  lastBackupText: byId<HTMLElement>('lastBackupText'),
+  storageAlert: byId<HTMLParagraphElement>('storageAlert'),
   // Save / rename dialog
   saveModalOverlay: byId<HTMLDivElement>('saveModalOverlay'),
   saveModalTitle: byId<HTMLHeadingElement>('saveModalTitle'),
@@ -92,6 +99,7 @@ export const el = {
   addCostBtn: byId<HTMLButtonElement>('addCostBtn'),
   // Confirm dialog
   confirmModalOverlay: byId<HTMLDivElement>('confirmModalOverlay'),
+  confirmModalTitle: byId<HTMLHeadingElement>('confirmModalTitle'),
   confirmModalMessage: byId<HTMLParagraphElement>('confirmModalMessage'),
   confirmModalCloseBtn: byId<HTMLButtonElement>('confirmModalCloseBtn'),
   confirmModalCancelBtn: byId<HTMLButtonElement>('confirmModalCancelBtn'),
@@ -108,10 +116,13 @@ export function showToast(message: string) {
 }
 
 /** Asks before a destructive action; `onConfirm` runs only if the user confirms. */
-export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void) {
+export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void, { title = 'Are you sure?', danger = true } = {}) {
   const { confirmModalOverlay: overlay, confirmModalConfirmBtn: confirmBtn } = el;
+  el.confirmModalTitle.textContent = title;
   el.confirmModalMessage.textContent = message;
   confirmBtn.textContent = confirmLabel;
+  confirmBtn.className = danger ? 'btn btn-danger' : 'btn btn-primary';
+  el.confirmModalCancelBtn.hidden = false;
   overlay.classList.add('open');
 
   const close = () => {
@@ -127,6 +138,12 @@ export function openConfirmModal(message: string, confirmLabel: string, onConfir
   overlay.onclick = (event) => {
     if (event.target === overlay) close();
   };
+}
+
+/** A message that must not vanish like a toast (errors, results). One OK button. */
+export function showMessage(title: string, message: string) {
+  openConfirmModal(message, 'OK', () => {}, { title, danger: false });
+  el.confirmModalCancelBtn.hidden = true;
 }
 
 let savedBodyScroll = 0;

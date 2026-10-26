@@ -34,7 +34,7 @@ CNTR is built for these three things, which a generic POS or a notes app does no
 
 - **Screens:** Sell (product tiles), Reports, Event, History and saved reports, Compare, Products, Settings.
 - **Settings:** 8 currencies (IDR, USD, EUR, SGD, AUD, GBP, JPY, MYR) and an optional compact money format.
-- **Storage:** data lives only in WebView `localStorage`. There is no sync, export or backup yet (planned).
+- **Storage:** data lives only on the device, in an SQLite database on the phone (WebView `localStorage` in a browser). No sync or cloud. Settings → Backup exports a JSON backup (and sales CSV) to a local file and restores from one.
 - **Offline assets:** the font (Plus Jakarta Sans) and the Lucide icons are bundled. Nothing may load from the network.
 - **Native features:** haptic feedback on taps. The app respects the system reduce-motion setting.
 - **Destructive actions** need a confirmation first.
