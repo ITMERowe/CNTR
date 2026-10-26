@@ -2,5 +2,9 @@
   "appId": "com.cntr.app",
   "appName": "CNTR",
   "webDir": "dist",
-  "bundledWebRuntime": false
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native"
+    }
+  }
 }

@@ -1,4 +1,4 @@
-import type { EventCost, Product, SaleRecord } from './types';
+import type { Product } from './types';
 
 export const defaultProducts: Product[] = [
   { name: 'Gacha', price: 25000, cost: 12000, color: '#f76495' },
@@ -11,42 +11,20 @@ export const defaultProducts: Product[] = [
   { name: 'Tote Bag', price: 50000, cost: 30000, color: '#5f6d77' },
 ];
 
-export function totals(tx: SaleRecord[]) {
-  return tx.reduce(
-    (a, t) => {
-      a.revenue += t.price;
-      a.profit += t.price - t.cost;
-      if (t.payment === 'Cash') a.cash += t.price;
-      if (t.payment === 'QRIS') a.qris += t.price;
-      return a;
-    },
-    { revenue: 0, profit: 0, cash: 0, qris: 0 },
-  );
-}
-
+/** Upserts `product` into the history list, following a rename from `previousName`. */
 export function ensureProductHistory(product: Product, productHistory: Product[], previousName?: string) {
   const lookupName = previousName ?? product.name;
   const existingIndex = productHistory.findIndex((item) => item.name === lookupName);
 
   if (existingIndex >= 0) {
-    const existing = productHistory[existingIndex];
-    existing.name = product.name;
-    existing.price = product.price;
-    existing.cost = product.cost;
-    existing.color = product.color;
-
+    Object.assign(productHistory[existingIndex], product);
     const duplicateIndex = productHistory.findIndex((item, index) => index !== existingIndex && item.name === product.name);
-    if (duplicateIndex >= 0) {
-      productHistory.splice(duplicateIndex, 1);
-    }
+    if (duplicateIndex >= 0) productHistory.splice(duplicateIndex, 1);
     return productHistory;
   }
 
   const duplicateIndex = productHistory.findIndex((item) => item.name === product.name);
-  if (duplicateIndex >= 0) {
-    productHistory.splice(duplicateIndex, 1);
-  }
-
+  if (duplicateIndex >= 0) productHistory.splice(duplicateIndex, 1);
   productHistory.push({ ...product });
   return productHistory;
 }
@@ -60,8 +38,4 @@ export function generateUUID() {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-}
-
-export function buildEmptyEventCost(): EventCost {
-  return { id: generateUUID(), name: '', amount: 0 };
 }
