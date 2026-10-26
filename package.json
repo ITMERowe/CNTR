@@ -9,14 +9,18 @@
     "build": "tsc --noEmit && vite build",
     "build:watch": "chokidar \"src/**/*\" -c \"npm run build\"",
     "preview": "vite preview",
+    "test": "node --test --experimental-strip-types tests/storage.test.ts",
     "cap:sync": "npx cap sync"
   },
   "dependencies": {
+    "@capacitor-community/sqlite": "^8.1.1",
     "@capacitor/android": "^8.0.0",
     "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.0.0",
+    "@capacitor/filesystem": "^8.1.5",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.0.0",
+    "@capacitor/share": "^8.0.3",
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "lucide": "^1.61.0",
     "preact": "^10.29.8"
