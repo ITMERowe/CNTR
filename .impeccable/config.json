@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-10-26T15:23:19.849Z",
+        "reason": "Claude: static scan of index.html without style.css reads h1/h2 as 16px; rendered .page-title is 26px (measured in screenshots); no headings added this session"
+      }
+    ]
+  }
+}

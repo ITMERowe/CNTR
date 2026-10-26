@@ -8,7 +8,11 @@ CNTR is a single-page app with no backend. `index.html` holds every screen and d
 src/
   main.ts              Controller: wires static controls once, owns render(), handles dialogs
   state.ts             App state and every rule for changing it (no DOM)
-  storage.ts           localStorage read/write, settings cache
+  storage.ts           In-memory data with write-through to the store, startup, settings cache
+  kv.ts                Key-value stores: SQLite (phone) and localStorage (browser / fallback)
+  migrate.ts           One-time, verified copy of legacy localStorage data into SQLite
+  backup.ts            Backup format, validation and CSV (no runtime imports; tested by tests/)
+  files.ts             Save backup files (Documents/CNTR + share sheet) and pick a file to restore
   reports.ts           Pure report maths: totals, product breakdowns, compare rows
   formatters.ts        Money formatting/parsing, colour helpers
   data.ts              Default products, product-history helper, UUIDs
@@ -51,7 +55,7 @@ Because names are identity, the product editor refuses a rename that would colli
 
 ## Storage
 
-Everything lives in `localStorage` as JSON (`src/storage.ts`):
+Data is a set of JSON values under these keys. On the phone they live in an SQLite table `kv (key, value)` in the app's private storage (`src/kv.ts`; iOS: `Library/CapacitorDatabase`, not iCloud-synced). In a browser they stay in `localStorage`. The JSON format is the same in both and in backups.
 
 | Key | Contents |
 |---|---|
@@ -66,7 +70,10 @@ Everything lives in `localStorage` as JSON (`src/storage.ts`):
 - List loaders only accept arrays, so corrupt data falls back to empty instead of crashing startup.
 - Settings are cached in memory (`fmt()` runs for every amount on screen); `saveSettings()` invalidates the cache.
 - Saved reports are re-read from storage when needed rather than cached, so a mutated copy never leaks between screens.
-- A failed write (e.g. storage full) is logged, not thrown.
+- **Reads are synchronous** from an in-memory copy loaded by `initStorage()` before the app starts (`main.ts` `start()`, then `initState()`). **Writes** update that copy at once and are written to the store in order, a few milliseconds later. A failed write (e.g. disk full) is kept, retried every 5 s, and shown in a warning banner until it succeeds; it is never dropped.
+- **Migration** (`migrate.ts`, first launch on the phone): copy the legacy `localStorage` keys into SQLite, read them back and compare, then set `cntrMeta.migratedFromLocalStorage`. The legacy copy is never changed or deleted. Rerunning is harmless: values are written by key, and once the flag is set it does nothing. If the database cannot be opened before migration ever succeeded, the app keeps running on `localStorage` (still the only, current copy) with a warning and retries next launch. Once the database has been used (`cntrMeta.usingDatabase` in `localStorage`), a database failure shows a "Try again" screen instead, because the old copy is stale.
+- **Backup** (`backup.ts`): `{ app: "CNTR", format: 1, exportedAt, data: { <key>: <parsed value> } }`. `parseBackup()` validates every record before anything changes and rejects the whole file on any problem. Restore saves a safety copy (`Documents/CNTR/cntr-before-restore-*.json`, else app-private storage), writes all keys in one SQLite transaction (keys missing from the backup are deleted), then reloads.
+- `cntrMeta.lastBackup` (when the last backup was exported) is not part of backups.
 
 ## Rendering
 

@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased (branch `ui/revamp`)
+## Unreleased
+
+### Changed
+- **Data is now stored in SQLite on the phone** instead of WebView `localStorage`, which the OS may clear. The first launch after updating copies the existing data into the database, checks the copy, and leaves the old copy untouched; it runs once and cannot duplicate records.
+- Saving no longer fails silently: if a write fails (e.g. the phone is out of storage), the change is kept, retried, and a warning stays on screen until it is saved.
+
+### Added
+- **Settings → Backup**: export all data as a JSON file (saved to `Documents/CNTR`, then the share sheet to keep a copy elsewhere), export sales as CSV, and restore from a backup. A restore checks the whole file first, saves a copy of the current data, then replaces everything in one step; a damaged or cut-off file is rejected with the reason and nothing changes.
+- A clear note in Settings that uninstalling, clearing app data or losing the phone deletes the data.
+- Unit tests (`npm test`, also run in CI) for migration, backup validation and CSV.
+
+## 2026-10-26 (merged to `main` from `ui/revamp`)
 
 ### Changed
 - New visual system: VS Code-dark surfaces, white ink accent, product colours as the hero, 4/8px spacing, one set of motion tokens. Designed with the ui-ux-pro-max (POS: Swiss minimal, high contrast, large targets) and dataviz skills.
