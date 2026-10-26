@@ -15,6 +15,7 @@
 - Corrupt saved data no longer prevents the app from starting.
 - On a fresh install, **Products** now lists the default products.
 - Compare screens no longer overflow off the right edge of the screen.
+- The colour presets in the product editor no longer overflow the picker on phones (swatches had a 44px minimum width).
 - Product names are no longer shrunk to 12px on phones narrower than 381px.
 - Header buttons, the stats bar and the highlighted tab are now correct on every screen (e.g. no "add product" button inside the product editor, no "clear sales" on Compare).
 - Changing the currency now updates the prices on the sales tiles immediately.
