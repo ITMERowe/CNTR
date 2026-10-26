@@ -269,6 +269,19 @@
       "norm_label": "appsettings"
     },
     {
+      "label": "Currency",
+      "file_type": "code",
+      "source_file": "src/types.ts",
+      "source_location": "L1",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_types_currency",
+      "community": 1,
+      "community_name": "storage.ts",
+      "norm_label": "currency"
+    },
+    {
       "label": "ImportedEventReport",
       "file_type": "code",
       "source_file": "src/types.ts",
@@ -295,19 +308,6 @@
       "norm_label": "mainactivity"
     },
     {
-      "label": "Currency",
-      "file_type": "code",
-      "source_file": "src/types.ts",
-      "source_location": "L1",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_types_currency",
-      "community": 4,
-      "community_name": "formatters.ts",
-      "norm_label": "currency"
-    },
-    {
       "label": "HSV",
       "file_type": "code",
       "source_file": "src/types.ts",
@@ -317,7 +317,7 @@
       "_origin": "ast",
       "id": "src_types_hsv",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "hsv"
     },
     {
@@ -539,18 +539,6 @@
       "norm_label": "icon()"
     },
     {
-      "label": "formatDate()",
-      "file_type": "code",
-      "source_file": "src/views/Lists.tsx",
-      "source_location": "L7",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_views_lists_formatdate",
-      "community": 0,
-      "community_name": "ReportParts.tsx",
-      "norm_label": "formatdate()"
-    },
-    {
       "label": "formatTime()",
       "file_type": "code",
       "source_file": "src/views/Lists.tsx",
@@ -585,18 +573,6 @@
       "community": 0,
       "community_name": "ReportParts.tsx",
       "norm_label": "recentsales()"
-    },
-    {
-      "label": "SavedReportList()",
-      "file_type": "code",
-      "source_file": "src/views/Lists.tsx",
-      "source_location": "L88",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_views_lists_savedreportlist",
-      "community": 0,
-      "community_name": "ReportParts.tsx",
-      "norm_label": "savedreportlist()"
     },
     {
       "label": "Card()",
@@ -705,18 +681,6 @@
       "community": 0,
       "community_name": "ReportParts.tsx",
       "norm_label": "profitclass()"
-    },
-    {
-      "label": "SalesGrid()",
-      "file_type": "code",
-      "source_file": "src/views/SalesGrid.tsx",
-      "source_location": "L25",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_views_salesgrid_salesgrid",
-      "community": 0,
-      "community_name": "ReportParts.tsx",
-      "norm_label": "salesgrid()"
     },
     {
       "label": "prefersReducedMotion()",
@@ -947,18 +911,6 @@
       "norm_label": "savesavedreports()"
     },
     {
-      "label": "saveSettings()",
-      "file_type": "code",
-      "source_file": "src/storage.ts",
-      "source_location": "L129",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_storage_savesettings",
-      "community": 1,
-      "community_name": "storage.ts",
-      "norm_label": "savesettings()"
-    },
-    {
       "label": "serializeSales()",
       "file_type": "code",
       "source_file": "src/storage.ts",
@@ -983,18 +935,6 @@
       "norm_label": "writejson()"
     },
     {
-      "label": "ensureProductHistory()",
-      "file_type": "code",
-      "source_file": "src/data.ts",
-      "source_location": "L15",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_data_ensureproducthistory",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "ensureproducthistory()"
-    },
-    {
       "label": "generateUUID()",
       "file_type": "code",
       "source_file": "src/data.ts",
@@ -1005,30 +945,6 @@
       "community": 3,
       "community_name": "main.ts",
       "norm_label": "generateuuid()"
-    },
-    {
-      "label": "formatInputNumber()",
-      "file_type": "code",
-      "source_file": "src/formatters.ts",
-      "source_location": "L67",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_formatters_formatinputnumber",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "formatinputnumber()"
-    },
-    {
-      "label": "parseCurrencyInput()",
-      "file_type": "code",
-      "source_file": "src/formatters.ts",
-      "source_location": "L52",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_formatters_parsecurrencyinput",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "parsecurrencyinput()"
     },
     {
       "label": "addSale()",
@@ -1197,18 +1113,6 @@
       "community": 3,
       "community_name": "main.ts",
       "norm_label": "opencomparemodal()"
-    },
-    {
-      "label": "openExpenseModal()",
-      "file_type": "code",
-      "source_file": "src/main.ts",
-      "source_location": "L302",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_main_openexpensemodal",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "openexpensemodal()"
     },
     {
       "label": "openImportModal()",
@@ -1415,18 +1319,6 @@
       "norm_label": "undosale()"
     },
     {
-      "label": "updateExpenseButtonState()",
-      "file_type": "code",
-      "source_file": "src/main.ts",
-      "source_location": "L296",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_main_updateexpensebuttonstate",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "updateexpensebuttonstate()"
-    },
-    {
       "label": "updateSaveModalButton()",
       "file_type": "code",
       "source_file": "src/main.ts",
@@ -1535,18 +1427,6 @@
       "norm_label": "dedupebyname()"
     },
     {
-      "label": "deleteProduct()",
-      "file_type": "code",
-      "source_file": "src/state.ts",
-      "source_location": "L92",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_state_deleteproduct",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "deleteproduct()"
-    },
-    {
       "label": "deleteSavedReport()",
       "file_type": "code",
       "source_file": "src/state.ts",
@@ -1643,18 +1523,6 @@
       "norm_label": "removelastsale()"
     },
     {
-      "label": "renameSales()",
-      "file_type": "code",
-      "source_file": "src/state.ts",
-      "source_location": "L81",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_state_renamesales",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "renamesales()"
-    },
-    {
       "label": "renameSavedReport()",
       "file_type": "code",
       "source_file": "src/state.ts",
@@ -1703,42 +1571,6 @@
       "norm_label": "saveeventcosts()"
     },
     {
-      "label": "saveProductHistory()",
-      "file_type": "code",
-      "source_file": "src/state.ts",
-      "source_location": "L58",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_state_saveproducthistory",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "saveproducthistory()"
-    },
-    {
-      "label": "saveProducts()",
-      "file_type": "code",
-      "source_file": "src/state.ts",
-      "source_location": "L53",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_state_saveproducts",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "saveproducts()"
-    },
-    {
-      "label": "saveSales()",
-      "file_type": "code",
-      "source_file": "src/state.ts",
-      "source_location": "L63",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_state_savesales",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "savesales()"
-    },
-    {
       "label": "setImportedEventReport()",
       "file_type": "code",
       "source_file": "src/state.ts",
@@ -1775,28 +1607,16 @@
       "norm_label": "updateexpense()"
     },
     {
-      "label": "loadSettings()",
+      "label": "saveSettings()",
       "file_type": "code",
       "source_file": "src/storage.ts",
-      "source_location": "L118",
+      "source_location": "L129",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_storage_loadsettings",
+      "id": "src_storage_savesettings",
       "community": 3,
       "community_name": "main.ts",
-      "norm_label": "loadsettings()"
-    },
-    {
-      "label": "getPickerColor()",
-      "file_type": "code",
-      "source_file": "src/ui/colorPicker.ts",
-      "source_location": "L73",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_colorpicker_getpickercolor",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "getpickercolor()"
+      "norm_label": "savesettings()"
     },
     {
       "label": "activeScreenId()",
@@ -1919,18 +1739,6 @@
       "norm_label": "updateheaderactions()"
     },
     {
-      "label": "closeProductEditor()",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L54",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_producteditor_closeproducteditor",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "closeproducteditor()"
-    },
-    {
       "label": "editProductByName()",
       "file_type": "code",
       "source_file": "src/ui/productEditor.ts",
@@ -1941,30 +1749,6 @@
       "community": 3,
       "community_name": "main.ts",
       "norm_label": "editproductbyname()"
-    },
-    {
-      "label": "initProductEditor()",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L120",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_producteditor_initproducteditor",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "initproducteditor()"
-    },
-    {
-      "label": "onChange()",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L13",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_producteditor_onchange",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "onchange()"
     },
     {
       "label": "openProductEditor()",
@@ -1979,40 +1763,16 @@
       "norm_label": "openproducteditor()"
     },
     {
-      "label": "removeEditedProduct()",
+      "label": "formatDate()",
       "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L62",
+      "source_file": "src/views/Lists.tsx",
+      "source_location": "L7",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_ui_producteditor_removeeditedproduct",
+      "id": "src_views_lists_formatdate",
       "community": 3,
       "community_name": "main.ts",
-      "norm_label": "removeeditedproduct()"
-    },
-    {
-      "label": "saveEditedProduct()",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L75",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_producteditor_saveeditedproduct",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "saveeditedproduct()"
-    },
-    {
-      "label": "updatePreview()",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L37",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_ui_producteditor_updatepreview",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "updatepreview()"
+      "norm_label": "formatdate()"
     },
     {
       "label": "ReportChecklist()",
@@ -2027,15 +1787,51 @@
       "norm_label": "reportchecklist()"
     },
     {
+      "label": "SavedReportList()",
+      "file_type": "code",
+      "source_file": "src/views/Lists.tsx",
+      "source_location": "L88",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_views_lists_savedreportlist",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "savedreportlist()"
+    },
+    {
+      "label": "SalesGrid()",
+      "file_type": "code",
+      "source_file": "src/views/SalesGrid.tsx",
+      "source_location": "L25",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_views_salesgrid_salesgrid",
+      "community": 3,
+      "community_name": "main.ts",
+      "norm_label": "salesgrid()"
+    },
+    {
+      "label": "ensureProductHistory()",
+      "file_type": "code",
+      "source_file": "src/data.ts",
+      "source_location": "L15",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_data_ensureproducthistory",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "ensureproducthistory()"
+    },
+    {
       "label": "chooseUniqueColor()",
       "file_type": "code",
       "source_file": "src/formatters.ts",
-      "source_location": "L112",
+      "source_location": "L105",
       "_callable": true,
       "_origin": "ast",
       "id": "src_formatters_chooseuniquecolor",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "chooseuniquecolor()"
     },
     {
@@ -2047,20 +1843,20 @@
       "_origin": "ast",
       "id": "src_formatters_escapeforregexp",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "escapeforregexp()"
     },
     {
-      "label": "escapeHtml()",
+      "label": "formatInputNumber()",
       "file_type": "code",
       "source_file": "src/formatters.ts",
-      "source_location": "L100",
+      "source_location": "L67",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_formatters_escapehtml",
+      "id": "src_formatters_formatinputnumber",
       "community": 4,
-      "community_name": "formatters.ts",
-      "norm_label": "escapehtml()"
+      "community_name": "productEditor.ts",
+      "norm_label": "formatinputnumber()"
     },
     {
       "label": "formatMoney()",
@@ -2071,7 +1867,7 @@
       "_origin": "ast",
       "id": "src_formatters_formatmoney",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "formatmoney()"
     },
     {
@@ -2083,20 +1879,128 @@
       "_origin": "ast",
       "id": "src_formatters_formatnumeric",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "formatnumeric()"
     },
     {
       "label": "normalizeHex()",
       "file_type": "code",
       "source_file": "src/formatters.ts",
-      "source_location": "L106",
+      "source_location": "L99",
       "_callable": true,
       "_origin": "ast",
       "id": "src_formatters_normalizehex",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "normalizehex()"
+    },
+    {
+      "label": "parseCurrencyInput()",
+      "file_type": "code",
+      "source_file": "src/formatters.ts",
+      "source_location": "L52",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_formatters_parsecurrencyinput",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "parsecurrencyinput()"
+    },
+    {
+      "label": "openExpenseModal()",
+      "file_type": "code",
+      "source_file": "src/main.ts",
+      "source_location": "L302",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_main_openexpensemodal",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "openexpensemodal()"
+    },
+    {
+      "label": "updateExpenseButtonState()",
+      "file_type": "code",
+      "source_file": "src/main.ts",
+      "source_location": "L296",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_main_updateexpensebuttonstate",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "updateexpensebuttonstate()"
+    },
+    {
+      "label": "deleteProduct()",
+      "file_type": "code",
+      "source_file": "src/state.ts",
+      "source_location": "L92",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_state_deleteproduct",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "deleteproduct()"
+    },
+    {
+      "label": "renameSales()",
+      "file_type": "code",
+      "source_file": "src/state.ts",
+      "source_location": "L81",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_state_renamesales",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "renamesales()"
+    },
+    {
+      "label": "saveProductHistory()",
+      "file_type": "code",
+      "source_file": "src/state.ts",
+      "source_location": "L58",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_state_saveproducthistory",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "saveproducthistory()"
+    },
+    {
+      "label": "saveProducts()",
+      "file_type": "code",
+      "source_file": "src/state.ts",
+      "source_location": "L53",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_state_saveproducts",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "saveproducts()"
+    },
+    {
+      "label": "saveSales()",
+      "file_type": "code",
+      "source_file": "src/state.ts",
+      "source_location": "L63",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_state_savesales",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "savesales()"
+    },
+    {
+      "label": "loadSettings()",
+      "file_type": "code",
+      "source_file": "src/storage.ts",
+      "source_location": "L118",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_storage_loadsettings",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "loadsettings()"
     },
     {
       "label": "applyCurrentColor()",
@@ -2107,7 +2011,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_applycurrentcolor",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "applycurrentcolor()"
     },
     {
@@ -2119,7 +2023,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_clamp",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "clamp()"
     },
     {
@@ -2131,8 +2035,20 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_closecolorpicker",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "closecolorpicker()"
+    },
+    {
+      "label": "getPickerColor()",
+      "file_type": "code",
+      "source_file": "src/ui/colorPicker.ts",
+      "source_location": "L73",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_ui_colorpicker_getpickercolor",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "getpickercolor()"
     },
     {
       "label": "hexToRgb()",
@@ -2143,7 +2059,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_hextorgb",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "hextorgb()"
     },
     {
@@ -2155,7 +2071,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_hsvtorgb",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "hsvtorgb()"
     },
     {
@@ -2167,7 +2083,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_initcolorpicker",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "initcolorpicker()"
     },
     {
@@ -2179,7 +2095,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_rgbtohex",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "rgbtohex()"
     },
     {
@@ -2191,7 +2107,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_rgbtohsv",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "rgbtohsv()"
     },
     {
@@ -2203,7 +2119,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_setpickercolor",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "setpickercolor()"
     },
     {
@@ -2215,8 +2131,80 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_trackpointer",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "trackpointer()"
+    },
+    {
+      "label": "closeProductEditor()",
+      "file_type": "code",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L54",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_ui_producteditor_closeproducteditor",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "closeproducteditor()"
+    },
+    {
+      "label": "initProductEditor()",
+      "file_type": "code",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L120",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_ui_producteditor_initproducteditor",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "initproducteditor()"
+    },
+    {
+      "label": "onChange()",
+      "file_type": "code",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L13",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_ui_producteditor_onchange",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "onchange()"
+    },
+    {
+      "label": "removeEditedProduct()",
+      "file_type": "code",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L62",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_ui_producteditor_removeeditedproduct",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "removeeditedproduct()"
+    },
+    {
+      "label": "saveEditedProduct()",
+      "file_type": "code",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L75",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_ui_producteditor_saveeditedproduct",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "saveeditedproduct()"
+    },
+    {
+      "label": "updatePreview()",
+      "file_type": "code",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L37",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_ui_producteditor_updatepreview",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "updatepreview()"
     },
     {
       "label": ".application()",
@@ -2468,17 +2456,6 @@
       "norm_label": "storage.ts"
     },
     {
-      "label": "CURRENCIES",
-      "file_type": "code",
-      "source_file": "src/storage.ts",
-      "source_location": "L11",
-      "_origin": "ast",
-      "id": "src_storage_currencies",
-      "community": 1,
-      "community_name": "storage.ts",
-      "norm_label": "currencies"
-    },
-    {
       "label": "DEFAULT_SETTINGS",
       "file_type": "code",
       "source_file": "src/storage.ts",
@@ -2592,7 +2569,7 @@
       "label": "Build pipeline",
       "file_type": "document",
       "source_file": "docs/ARCHITECTURE.md",
-      "source_location": "L98",
+      "source_location": "L97",
       "_origin": "ast",
       "id": "docs_architecture_build_pipeline",
       "community": 10,
@@ -2832,117 +2809,117 @@
       "_origin": "ast",
       "id": "package",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "package.json"
     },
     {
       "label": "dependencies",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L13",
+      "source_location": "L14",
       "_origin": "ast",
       "id": "package_dependencies",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "dependencies"
     },
     {
       "label": "@capacitor/android",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L14",
+      "source_location": "L15",
       "_origin": "ast",
       "id": "package_dependencies_capacitor_android",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@capacitor/android"
     },
     {
       "label": "@capacitor/core",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L15",
+      "source_location": "L16",
       "_origin": "ast",
       "id": "package_dependencies_capacitor_core",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@capacitor/core"
     },
     {
       "label": "@capacitor/haptics",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L16",
+      "source_location": "L17",
       "_origin": "ast",
       "id": "package_dependencies_capacitor_haptics",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@capacitor/haptics"
     },
     {
       "label": "@capacitor/ios",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L17",
+      "source_location": "L18",
       "_origin": "ast",
       "id": "package_dependencies_capacitor_ios",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@capacitor/ios"
     },
     {
       "label": "@fontsource-variable/plus-jakarta-sans",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L18",
+      "source_location": "L19",
       "_origin": "ast",
       "id": "package_dependencies_fontsource_variable_plus_jakarta_sans",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@fontsource-variable/plus-jakarta-sans"
     },
     {
       "label": "lucide",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L19",
+      "source_location": "L20",
       "_origin": "ast",
       "id": "package_dependencies_lucide",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "lucide"
     },
     {
       "label": "preact",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L20",
+      "source_location": "L21",
       "_origin": "ast",
       "id": "package_dependencies_preact",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "preact"
     },
     {
       "label": "devDependencies",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L22",
+      "source_location": "L23",
       "_origin": "ast",
       "id": "package_devdependencies",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "devdependencies"
     },
     {
       "label": "@capacitor/cli",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L23",
+      "source_location": "L24",
       "_origin": "ast",
       "id": "package_devdependencies_capacitor_cli",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@capacitor/cli"
     },
     {
@@ -2953,30 +2930,19 @@
       "_origin": "ast",
       "id": "package_devdependencies_chokidar_cli",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "chokidar-cli"
     },
     {
       "label": "@playwright/cli",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "package_devdependencies_playwright_cli",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@playwright/cli"
-    },
-    {
-      "label": "@types/node",
-      "file_type": "code",
-      "source_file": "package.json",
-      "source_location": "L25",
-      "_origin": "ast",
-      "id": "package_devdependencies_types_node",
-      "community": 2,
-      "community_name": "dependencies",
-      "norm_label": "@types/node"
     },
     {
       "label": "typescript",
@@ -2986,7 +2952,7 @@
       "_origin": "ast",
       "id": "package_devdependencies_typescript",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "typescript"
     },
     {
@@ -2997,8 +2963,19 @@
       "_origin": "ast",
       "id": "package_devdependencies_vite",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "vite"
+    },
+    {
+      "label": "license",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L4",
+      "_origin": "ast",
+      "id": "package_license",
+      "community": 2,
+      "community_name": "package.json",
+      "norm_label": "license"
     },
     {
       "label": "name",
@@ -3008,7 +2985,7 @@
       "_origin": "ast",
       "id": "package_name",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "name"
     },
     {
@@ -3019,150 +2996,150 @@
       "_origin": "ast",
       "id": "package_private",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "private"
     },
     {
       "label": "scripts",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L6",
+      "source_location": "L7",
       "_origin": "ast",
       "id": "package_scripts",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "scripts"
     },
     {
       "label": "build",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L8",
+      "source_location": "L9",
       "_origin": "ast",
       "id": "package_scripts_build",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "build"
     },
     {
       "label": "build:watch",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L9",
+      "source_location": "L10",
       "_origin": "ast",
       "id": "package_scripts_build_watch",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "build:watch"
     },
     {
       "label": "cap:sync",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L11",
+      "source_location": "L12",
       "_origin": "ast",
       "id": "package_scripts_cap_sync",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "cap:sync"
     },
     {
       "label": "dev",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L7",
+      "source_location": "L8",
       "_origin": "ast",
       "id": "package_scripts_dev",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "dev"
     },
     {
       "label": "preview",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L10",
+      "source_location": "L11",
       "_origin": "ast",
       "id": "package_scripts_preview",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "preview"
     },
     {
       "label": "type",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L5",
+      "source_location": "L6",
       "_origin": "ast",
       "id": "package_type",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "type"
     },
     {
       "label": "version",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L4",
+      "source_location": "L5",
       "_origin": "ast",
       "id": "package_version",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "version"
     },
     {
       "label": "@capacitor/android",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L14",
+      "source_location": "L15",
       "_origin": "ast",
       "id": "capacitor_android",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@capacitor/android"
     },
     {
       "label": "@capacitor/cli",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L23",
+      "source_location": "L24",
       "_origin": "ast",
       "id": "capacitor_cli",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@capacitor/cli"
     },
     {
       "label": "@capacitor/core",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L15",
+      "source_location": "L16",
       "_origin": "ast",
       "id": "capacitor_core",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@capacitor/core"
     },
     {
       "label": "@capacitor/haptics",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L16",
+      "source_location": "L17",
       "_origin": "ast",
       "id": "capacitor_haptics",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@capacitor/haptics"
     },
     {
       "label": "@capacitor/ios",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L17",
+      "source_location": "L18",
       "_origin": "ast",
       "id": "capacitor_ios",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@capacitor/ios"
     },
     {
@@ -3173,63 +3150,52 @@
       "_origin": "ast",
       "id": "chokidar_cli",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "chokidar-cli"
     },
     {
       "label": "@fontsource-variable/plus-jakarta-sans",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L18",
+      "source_location": "L19",
       "_origin": "ast",
       "id": "fontsource_variable_plus_jakarta_sans",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@fontsource-variable/plus-jakarta-sans"
     },
     {
       "label": "lucide",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L19",
+      "source_location": "L20",
       "_origin": "ast",
       "id": "lucide",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "lucide"
     },
     {
       "label": "@playwright/cli",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "playwright_cli",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "@playwright/cli"
     },
     {
       "label": "preact",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L20",
+      "source_location": "L21",
       "_origin": "ast",
       "id": "preact",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "preact"
-    },
-    {
-      "label": "@types/node",
-      "file_type": "concept",
-      "source_file": "package.json",
-      "source_location": "L25",
-      "_origin": "ast",
-      "id": "types_node",
-      "community": 2,
-      "community_name": "dependencies",
-      "norm_label": "@types/node"
     },
     {
       "label": "typescript",
@@ -3239,7 +3205,7 @@
       "_origin": "ast",
       "id": "typescript",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "typescript"
     },
     {
@@ -3250,7 +3216,7 @@
       "_origin": "ast",
       "id": "vite",
       "community": 2,
-      "community_name": "dependencies",
+      "community_name": "package.json",
       "norm_label": "vite"
     },
     {
@@ -4167,17 +4133,6 @@
       "norm_label": "parent_tab"
     },
     {
-      "label": "productEditor.ts",
-      "file_type": "code",
-      "source_file": "src/ui/productEditor.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "src_ui_producteditor",
-      "community": 3,
-      "community_name": "main.ts",
-      "norm_label": "producteditor.ts"
-    },
-    {
       "label": ".codex/skills/graphify/references/hooks.md",
       "file_type": "document",
       "source_file": ".codex/skills/graphify/references/hooks.md",
@@ -4999,7 +4954,7 @@
       "_origin": "ast",
       "id": "src_formatters",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "formatters.ts"
     },
     {
@@ -5010,7 +4965,7 @@
       "_origin": "ast",
       "id": "src_formatters_currency_locales",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "currency_locales"
     },
     {
@@ -5021,7 +4976,7 @@
       "_origin": "ast",
       "id": "src_formatters_currency_separators",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "currency_separators"
     },
     {
@@ -5032,19 +4987,8 @@
       "_origin": "ast",
       "id": "src_formatters_currency_symbols",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "currency_symbols"
-    },
-    {
-      "label": "HTML_ESCAPES",
-      "file_type": "code",
-      "source_file": "src/formatters.ts",
-      "source_location": "L97",
-      "_origin": "ast",
-      "id": "src_formatters_html_escapes",
-      "community": 4,
-      "community_name": "formatters.ts",
-      "norm_label": "html_escapes"
     },
     {
       "label": "numberFormats",
@@ -5054,19 +4998,30 @@
       "_origin": "ast",
       "id": "src_formatters_numberformats",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "numberformats"
     },
     {
       "label": "PRESET_COLORS",
       "file_type": "code",
       "source_file": "src/formatters.ts",
-      "source_location": "L104",
+      "source_location": "L97",
       "_origin": "ast",
       "id": "src_formatters_preset_colors",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "preset_colors"
+    },
+    {
+      "label": "CURRENCIES",
+      "file_type": "code",
+      "source_file": "src/storage.ts",
+      "source_location": "L11",
+      "_origin": "ast",
+      "id": "src_storage_currencies",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "currencies"
     },
     {
       "label": "colorPicker.ts",
@@ -5076,7 +5031,7 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "colorpicker.ts"
     },
     {
@@ -5087,8 +5042,19 @@
       "_origin": "ast",
       "id": "src_ui_colorpicker_currenthsv",
       "community": 4,
-      "community_name": "formatters.ts",
+      "community_name": "productEditor.ts",
       "norm_label": "currenthsv"
+    },
+    {
+      "label": "productEditor.ts",
+      "file_type": "code",
+      "source_file": "src/ui/productEditor.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_ui_producteditor",
+      "community": 4,
+      "community_name": "productEditor.ts",
+      "norm_label": "producteditor.ts"
     },
     {
       "label": "storage-state.md",
@@ -6451,18 +6417,29 @@
       "_origin": "ast",
       "id": "changelog",
       "community": 45,
-      "community_name": "Unreleased",
+      "community_name": "2026-10-26 (merged to `main`)",
       "norm_label": "changelog.md"
+    },
+    {
+      "label": "2026-10-26 (merged to `main`)",
+      "file_type": "document",
+      "source_file": "CHANGELOG.md",
+      "source_location": "L21",
+      "_origin": "ast",
+      "id": "changelog_2026_10_26_merged_to_main",
+      "community": 45,
+      "community_name": "2026-10-26 (merged to `main`)",
+      "norm_label": "2026-10-26 (merged to `main`)"
     },
     {
       "label": "Build",
       "file_type": "document",
       "source_file": "CHANGELOG.md",
-      "source_location": "L48",
+      "source_location": "L53",
       "_origin": "ast",
       "id": "changelog_build",
       "community": 45,
-      "community_name": "Unreleased",
+      "community_name": "2026-10-26 (merged to `main`)",
       "norm_label": "build"
     },
     {
@@ -6473,18 +6450,18 @@
       "_origin": "ast",
       "id": "changelog_changed",
       "community": 45,
-      "community_name": "Unreleased",
+      "community_name": "2026-10-26 (merged to `main`)",
       "norm_label": "changed"
     },
     {
       "label": "Changed",
       "file_type": "document",
       "source_file": "CHANGELOG.md",
-      "source_location": "L38",
+      "source_location": "L43",
       "_origin": "ast",
-      "id": "changelog_changed_38",
+      "id": "changelog_changed_43",
       "community": 45,
-      "community_name": "Unreleased",
+      "community_name": "2026-10-26 (merged to `main`)",
       "norm_label": "changed"
     },
     {
@@ -6495,7 +6472,7 @@
       "_origin": "ast",
       "id": "changelog_changelog",
       "community": 45,
-      "community_name": "Unreleased",
+      "community_name": "2026-10-26 (merged to `main`)",
       "norm_label": "changelog"
     },
     {
@@ -6506,41 +6483,140 @@
       "_origin": "ast",
       "id": "changelog_fixed",
       "community": 45,
-      "community_name": "Unreleased",
+      "community_name": "2026-10-26 (merged to `main`)",
       "norm_label": "fixed"
     },
     {
       "label": "Fixed",
       "file_type": "document",
       "source_file": "CHANGELOG.md",
-      "source_location": "L18",
+      "source_location": "L23",
       "_origin": "ast",
-      "id": "changelog_fixed_18",
+      "id": "changelog_fixed_23",
       "community": 45,
-      "community_name": "Unreleased",
+      "community_name": "2026-10-26 (merged to `main`)",
       "norm_label": "fixed"
     },
     {
-      "label": "UI revamp (branch `ui/revamp`)",
-      "file_type": "document",
-      "source_file": "CHANGELOG.md",
-      "source_location": "L3",
-      "_origin": "ast",
-      "id": "changelog_ui_revamp_branch_ui_revamp",
-      "community": 45,
-      "community_name": "Unreleased",
-      "norm_label": "ui revamp (branch `ui/revamp`)"
-    },
-    {
-      "label": "Unreleased",
+      "label": "Project",
       "file_type": "document",
       "source_file": "CHANGELOG.md",
       "source_location": "L16",
       "_origin": "ast",
-      "id": "changelog_unreleased",
+      "id": "changelog_project",
       "community": 45,
-      "community_name": "Unreleased",
-      "norm_label": "unreleased"
+      "community_name": "2026-10-26 (merged to `main`)",
+      "norm_label": "project"
+    },
+    {
+      "label": "Unreleased (branch `ui/revamp`)",
+      "file_type": "document",
+      "source_file": "CHANGELOG.md",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "changelog_unreleased_branch_ui_revamp",
+      "community": 45,
+      "community_name": "2026-10-26 (merged to `main`)",
+      "norm_label": "unreleased (branch `ui/revamp`)"
+    },
+    {
+      "label": "HANDOFF.md",
+      "file_type": "document",
+      "source_file": "HANDOFF.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "handoff",
+      "community": 46,
+      "community_name": "HANDOFF",
+      "norm_label": "handoff.md"
+    },
+    {
+      "label": "Current state (verified against the code on 2026-10-26)",
+      "file_type": "document",
+      "source_file": "HANDOFF.md",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "handoff_current_state_verified_against_the_code_on_2026_10_26",
+      "community": 46,
+      "community_name": "HANDOFF",
+      "norm_label": "current state (verified against the code on 2026-10-26)"
+    },
+    {
+      "label": "Decisions (and why)",
+      "file_type": "document",
+      "source_file": "HANDOFF.md",
+      "source_location": "L48",
+      "_origin": "ast",
+      "id": "handoff_decisions_and_why",
+      "community": 46,
+      "community_name": "HANDOFF",
+      "norm_label": "decisions (and why)"
+    },
+    {
+      "label": "Files touched in the revamp (`ui/revamp` vs `main`)",
+      "file_type": "document",
+      "source_file": "HANDOFF.md",
+      "source_location": "L32",
+      "_origin": "ast",
+      "id": "handoff_files_touched_in_the_revamp_ui_revamp_vs_main",
+      "community": 46,
+      "community_name": "HANDOFF",
+      "norm_label": "files touched in the revamp (`ui/revamp` vs `main`)"
+    },
+    {
+      "label": "Goal",
+      "file_type": "document",
+      "source_file": "HANDOFF.md",
+      "source_location": "L7",
+      "_origin": "ast",
+      "id": "handoff_goal",
+      "community": 46,
+      "community_name": "HANDOFF",
+      "norm_label": "goal"
+    },
+    {
+      "label": "HANDOFF",
+      "file_type": "document",
+      "source_file": "HANDOFF.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "handoff_handoff",
+      "community": 46,
+      "community_name": "HANDOFF",
+      "norm_label": "handoff"
+    },
+    {
+      "label": "Known issues / blockers (unresolved)",
+      "file_type": "document",
+      "source_file": "HANDOFF.md",
+      "source_location": "L56",
+      "_origin": "ast",
+      "id": "handoff_known_issues_blockers_unresolved",
+      "community": 46,
+      "community_name": "HANDOFF",
+      "norm_label": "known issues / blockers (unresolved)"
+    },
+    {
+      "label": "Next steps (priority order)",
+      "file_type": "document",
+      "source_file": "HANDOFF.md",
+      "source_location": "L66",
+      "_origin": "ast",
+      "id": "handoff_next_steps_priority_order",
+      "community": 46,
+      "community_name": "HANDOFF",
+      "norm_label": "next steps (priority order)"
+    },
+    {
+      "label": "Verification log",
+      "file_type": "document",
+      "source_file": "HANDOFF.md",
+      "source_location": "L79",
+      "_origin": "ast",
+      "id": "handoff_verification_log",
+      "community": 46,
+      "community_name": "HANDOFF",
+      "norm_label": "verification log"
     },
     {
       "label": "tsconfig.json",
@@ -7720,7 +7796,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/formatters.ts",
-      "source_location": "L113",
+      "source_location": "L106",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_formatters_chooseuniquecolor",
@@ -10601,7 +10677,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/formatters.ts",
-      "source_location": "L116",
+      "source_location": "L109",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_formatters_chooseuniquecolor",
@@ -10863,7 +10939,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -10875,7 +10951,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -10887,7 +10963,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -10899,7 +10975,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -10911,7 +10987,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L18",
+      "source_location": "L19",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -10923,7 +10999,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -10935,7 +11011,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -10947,7 +11023,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L23",
+      "source_location": "L24",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -10971,24 +11047,12 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L25",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
       "source": "package_devdependencies_playwright_cli",
       "target": "playwright_cli",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports",
-      "confidence": "EXTRACTED",
-      "source_file": "package.json",
-      "source_location": "L25",
-      "weight": 1.0,
-      "context": "import",
-      "_origin": "ast",
-      "source": "package_devdependencies_types_node",
-      "target": "types_node",
       "confidence_score": 1.0
     },
     {
@@ -13794,11 +13858,44 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CHANGELOG.md",
-      "source_location": "L16",
+      "source_location": "L23",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "changelog_2026_10_26_merged_to_main",
+      "target": "changelog_fixed_23",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CHANGELOG.md",
+      "source_location": "L43",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "changelog_2026_10_26_merged_to_main",
+      "target": "changelog_changed_43",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CHANGELOG.md",
+      "source_location": "L53",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "changelog_2026_10_26_merged_to_main",
+      "target": "changelog_build",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CHANGELOG.md",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
       "source": "changelog_changelog",
-      "target": "changelog_unreleased",
+      "target": "changelog_2026_10_26_merged_to_main",
       "confidence_score": 1.0
     },
     {
@@ -13809,7 +13906,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "changelog_changelog",
-      "target": "changelog_ui_revamp_branch_ui_revamp",
+      "target": "changelog_unreleased_branch_ui_revamp",
       "confidence_score": 1.0
     },
     {
@@ -13819,8 +13916,19 @@
       "source_location": "L13",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "changelog_ui_revamp_branch_ui_revamp",
+      "source": "changelog_unreleased_branch_ui_revamp",
       "target": "changelog_fixed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CHANGELOG.md",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "changelog_unreleased_branch_ui_revamp",
+      "target": "changelog_project",
       "confidence_score": 1.0
     },
     {
@@ -13830,41 +13938,8 @@
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "changelog_ui_revamp_branch_ui_revamp",
+      "source": "changelog_unreleased_branch_ui_revamp",
       "target": "changelog_changed",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "CHANGELOG.md",
-      "source_location": "L18",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "changelog_unreleased",
-      "target": "changelog_fixed_18",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "CHANGELOG.md",
-      "source_location": "L38",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "changelog_unreleased",
-      "target": "changelog_changed_38",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "CHANGELOG.md",
-      "source_location": "L48",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "changelog_unreleased",
-      "target": "changelog_build",
       "confidence_score": 1.0
     },
     {
@@ -16874,11 +16949,99 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "docs/ARCHITECTURE.md",
-      "source_location": "L98",
+      "source_location": "L97",
       "weight": 1.0,
       "_origin": "ast",
       "source": "docs_architecture_architecture",
       "target": "docs_architecture_build_pipeline",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "HANDOFF.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "handoff",
+      "target": "handoff_handoff",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "HANDOFF.md",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "handoff_handoff",
+      "target": "handoff_current_state_verified_against_the_code_on_2026_10_26",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "HANDOFF.md",
+      "source_location": "L32",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "handoff_handoff",
+      "target": "handoff_files_touched_in_the_revamp_ui_revamp_vs_main",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "HANDOFF.md",
+      "source_location": "L48",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "handoff_handoff",
+      "target": "handoff_decisions_and_why",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "HANDOFF.md",
+      "source_location": "L56",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "handoff_handoff",
+      "target": "handoff_known_issues_blockers_unresolved",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "HANDOFF.md",
+      "source_location": "L66",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "handoff_handoff",
+      "target": "handoff_next_steps_priority_order",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "HANDOFF.md",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "handoff_handoff",
+      "target": "handoff_goal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "HANDOFF.md",
+      "source_location": "L79",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "handoff_handoff",
+      "target": "handoff_verification_log",
       "confidence_score": 1.0
     },
     {
@@ -16907,7 +17070,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package",
@@ -16929,7 +17092,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L22",
+      "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package",
@@ -16955,7 +17118,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package",
-      "target": "package_version",
+      "target": "package_license",
       "confidence_score": 1.0
     },
     {
@@ -16966,7 +17129,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package",
-      "target": "package_type",
+      "target": "package_version",
       "confidence_score": 1.0
     },
     {
@@ -16977,18 +17140,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package",
-      "target": "package_scripts",
+      "target": "package_type",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L14",
+      "source_location": "L7",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "package_dependencies",
-      "target": "package_dependencies_capacitor_android",
+      "source": "package",
+      "target": "package_scripts",
       "confidence_score": 1.0
     },
     {
@@ -16999,7 +17162,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_capacitor_core",
+      "target": "package_dependencies_capacitor_android",
       "confidence_score": 1.0
     },
     {
@@ -17010,7 +17173,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_capacitor_haptics",
+      "target": "package_dependencies_capacitor_core",
       "confidence_score": 1.0
     },
     {
@@ -17021,7 +17184,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_capacitor_ios",
+      "target": "package_dependencies_capacitor_haptics",
       "confidence_score": 1.0
     },
     {
@@ -17032,7 +17195,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_fontsource_variable_plus_jakarta_sans",
+      "target": "package_dependencies_capacitor_ios",
       "confidence_score": 1.0
     },
     {
@@ -17043,7 +17206,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_lucide",
+      "target": "package_dependencies_fontsource_variable_plus_jakarta_sans",
       "confidence_score": 1.0
     },
     {
@@ -17054,18 +17217,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_preact",
+      "target": "package_dependencies_lucide",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L23",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "package_devdependencies",
-      "target": "package_devdependencies_capacitor_cli",
+      "source": "package_dependencies",
+      "target": "package_dependencies_preact",
       "confidence_score": 1.0
     },
     {
@@ -17076,7 +17239,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
-      "target": "package_devdependencies_playwright_cli",
+      "target": "package_devdependencies_capacitor_cli",
       "confidence_score": 1.0
     },
     {
@@ -17087,7 +17250,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
-      "target": "package_devdependencies_types_node",
+      "target": "package_devdependencies_playwright_cli",
       "confidence_score": 1.0
     },
     {
@@ -17131,7 +17294,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_scripts",
-      "target": "package_scripts_preview",
+      "target": "package_scripts_build_watch",
       "confidence_score": 1.0
     },
     {
@@ -17142,18 +17305,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_scripts",
-      "target": "package_scripts_cap_sync",
+      "target": "package_scripts_preview",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L7",
+      "source_location": "L12",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_scripts",
-      "target": "package_scripts_dev",
+      "target": "package_scripts_cap_sync",
       "confidence_score": 1.0
     },
     {
@@ -17164,7 +17327,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_scripts",
-      "target": "package_scripts_build",
+      "target": "package_scripts_dev",
       "confidence_score": 1.0
     },
     {
@@ -17175,7 +17338,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_scripts",
-      "target": "package_scripts_build_watch",
+      "target": "package_scripts_build",
       "confidence_score": 1.0
     },
     {
@@ -17215,40 +17378,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/formatters.ts",
-      "source_location": "L100",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "src_formatters",
-      "target": "src_formatters_escapehtml",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/formatters.ts",
-      "source_location": "L104",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "src_formatters",
-      "target": "src_formatters_preset_colors",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/formatters.ts",
-      "source_location": "L106",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "src_formatters",
-      "target": "src_formatters_normalizehex",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/formatters.ts",
-      "source_location": "L112",
+      "source_location": "L105",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_formatters",
@@ -17373,7 +17503,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_formatters",
-      "target": "src_formatters_html_escapes",
+      "target": "src_formatters_preset_colors",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/formatters.ts",
+      "source_location": "L99",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_formatters",
+      "target": "src_formatters_normalizehex",
       "confidence_score": 1.0
     },
     {
@@ -20563,5 +20704,5 @@
       "source_file": "AGENTS.md"
     }
   ],
-  "built_at_commit": "dd51acaf38f64f80850e6f6c24f10488d0089a72"
+  "built_at_commit": "9c08b1e9aefac8d36bb9192e7cb3794a36bc6e47"
 }

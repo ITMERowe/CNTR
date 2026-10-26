@@ -10,7 +10,7 @@ src/
   state.ts             App state and every rule for changing it (no DOM)
   storage.ts           localStorage read/write, settings cache
   reports.ts           Pure report maths: totals, product breakdowns, compare rows
-  formatters.ts        Money formatting/parsing, colour helpers, escapeHtml
+  formatters.ts        Money formatting/parsing, colour helpers
   data.ts              Default products, product-history helper, UUIDs
   types.ts             Shared types
   ui/
@@ -70,7 +70,7 @@ Everything lives in `localStorage` as JSON (`src/storage.ts`):
 
 ## Rendering
 
-`render()` in `main.ts` is the single refresh. It updates the header stats and tile counters, then renders each Preact view into its container (`renderView(h(SalesReport, props), el.report)`). Preact diffs against the previous render, so calling it after every change is cheap.
+`render()` in `main.ts` is the single refresh. It renders each Preact view (revenue hero, sales tiles, reports, lists) into its container (`renderView(h(SalesReport, props), el.report)`). Preact diffs against the previous render, so calling it after every change is cheap.
 
 - **Views are pure**: they receive data and callbacks as props and never read `state` or `localStorage` themselves.
 - **Sales tiles** are the `SalesGrid` component. A counter's element is re-keyed when its value changes, which restarts its CSS roll animation; `pulse` says which counter changed and in which direction.
@@ -79,12 +79,11 @@ Everything lives in `localStorage` as JSON (`src/storage.ts`):
 
 ## Navigation
 
-`openScreen(id)` in `ui/dom.ts` is the only way to change screens. Besides toggling the `.screen.active` section it highlights the bottom-nav tab (sub-screens map to their parent via `PARENT_TAB`), shows the Revenue/Profit bar only on the sales screen, and sets the header buttons for that screen. Add new screens to `index.html` as a `<section class="screen">` and, if they are a sub-screen, to `PARENT_TAB`.
+`openScreen(id)` in `ui/dom.ts` is the only way to change screens. Besides toggling the `.screen.active` section it highlights the bottom-nav tab (sub-screens map to their parent via `PARENT_TAB`), shows the revenue hero only on the Sell screen, and sets the header buttons for that screen. Add new screens to `index.html` as a `<section class="screen">` and, if they are a sub-screen, to `PARENT_TAB`.
 
 ## Conventions
 
 - **New UI is a Preact component** in `views/`. Pass data and callbacks as props; Preact escapes text, so never use `dangerouslySetInnerHTML` for user input.
-- **Legacy string templates** (sales tiles, header stats) must pass user text through `escapeHtml()`.
 - **Wire static elements once** at startup; never attach listeners inside `render()`.
 - **Confirm destructive actions** with `openConfirmModal()` (clear sales, delete report, remove product).
 - **Styling** uses the tokens at the top of `src/style.css`: surfaces (`--bg`, `--surface-1..3`, VS Code dark palette), text (`--text`, `--text-2`, `--text-3`, all >= 4.5:1), meaning (`--positive`, `--negative`, `--cash`, `--qris`), radii, a 4/8px spacing scale and motion. Never hard-code a colour in a component.
