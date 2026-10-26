@@ -34,7 +34,8 @@
 ### Build
 - The APK workflow now runs on every branch, not only `main`; it uses `setup-android@v4` (v3 broke when Google removed the legacy SDK `tools` package) and is pinned to Ubuntu 24.04.
 - Gradle 8.14.3, Android Gradle Plugin 8.13.0.
-- Workflow actions moved to their Node 24 versions (`checkout`, `setup-node`, `upload-artifact` v7) ahead of GitHub retiring Node 20; the APK is now uploaded as a plain `app-debug.apk` instead of a zip.
+- Workflow actions moved to their Node 24 versions (`checkout`, `setup-node`, `upload-artifact` v7) ahead of GitHub retiring Node 20; the APK is now uploaded as a plain `.apk` instead of a zip.
+- APKs are named `CNTR_<version>.apk` (e.g. `CNTR_1.0.42.apk`); `versionCode` and `versionName` come from the CI run number, so every build is a newer version.
 - `dist/` and `node_modules/` are no longer tracked in git (CI builds them); `.gitignore` also covers signing keystores, env files, editor files and graphify caches.
 - TypeScript now fails the build on unused code.
 - Removed the obsolete `.graphify/` folder, the template Android example tests and an always-hidden button.

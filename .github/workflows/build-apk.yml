@@ -43,6 +43,8 @@ jobs:
         run: npx cap sync android
 
       - name: Build debug APK
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
         run: |
           cd android
           chmod +x gradlew
@@ -52,6 +54,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/CNTR_*.apk
           archive: false
           if-no-files-found: error

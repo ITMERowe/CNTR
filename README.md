@@ -34,7 +34,7 @@ npm run dev        # http://localhost:5173 (also reachable from your phone on th
 Every push to GitHub builds a debug APK automatically.
 
 1. Open the repo on GitHub → **Actions** → **Build APK** → the newest run with a green check.
-2. Scroll to **Artifacts** and download **app-debug.apk** (you must be signed in to GitHub).
+2. Scroll to **Artifacts** and download **CNTR_1.0.N.apk** (you must be signed in to GitHub). `N` is the build number: higher means newer.
 3. Open it on your phone. Android will ask you to allow installs from that app (browser or Files). Allow it once.
 4. Requires Android 7.0 (API 24) or newer.
 
@@ -48,7 +48,7 @@ Needs JDK 21 and the Android SDK 36 (easiest via Android Studio Otter 2025.2.1 o
 npm run build
 npx cap sync android
 cd android && ./gradlew assembleDebug        # Windows: gradlew.bat assembleDebug
-# → android/app/build/outputs/apk/debug/app-debug.apk
+# → android/app/build/outputs/apk/debug/CNTR_1.0.1.apk (local builds are build 1)
 ```
 
 Or run `npx cap open android` and press Run in Android Studio with your phone connected over USB.
