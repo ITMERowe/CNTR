@@ -1,16 +1,16 @@
 # Graph Report - CNTR  (2026-10-27)
 
 ## Corpus Check
-- 106 files · ~105,360 words
+- 106 files · ~105,423 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 973 nodes · 1805 edges · 74 communities (63 shown, 11 thin omitted)
+- 973 nodes · 1805 edges · 75 communities (62 shown, 13 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 62 edges (avg confidence: 0.62)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e2d80b5b`
+- Built from commit: `a9c058ee`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -67,6 +67,7 @@
 - CNTR 0.1: fixes, light mode, Indonesian, security review
 - Review Focus
 - playwright-cli/SKILL.md
+- element-attributes.md
 - preact
 - Video Recording
 - openConfirmModal
@@ -75,7 +76,7 @@
 - main.ts
 - render
 - Advanced Mocking with run-code
-- @capacitor/haptics
+- @capacitor/filesystem
 - Attaching Screenshots and Videos to Pull Requests
 - Trace Output Files
 - Security review: CNTR repository and app (2026-10-27)
@@ -112,7 +113,7 @@
 - **APK build pipeline** — _github_workflows_build_apk_build_apk, _github_workflows_build_apk_capacitor_sync, _github_workflows_build_apk_gradle_assembledebug, _github_workflows_build_apk_cntr_debug_apk [EXTRACTED 1.00]
 - **Graphify-first agent instructions** — _claude_claude_graphify_first_workflow, agents_graphify_required_workflow, claude_graphify_rules, claude_graphify_knowledge_graph [INFERRED 0.95]
 
-## Communities (74 total, 11 thin omitted)
+## Communities (75 total, 13 thin omitted)
 
 ### Community 0 - "EventScreen.tsx"
 Cohesion: 0.08
@@ -124,7 +125,7 @@ Nodes (63): BACKUP_APP, BACKUP_FORMAT, BackupFile, BackupSummary, checkCost(), c
 
 ### Community 2 - "dependencies"
 Cohesion: 0.13
-Nodes (15): @capacitor/app, @capacitor/core, @capacitor/filesystem, @capacitor/ios, @capacitor/share, @fontsource-variable/plus-jakarta-sans, lucide, dependencies (+7 more)
+Nodes (15): @capacitor/app, @capacitor/core, @capacitor/haptics, @capacitor/ios, @capacitor/share, @fontsource-variable/plus-jakarta-sans, lucide, dependencies (+7 more)
 
 ### Community 3 - "How it works (decided)"
 Cohesion: 0.12
@@ -231,7 +232,7 @@ Cohesion: 0.10
 Nodes (20): 1. Name Browser Sessions Semantically, 2. Always Clean Up, 3. Delete Stale Browser Data, A/B Testing Sessions, Attach by channel name, Attach via browser extension, Attach via CDP endpoint, Attaching to a Running Browser (+12 more)
 
 ### Community 44 - "Tracing"
-Cohesion: 0.15
+Cohesion: 0.17
 Nodes (12): 1. Start Tracing Before the Problem, 2. Clean Up Old Traces, Analyzing Performance, Basic Usage, Best Practices, Capturing Evidence, Debugging Failed Actions, Limitations (+4 more)
 
 ### Community 45 - "Changelog"
@@ -286,10 +287,6 @@ Nodes (15): 1. Bug fixes, 1a. Deleting a product keeps its sales (owner decided)
 Cohesion: 0.14
 Nodes (13): CNTR 0.1 Update Implementation Plan, Global Constraints, Review Focus, Task 0: Commit the current work, Task 1: Security review (report only), Task 1b: Security fixes (owner approved all of findings 1–7 on 2026-10-27), Task 2: Deleting a product keeps its sales, Task 3: Cancel can never save a past-event edit (+5 more)
 
-### Community 59 - "playwright-cli/SKILL.md"
-Cohesion: 0.21
-Nodes (4): Examples, Inspecting Element Attributes, Debugging Playwright Tests, Running Playwright Tests
-
 ### Community 62 - "Video Recording"
 Cohesion: 0.20
 Nodes (10): 1. Use Descriptive Filenames, 2. Record entire hero scripts., 3. Attach the recording to the pull request, Basic Recording, Best Practices, Cursor, Target Highlight and Click Point, Limitations, Overlay API Summary (+2 more)
@@ -315,7 +312,7 @@ Cohesion: 0.16
 Nodes (22): feedback, activeExpenses(), addSale(), adjustDraft(), blockedByTutorial(), confirmEndDay(), deleteExpense(), editingPastEvent() (+14 more)
 
 ### Community 68 - "Advanced Mocking with run-code"
-Cohesion: 0.25
+Cohesion: 0.22
 Nodes (8): Advanced Mocking with run-code, CLI Route Commands, Conditional Response Based on Request, Delayed Response, Modify Real Response, Request Mocking, Simulate Network Failures, URL Patterns
 
 ### Community 71 - "Attaching Screenshots and Videos to Pull Requests"
@@ -333,14 +330,14 @@ Nodes (3): Checked and fine, Findings, most serious first, Security review: CNTR
 ## Knowledge Gaps
 - **420 isolated node(s):** `name`, `private`, `license`, `type`, `dev` (+415 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `tab()` connect `tutorial.ts` to `lib.mjs`?**
   _High betweenness centrality (0.056) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `dependencies` to `@capacitor/haptics`, `@capacitor-community/sqlite`, `@capacitor/android`, `package.json`, `preact`?**
+- **Why does `dependencies` connect `dependencies` to `@capacitor/filesystem`, `@capacitor-community/sqlite`, `@capacitor/android`, `package.json`, `preact`?**
   _High betweenness centrality (0.022) - this node is a cross-community bridge._
 - **Are the 10 inferred relationships involving `render()` (e.g. with `addSale()` and `confirmEndDay()`) actually correct?**
   _`render()` has 10 INFERRED edges - model-reasoned connections that need verification._

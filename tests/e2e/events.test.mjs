@@ -241,6 +241,19 @@ const del = await run(page, `${H}
 `);
 check('delete past event asks, removes it, returns to History', del.asked && del.left === 1 && del.screen === 'historyScreen', del);
 
+// An empty day shows "No sales yet", not a misleading date
+await run(page, `localStorage.clear(); localStorage.setItem('cntrMeta.tutorialOffered', 'test'); localStorage.cntrProducts = ${JSON.stringify(SAMPLE_PRODUCTS)};`);
+await load();
+const emptyDay = await run(page, `${H}
+  const subs = () => [...document.querySelectorAll('#eventCard .day-sub')].map((s) => s.textContent.trim());
+  tab('salesScreen'); tap('Gacha', 'Cash'); await wait(100);
+  tab('eventScreen');
+  document.getElementById('endDayBtn').click(); await confirmYes(); await wait(100);
+  return subs();
+`);
+check('a day with sales shows the first sale\'s date and count', /^\d{1,2} \w+ \d{4} · 1 sale$/.test(emptyDay[0] ?? ''), emptyDay);
+check('the new empty day after End day says just "No sales yet"', emptyDay.at(-1) === 'No sales yet', emptyDay);
+
 check('no uncaught exceptions', errors.length === 0, errors.join(' | '));
 await browser.close();
 done();

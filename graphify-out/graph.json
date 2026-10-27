@@ -668,7 +668,7 @@
       "label": "CountEditor()",
       "file_type": "code",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L72",
+      "source_location": "L71",
       "_callable": true,
       "_origin": "ast",
       "id": "src_views_eventscreen_counteditor",
@@ -680,7 +680,7 @@
       "label": "DayCards()",
       "file_type": "code",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L41",
+      "source_location": "L40",
       "_callable": true,
       "_origin": "ast",
       "id": "src_views_eventscreen_daycards",
@@ -689,22 +689,22 @@
       "norm_label": "daycards()"
     },
     {
-      "label": "dayDate()",
+      "label": "daySummary()",
       "file_type": "code",
       "source_file": "src/views/EventScreen.tsx",
       "source_location": "L36",
       "_callable": true,
       "_origin": "ast",
-      "id": "src_views_eventscreen_daydate",
+      "id": "src_views_eventscreen_daysummary",
       "community": 0,
       "community_name": "EventScreen.tsx",
-      "norm_label": "daydate()"
+      "norm_label": "daysummary()"
     },
     {
       "label": "EventScreen()",
       "file_type": "code",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L138",
+      "source_location": "L137",
       "_callable": true,
       "_origin": "ast",
       "id": "src_views_eventscreen_eventscreen",
@@ -716,7 +716,7 @@
       "label": "ProductBreakdown()",
       "file_type": "code",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L120",
+      "source_location": "L119",
       "_callable": true,
       "_origin": "ast",
       "id": "src_views_eventscreen_productbreakdown",
@@ -4692,15 +4692,15 @@
       "norm_label": "@capacitor/core"
     },
     {
-      "label": "@capacitor/filesystem",
+      "label": "@capacitor/haptics",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L21",
+      "source_location": "L22",
       "_origin": "ast",
-      "id": "package_dependencies_capacitor_filesystem",
+      "id": "package_dependencies_capacitor_haptics",
       "community": 2,
       "community_name": "dependencies",
-      "norm_label": "@capacitor/filesystem"
+      "norm_label": "@capacitor/haptics"
     },
     {
       "label": "@capacitor/ios",
@@ -4769,15 +4769,15 @@
       "norm_label": "@capacitor/core"
     },
     {
-      "label": "@capacitor/filesystem",
+      "label": "@capacitor/haptics",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L21",
+      "source_location": "L22",
       "_origin": "ast",
-      "id": "capacitor_filesystem",
+      "id": "capacitor_haptics",
       "community": 2,
       "community_name": "dependencies",
-      "norm_label": "@capacitor/filesystem"
+      "norm_label": "@capacitor/haptics"
     },
     {
       "label": "@capacitor/ios",
@@ -7431,17 +7431,6 @@
       "norm_label": "persistent profile"
     },
     {
-      "label": "tracing.md",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/tracing.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_tracing",
-      "community": 44,
-      "community_name": "Tracing",
-      "norm_label": "tracing.md"
-    },
-    {
       "label": "1. Start Tracing Before the Problem",
       "file_type": "document",
       "source_file": ".claude/skills/playwright-cli/references/tracing.md",
@@ -9620,39 +9609,6 @@
       "norm_label": "task 8: docs and handoff"
     },
     {
-      "label": "element-attributes.md",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/element-attributes.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_element_attributes",
-      "community": 59,
-      "community_name": "playwright-cli/SKILL.md",
-      "norm_label": "element-attributes.md"
-    },
-    {
-      "label": "Examples",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/element-attributes.md",
-      "source_location": "L5",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_element_attributes_examples",
-      "community": 59,
-      "community_name": "playwright-cli/SKILL.md",
-      "norm_label": "examples"
-    },
-    {
-      "label": "Inspecting Element Attributes",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/element-attributes.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_element_attributes_inspecting_element_attributes",
-      "community": 59,
-      "community_name": "playwright-cli/SKILL.md",
-      "norm_label": "inspecting element attributes"
-    },
-    {
       "label": "playwright-tests.md",
       "file_type": "document",
       "source_file": ".claude/skills/playwright-cli/references/playwright-tests.md",
@@ -9697,17 +9653,6 @@
       "norm_label": "pr-attachments.md"
     },
     {
-      "label": "request-mocking.md",
-      "file_type": "document",
-      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "claude_skills_playwright_cli_references_request_mocking",
-      "community": 59,
-      "community_name": "playwright-cli/SKILL.md",
-      "norm_label": "request-mocking.md"
-    },
-    {
       "label": "running-code.md",
       "file_type": "document",
       "source_file": ".claude/skills/playwright-cli/references/running-code.md",
@@ -9739,6 +9684,17 @@
       "community": 59,
       "community_name": "playwright-cli/SKILL.md",
       "norm_label": "test-generation.md"
+    },
+    {
+      "label": "tracing.md",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/tracing.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_tracing",
+      "community": 59,
+      "community_name": "playwright-cli/SKILL.md",
+      "norm_label": "tracing.md"
     },
     {
       "label": "video-recording.md",
@@ -10018,6 +9974,39 @@
       "norm_label": "void"
     },
     {
+      "label": "element-attributes.md",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/element-attributes.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_element_attributes",
+      "community": 60,
+      "community_name": "element-attributes.md",
+      "norm_label": "element-attributes.md"
+    },
+    {
+      "label": "Examples",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/element-attributes.md",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_element_attributes_examples",
+      "community": 60,
+      "community_name": "element-attributes.md",
+      "norm_label": "examples"
+    },
+    {
+      "label": "Inspecting Element Attributes",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/element-attributes.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_element_attributes_inspecting_element_attributes",
+      "community": 60,
+      "community_name": "element-attributes.md",
+      "norm_label": "inspecting element attributes"
+    },
+    {
       "label": "preact",
       "file_type": "code",
       "source_file": "package.json",
@@ -10282,6 +10271,17 @@
       "norm_label": "isnative"
     },
     {
+      "label": "request-mocking.md",
+      "file_type": "document",
+      "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_skills_playwright_cli_references_request_mocking",
+      "community": 68,
+      "community_name": "Advanced Mocking with run-code",
+      "norm_label": "request-mocking.md"
+    },
+    {
       "label": "Advanced Mocking with run-code",
       "file_type": "document",
       "source_file": ".claude/skills/playwright-cli/references/request-mocking.md",
@@ -10370,26 +10370,26 @@
       "norm_label": "url patterns"
     },
     {
-      "label": "@capacitor/haptics",
+      "label": "@capacitor/filesystem",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L22",
+      "source_location": "L21",
       "_origin": "ast",
-      "id": "package_dependencies_capacitor_haptics",
+      "id": "package_dependencies_capacitor_filesystem",
       "community": 69,
-      "community_name": "@capacitor/haptics",
-      "norm_label": "@capacitor/haptics"
+      "community_name": "@capacitor/filesystem",
+      "norm_label": "@capacitor/filesystem"
     },
     {
-      "label": "@capacitor/haptics",
+      "label": "@capacitor/filesystem",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L22",
+      "source_location": "L21",
       "_origin": "ast",
-      "id": "capacitor_haptics",
+      "id": "capacitor_filesystem",
       "community": 69,
-      "community_name": "@capacitor/haptics",
-      "norm_label": "@capacitor/haptics"
+      "community_name": "@capacitor/filesystem",
+      "norm_label": "@capacitor/filesystem"
     },
     {
       "label": ".claude/skills/graphify/SKILL.md",
@@ -15881,7 +15881,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L102",
+      "source_location": "L101",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_counteditor",
@@ -15893,7 +15893,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L82",
+      "source_location": "L81",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_counteditor",
@@ -15905,7 +15905,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L82",
+      "source_location": "L81",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_counteditor",
@@ -15917,7 +15917,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L46",
+      "source_location": "L45",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_daycards",
@@ -15929,11 +15929,11 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L56",
+      "source_location": "L55",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_daycards",
-      "target": "src_reports_plural",
+      "target": "src_views_eventscreen_daysummary",
       "confidence_score": 1.0
     },
     {
@@ -15941,19 +15941,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L56",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "src_views_eventscreen_daycards",
-      "target": "src_views_eventscreen_daydate",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L60",
+      "source_location": "L59",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_daycards",
@@ -15965,7 +15953,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L61",
+      "source_location": "L60",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_daycards",
@@ -15980,8 +15968,20 @@
       "source_location": "L37",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "src_views_eventscreen_daydate",
+      "source": "src_views_eventscreen_daysummary",
       "target": "src_events_formatday",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/views/EventScreen.tsx",
+      "source_location": "L37",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_views_eventscreen_daysummary",
+      "target": "src_reports_plural",
       "confidence_score": 1.0
     },
     {
@@ -15990,7 +15990,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L140",
+      "source_location": "L139",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_eventscreen",
@@ -16002,7 +16002,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L141",
+      "source_location": "L140",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_eventscreen",
@@ -16014,7 +16014,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L169",
+      "source_location": "L167",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_eventscreen",
@@ -16026,7 +16026,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L174",
+      "source_location": "L172",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_eventscreen",
@@ -16038,7 +16038,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L175",
+      "source_location": "L173",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_eventscreen",
@@ -16049,7 +16049,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L121",
+      "source_location": "L120",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen_productbreakdown",
@@ -29594,7 +29594,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L120",
+      "source_location": "L119",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen",
@@ -29605,7 +29605,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L138",
+      "source_location": "L137",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen",
@@ -29631,14 +29631,14 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen",
-      "target": "src_views_eventscreen_daydate",
+      "target": "src_views_eventscreen_daysummary",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L41",
+      "source_location": "L40",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen",
@@ -29649,7 +29649,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/views/EventScreen.tsx",
-      "source_location": "L72",
+      "source_location": "L71",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_eventscreen",
@@ -32039,5 +32039,5 @@
       "source_file": "AGENTS.md"
     }
   ],
-  "built_at_commit": "e2d80b5b811faa11b5e4b549f320286baecf3217"
+  "built_at_commit": "a9c058eeee35b08060bae8aba5789664b559ddeb"
 }

@@ -32,13 +32,12 @@ interface Props {
 }
 
 
-/** Day N's date: its first sale, else the day it started. */
-function dayDate(day: SaleRecord[], index: number, dayBreaks: string[], startedAt: string) {
-  if (day.length) return formatDay(day[0].timestamp);
-  return formatDay(index === 0 ? startedAt : dayBreaks[index - 1]);
+/** A day's line under its title: the first sale's date and the count; an empty day has no meaningful date yet. */
+function daySummary(day: SaleRecord[]) {
+  return day.length ? `${formatDay(day[0].timestamp)} · ${plural(day.length, 'sale')}` : 'No sales yet';
 }
 
-function DayCards({ days, dayBreaks, startedAt, live }: { days: SaleRecord[][]; dayBreaks: string[]; startedAt: string; live: boolean }) {
+function DayCards({ days, live }: { days: SaleRecord[][]; live: boolean }) {
   return (
     <Card title="Days">
       <div class="day-list">
@@ -53,7 +52,7 @@ function DayCards({ days, dayBreaks, startedAt, live }: { days: SaleRecord[][]; 
                   {isToday && <span class="chip">Today · live</span>}
                 </strong>
                 <span class="day-sub">
-                  {dayDate(day, index, dayBreaks, startedAt)} · {plural(day.length, 'sale')}
+                  {daySummary(day)}
                 </span>
               </div>
               <div class="day-figures">
@@ -139,7 +138,6 @@ export function EventScreen(props: Props) {
   const { name, sales, dayBreaks, expenses, products, colorFor, live, edit } = props;
   const summary = eventSummary(sales, expenses);
   const days = splitDays(sales, dayBreaks);
-  const startedAt = sales.length ? new Date(Math.min(...sales.map((sale) => new Date(sale.timestamp).getTime()))).toISOString() : new Date().toISOString();
   const isEmpty = !sales.length && !expenses.length;
 
   return (
@@ -178,7 +176,7 @@ export function EventScreen(props: Props) {
         </>
       )}
 
-      {dayBreaks.length > 0 && <DayCards days={days} dayBreaks={dayBreaks} startedAt={startedAt} live={live} />}
+      {dayBreaks.length > 0 && <DayCards days={days} live={live} />}
 
       {edit && <CountEditor days={days} products={products} edit={edit} />}
 
