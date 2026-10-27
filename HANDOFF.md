@@ -9,7 +9,7 @@ _Last updated: 2026-10-27._
 - **Branch:** `feature/signing-tests-about`, pushed to origin at `c58f58f`. It is ahead of `main` (`3c0255d`) with: release signing, browser tests, About screen, automatic backups, the merged live Event screen with multi-day events and editable History, payment methods per product, Products per day, the Settings/Products rework. **Not merged into `main` yet** (the owner merged the last branch via a GitHub PR; ask which way).
 - **CI:** run #23 (`40445431090`) for `c58f58f` **succeeded** (all tests on Linux/Chrome): release-signed `CNTR_1.0.23.apk` (12.1 MB) + `CNTR_1.0.23.aab` (8.2 MB). Signing has worked since run #22.
 - **Do not commit** (owner's machine-specific files): `.claude/settings.json`, `.claude/skills/playwright-cli/`, `.playwright/`.
-- **0.1 update: built and committed locally, NOT pushed** (10 commits `af96c1a`..HEAD on top of `c58f58f`; final review done, its one data-loss finding fixed): tutorial + sound + 0.1 version, security fixes, the 3 bug fixes, light mode, language setting, Bahasa Indonesia. CI has not built 0.1 yet: push when the owner says so, then check the run.
+- **0.1 update: built and committed locally, NOT pushed** (10 commits `af96c1a`..`7a45bc3` on top of `c58f58f`; final whole-branch review done: no Critical, one Important data-loss finding fixed with tests B33/B34, one Important left for a phone check, 10 deferred minors below): tutorial + sound + 0.1 version, security fixes, the 3 bug fixes, light mode, language setting, Bahasa Indonesia. **Waiting for the owner to choose:** merge to `main` locally, push and open a PR, or keep the branch as is. CI has not built 0.1 yet: after a push, check the run and the `CNTR_0.1.<build>.apk`.
 - **Verify locally:** `npx tsc --noEmit`, `npm test` (37 unit), `npm run build`, `npm run test:e2e` (10 suites, 296 checks; serves `dist/` on port 4320 with Edge on Windows, so stop any preview you started on 4320 first). Last run 2026-10-27: all pass. Run `graphify update .` after code changes.
 - **Tooling:** no JDK/Android SDK, Xcode or `gh` here: APKs are built only by CI, and the GitHub API is read-only (60 requests/hour). In Git Bash, piping node+playwright output into `grep` can swallow it: write to a file, then read it.
 
@@ -52,14 +52,33 @@ CNTR is an offline sales counter for convention/pop-up booths (TypeScript + Prea
 
 - **Tutorial and sound not tried on a phone:** on Android the tour relies on `sessionStorage` surviving `location.reload()` and being cleared when the app process dies (true for WebView; unverified here). The SQLite swap is tested against the fake native bridge (B25–B28), but the crash-mid-tour case only in the browser (the fake database lives in `sessionStorage`). The bubble was checked by screenshot at 412×892 only.
 - **Never run on a real device:** native SQLite, Filesystem/Share (backups), haptics, Android back gesture, safe areas, large system text. All tested only in a browser and against a fake native bridge. iOS never built.
-- **Deferred minor findings (from the events code review):**
-  - Restoring an old 1.0.21 backup empties History without saying so (a safety copy is taken first).
-  - CSV calls an unnamed live event "Current event" (the screen says "Event <date>"; CSV stays English by owner decision).
-  - History +1 on an event's last day can be timed after the event ended (affects only the hour chart).
-- `tests/e2e/motion.test.mjs` "[reduced motion] sheet in place almost immediately" is timing-sensitive: it failed once in a full run on a busy machine, then passed 3/3 alone.
-- Switching language while a dialog is open leaves that dialog's text in the old language until it is reopened.
-- **From the final review (deferred minors):** a sale tapped in the second the tutorial starts can land in the practice data; a WebView reload mid-tour restarts the tour at step 1; startup storage errors are always English; restoring a pre-0.1 backup switches an Indonesian user to English; editing a re-created product's price reprices today's sales of the deleted one with the same name.
-- **Check on the phone:** with Theme = Phone setting, switch the phone between dark and light while CNTR is open. If CNTR does not follow until restarted, MainActivity needs to pass the change to the WebView (it handles `uiMode` itself).
+- **Check on the phone (from the 0.1 final review, graded Important, needs a device):** with Theme = Phone setting, switch the phone between dark and light while CNTR is open. If CNTR does not follow until restarted: `MainActivity` handles `uiMode` itself (`configChanges` in `AndroidManifest.xml`), so forward `onConfigurationChanged` to the WebView/JS, or drop `uiMode` from `configChanges` (that recreates the activity on a theme switch).
+
+### Deferred minors (all open; none loses saved data unless stated)
+
+From the 0.1 final review (2026-10-27):
+1. **A sale tapped while the tutorial is starting can land in the practice data.** Between Start tour and the reload (`main.ts` `startTutorial()`, `storage.ts` `startTutorialData()`), the screen still takes taps; a sale written in that second is not in the saved real copy and is dropped when the tour ends. *Fix:* a busy overlay or a lock from Start tour until the reload.
+2. **A WebView reload mid-tour restarts the tour at step 1** on practice data that has already changed (e.g. the event already ended); later steps then wait on states that cannot happen and show Skip after 2 s. Harmless but confusing (`main.ts` start: `runTour` when `cntrTourRunning` is set). *Fix:* store the step index in `sessionStorage` and resume, or end the tutorial on such a reload.
+3. **Startup storage messages are always English** (`storage.ts` `initStorage`: "could not open/read its data", "could not be moved to safer storage"), because they are made before the language is applied. *Fix:* read the saved language first, or translate when shown.
+4. **Restoring a backup made before 0.1 switches an Indonesian user to English** (the backup's `cntrSettings` has no `language`; after the reload it is not a fresh install, so English is chosen and saved). *Fix:* keep the current language when the restored settings have none.
+5. **Editing a re-created product's price also reprices today's sales of the deleted product with the same name** (`productEditor.ts` → `renameSales` matches by name). Follows the existing "edits apply to today's sales" rule. *Fix (if wanted):* only when the owner decides products need an id instead of the name.
+6. **Switching language while a dialog is open** leaves that dialog's text in the old language until it is reopened (`translateStatic` skips text set by code). *Fix:* close open dialogs, or re-render them, on a language change.
+7. **Flaky check:** `tests/e2e/motion.test.mjs` "[reduced motion] sheet in place almost immediately" failed once in a full run on a busy machine, then passed 3/3 alone. *Fix:* give it a slightly larger time window if it fails again (watch CI).
+
+From the earlier events code review:
+8. Restoring an old 1.0.21 backup empties History without saying so (a safety copy is taken first).
+9. CSV calls an unnamed live event "Current event" while the screen says "Event <date>" (CSV stays English by owner decision).
+10. History +1 on an event's last day can be timed after the event ended (affects only the hour chart).
+
+### Calls made during the 0.1 build (owner to check)
+- Saving an edited past event always finishes once started: Save, Cancel and Android back are locked meanwhile; switching tabs does not cancel it.
+- An empty day card says just "No sales yet".
+- Light mode: contrast checked with the layout suite's WCAG scan; money green `#116329`, red `#c72c1c`; payment colours unchanged.
+- The Language row sits in the Appearance group next to Theme.
+- Indonesian uses the casual "kamu" (one search-and-replace in `src/i18n.ts` to switch to "Anda"); practice products stay "Sticker"/"Keychain"; backup error messages are translated too; CSV stays English.
+- No special colour for a deleted product's sales (the screens already fall back to grey).
+
+### Other known limits
 - Tile text on pink/green/orange is below WCAG 4.5:1 (owner's choice).
 - A sale is written a few ms after the tap; killing the app in that instant can lose that tap.
 - Uninstalling, clearing app data or losing the phone deletes everything unless a backup was exported (stated only in About → Privacy now).
