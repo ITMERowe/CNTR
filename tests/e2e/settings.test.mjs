@@ -32,7 +32,29 @@ const settings = await run(page, `${H}
   const groups = [...document.querySelectorAll('#settingsScreen .group')].map((g) => g.dataset.group);
   return { groups, summary: document.getElementById('productsSummary').textContent, lastBackup: document.getElementById('lastBackupText').textContent };
 `);
-check('Settings order: Products, Event, Money, Sound, Sales data, Backup, About', settings.groups.join() === 'products,event,money,sound,sales,backup,about', settings.groups);
+check('Settings order: Products, Event, Money, Appearance, Sound, Sales data, Backup, About', settings.groups.join() === 'products,event,money,appearance,sound,sales,backup,about', settings.groups);
+
+// Appearance: follows the phone by default (live, no reload); Light or Dark sticks
+const themeNow = () => page.evaluate(() => document.documentElement.dataset.theme);
+await page.emulateMedia({ colorScheme: 'light' });
+await sleep(100);
+const followLight = await themeNow();
+await page.emulateMedia({ colorScheme: 'dark' });
+await sleep(100);
+const followDark = await themeNow();
+const choice = await run(page, `${H}
+  const select = document.getElementById('themeSelect');
+  const before = select.value;
+  select.value = 'light'; select.dispatchEvent(new Event('change'));
+  await wait(100);
+  return { before, stored: stored('cntrSettings').theme };
+`);
+await page.emulateMedia({ colorScheme: 'dark' });
+await sleep(100);
+const stuck = await themeNow();
+check('Appearance defaults to Phone setting and follows the phone live', choice.before === 'system' && followLight === 'light' && followDark === 'dark', { before: choice.before, followLight, followDark });
+check('choosing Light stores it and stays light when the phone is dark', choice.stored === 'light' && stuck === 'light', { stored: choice.stored, stuck });
+await run(page, `const s = document.getElementById('themeSelect'); s.value = 'system'; s.dispatchEvent(new Event('change'));`);
 
 // Sound effects: on by default, a sale plays one tone; switched off, a sale is silent and the choice is saved
 const sound = await run(page, `${H}

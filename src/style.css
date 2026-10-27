@@ -54,9 +54,37 @@
   --dur-2: 280ms;
   --dur-3: 420ms;
 
+  --bar-bg: rgba(30, 30, 30, 0.9);
+  --on-negative: #1d0806;
   --tabbar-h: 68px;
   --font: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color-scheme: dark;
+}
+
+/* Light theme: VS Code Light+, the counterpart of the Dark+ palette above. Every text/surface pair stays >= 4.5:1. */
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --surface-1: #f3f3f3;
+  --surface-2: #e8e8e8;
+  --surface-3: #e4e6f1;
+  --line: rgba(0, 0, 0, 0.1);
+  --line-strong: rgba(0, 0, 0, 0.18);
+  --scrim: rgba(0, 0, 0, 0.4);
+  --selection: #add6ff;
+
+  --text: #1e1e1e;
+  --text-2: #3b3b3b;
+  --text-3: #616161;
+  --on-ink: #ffffff;
+
+  /* Darker greens and reds so money stays readable on white */
+  --positive: #116329;
+  --negative: #c72c1c;
+  --on-negative: #ffffff;
+  --chart-rest: #d4d4d4;
+
+  --bar-bg: rgba(248, 248, 248, 0.92);
+  color-scheme: light;
 }
 
 /* ---------- Base ---------- */
@@ -390,7 +418,7 @@ p {
 
 .btn-danger {
   background: var(--negative);
-  color: #1d0806;
+  color: var(--on-negative);
 }
 
 .btn-block {
@@ -2267,7 +2295,7 @@ p {
   grid-template-columns: repeat(4, 1fr);
   height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
   padding: var(--s1) var(--s2) env(safe-area-inset-bottom);
-  background: rgba(30, 30, 30, 0.9);
+  background: var(--bar-bg);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   border-top: 1px solid var(--line);

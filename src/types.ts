@@ -58,4 +58,6 @@ export interface AppSettings {
   productsPerDay: boolean;
   /** Soft tones on sales, undo and finished actions (vibration is separate and always on). */
   sound: boolean;
+  /** Colour theme; 'system' follows the phone's light/dark setting. */
+  theme: 'system' | 'light' | 'dark';
 }

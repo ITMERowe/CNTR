@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   compactMoney: false,
   productsPerDay: true,
   sound: true,
+  theme: 'system',
 };
 
 /** Sales are stored with ISO string timestamps. */
@@ -281,6 +282,7 @@ export function loadSettings(): AppSettings {
     // Settings saved before this option (or a damaged value) get the default.
     productsPerDay: typeof stored.productsPerDay === 'boolean' ? stored.productsPerDay : DEFAULT_SETTINGS.productsPerDay,
     sound: typeof stored.sound === 'boolean' ? stored.sound : DEFAULT_SETTINGS.sound,
+    theme: stored.theme === 'light' || stored.theme === 'dark' ? stored.theme : DEFAULT_SETTINGS.theme,
   };
   return { ...cachedSettings };
 }

@@ -48,7 +48,8 @@ import {
   tutorialOffered,
 } from './storage';
 import { practiceData, runTour, TOUR_SESSION_KEY, TOUR_STEPS, tourRunning } from './tutorial';
-import type { Currency, PastEvent, Product } from './types';
+import { applyTheme } from './theme';
+import type { AppSettings, Currency, PastEvent, Product } from './types';
 import {
   activeScreenId,
   el,
@@ -549,6 +550,12 @@ function wireSettings() {
     saveSettings({ ...loadSettings(), productsPerDay: el.productsPerDayToggle.checked });
     render();
   });
+  el.themeSelect.value = loadSettings().theme;
+  el.themeSelect.addEventListener('change', () => {
+    const theme = el.themeSelect.value as AppSettings['theme'];
+    saveSettings({ ...loadSettings(), theme });
+    applyTheme(theme);
+  });
   el.soundToggle.checked = loadSettings().sound;
   el.soundToggle.addEventListener('change', () => {
     saveSettings({ ...loadSettings(), sound: el.soundToggle.checked });
@@ -831,6 +838,7 @@ async function start() {
   // Practice data without a tour running (the app was closed mid-tour): bring the real data back first.
   if (tutorialActive() && !sessionStorage.getItem(TOUR_SESSION_KEY) && (await endTutorial())) return;
   if (initState() && !tutorialActive()) void backUpDroppedReports();
+  applyTheme(loadSettings().theme);
   hydrateIcons();
   // The installed app's version on the phone (e.g. 0.1.42 from CI); package.json in the browser.
   el.aboutVersion.textContent = isNative ? (await App.getInfo().catch(() => ({ version: packageVersion }))).version : `${packageVersion} (browser)`;

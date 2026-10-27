@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/main.ts": {
-    "mtime": 1793082055.1597843,
-    "ast_hash": "5564a6e3e1b14ecbe8e9d75389779393",
+    "mtime": 1793083072.1066227,
+    "ast_hash": "241888fdcea67d38ca9df4f42772b05f",
     "semantic_hash": ""
   },
   "tsconfig.json": {
@@ -180,8 +180,8 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1793081200.7622485,
-    "ast_hash": "c8b2003ef34392fd1e44dee76da42a16",
+    "mtime": 1793083052.9328616,
+    "ast_hash": "7cea2e87bf0325e1f43dabdc3f5743ac",
     "semantic_hash": ""
   },
   "android/app/src/main/res/drawable-land-hdpi/splash.png": {
@@ -345,13 +345,13 @@
     "semantic_hash": ""
   },
   "src/storage.ts": {
-    "mtime": 1793075153.2183168,
-    "ast_hash": "6bcc4c290cef36bece30d12830dc8961",
+    "mtime": 1793083050.578924,
+    "ast_hash": "ef00d29e2e201ec9e522b88c1204855d",
     "semantic_hash": ""
   },
   "src/types.ts": {
-    "mtime": 1793073813.24749,
-    "ast_hash": "519a219f735a6bac06ce9e30448067eb",
+    "mtime": 1793083069.4947162,
+    "ast_hash": "0e526b56b2392bab7f108ea5893d4a4f",
     "semantic_hash": ""
   },
   ".claude/settings.json": {
@@ -465,8 +465,8 @@
     "semantic_hash": ""
   },
   "src/ui/dom.ts": {
-    "mtime": 1793075276.1885998,
-    "ast_hash": "d3d746c4b23a5325a3137549ddc11359",
+    "mtime": 1793083054.339982,
+    "ast_hash": "afc57e9f2ca16129a508a9deac6d6ea0",
     "semantic_hash": ""
   },
   "src/ui/productEditor.ts": {
@@ -585,8 +585,8 @@
     "semantic_hash": ""
   },
   "tests/e2e/layout.test.mjs": {
-    "mtime": 1793071322.5178323,
-    "ast_hash": "a142856929ecfeed523bc27ea0466bfb",
+    "mtime": 1793082909.3849807,
+    "ast_hash": "5941a59677a8c4df95c8eada6f2d8f42",
     "semantic_hash": ""
   },
   "tests/e2e/lib.mjs": {
@@ -655,8 +655,8 @@
     "semantic_hash": ""
   },
   "tests/e2e/settings.test.mjs": {
-    "mtime": 1793081658.7560704,
-    "ast_hash": "5798c62186a99c5bfdbe79ebe5168ac9",
+    "mtime": 1793082870.8710208,
+    "ast_hash": "86e3b9d7eae6b10d9d55c2c106558b94",
     "semantic_hash": ""
   },
   "src/feedback.ts": {
@@ -692,6 +692,11 @@
   "docs/superpowers/specs/2026-10-27-0.1-update-design.md": {
     "mtime": 1793080327.057131,
     "ast_hash": "d5bc2104df41265ff40c641664a1cef9",
+    "semantic_hash": ""
+  },
+  "src/theme.ts": {
+    "mtime": 1793083051.468796,
+    "ast_hash": "939e31b56c9f70f4f08fc3d3caf50ae8",
     "semantic_hash": ""
   }
 }
