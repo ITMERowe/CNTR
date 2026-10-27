@@ -795,18 +795,20 @@ async function startTutorial() {
   location.reload();
 }
 
-/** Puts the real data back and reloads. Returns false (and says so) if that failed; the real data stays safe and is tried again next launch. */
+/**
+ * Puts the real data back and reloads. If that fails, the app is blocked with a Try again screen: running on
+ * practice data would put new sales there, and they would be dropped when the real data comes back.
+ */
 async function endTutorial() {
   sessionStorage.removeItem(TOUR_SESSION_KEY);
   try {
     await endTutorialData();
   } catch (error) {
     feedback('warn');
-    showMessage(t('tutorial.notRemoved'), t('tutorial.notRemovedText', { error: errorText(error) }));
-    return false;
+    showStartupError(t('tutorial.endFailed', { error: errorText(error) }));
+    return;
   }
   location.reload();
-  return true;
 }
 
 function confirmStartTutorial() {
@@ -835,7 +837,7 @@ function offerTutorial() {
 function showStartupError(message: string) {
   const box = Object.assign(document.createElement('div'), { className: 'startup-error', role: 'alert' });
   const text = Object.assign(document.createElement('p'), { textContent: message });
-  const retry = Object.assign(document.createElement('button'), { className: 'btn btn-primary', type: 'button', textContent: 'Try again' });
+  const retry = Object.assign(document.createElement('button'), { className: 'btn btn-primary', type: 'button', textContent: t('tryAgain') });
   retry.addEventListener('click', () => location.reload());
   box.append(text, retry);
   document.body.replaceChildren(box);
@@ -852,7 +854,10 @@ async function start() {
     return;
   }
   // Practice data without a tour running (the app was closed mid-tour): bring the real data back first.
-  if (tutorialActive() && !sessionStorage.getItem(TOUR_SESSION_KEY) && (await endTutorial())) return;
+  if (tutorialActive() && !sessionStorage.getItem(TOUR_SESSION_KEY)) {
+    await endTutorial(); // reloads, or blocks with Try again
+    return;
+  }
   if (initState() && !tutorialActive()) void backUpDroppedReports();
   applyTheme(loadSettings().theme);
   applyLanguage(loadSettings().language);

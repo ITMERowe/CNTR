@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/main.ts": {
-    "mtime": 1793084819.9320555,
-    "ast_hash": "d29fee907d6b8c38dc3efb1d00d1f05d",
+    "mtime": 1793086580.7761,
+    "ast_hash": "c92f95de0c2160f4100bc8401f834dc6",
     "semantic_hash": ""
   },
   "tsconfig.json": {
@@ -520,8 +520,8 @@
     "semantic_hash": ""
   },
   "HANDOFF.md": {
-    "mtime": 1793086168.9117582,
-    "ast_hash": "e9687b16c1cf2b3b4548e2433f5cc42d",
+    "mtime": 1793087145.2926588,
+    "ast_hash": "7e6b0a9bcf3aa97d3eaf1eed31204afd",
     "semantic_hash": ""
   },
   "docs/screenshots/event.png": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   "tests/e2e/data-safety.test.mjs": {
-    "mtime": 1793081951.912637,
-    "ast_hash": "0f37dc7c8a7efd15593f2509f27a4c50",
+    "mtime": 1793086454.4232943,
+    "ast_hash": "71e58693bab21b194d301f576f1e5b45",
     "semantic_hash": ""
   },
   "tests/e2e/functional.test.mjs": {
@@ -700,8 +700,8 @@
     "semantic_hash": ""
   },
   "src/i18n.ts": {
-    "mtime": 1793085699.2186997,
-    "ast_hash": "03179bd03c465e41cfc3dfba8a223f85",
+    "mtime": 1793086593.5655732,
+    "ast_hash": "cf4929a1cbd9bb6aa8c5a954881f18d4",
     "semantic_hash": ""
   },
   "tests/i18n.test.ts": {

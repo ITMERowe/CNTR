@@ -324,6 +324,20 @@ function fakeNative() {
   const after = await page.evaluate(() => JSON.parse(sessionStorage.__db));
   check('B27 Quit tour puts the real SQLite data back exactly and drops the saved copy', dataOnly(after) === before && !after['cntrMeta.tutorialSavedData'] && (await heroSales(page)) === '3');
   check('B28 no page errors during the tour on the phone', errors.length === 0, errors.join(' | '));
+
+  // Putting the real data back fails: the app must not keep running on practice data (sales there would be lost).
+  await toSettings(page);
+  await page.click('#startTutorialBtn'); await page.click('#confirmModalConfirmBtn');
+  await page.waitForLoadState('load'); await page.waitForTimeout(1200);
+  await page.evaluate(() => { sessionStorage.__fail = JSON.stringify({ executeSet: true }); });
+  await page.click('#tourQuitBtn'); await page.waitForTimeout(800);
+  const blocked = await page.evaluate(() => ({ error: document.querySelector('.startup-error')?.textContent ?? '', tiles: document.querySelectorAll('.tile').length }));
+  check('B33 if the real data cannot be put back, the app blocks (no selling on practice data) and says why', /practice data/i.test(blocked.error) && blocked.tiles === 0, blocked);
+  await page.evaluate(() => { sessionStorage.__fail = '{}'; });
+  await page.click('.startup-error .btn');
+  await page.waitForLoadState('load'); await page.waitForTimeout(1500);
+  const recovered = await page.evaluate(() => JSON.parse(sessionStorage.__db));
+  check('B34 "Try again" then puts the real data back', dataOnly(recovered) === before && !recovered['cntrMeta.tutorialSavedData'] && (await heroSales(page)) === '3');
   await ctx.close();
 }
 

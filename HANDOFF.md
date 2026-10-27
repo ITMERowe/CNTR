@@ -9,8 +9,8 @@ _Last updated: 2026-10-27._
 - **Branch:** `feature/signing-tests-about`, pushed to origin at `c58f58f`. It is ahead of `main` (`3c0255d`) with: release signing, browser tests, About screen, automatic backups, the merged live Event screen with multi-day events and editable History, payment methods per product, Products per day, the Settings/Products rework. **Not merged into `main` yet** (the owner merged the last branch via a GitHub PR; ask which way).
 - **CI:** run #23 (`40445431090`) for `c58f58f` **succeeded** (all tests on Linux/Chrome): release-signed `CNTR_1.0.23.apk` (12.1 MB) + `CNTR_1.0.23.aab` (8.2 MB). Signing has worked since run #22.
 - **Do not commit** (owner's machine-specific files): `.claude/settings.json`, `.claude/skills/playwright-cli/`, `.playwright/`.
-- **0.1 update: built and committed locally, NOT pushed** (8 commits `af96c1a`..`621ef32` on top of `c58f58f`): tutorial + sound + 0.1 version, security fixes, the 3 bug fixes, light mode, language setting, Bahasa Indonesia. CI has not built 0.1 yet: push when the owner says so, then check the run.
-- **Verify locally:** `npx tsc --noEmit`, `npm test` (37 unit), `npm run build`, `npm run test:e2e` (10 suites, 294 checks; serves `dist/` on port 4320 with Edge on Windows, so stop any preview you started on 4320 first). Last run 2026-10-27: all pass. Run `graphify update .` after code changes.
+- **0.1 update: built and committed locally, NOT pushed** (10 commits `af96c1a`..HEAD on top of `c58f58f`; final review done, its one data-loss finding fixed): tutorial + sound + 0.1 version, security fixes, the 3 bug fixes, light mode, language setting, Bahasa Indonesia. CI has not built 0.1 yet: push when the owner says so, then check the run.
+- **Verify locally:** `npx tsc --noEmit`, `npm test` (37 unit), `npm run build`, `npm run test:e2e` (10 suites, 296 checks; serves `dist/` on port 4320 with Edge on Windows, so stop any preview you started on 4320 first). Last run 2026-10-27: all pass. Run `graphify update .` after code changes.
 - **Tooling:** no JDK/Android SDK, Xcode or `gh` here: APKs are built only by CI, and the GitHub API is read-only (60 requests/hour). In Git Bash, piping node+playwright output into `grep` can swallow it: write to a file, then read it.
 
 ## Goal
@@ -58,6 +58,8 @@ CNTR is an offline sales counter for convention/pop-up booths (TypeScript + Prea
   - History +1 on an event's last day can be timed after the event ended (affects only the hour chart).
 - `tests/e2e/motion.test.mjs` "[reduced motion] sheet in place almost immediately" is timing-sensitive: it failed once in a full run on a busy machine, then passed 3/3 alone.
 - Switching language while a dialog is open leaves that dialog's text in the old language until it is reopened.
+- **From the final review (deferred minors):** a sale tapped in the second the tutorial starts can land in the practice data; a WebView reload mid-tour restarts the tour at step 1; startup storage errors are always English; restoring a pre-0.1 backup switches an Indonesian user to English; editing a re-created product's price reprices today's sales of the deleted one with the same name.
+- **Check on the phone:** with Theme = Phone setting, switch the phone between dark and light while CNTR is open. If CNTR does not follow until restarted, MainActivity needs to pass the change to the WebView (it handles `uiMode` itself).
 - Tile text on pink/green/orange is below WCAG 4.5:1 (owner's choice).
 - A sale is written a few ms after the tap; killing the app in that instant can lose that tap.
 - Uninstalling, clearing app data or losing the phone deletes everything unless a backup was exported (stated only in About → Privacy now).

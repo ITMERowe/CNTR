@@ -139,8 +139,6 @@ export const en = {
   'continue': 'Continue',
   'autoBackup.failed': 'Backup failed',
   'tutorial.notStarted': 'Tutorial not started',
-  'tutorial.notRemoved': 'Practice data not removed yet',
-  'tutorial.notRemovedText': '{error}. Your own data is safe and comes back the next time CNTR opens.',
   'tutorial.replayText': 'Your sales, products and events are put aside during the tour and come back exactly as they are when it ends.',
   'tutorial.start': 'Start tour',
   'tutorial.replayTitle': 'Show the tutorial?',
@@ -271,6 +269,8 @@ export const en = {
   'tutorial.event-name': 'This is your event with its totals and payment methods. Tap the name any time to rename it.',
   'tutorial.compare-view': 'See which event earned more, and where the money came from.',
   'product.profitEach': 'profit {amount}',
+  'tutorial.endFailed': 'CNTR could not put your own data back yet ({error}). It is safe and nothing is lost. So that no sale lands in the practice data, CNTR stays closed until this works.',
+  'tryAgain': 'Try again',
 };
 
 export type Key = keyof typeof en;
@@ -412,8 +412,6 @@ export const id: Record<Key, string> = {
   'continue': 'Lanjutkan',
   'autoBackup.failed': 'Pencadangan gagal',
   'tutorial.notStarted': 'Tutorial tidak dimulai',
-  'tutorial.notRemoved': 'Data latihan belum dihapus',
-  'tutorial.notRemovedText': '{error}. Datamu sendiri aman dan kembali saat CNTR dibuka lagi.',
   'tutorial.replayText': 'Penjualan, produk, dan acaramu disimpan dulu selama tur dan kembali persis seperti semula saat tur selesai.',
   'tutorial.start': 'Mulai tur',
   'tutorial.replayTitle': 'Lihat tutorial?',
@@ -544,6 +542,8 @@ export const id: Record<Key, string> = {
   'tutorial.event-name': 'Ini acaramu, lengkap dengan total dan metode pembayarannya. Ketuk namanya kapan saja untuk menggantinya.',
   'tutorial.compare-view': 'Lihat acara mana yang hasilnya lebih besar, dan dari mana uangnya.',
   'product.profitEach': 'laba {amount}',
+  'tutorial.endFailed': 'CNTR belum bisa mengembalikan datamu ({error}). Datamu aman dan tidak ada yang hilang. Supaya tidak ada penjualan yang masuk ke data latihan, CNTR tetap tertutup sampai ini berhasil.',
+  'tryAgain': 'Coba lagi',
 };
 
 let current: Lang = 'en';
