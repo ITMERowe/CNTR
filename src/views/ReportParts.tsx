@@ -1,6 +1,5 @@
 import type { ComponentChildren } from 'preact';
-import { useState } from 'preact/hooks';
-import { fmt } from '../formatters';
+import { fmt, splitFigure } from '../formatters';
 import { paymentClass, paymentsInUse } from '../payments';
 import type { ProductTotals } from '../reports';
 import type { SaleRecord } from '../types';
@@ -27,12 +26,15 @@ export function Card({ title, action, children, class: className }: { title?: st
 }
 
 /** The one headline number of a view. */
-export function Hero({ label, value, meta, tone }: { label: string; value: string; meta?: ComponentChildren; tone?: 'negative' }) {
+export function Hero({ label, value, tone }: { label: string; value: string; tone?: 'negative' }) {
+  const { sign, symbol, number } = splitFigure(value);
   return (
     <section class="report-hero">
       <span class="eyebrow">{label}</span>
-      <span class={tone === 'negative' ? 'hero-figure is-negative' : 'hero-figure'} style={{ '--chars': value.length }}>{value}</span>
-      {meta && <span class="hero-meta">{meta}</span>}
+      <span class={tone === 'negative' ? 'hero-figure is-negative' : 'hero-figure'} style={{ '--chars': value.length }}>
+        {sign}
+        <span class="hero-figure-symbol">{symbol}</span> {number}
+      </span>
     </section>
   );
 }
@@ -93,61 +95,6 @@ export function PaymentSplit({ sales }: { sales: SaleRecord[] }) {
         ))}
       </div>
     </div>
-  );
-}
-
-const hourLabel = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
-
-/** Sales per hour. Emphasis form: the busiest hour in ink, the rest recessive. Tap a column to read it. */
-export function HourChart({ sales }: { sales: SaleRecord[] }) {
-  const counts = new Map<number, number>();
-  for (const sale of sales) {
-    const hour = new Date(sale.timestamp).getHours();
-    counts.set(hour, (counts.get(hour) ?? 0) + 1);
-  }
-  const hours = [...counts.keys()].sort((a, b) => a - b);
-  const [selected, setSelected] = useState<number | null>(null);
-  if (hours.length < 2) {
-    // One column is not a chart; say it in words instead.
-    return hours.length ? <p class="chart-note">{t('chart.allBetween', { sales: tn('count.sale', sales.length), from: hourLabel(hours[0]), to: hourLabel((hours[0] + 1) % 24) })}</p> : null;
-  }
-
-  const range = Array.from({ length: hours[hours.length - 1] - hours[0] + 1 }, (_, i) => hours[0] + i);
-  const max = Math.max(...counts.values());
-  const peak = range.find((hour) => counts.get(hour) === max)!;
-  const focus = selected ?? peak;
-  const labelEvery = range.length > 8 ? 2 : 1;
-
-  return (
-    <figure class="chart" aria-label={t('chart.busiestLabel', { hour: hourLabel(peak), sales: tn('count.sale', max) })}>
-      <figcaption class="chart-caption">
-        <strong>{hourLabel(focus)}</strong> · {tn('count.sale', counts.get(focus) ?? 0)}
-        {focus === peak && <span class="chip">{t('chart.busiest')}</span>}
-      </figcaption>
-      <div class="chart-plot">
-        {range.map((hour, index) => {
-          const count = counts.get(hour) ?? 0;
-          return (
-            <button
-              key={hour}
-              type="button"
-              class={`chart-col${hour === peak ? ' is-peak' : ''}${hour === focus ? ' is-focus' : ''}`}
-              style={{ '--i': index }}
-              aria-label={`${hourLabel(hour)}: ${tn('count.sale', count)}`}
-              aria-pressed={hour === focus}
-              onClick={() => setSelected(hour === selected ? null : hour)}
-            >
-              <span class="chart-bar" style={{ height: `${count ? Math.max(4, (count / max) * 100) : 0}%` }} />
-            </button>
-          );
-        })}
-      </div>
-      <div class="chart-axis" aria-hidden="true">
-        {range.map((hour, index) => (
-          <span key={hour}>{index % labelEvery === 0 ? String(hour).padStart(2, '0') : ''}</span>
-        ))}
-      </div>
-    </figure>
   );
 }
 

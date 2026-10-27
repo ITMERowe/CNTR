@@ -34,7 +34,7 @@ const fresh = await run(page, `${H}
 `);
 check('fresh install: no starter products, the empty counter says how to add one', fresh.tiles === 0 && /Tap \+/.test(fresh.empty), fresh);
 
-// 2. The editor offers the methods; a new product starts with Cash + QRIS; a third is refused; the last cannot be removed
+// 2. The editor offers the methods; a new product starts with Cash + QRIS; a third swaps out the oldest pick; the last cannot be removed
 const editor = await run(page, `${H}
   document.getElementById('openProductEdit').click();
   const offered = [...document.querySelectorAll('#editPayments .payment-option')].map((b) => b.dataset.method);
@@ -42,15 +42,15 @@ const editor = await run(page, `${H}
   option('Card').click();
   const afterThird = pressed();
   const cardDisabled = option('Card').getAttribute('aria-disabled') === 'true';
-  option('QRIS').click(); option('Cash').click();
+  option('Card').click(); option('QRIS').click();
   const lastKept = pressed();
   document.getElementById('closeEditBtn').click();
   return { offered, start, afterThird, cardDisabled, lastKept };
 `);
 check('editor offers Cash, QRIS, Transfer, Card, E-wallet', editor.offered.join() === 'Cash,QRIS,Transfer,Card,E-wallet', editor);
 check('a new product starts with Cash + QRIS', editor.start.join() === 'Cash,QRIS', editor);
-check('a third method is refused while 2 are chosen', editor.afterThird.join() === 'Cash,QRIS' && editor.cardDisabled, editor);
-check('the last method cannot be removed', editor.lastKept.join() === 'Cash', editor);
+check('a third pick swaps out the oldest (Cash) instead of being refused; chips stay enabled', editor.afterThird.join() === 'QRIS,Card' && !editor.cardDisabled, editor);
+check('the last method cannot be removed', editor.lastKept.join() === 'QRIS', editor);
 
 // 3. Two methods = two halves; one method = one full-width button; the sale records that method
 const tiles = await run(page, `${H}

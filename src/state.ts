@@ -112,17 +112,12 @@ export function productColor(name: string) {
   return state.productHistory.find((product) => product.name === name)?.color ?? '';
 }
 
-/** Renames a product's live sales; its new price and cost apply to today's sales only (ended days stay frozen). */
+/** Renames a product's live sales. A new price or cost applies only to sales made after it: a sale keeps what it was sold for. */
 export function renameSales(oldName: string, product: Product) {
-  const today = new Set(todayLiveSales());
   for (const sale of state.sales) {
     // By id, so a deleted product's sales never follow a new product with its name; older sales have no id.
     if (sale.productId ? sale.productId !== product.id : sale.product !== oldName) continue;
     sale.product = product.name;
-    if (today.has(sale)) {
-      sale.price = product.price;
-      sale.cost = product.cost;
-    }
   }
 }
 
@@ -136,9 +131,19 @@ export function deleteProduct(name: string) {
   saveProducts();
 }
 
+/** Records a sale. Returns true if it started a new day (the "new day when the date changes" setting). */
 export function recordSale(product: Product, payment: string) {
-  state.sales.push({ product: product.name, productId: product.id, price: product.price, cost: product.cost, payment, timestamp: saleTime(new Date(), state.liveEvent.dayBreaks) });
+  const now = new Date();
+  const today = todayLiveSales();
+  const last = today[today.length - 1];
+  const newDay = storage.loadSettings().newDayOnDateChange && last !== undefined && new Date(last.timestamp).toDateString() !== now.toDateString();
+  if (newDay) {
+    state.liveEvent = { ...state.liveEvent, dayBreaks: [...state.liveEvent.dayBreaks, breakTime(now, state.sales, state.liveEvent.dayBreaks)] };
+    storage.saveLiveEvent(state.liveEvent);
+  }
+  state.sales.push({ product: product.name, productId: product.id, price: product.price, cost: product.cost, payment, timestamp: saleTime(now, state.liveEvent.dayBreaks) });
   saveSales();
+  return newDay;
 }
 
 /** Removes today's most recent matching sale (never one from an ended day); returns false if there was none. */

@@ -4,11 +4,11 @@ import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { h, render as renderView } from 'preact';
 import { generateUUID } from './data';
-import { formatInputNumber, parseCurrencyInput } from './formatters';
+import { fmt, formatInputNumber, parseCurrencyInput } from './formatters';
 import { version as packageVersion } from '../package.json';
 import { buildBackup, parseBackup, salesCsv } from './backup';
 import { DATA_KEYS, DROPPED_KEYS } from './migrate';
-import { pickTextFile, saveAutoBackup, saveFile, saveSafetyCopy } from './files';
+import { pickTextFile, saveAutoBackup, saveDayBackup, saveFile, saveSafetyCopy } from './files';
 import { adjustCount } from './events';
 import { feedback } from './feedback';
 import { totals } from './reports';
@@ -53,11 +53,13 @@ import { applyTheme } from './theme';
 import type { AppSettings, Currency, PastEvent, Product } from './types';
 import {
   activeScreenId,
+  closeSheet,
   el,
   getProductListOrder,
   lockBodyScroll,
   openConfirmModal,
   openScreen,
+  openSheet,
   showMessage,
   showToast,
   unlockBodyScroll,
@@ -80,11 +82,11 @@ let pulseId = 0;
 const isNative = Capacitor.isNativePlatform();
 
 function addSale(product: Product, payment: string) {
-  recordSale(product, payment);
+  const newDay = recordSale(product, payment);
   pulse = { product: product.name, payment, direction: 'up', id: ++pulseId };
   feedback('sale');
   render();
-  showToast(`${product.name} · ${payment}`);
+  showToast(newDay ? t('toast.newDay', { day: liveDayCount() }) : `${product.name} · ${payment}`);
 }
 
 function undoSale(product: Product, payment: string) {
@@ -127,6 +129,7 @@ function render() {
       onAdd: addSale,
       onUndo: undoSale,
       onEdit: (product: Product) => openProductEditor(state.products.indexOf(product)),
+      onAddProduct: () => openProductEditor(-1),
     }),
     el.grid,
   );
@@ -147,12 +150,13 @@ function render() {
       onDeleteExpense: deleteExpense,
       onEndDay: confirmEndDay,
       onEndEvent: () => openNameSheet('end-event'),
+      onGoToSell: () => goTo('salesScreen'),
     }),
     el.eventReport,
   );
   renderView(h(RecentSales, { sales: state.sales.slice(-8).reverse(), colorFor: productColor }), el.historyRecentSales);
   renderView(h(EventList, { events: state.pastEvents, onOpen: openPastEvent }), el.pastEventList);
-  el.compareEventsBtn.disabled = state.pastEvents.length < 2;
+  el.compareEventsBtn.hidden = state.pastEvents.length < 2;
   renderPastEvent();
   renderProductList();
   updateHeaderActions();
@@ -163,6 +167,7 @@ function renderPastEvent() {
   const stored = viewingId ? findPastEvent(viewingId) : undefined;
   const event = draft ?? stored;
   el.pastEventEditBar.hidden = !draft;
+  document.body.classList.toggle('is-editing-event', Boolean(draft));
   el.pastEventEditBtn.hidden = el.pastEventDeleteBtn.hidden = el.pastEventBackBtn.hidden = Boolean(draft);
   if (!event) {
     renderView(null, el.pastEventCard);
@@ -182,6 +187,7 @@ function renderPastEvent() {
       colorFor: snapshotColor,
       productsPerDay: loadSettings().productsPerDay,
       live: false,
+      dates: { startedAt: event.startedAt, endedAt: event.endedAt },
       ...(draft
         ? {
             onRename: () => openNameSheet('rename-draft'),
@@ -252,13 +258,14 @@ function confirmEndDay() {
   openConfirmModal(
     t('endDay.message', { day }),
     t('endDay.button'),
-    () => {
-      if (endDay()) {
-        feedback('success');
-        showToast(t('toast.daySaved', { day }));
-      }
-      render();
-    },
+    () =>
+      void withAutoBackup(() => {
+        if (endDay()) {
+          feedback('success');
+          showToast(t('toast.daySaved', { day }));
+        }
+        render();
+      }, dayBackup),
     { title: t('endDay.title'), danger: false },
   );
 }
@@ -275,6 +282,25 @@ function confirmEndEvent(name: string) {
         showToast(t('toast.movedToHistory'));
       }),
     { title: t('endEvent.title'), danger: false },
+  );
+}
+
+/** If the live event's last sale is over 3 days old, offers to end it before the next con's sales land in it. */
+function checkStaleEvent() {
+  const lastSale = state.sales.reduce<Date | null>((max, sale) => (!max || sale.timestamp > max ? sale.timestamp : max), null);
+  if (!lastSale || Date.now() - lastSale.getTime() <= 3 * 24 * 60 * 60 * 1000) return;
+  const name = liveEventName();
+  openConfirmModal(
+    t('staleEvent.message'),
+    t('staleEvent.endIt'),
+    () =>
+      void withAutoBackup(() => {
+        endEvent(name);
+        render();
+        feedback('success');
+        showToast(t('toast.movedToHistory'));
+      }),
+    { title: t('staleEvent.title', { name }), danger: false, cancelLabel: t('staleEvent.sameEvent') },
   );
 }
 
@@ -320,6 +346,25 @@ function cancelEditing() {
   if (saving) return;
   draft = null;
   render();
+}
+
+/** Runs `leave` after dropping the edit copy; if it has unsaved changes, asks first (Keep editing / Discard). */
+function leaveEditing(leave: () => void) {
+  const stored = viewingId ? findPastEvent(viewingId) : undefined;
+  if (!draft || saving || JSON.stringify(draft) === JSON.stringify(stored)) {
+    if (!saving) draft = null;
+    leave();
+    return;
+  }
+  openConfirmModal(
+    t('discard.message'),
+    t('discard.button'),
+    () => {
+      draft = null;
+      leave();
+    },
+    { title: t('discard.title'), cancelLabel: t('discard.keep') },
+  );
 }
 
 async function saveEditing() {
@@ -374,17 +419,18 @@ function openNameSheet(mode: NameSheetMode) {
   nameSheetMode = mode;
   const ending = mode === 'end-event';
   el.saveModalTitle.textContent = ending ? t('endEvent.button') : t('rename_event');
-  el.saveModalText.textContent = ending ? t('endEvent.nameText') : t('name_this_event_so_you_can_find_it_later');
+  const noExpenses = ending && state.eventCosts.length === 0 ? ` ${t('endEvent.noExpenses')}` : '';
+  el.saveModalText.textContent = (ending ? t('endEvent.nameText') : t('name_this_event_so_you_can_find_it_later')) + noExpenses;
   el.saveModalSaveBtn.textContent = ending ? t('next') : t('save');
   el.saveModalInput.value = mode === 'rename-draft' ? (draft?.name ?? '') : liveEventName();
   updateSaveModalButton();
-  el.saveModalOverlay.classList.add('open');
+  openSheet(el.saveModalOverlay);
   el.saveModalInput.focus();
 }
 
 function closeSaveModal() {
   el.saveModalInput.value = '';
-  el.saveModalOverlay.classList.remove('open');
+  closeSheet(el.saveModalOverlay);
 }
 
 function submitSaveModal() {
@@ -425,13 +471,13 @@ function openExpenseModal(id: string | null) {
   el.eventCostName.value = cost?.name ?? '';
   el.eventCostAmount.value = cost ? formatInputNumber(String(cost.amount), loadSettings().currency) : '';
   updateExpenseButtonState();
-  el.expenseModalOverlay.classList.add('open');
+  openSheet(el.expenseModalOverlay);
   lockBodyScroll();
 }
 
 function closeExpenseModal() {
   editingExpenseId = null;
-  el.expenseModalOverlay.classList.remove('open');
+  closeSheet(el.expenseModalOverlay);
   unlockBodyScroll();
 }
 
@@ -454,10 +500,14 @@ function submitExpense() {
 }
 
 function deleteExpense(id: string) {
-  if (editingPastEvent()) draft = { ...draft!, expenses: draft!.expenses.filter((cost) => cost.id !== id) };
-  else removeExpense(id);
-  feedback('remove');
-  render();
+  const cost = activeExpenses().find((item) => item.id === id);
+  if (!cost) return;
+  openConfirmModal(t('expense.deleteText', { name: cost.name, amount: fmt(cost.amount) }), t('delete'), () => {
+    if (editingPastEvent()) draft = { ...draft!, expenses: draft!.expenses.filter((item) => item.id !== id) };
+    else removeExpense(id);
+    feedback('remove');
+    render();
+  }, { title: t('expense.delete') });
 }
 
 // ---- Compare dialog ----
@@ -471,11 +521,11 @@ function checkedValues(container: HTMLElement) {
 function openCompareModal() {
   renderView(h(EventChecklist, { events: state.pastEvents, checked: compareSelection }), el.compareModalList);
   el.compareModalConfirmBtn.disabled = checkedValues(el.compareModalList).length !== 2;
-  el.compareModalOverlay.classList.add('open');
+  openSheet(el.compareModalOverlay);
 }
 
 function closeCompareModal() {
-  el.compareModalOverlay.classList.remove('open');
+  closeSheet(el.compareModalOverlay);
 }
 
 function confirmCompareSelection() {
@@ -512,17 +562,11 @@ function goTo(screenId: string) {
 
 function wireNavigation() {
   document.querySelectorAll<HTMLButtonElement>('.tabbar .tab').forEach((button) => {
-    onClick(button, () => {
-      draft = null; // leaving an unsaved edit drops it
-      goTo(button.dataset.tab ?? 'salesScreen');
-    });
+    onClick(button, () => leaveEditing(() => goTo(button.dataset.tab ?? 'salesScreen')));
   });
 
-  onClick(el.openProductsMenuBtn, () => goTo('productHistoryScreen'));
   onClick(el.openAboutMenuBtn, () => goTo('aboutScreen'));
-  for (const back of [el.productHistoryBackBtn, el.aboutBackBtn]) {
-    onClick(back, () => goTo('settingsScreen'));
-  }
+  onClick(el.aboutBackBtn, () => goTo('settingsScreen'));
   onClick(el.pastEventBackBtn, closePastEvent);
   onClick(el.pastEventEditBtn, startEditing);
   onClick(el.pastEventCancelBtn, cancelEditing);
@@ -551,6 +595,10 @@ function wireSettings() {
     saveSettings({ ...loadSettings(), productsPerDay: el.productsPerDayToggle.checked });
     render();
   });
+  el.newDayToggle.checked = loadSettings().newDayOnDateChange;
+  el.newDayToggle.addEventListener('change', () => {
+    saveSettings({ ...loadSettings(), newDayOnDateChange: el.newDayToggle.checked });
+  });
   el.languageSelect.value = loadSettings().language;
   el.languageSelect.addEventListener('change', () => {
     const language = el.languageSelect.value as Lang;
@@ -559,13 +607,17 @@ function wireSettings() {
     document.querySelectorAll<HTMLElement>('.sheet-overlay.open [id$="CloseBtn"]').forEach((button) => button.click());
     applyLanguage(language);
     updateLastBackupText();
+    updateThemeState();
     render();
   });
-  el.themeSelect.value = loadSettings().theme;
-  el.themeSelect.addEventListener('change', () => {
-    const theme = el.themeSelect.value as AppSettings['theme'];
+  el.themeToggle.checked = loadSettings().theme === 'dark';
+  updateThemeState();
+  el.themeToggle.addEventListener('change', () => {
+    const theme: AppSettings['theme'] = el.themeToggle.checked ? 'dark' : 'light';
     saveSettings({ ...loadSettings(), theme });
     applyTheme(theme);
+    updateThemeState();
+    feedback('step');
   });
   el.soundToggle.checked = loadSettings().sound;
   el.soundToggle.addEventListener('change', () => {
@@ -606,7 +658,27 @@ function wireDialogs() {
   onClick(el.compareModalCloseBtn, closeCompareModal);
   onBackdropClick(el.compareModalOverlay, closeCompareModal);
   el.compareModalList.addEventListener('change', () => {
-    el.compareModalConfirmBtn.disabled = checkedValues(el.compareModalList).length !== 2;
+    const count = checkedValues(el.compareModalList).length;
+    el.compareModalConfirmBtn.disabled = count !== 2;
+    if (count === 2) confirmCompareSelection(); // compares as soon as the 2nd event is ticked; the button still works as a fallback
+  });
+
+  // Enter (the keyboard's arrow key) moves to the next field on the same screen or sheet; on the last one it closes
+  // the keyboard. The key shows "next" or "done" to match. Inputs with their own Enter (event name) prevent this.
+  const nextField = (input: HTMLInputElement) => {
+    const fields = [...(input.closest('.sheet, .screen') ?? document).querySelectorAll<HTMLInputElement>('input[type="text"]')].filter((field) => field.getClientRects().length);
+    return fields[fields.indexOf(input) + 1];
+  };
+  const isTextInput = (target: EventTarget | null): target is HTMLInputElement => target instanceof HTMLInputElement && target.type === 'text';
+  document.addEventListener('focusin', (event) => {
+    if (isTextInput(event.target)) event.target.enterKeyHint = nextField(event.target) ? 'next' : 'done';
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || event.defaultPrevented || !isTextInput(event.target)) return;
+    event.preventDefault();
+    const next = nextField(event.target);
+    if (next) next.focus();
+    else event.target.blur();
   });
 
   document.addEventListener('keydown', (event) => {
@@ -614,6 +686,7 @@ function wireDialogs() {
     if (el.saveModalOverlay.classList.contains('open')) closeSaveModal();
     if (el.compareModalOverlay.classList.contains('open')) closeCompareModal();
     if (el.expenseModalOverlay.classList.contains('open')) closeExpenseModal();
+    if (el.confirmModalOverlay.classList.contains('open')) el.confirmModalCloseBtn.click();
   });
 }
 
@@ -624,7 +697,7 @@ function goBack() {
   const backBtn = document.querySelector<HTMLElement>('.screen.active .back-btn');
   if (el.colorPickerMenu.classList.contains('open')) closeColorPicker();
   else if (sheet) sheet.querySelector<HTMLElement>('[id$="CloseBtn"]')?.click();
-  else if (draft && activeScreenId() === 'pastEventScreen') cancelEditing();
+  else if (draft && activeScreenId() === 'pastEventScreen') leaveEditing(render);
   else if (backBtn?.offsetParent) backBtn.click();
   else if (activeScreenId() !== 'salesScreen') goTo('salesScreen');
   else App.minimizeApp();
@@ -640,6 +713,10 @@ const formatWhen = (iso: string) => new Date(iso).toLocaleString(locale(), { day
 function updateLastBackupText() {
   const last = loadLastBackup();
   el.lastBackupText.textContent = last ? formatWhen(last) : t('never');
+}
+
+function updateThemeState() {
+  el.themeState.textContent = t(el.themeToggle.checked ? 'theme.dark' : 'theme.light');
 }
 
 /** Saves a file and reports where it went. Returns true if it was saved somewhere. */
@@ -747,6 +824,11 @@ async function autoBackup() {
   await saveAutoBackup(`cntr-auto-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2));
 }
 
+/** Writes (replacing) the End day safety backup. Throws if it could not be saved. */
+async function dayBackup() {
+  await saveDayBackup(JSON.stringify(buildBackup(storedValues(), new Date()), null, 2));
+}
+
 /** Once, when events replace saved reports: keep the old reports in an automatic backup, since exports no longer include them. */
 async function backUpDroppedReports() {
   if (!DROPPED_KEYS.some((key) => storedValues(DROPPED_KEYS).has(key))) return;
@@ -759,14 +841,14 @@ async function backUpDroppedReports() {
   }
 }
 
-/** Runs a destructive `action` after an automatic backup; if the backup fails, asks before going ahead. */
-async function withAutoBackup(action: () => void) {
+/** Runs a destructive `action` after a safety backup (`backup`, default the full timestamped one); if the backup fails, asks before going ahead. */
+async function withAutoBackup(action: () => void, backup: () => Promise<void> = autoBackup) {
   if (tutorialActive()) {
     action(); // practice data: no backup files to pile up
     return;
   }
   try {
-    await autoBackup();
+    await backup();
   } catch (error) {
     feedback('warn');
     openConfirmModal(t('autoBackup.failedText', { error: errorText(error) }), t('continue'), action, { title: t('autoBackup.failed') });
@@ -902,6 +984,8 @@ async function start() {
     runTour(TOUR_STEPS, () => void endTutorial());
   } else if (!tutorialOffered() && !hasOwnData()) {
     offerTutorial();
+  } else {
+    checkStaleEvent();
   }
 }
 

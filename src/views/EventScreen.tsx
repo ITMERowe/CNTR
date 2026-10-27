@@ -5,7 +5,7 @@ import { paymentClass, productPayments, sortPayments } from '../payments';
 import { buildProductBreakdown, marginPercent } from '../reports';
 import type { EventCost, Product, SaleRecord } from '../types';
 import { Icon } from './Icon';
-import { Card, EmptyState, Hero, HourChart, Kpi, PaymentSplit, ProductRows, profitClass } from './ReportParts';
+import { Card, EmptyState, Hero, Kpi, PaymentSplit, ProductRows, profitClass } from './ReportParts';
 import { t, tn } from '../i18n';
 
 export interface EventEditHandlers {
@@ -21,6 +21,8 @@ interface Props {
   products: Product[];
   colorFor: (name: string) => string;
   live: boolean;
+  /** A past event's first and last sale dates, shown under its name (the live event shows the Live chip instead). */
+  dates?: { startedAt: string; endedAt: string };
   /** One collapsible Products card per day (Settings → Products per day). */
   productsPerDay: boolean;
   onRename?: () => void;
@@ -29,6 +31,7 @@ interface Props {
   onDeleteExpense?: (id: string) => void;
   onEndDay?: () => void;
   onEndEvent?: () => void;
+  onGoToSell?: () => void;
   edit?: EventEditHandlers;
 }
 
@@ -140,6 +143,8 @@ export function EventScreen(props: Props) {
   const summary = eventSummary(sales, expenses);
   const days = splitDays(sales, dayBreaks);
   const isEmpty = !sales.length && !expenses.length;
+  // Nothing at all yet (no products either): one empty state instead of it stacked with another for the Products card below.
+  const allEmpty = isEmpty && !products.length;
 
   return (
     <>
@@ -157,18 +162,38 @@ export function EventScreen(props: Props) {
         {live && <span class="chip chip-live">{t('live')}</span>}
       </div>
 
-      {isEmpty && !edit ? (
+      {props.dates && (
+        <p class="event-when">
+          {(() => {
+            const first = formatDay(props.dates.startedAt);
+            const last = formatDay(props.dates.endedAt);
+            return first === last ? first : `${first} – ${last}`;
+          })()}
+          {' · '}
+          {tn('count.day', days.length)}
+        </p>
+      )}
+
+      {allEmpty && !edit ? (
+        <Card>
+          <EmptyState
+            icon="event"
+            title={t('sales.none')}
+            text={t('event.emptyText')}
+            action={props.onGoToSell && (
+              <button class="btn btn-primary btn-block" type="button" onClick={props.onGoToSell}>
+                {t('event.goToSell')}
+              </button>
+            )}
+          />
+        </Card>
+      ) : isEmpty && !edit ? (
         <Card>
           <EmptyState icon="event" title={t('sales.none')} text={t('event.emptyText')} />
         </Card>
       ) : (
         <>
-          <Hero
-            label={summary.net < 0 ? t('deficit') : t('net_profit')}
-            value={fmt(summary.net)}
-            tone={summary.net < 0 ? 'negative' : undefined}
-            meta={t('event.netMeta', { profit: fmt(summary.productProfit), expenses: fmt(summary.expenses) })}
-          />
+          <Hero label={summary.net < 0 ? t('deficit') : t('net_profit')} value={fmt(summary.net)} tone={summary.net < 0 ? 'negative' : undefined} />
           <div class="kpi-row kpi-row-3">
             <Kpi label={t('revenue')} value={fmt(summary.revenue)} hint={tn('count.sale', summary.count)} />
             <Kpi label={t('profit')} value={fmt(summary.productProfit)} hint={t('margin', { pct: marginPercent(summary.revenue, summary.productProfit).toFixed(1) })} tone={summary.productProfit < 0 ? 'is-negative' : undefined} />
@@ -223,19 +248,14 @@ export function EventScreen(props: Props) {
         </Card>
       )}
 
-      {!edit && sales.length > 0 && (
-        <Card title={t('sales_by_hour')}>
-          <HourChart sales={sales} />
-        </Card>
-      )}
-
       {!edit &&
+        !allEmpty &&
         (props.productsPerDay ? (
           days.map((day, index) => (
             // Only the latest day starts open; `open` is set again only if that changes, so taps stick.
             <details class="card products-day" key={index} open={index === days.length - 1}>
               <summary class="products-day-head">
-                <h2 class="card-title">{t('products.day', { n: index + 1 })}</h2>
+                <h2 class="card-title">{days.length > 1 ? t('products.day', { n: index + 1 }) : t('products')}</h2>
                 <span class="products-day-meta">{tn('count.sale', day.length)}</span>
                 <Icon name="chevron-right" />
               </summary>

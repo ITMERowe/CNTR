@@ -60,10 +60,12 @@ export interface AppSettings {
   compactMoney: boolean;
   /** Event screen: one Products card per day instead of one for the whole event. */
   productsPerDay: boolean;
+  /** The first sale on a new calendar date starts a new day by itself (as if End day had been pressed). */
+  newDayOnDateChange: boolean;
   /** Soft tones on sales, undo and finished actions (vibration is separate and always on). */
   sound: boolean;
-  /** Colour theme; 'system' follows the phone's light/dark setting. */
-  theme: 'system' | 'light' | 'dark';
+  /** Colour theme. Resolved from the phone's own setting once, the first time there is no stored choice yet; after that it is just Light/Dark, chosen in Settings. */
+  theme: 'light' | 'dark';
   /** App language; chosen once on first launch (see initialLanguage), then only by the user. */
   language: 'en' | 'id';
 }

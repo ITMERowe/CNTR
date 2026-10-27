@@ -74,9 +74,8 @@ for (const [theme, language] of [['dark', 'en'], ['light', 'en'], ['dark', 'id']
     await page.click(`.tabbar .tab[data-tab="${tab}"]`);
     await assess(tab);
   }
-  await page.click('#openProductsMenuBtn');
-  await assess('Products (Settings)');
-  await page.click('#productHistoryBackBtn');
+  await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
+  await assess('Products');
   if (width === 412) {
     await page.click('.tabbar .tab[data-tab="salesScreen"]');
     await sleep(300);

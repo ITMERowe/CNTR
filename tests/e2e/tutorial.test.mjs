@@ -51,8 +51,14 @@ const afterReload = async (page) => {
   const practice = await page.evaluate(() => ({ products: JSON.parse(localStorage.cntrProducts).map((p) => p.name), events: JSON.parse(localStorage.cntrEvents).length }));
   check('Start tour loads practice products and two practice events', practice.products.join() === 'Sticker,Keychain' && practice.events === 2, practice);
 
-  const stuck = await playTour(page);
+  const offScreen = [];
+  const stuck = await playTour(page, undefined, async (id) => {
+    await sleep(300); // the bubble is placed on the next poll
+    const box = await page.evaluate(() => { const r = document.querySelector('.tour-bubble').getBoundingClientRect(); return { top: r.top, bottom: r.bottom, height: innerHeight }; });
+    if (box.top < 0 || box.bottom > box.height) offScreen.push(`${id} ${Math.round(box.top)}..${Math.round(box.bottom)}`);
+  });
   check(`all ${Object.keys(TOUR_ACTIONS).length} steps can be done with real taps and move the tour on`, !stuck, stuck ?? '');
+  check('the tour bubble is fully on screen at every step (never under the status bar)', !offScreen.length, offScreen.join(' | '));
   await afterReload(page);
   await sleep(300);
   const after = await snapshot(page);
@@ -183,7 +189,7 @@ async function startFromSettings(page) {
   await page.click('.tabbar .tab[data-tab="settingsScreen"]');
   await page.selectOption('#languageSelect', 'id');
   await sleep(200);
-  const switched = await page.evaluate(() => ({ stored: JSON.parse(localStorage.cntrSettings).language, theme: document.querySelector('label[for="themeSelect"] .group-row-label').textContent }));
+  const switched = await page.evaluate(() => ({ stored: JSON.parse(localStorage.cntrSettings).language, theme: document.getElementById('themeLabel').textContent }));
   check('choosing Bahasa Indonesia in Settings switches without a reload and is saved', switched.stored === 'id' && switched.theme === 'Tema', switched);
 
   // A dialog open during a language switch is closed, not left in the old language.

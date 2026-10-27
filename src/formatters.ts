@@ -1,7 +1,7 @@
 import { loadSettings } from './storage';
 import type { Currency } from './types';
 
-const CURRENCY_SYMBOLS: Record<Currency, string> = {
+export const CURRENCY_SYMBOLS: Record<Currency, string> = {
   IDR: 'Rp',
   USD: '$',
   EUR: '€',
@@ -93,6 +93,14 @@ export const fmt = (n: number) => {
   const settings = loadSettings();
   return formatMoney(n, settings.currency, settings.compactMoney);
 };
+
+/** A `fmt()` result split into its sign, currency symbol and number, for a big figure that styles the symbol smaller and greyer (the sign stays with the number, so a deficit still reads as negative at a glance). */
+export function splitFigure(formatted: string): { sign: string; symbol: string; number: string } {
+  const sign = formatted.startsWith('-') ? '-' : '';
+  const rest = sign ? formatted.slice(1) : formatted;
+  const space = rest.indexOf(' ');
+  return space < 0 ? { sign, symbol: '', number: rest } : { sign, symbol: rest.slice(0, space), number: rest.slice(space + 1) };
+}
 
 export const PRESET_COLORS = ['#F76495', '#FF4D4D', '#F9B234', '#51C43F', '#30C7FF', '#4F6EFF', '#B85DFF'];
 

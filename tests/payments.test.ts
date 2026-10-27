@@ -18,7 +18,8 @@ test('a product saved before payment methods existed takes Cash and QRIS', () =>
 test('choosing methods: at most 2, never none, kept in the fixed order', () => {
   assert.deepEqual(togglePayment(['Cash'], 'Card'), ['Cash', 'Card']);
   assert.deepEqual(togglePayment(['Card'], 'Cash'), ['Cash', 'Card'], 'fixed order, not tap order');
-  assert.deepEqual(togglePayment(['Cash', 'QRIS'], 'Card'), ['Cash', 'QRIS'], 'a third is refused');
+  assert.deepEqual(togglePayment(['Cash', 'QRIS'], 'Card'), ['QRIS', 'Card'], 'a third swaps out the oldest (default: the first)');
+  assert.deepEqual(togglePayment(['Cash', 'QRIS'], 'Card', 'QRIS'), ['Cash', 'Card'], 'a third swaps out the given oldest pick');
   assert.deepEqual(togglePayment(['Cash', 'QRIS'], 'QRIS'), ['Cash']);
   assert.deepEqual(togglePayment(['Cash'], 'Cash'), ['Cash'], 'the last one cannot be removed');
 });

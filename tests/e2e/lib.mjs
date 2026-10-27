@@ -80,17 +80,17 @@ export const TOUR_ACTIONS = {
   'history-save': (p) => p.click('#pastEventSaveBtn'),
   'history-back': (p) => p.click('#pastEventBackBtn'),
   'compare-open': (p) => p.click('#compareEventsBtn'),
+  // Compares as soon as the 2nd event is ticked; no separate confirm tap.
   'compare-pick': async (p) => {
     await p.click('#compareModalList .check-row >> nth=0');
     await p.click('#compareModalList .check-row >> nth=1');
-    await p.click('#compareModalConfirmBtn');
   },
   'compare-view': tourNext,
   done: tourNext,
 };
 
-/** Does the tour's steps in order until (not including) `until`. Returns null, or where it got stuck. */
-export async function playTour(page, until) {
+/** Does the tour's steps in order until (not including) `until`. Returns null, or where it got stuck. `onStep(id)` runs as each step shows. */
+export async function playTour(page, until, onStep) {
   for (const id of Object.keys(TOUR_ACTIONS)) {
     if (id === until) return null;
     try {
@@ -98,6 +98,7 @@ export async function playTour(page, until) {
     } catch {
       return { expected: id, showing: await page.evaluate(() => document.querySelector('.tour-bubble')?.dataset.step ?? null) };
     }
+    await onStep?.(id);
     try {
       await TOUR_ACTIONS[id](page);
     } catch (error) {

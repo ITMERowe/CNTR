@@ -6,6 +6,7 @@ const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) 
 
 export const el = {
   grid: byId<HTMLDivElement>('grid'),
+  brand: byId<HTMLDivElement>('brand'),
   stats: byId<HTMLDivElement>('stats'),
   toast: byId<HTMLDivElement>('toast'),
   openProductEdit: byId<HTMLButtonElement>('openProductEdit'),
@@ -14,7 +15,9 @@ export const el = {
   closeEditBtn: byId<HTMLButtonElement>('closeEditBtn'),
   removeProductBtn: byId<HTMLButtonElement>('removeProductBtn'),
   editName: byId<HTMLInputElement>('editName'),
+  editPriceLabel: byId<HTMLElement>('editPriceLabel'),
   editPrice: byId<HTMLInputElement>('editPrice'),
+  editCostLabel: byId<HTMLElement>('editCostLabel'),
   editCost: byId<HTMLInputElement>('editCost'),
   saveProductBtn: byId<HTMLButtonElement>('saveProductBtn'),
   editPayments: byId<HTMLDivElement>('editPayments'),
@@ -49,16 +52,16 @@ export const el = {
   currencySelect: byId<HTMLSelectElement>('currencySelect'),
   compactMoneyToggle: byId<HTMLInputElement>('compactMoneyToggle'),
   productsPerDayToggle: byId<HTMLInputElement>('productsPerDayToggle'),
+  newDayToggle: byId<HTMLInputElement>('newDayToggle'),
   soundToggle: byId<HTMLInputElement>('soundToggle'),
-  themeSelect: byId<HTMLSelectElement>('themeSelect'),
+  themeToggle: byId<HTMLInputElement>('themeToggle'),
+  themeState: byId<HTMLElement>('themeState'),
   languageSelect: byId<HTMLSelectElement>('languageSelect'),
-  openProductsMenuBtn: byId<HTMLButtonElement>('openProductsMenuBtn'),
   productsSummary: byId<HTMLElement>('productsSummary'),
   openAboutMenuBtn: byId<HTMLButtonElement>('openAboutMenuBtn'),
   startTutorialBtn: byId<HTMLButtonElement>('startTutorialBtn'),
   aboutBackBtn: byId<HTMLButtonElement>('aboutBackBtn'),
   aboutVersion: byId<HTMLSpanElement>('aboutVersion'),
-  productHistoryBackBtn: byId<HTMLButtonElement>('productHistoryBackBtn'),
   productHistoryList: byId<HTMLDivElement>('productHistoryList'),
   // Backup
   exportBackupBtn: byId<HTMLButtonElement>('exportBackupBtn'),
@@ -108,6 +111,26 @@ export function showToast(message: string) {
   toastTimer = window.setTimeout(() => el.toast.classList.remove('show'), 900);
 }
 
+let sheetReturnFocus: HTMLElement | null = null;
+
+/** Opens a `.sheet-overlay`: blocks the page behind it (tabs, header, content) and moves focus into the sheet. */
+export function openSheet(overlay: HTMLElement) {
+  sheetReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  overlay.classList.add('open');
+  for (const blocked of document.querySelectorAll<HTMLElement>('.app > header, .app > main, .app > nav')) blocked.inert = true;
+  // Cancel (the safe action), not the first input or the primary/destructive button.
+  const sheet = overlay.querySelector<HTMLElement>('.sheet');
+  (sheet?.querySelector<HTMLElement>('.sheet-actions .btn-secondary') ?? sheet)?.focus();
+}
+
+/** Closes a sheet opened with openSheet: unblocks the page and returns focus to what opened it. */
+export function closeSheet(overlay: HTMLElement) {
+  overlay.classList.remove('open');
+  for (const blocked of document.querySelectorAll<HTMLElement>('.app > header, .app > main, .app > nav')) blocked.inert = false;
+  sheetReturnFocus?.focus();
+  sheetReturnFocus = null;
+}
+
 /** Asks before a destructive action; `onConfirm` runs only if the user confirms. */
 export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void, { title = t('are_you_sure'), danger = true, cancelLabel = t('cancel') } = {}) {
   const { confirmModalOverlay: overlay, confirmModalConfirmBtn: confirmBtn } = el;
@@ -117,10 +140,10 @@ export function openConfirmModal(message: string, confirmLabel: string, onConfir
   confirmBtn.className = danger ? 'btn btn-danger' : 'btn btn-primary';
   el.confirmModalCancelBtn.textContent = cancelLabel;
   el.confirmModalCancelBtn.hidden = false;
-  overlay.classList.add('open');
+  openSheet(overlay);
 
   const close = () => {
-    overlay.classList.remove('open');
+    closeSheet(overlay);
     overlay.onclick = confirmBtn.onclick = el.confirmModalCancelBtn.onclick = el.confirmModalCloseBtn.onclick = null;
   };
   confirmBtn.onclick = () => {
@@ -171,9 +194,11 @@ export function updateHeaderActions(screenId = activeScreenId()) {
 const PARENT_TAB: Record<string, string> = {
   pastEventScreen: 'historyScreen',
   compareEventScreen: 'historyScreen',
-  productHistoryScreen: 'settingsScreen',
   aboutScreen: 'settingsScreen',
 };
+
+// The entrance animation plays once per screen, not on every tab switch back to it.
+const enteredScreens = new Set<string>([document.querySelector('.screen.active')?.id ?? 'salesScreen']);
 
 let productListOrder: string[] | null = null;
 
@@ -184,11 +209,21 @@ export function getProductListOrder() {
 
 /** The only way to change screens: also sets the tab highlight, stats bar and header buttons. */
 export function openScreen(screenId: string) {
-  document.querySelectorAll('.screen').forEach((screen) => screen.classList.toggle('active', screen.id === screenId));
+  // Every page opens at its top, not at the previous page's scroll position. The pages scroll inside .content.
+  if (screenId !== activeScreenId()) {
+    document.querySelector('.content')?.scrollTo(0, 0);
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll<HTMLElement>('.screen').forEach((screen) => screen.classList.toggle('active', screen.id === screenId));
+  const enteringScreen = document.getElementById(screenId);
+  if (enteringScreen) enteringScreen.style.animation = enteredScreens.has(screenId) ? 'none' : '';
+  enteredScreens.add(screenId);
   productListOrder = screenId === 'productHistoryScreen' ? state.productHistory.map((product) => product.name) : null;
 
   const tab = document.querySelector(`.tabbar .tab[data-tab="${screenId}"]`) ? screenId : PARENT_TAB[screenId];
   if (tab) document.querySelectorAll('.tabbar .tab').forEach((button) => button.classList.toggle('active', button.getAttribute('data-tab') === tab));
   el.stats.style.display = screenId === 'salesScreen' ? '' : 'none';
+  // The "CNTR" wordmark only earns its place on Sell; every other screen has its own title.
+  el.brand.style.display = screenId === 'salesScreen' ? '' : 'none';
   updateHeaderActions(screenId);
 }

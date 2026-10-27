@@ -52,9 +52,14 @@ const exp2 = await run(page, `
   document.getElementById('addCostBtn').click();
   await new Promise((r) => setTimeout(r, 30)); const afterEdit = JSON.parse(localStorage.cntrEventCosts).map(c => c.name).join();
   document.querySelector('.delete-cost').click();
-  await new Promise((r) => setTimeout(r, 30)); return { before, afterEdit, left: JSON.parse(localStorage.cntrEventCosts).length };
+  await new Promise((r) => setTimeout(r, 30));
+  const asked = document.getElementById('confirmModalOverlay').classList.contains('open') && JSON.parse(localStorage.cntrEventCosts).length === 1;
+  const askText = document.getElementById('confirmModalMessage').textContent;
+  document.getElementById('confirmModalConfirmBtn').click();
+  await new Promise((r) => setTimeout(r, 30)); return { before, afterEdit, asked, askText, left: JSON.parse(localStorage.cntrEventCosts).length };
 `);
 check('edit expense prefills and saves', exp2.before === 'Booth' && exp2.afterEdit === 'Booth fee', JSON.stringify(exp2));
+check('deleting an expense asks first, naming it and its amount', exp2.asked && exp2.askText === 'Delete Booth fee (Rp 150.000)?', JSON.stringify(exp2));
 check('delete expense', exp2.left === 0);
 
 // 4. HTML in product name is escaped
@@ -83,7 +88,7 @@ await run(page, `document.getElementById('closeEditBtn').click();`);
 await load();
 const hist = await run(page, `
   // deactivate Cheki
-  document.getElementById('openProductsMenuBtn').click();
+  document.querySelector('.tabbar .tab[data-tab="productHistoryScreen"]').click();
   document.querySelector('.product-toggle-btn[data-name="Cheki"]').click();
   await new Promise((r) => setTimeout(r, 30));
   return JSON.parse(localStorage.cntrProducts).some(p => p.name === 'Cheki');
@@ -91,7 +96,7 @@ const hist = await run(page, `
 check('deactivate product', hist === false);
 await load();
 const histEdit = await run(page, `
-  document.getElementById('openProductsMenuBtn').click();
+  document.querySelector('.tabbar .tab[data-tab="productHistoryScreen"]').click();
   document.querySelector('.product-edit-btn[data-name="Cheki"]').click();
   const title = document.getElementById('productEditTitle').textContent;
   document.getElementById('editName').value = 'Cheki 2';
@@ -119,20 +124,20 @@ check('add after aborted history edit adds a new product', addAfter.active.inclu
 const orphan = await run(page, `
   const tile = document.querySelector('.tile[data-product="Poster"]');
   tile.querySelector('[data-payment="Cash"][data-action="plus"]').click();
-  document.getElementById('openProductsMenuBtn').click();
+  document.querySelector('.tabbar .tab[data-tab="productHistoryScreen"]').click();
   document.querySelector('.product-toggle-btn[data-name="Poster"]').click();
   document.querySelector('.tabbar .tab[data-tab="eventScreen"]').click();
   return [...document.querySelectorAll('#eventCard .rank-name')].map(n => n.textContent).includes('Poster');
 `);
 check('deactivated product still in sales breakdown', orphan);
 
-// 9. A new product reusing a deleted product's name is a different product: editing it leaves the old one's sales alone
+// 9. A new product reusing a deleted product's name is a different product; a new price applies only to sales after it
 const reuse = await run(page, `
   document.querySelector('.tabbar .tab[data-tab="salesScreen"]').click();
   const ids = JSON.parse(localStorage.cntrProducts).map((p) => p.id);
   const sell = () => document.querySelector('.tile[data-product="Gacha"] [data-payment="Cash"][data-action="plus"]').click();
   sell();
-  const editGacha = () => { document.getElementById('openProductsMenuBtn').click(); document.querySelector('.product-edit-btn[data-name="Gacha"]').click(); };
+  const editGacha = () => { document.querySelector('.tabbar .tab[data-tab="productHistoryScreen"]').click(); document.querySelector('.product-edit-btn[data-name="Gacha"]').click(); };
   editGacha();
   document.getElementById('removeProductBtn').click();
   document.getElementById('confirmModalConfirmBtn').click();
@@ -145,12 +150,27 @@ const reuse = await run(page, `
   editGacha();
   document.getElementById('editPrice').value = '2000';
   document.getElementById('saveProductBtn').click();
+  document.querySelector('.tabbar .tab[data-tab="salesScreen"]').click();
+  sell();
   await new Promise((r) => setTimeout(r, 30));
   const gacha = JSON.parse(localStorage.cntrSales).filter((s) => s.product === 'Gacha');
   return { ids: ids.every(Boolean), prices: gacha.map((s) => s.price), linked: gacha.at(-1).productId === JSON.parse(localStorage.cntrProducts).find((p) => p.name === 'Gacha').id };
 `);
 check('older products get an id on load', reuse.ids, JSON.stringify(reuse));
-check("editing a re-created product reprices only its own sales, not the deleted one's", reuse.prices.at(-1) === 2000 && reuse.prices.slice(0, -1).every((p) => p !== 2000) && reuse.linked, JSON.stringify(reuse));
+check("a new price applies only to later sales; earlier ones and a deleted product's keep theirs", reuse.prices.at(-2) === 1000 && reuse.prices.at(-1) === 2000 && reuse.prices.slice(0, -2).every((p) => p !== 1000 && p !== 2000) && reuse.linked, JSON.stringify(reuse));
+
+// 10. Enter moves to the next field, and on the last one closes the keyboard (the field loses focus)
+await run(page, `document.querySelector('.tabbar .tab[data-tab="salesScreen"]').click(); document.getElementById('openProductEdit').click();`);
+await page.focus('#editName');
+const hints = [await page.evaluate(() => document.activeElement.enterKeyHint)];
+const order = [];
+for (let i = 0; i < 3; i++) {
+  await page.keyboard.press('Enter');
+  order.push(await page.evaluate(() => document.activeElement.id || document.activeElement.tagName));
+  if (i === 1) hints.push(await page.evaluate(() => document.activeElement.enterKeyHint));
+}
+check('Enter goes name → price → cost, then closes the keyboard', order.join() === 'editPrice,editCost,BODY' && hints.join() === 'next,done', JSON.stringify({ order, hints }));
+await run(page, `document.getElementById('closeEditBtn').click();`);
 
 // 12. Corrupt storage doesn't crash startup
 await run(page, `localStorage.cntrSales = '{"oops":1}'; localStorage.cntrEvents = 'null'; localStorage.cntrLiveEvent = '[]';`);

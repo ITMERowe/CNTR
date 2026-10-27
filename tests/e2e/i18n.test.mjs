@@ -9,7 +9,7 @@ const errors = [];
 page.on('pageerror', (error) => errors.push(error.message));
 
 // English words that appear in the UI. Payment method names, product names, CNTR and the language names stay as they are.
-const ENGLISH = /\b(the|and|your|you|tap|add|sales?|events?|day|days|products?|expenses?|revenue|profit|settings|backup|export|restore|cancel|save|delete|edit|compare|history|sell|today|yesterday|start|end|undo|name|price|cost|colou?r|methods?|theme|language|sound|money|about|version|license|privacy|show|next|skip|quit|finish|none|never|last|phone|hidden|counter|manage|items?|margin|net|deficit|busiest|hour|between|units|sold|not|yet|no|new|past|current|live|picker|hue|preset|close|back|done|appearance|light|dark|setting|compact|amounts?|currency|replace|everything|choose|pick)\b/i;
+const ENGLISH = /\b(the|and|your|you|tap|add|sales?|events?|day|days|products?|expenses?|revenue|profit|settings|backup|export|restore|cancel|save|delete|edit|compare|history|sell|today|yesterday|start|end|undo|name|price|cost|colou?r|methods?|theme|language|sound|money|about|version|license|privacy|show|next|skip|quit|finish|none|never|last|phone|hidden|counter|manage|items?|margin|net|deficit|busiest|hour|between|units|sold|not|yet|no|new|past|current|live|picker|hue|preset|close|back|done|looks|light|dark|setting|compact|amounts?|currency|replace|everything|choose|pick)\b/i;
 const KEEP = /\b(Cash|QRIS|Transfer|Card|E-wallet|CNTR|English|Bahasa Indonesia|Gacha|Cheki|Poster|Photocard|Sticker|Acrylic Stand|Keychain|Tote Bag|Booth rental|MIT|ITMERowe|Preact|Capacitor|SQLite|Lucide|Plus Jakarta Sans|ISC|SIL|Open Font License)\b/g;
 
 /** Visible English left in the active screen and any open sheet or bubble. */
@@ -104,13 +104,12 @@ await page.click('#pastEventBackBtn');
 await page.click('#compareEventsBtn');
 await look('Compare picker');
 await page.click('#compareModalList .check-row >> nth=0');
-await page.click('#compareModalList .check-row >> nth=1');
-await page.click('#compareModalConfirmBtn');
+await page.click('#compareModalList .check-row >> nth=1'); // compares as soon as the 2nd is ticked
 await look('Compare');
 // Settings, Products, the product editor, About, a message
 await tab('settingsScreen');
 await look('Settings');
-await page.click('#openProductsMenuBtn');
+await tab('productHistoryScreen');
 await look('Products');
 await page.click('#addProductBtn');
 await look('Product editor');

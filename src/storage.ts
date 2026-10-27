@@ -17,10 +17,14 @@ export const DEFAULT_SETTINGS: AppSettings = {
   currency: 'IDR',
   compactMoney: false,
   productsPerDay: true,
+  newDayOnDateChange: false,
   sound: true,
-  theme: 'system',
+  theme: 'dark',
   language: 'en',
 };
+
+/** The phone's own light/dark setting, read only to resolve the very first choice (never followed afterwards). */
+const resolveTheme = (): AppSettings['theme'] => (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
 
 /** Sales are stored with ISO string timestamps. */
 type StoredSale = Omit<SaleRecord, 'timestamp'> & { timestamp: string };
@@ -288,12 +292,15 @@ export function loadSettings(): AppSettings {
     compactMoney: Boolean(stored.compactMoney),
     // Settings saved before this option (or a damaged value) get the default.
     productsPerDay: typeof stored.productsPerDay === 'boolean' ? stored.productsPerDay : DEFAULT_SETTINGS.productsPerDay,
+    newDayOnDateChange: typeof stored.newDayOnDateChange === 'boolean' ? stored.newDayOnDateChange : DEFAULT_SETTINGS.newDayOnDateChange,
     sound: typeof stored.sound === 'boolean' ? stored.sound : DEFAULT_SETTINGS.sound,
-    theme: stored.theme === 'light' || stored.theme === 'dark' ? stored.theme : DEFAULT_SETTINGS.theme,
+    theme: stored.theme === 'light' || stored.theme === 'dark' ? stored.theme : resolveTheme(),
     language: stored.language === 'en' || stored.language === 'id' ? stored.language : initialLanguage(navigator.language, freshInstall),
   };
-  // The first choice is saved at once, so it never changes on its own later (e.g. after the phone's language changes).
-  if (stored.language !== cachedSettings.language) persist(SETTINGS_KEY, JSON.stringify({ ...stored, language: cachedSettings.language }));
+  // The first choice is saved at once, so it never changes on its own later (e.g. after the phone's language or theme changes).
+  if (stored.language !== cachedSettings.language || stored.theme !== cachedSettings.theme) {
+    persist(SETTINGS_KEY, JSON.stringify({ ...stored, language: cachedSettings.language, theme: cachedSettings.theme }));
+  }
   return { ...cachedSettings };
 }
 

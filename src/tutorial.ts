@@ -159,22 +159,30 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
     if (event.key === 'Escape') event.stopImmediatePropagation();
   }
 
+  let placed = '';
+  /** Runs every frame, so the ring follows a sliding sheet or a scroll; it only writes styles when something moved. */
   function place() {
     const found = target();
     const sheet = document.querySelector('.sheet-overlay.open');
     const rect = found && (!sheet || sheet.contains(found)) ? found.getBoundingClientRect() : null;
+    const where = rect ? `${rect.top},${rect.left},${rect.width},${rect.height},${bubble.offsetHeight},${innerHeight}` : 'full';
+    if (where === placed) return;
+    placed = where;
     ring.classList.toggle('tour-ring-full', !rect);
-    bubble.style.top = bubble.style.bottom = bubble.style.transform = '';
     if (!rect) {
       // Nothing to point at (a look-only step): dim everything and show the bubble mid-screen.
-      Object.assign(ring.style, { top: '0', left: '0', width: '100%', height: '100%' });
+      Object.assign(ring.style, { transform: '', width: '100%', height: '100%' });
       Object.assign(bubble.style, { top: '50%', transform: 'translateY(-50%)' });
       return;
     }
-    Object.assign(ring.style, { top: `${rect.top - 4}px`, left: `${rect.left - 4}px`, width: `${rect.width + 8}px`, height: `${rect.height + 8}px` });
-    // The bubble goes on whichever side of the target has more room.
-    if (rect.top > innerHeight - rect.bottom) bubble.style.bottom = `${innerHeight - rect.top + 12}px`;
-    else bubble.style.top = `${rect.bottom + 12}px`;
+    // Moved with transform (no layout, cheap to animate on a phone), not top/left.
+    Object.assign(ring.style, { transform: `translate(${rect.left - 4}px, ${rect.top - 4}px)`, width: `${rect.width + 8}px`, height: `${rect.height + 8}px` });
+    bubble.style.transform = '';
+    // The bubble goes on whichever side of the target has more room, but never under the status bar, a camera
+    // cutout or the gesture bar (the safe-area insets): a target taller than the room left makes it overlap instead.
+    const height = bubble.offsetHeight;
+    const y = rect.top > innerHeight - rect.bottom ? rect.top - 12 - height : rect.bottom + 12;
+    bubble.style.top = `max(calc(env(safe-area-inset-top) + 12px), min(${y}px, calc(${innerHeight - height - 12}px - env(safe-area-inset-bottom))))`;
   }
 
   function updateNext() {
@@ -196,14 +204,18 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
     updateNext();
     target()?.scrollIntoView({ block: 'center' });
     place();
+    // The new hint fades in (opacity only: smooth on any phone).
+    bubble.classList.remove('tour-in');
+    void bubble.offsetWidth;
+    bubble.classList.add('tour-in');
   }
 
   function end(finished: boolean) {
     window.clearInterval(timer);
+    cancelAnimationFrame(frame);
     for (const type of GUARDED) window.removeEventListener(type, guard, true);
     window.removeEventListener('keydown', guardKeys, true);
     document.removeEventListener('click', onTap, true);
-    window.removeEventListener('scroll', place, true);
     ring.remove();
     bubble.remove();
     running = false;
@@ -227,12 +239,16 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
     if (target()) missingSince = 0;
     else missingSince ||= Date.now();
     updateNext();
-    place();
   }, 250);
+  let frame = 0;
+  const follow = () => {
+    place();
+    frame = requestAnimationFrame(follow);
+  };
+  frame = requestAnimationFrame(follow);
   for (const type of GUARDED) window.addEventListener(type, guard, true);
   window.addEventListener('keydown', guardKeys, true);
   document.addEventListener('click', onTap, true);
-  window.addEventListener('scroll', place, true);
   next.addEventListener('click', advance);
   quit.addEventListener('click', () => end(false));
   show(0);

@@ -1,8 +1,8 @@
 // Add / edit / remove a product.
 import { ensureProductHistory, generateUUID } from '../data';
 import { feedback } from '../feedback';
-import { chooseUniqueColor, formatInputNumber, parseCurrencyInput } from '../formatters';
-import { DEFAULT_PAYMENTS, MAX_PAYMENTS, PAYMENT_METHODS, paymentClass, productPayments, togglePayment } from '../payments';
+import { CURRENCY_SYMBOLS, chooseUniqueColor, formatInputNumber, parseCurrencyInput } from '../formatters';
+import { DEFAULT_PAYMENTS, FREE_PAYMENT, PAYMENT_METHODS, paymentClass, productPayments, togglePayment } from '../payments';
 import { deleteProduct, renameSales, saveProductHistory, saveProducts, saveSales, state } from '../state';
 import { loadSettings } from '../storage';
 import { closeColorPicker, getPickerColor, initColorPicker, setPickerColor } from './colorPicker';
@@ -15,6 +15,8 @@ let editingHistoryIndex: number | null = null;
 let returnScreen = 'salesScreen';
 let onChange: () => void = () => {};
 let selectedPayments: string[] = DEFAULT_PAYMENTS;
+/** Selection order, oldest first: which pick a third tap swaps out. */
+let paymentPickOrder: string[] = DEFAULT_PAYMENTS;
 
 /** index >= 0 edits an active product; historyIndex edits an inactive one; neither means "add". */
 export function openProductEditor(index: number, historyIndex: number | null = null) {
@@ -28,27 +30,28 @@ export function openProductEditor(index: number, historyIndex: number | null = n
   closeColorPicker();
 
   el.productEditTitle.textContent = source ? t('product.edit') : t('add_product');
+  const symbol = CURRENCY_SYMBOLS[currency];
+  el.editPriceLabel.textContent = t('product.priceLabel', { symbol });
+  el.editCostLabel.textContent = t('product.costLabel', { symbol });
   el.editName.value = source?.name ?? '';
   el.editPrice.value = source ? formatInputNumber(String(source.price), currency) : '';
   el.editCost.value = source ? formatInputNumber(String(source.cost), currency) : '';
   el.removeProductBtn.style.display = source ? 'grid' : 'none';
   setPickerColor(source?.color ?? chooseUniqueColor(state.products, '#F76495'));
   selectedPayments = source ? productPayments(source) : DEFAULT_PAYMENTS;
+  paymentPickOrder = [...selectedPayments];
   renderPaymentOptions();
   updatePreview();
   openScreen('productEditScreen');
 }
 
-/** One toggle per method; while 2 are chosen the others are greyed out (aria-disabled, so they still explain on tap). */
+/** One toggle per method; a third tap swaps out the oldest pick, so every chip stays readable and tappable. */
 function renderPaymentOptions() {
   el.editPayments.replaceChildren(
     ...PAYMENT_METHODS.map((method) => {
-      const on = selectedPayments.includes(method);
-      const full = !on && selectedPayments.length >= MAX_PAYMENTS;
       const button = Object.assign(document.createElement('button'), { type: 'button', className: `payment-option ${paymentClass(method)}`, textContent: method });
       button.dataset.method = method;
-      button.setAttribute('aria-pressed', String(on));
-      button.setAttribute('aria-disabled', String(full));
+      button.setAttribute('aria-pressed', String(selectedPayments.includes(method)));
       return button;
     }),
   );
@@ -57,21 +60,22 @@ function renderPaymentOptions() {
 function onPaymentOptionClick(event: MouseEvent) {
   const method = (event.target as HTMLElement).closest<HTMLElement>('.payment-option')?.dataset.method;
   if (!method) return;
-  const next = togglePayment(selectedPayments, method);
-  if (next === selectedPayments) {
+  if (selectedPayments.includes(method) && selectedPayments.length === 1) {
     feedback('warn');
-    showToast(selectedPayments.includes(method) ? t('payments.needOne') : t('payments.max', { max: MAX_PAYMENTS }));
-  } else {
-    feedback('step');
+    showToast(t('payments.needOne'));
+    return;
   }
-  selectedPayments = next;
+  selectedPayments = togglePayment(selectedPayments, method, paymentPickOrder[0]);
+  paymentPickOrder = [...paymentPickOrder.filter((item) => selectedPayments.includes(item)), ...selectedPayments.filter((item) => !paymentPickOrder.includes(item))];
+  feedback('step');
   renderPaymentOptions();
 }
 
 /** Mirrors the name and price into the tile preview on the colour field. */
 function updatePreview() {
   el.editPreviewName.textContent = el.editName.value.trim() || t('product_name');
-  el.editPreviewPrice.textContent = el.editPrice.value || formatInputNumber('0', loadSettings().currency);
+  const price = parseCurrencyInput(el.editPrice.value, loadSettings().currency);
+  el.editPreviewPrice.textContent = price > 0 ? el.editPrice.value : FREE_PAYMENT;
 }
 
 /** Opens the editor for a product by name, whether it is active or only in history. */

@@ -1,90 +1,107 @@
+import type { ComponentChildren } from 'preact';
+import { formatDay } from '../events';
 import { fmt } from '../formatters';
 import { compareProductCounts, getEventSummary } from '../reports';
-import type { PastEvent } from '../types';
-import { EmptyState } from './ReportParts';
-import { t } from '../i18n';
+import type { EventCost, PastEvent } from '../types';
+import { Card, EmptyState } from './ReportParts';
+import { t, tn } from '../i18n';
 
-interface Row {
-  name: string;
-  value: string;
-  winner: boolean;
+/** B's change from A, in neutral text: ▲/▼ say which way, never whether that is good. */
+function Diff({ a, b, money }: { a: number; b: number; money: boolean }) {
+  const delta = b - a;
+  if (!delta) return null;
+  const amount = money ? fmt(Math.abs(delta)) : String(Math.abs(delta));
+  return (
+    <span class="cmp-diff" aria-label={t(delta > 0 ? 'compare.more' : 'compare.less', { amount })}>
+      {delta > 0 ? '▲' : '▼'} {amount}
+    </span>
+  );
 }
 
-function Metric({ label, value, winner, negative = false }: { label: string; value: string; winner: boolean; negative?: boolean }) {
+/** One line: its label, then A and B under their event's column. `null` = the event has none ("—"). */
+function Row({ label, a, b, money = true, metric }: { label: string; a: number | null; b: number | null; money?: boolean; metric?: string }) {
+  const show = (value: number | null) =>
+    value === null ? <span class="cmp-value cmp-missing">—</span> : <span class={`cmp-value${money && value < 0 ? ' is-negative' : ''}`}>{money ? fmt(value) : String(value)}</span>;
   return (
-    <div class={`compare-metric${winner ? ' is-winner' : ''}${negative ? ' is-negative' : ''}`}>
-      <span class="compare-label">{label}</span>
-      <span class="compare-value">
-        {value}
-        {winner && <span class="sr-only">{t('better')}</span>}
+    <div class="cmp-row" data-metric={metric}>
+      <span class="cmp-label">{label}</span>
+      <span class="cmp-cell">{show(a)}</span>
+      <span class="cmp-cell">
+        {show(b)}
+        {a !== null && b !== null && <Diff a={a} b={b} money={money} />}
       </span>
     </div>
   );
 }
 
-function RowList({ title, rows }: { title: string; rows: Row[] }) {
-  if (!rows.length) return null;
+function Section({ title, children }: { title: string; children: ComponentChildren }) {
   return (
-    <div class="compare-group">
-      <span class="compare-group-title">{title}</span>
-      {rows.map((row) => (
-        <div class={row.winner ? 'compare-line is-winner' : 'compare-line'} key={row.name}>
-          <span class="compare-line-name">{row.name}</span>
-          <span class="compare-line-value">
-            {row.value}
-            {row.winner && <span class="sr-only">{t('better')}</span>}
-          </span>
-        </div>
-      ))}
-    </div>
+    <Card title={title}>
+      <div class="cmp-rows">{children}</div>
+    </Card>
   );
 }
 
-/** One event's column. Winners are the better value of `event` versus `other`. */
-function CompareCard({ label, event, other, products }: { label: string; event: PastEvent; other: PastEvent; products: Row[] }) {
-  const mine = getEventSummary(event);
-  const theirs = getEventSummary(other);
-
-  const expenseRows = [...new Set([...event.expenses, ...other.expenses].map((cost) => cost.name))]
-    .map((name) => {
-      const value = event.expenses.find((cost) => cost.name === name)?.amount ?? 0;
-      const otherValue = other.expenses.find((cost) => cost.name === name)?.amount ?? 0;
-      return { name, amount: value, value: fmt(value), winner: value < otherValue };
-    })
-    .sort((a, b) => b.amount - a.amount);
-
-  return (
-    <div class="compare-card">
-      <div class="compare-card-head">
-        <span class="compare-badge">{label}</span>
-        <h3 class="compare-name">{event.name}</h3>
-      </div>
-      <Metric label={mine.net < 0 ? t('deficit') : t('net_profit')} value={fmt(mine.net)} winner={mine.net > theirs.net} negative={mine.net < 0} />
-      <Metric label={t('revenue')} value={fmt(mine.revenue)} winner={mine.revenue > theirs.revenue} />
-      <Metric label={t('profit')} value={fmt(mine.profit)} winner={mine.profit > theirs.profit} />
-      <Metric label={t('expenses')} value={fmt(mine.expenses)} winner={mine.expenses < theirs.expenses} />
-      <Metric label={t('sales')} value={String(mine.salesCount)} winner={mine.salesCount > theirs.salesCount} />
-      <RowList title={t('expenses')} rows={expenseRows} />
-      <RowList title={t('units_sold')} rows={products} />
-    </div>
-  );
+/** Expense totals by name (two "Parking" lines are one row), so both events line up row by row. */
+function expenseTotals(expenses: EventCost[]) {
+  const totals = new Map<string, number>();
+  for (const cost of expenses) totals.set(cost.name, (totals.get(cost.name) ?? 0) + cost.amount);
+  return totals;
 }
 
+const dayCount = (event: PastEvent) => event.dayBreaks.length + 1;
+
+/** Two past events side by side: A (older) in the left column, B in the right with its change from A. */
 export function CompareView({ events }: { events: PastEvent[] }) {
-  const [left, right] = events;
+  const [left, right] = [...events].sort((x, y) => new Date(x.startedAt).getTime() - new Date(y.startedAt).getTime());
   if (!left || !right) return <EmptyState icon="chart" title={t('compare.nothing')} text={t('compare.nothingText')} />;
 
-  const counts = compareProductCounts(left, right);
-  const rowsFor = (side: 'left' | 'right') =>
-    counts.map((row) => {
-      const [mine, theirs] = side === 'left' ? [row.leftCount, row.rightCount] : [row.rightCount, row.leftCount];
-      return { name: row.name, value: String(mine), winner: mine > theirs };
-    });
+  const a = getEventSummary(left);
+  const b = getEventSummary(right);
+  const products = compareProductCounts(left, right, Infinity);
+  const costsA = expenseTotals(left.expenses);
+  const costsB = expenseTotals(right.expenses);
+  const costNames = [...new Set([...costsA.keys(), ...costsB.keys()])].sort((x, y) => Math.max(costsB.get(y) ?? 0, costsA.get(y) ?? 0) - Math.max(costsB.get(x) ?? 0, costsA.get(x) ?? 0));
+  const multiDay = dayCount(left) > 1 || dayCount(right) > 1;
 
   return (
-    <div class="compare">
-      <CompareCard label="A" event={left} other={right} products={rowsFor('left')} />
-      <CompareCard label="B" event={right} other={left} products={rowsFor('right')} />
+    <div class="cmp">
+      <div class="cmp-head">
+        {[left, right].map((event, index) => (
+          <div class="cmp-event" key={event.id}>
+            <span class="cmp-tag">{index ? 'B' : 'A'}</span>
+            <h2 class="cmp-name">{event.name}</h2>
+            <span class="cmp-when">
+              {formatDay(event.startedAt)} · {tn('count.day', dayCount(event))}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <Section title={t('compare.results')}>
+        <Row label={t('net_profit')} a={a.net} b={b.net} metric="net" />
+        {multiDay && <Row label={t('compare.netPerDay')} a={Math.round(a.net / dayCount(left))} b={Math.round(b.net / dayCount(right))} />}
+        <Row label={t('revenue')} a={a.revenue} b={b.revenue} />
+        <Row label={t('profit')} a={a.profit} b={b.profit} />
+        <Row label={t('expenses')} a={a.expenses} b={b.expenses} />
+        <Row label={t('sales')} a={a.salesCount} b={b.salesCount} money={false} />
+      </Section>
+
+      {products.length > 0 && (
+        <Section title={t('units_sold')}>
+          {products.map((row) => (
+            <Row key={row.name} label={row.name} a={row.leftCount} b={row.rightCount} money={false} />
+          ))}
+        </Section>
+      )}
+
+      {costNames.length > 0 && (
+        <Section title={t('compare.expenseItems')}>
+          {costNames.map((name) => (
+            <Row key={name} label={name} a={costsA.get(name) ?? null} b={costsB.get(name) ?? null} />
+          ))}
+        </Section>
+      )}
     </div>
   );
 }

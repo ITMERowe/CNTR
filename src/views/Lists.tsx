@@ -4,7 +4,18 @@ import { paymentClass, productPayments } from '../payments';
 import type { PastEvent, Product, SaleRecord } from '../types';
 import { Icon } from './Icon';
 import { EmptyState, profitClass } from './ReportParts';
-import { t, tn } from '../i18n';
+import { locale, t, tn } from '../i18n';
+
+/** A compact day/month block in place of a generic icon, so rows are told apart at a glance. */
+function DateBlock({ value }: { value: Date | string }) {
+  const date = new Date(value);
+  return (
+    <span class="row-date" aria-hidden="true">
+      <strong>{date.toLocaleDateString(locale(), { day: 'numeric' })}</strong>
+      <small>{date.toLocaleDateString(locale(), { month: 'short' })}</small>
+    </span>
+  );
+}
 
 const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -14,7 +25,7 @@ export function RecentSales({ sales, colorFor }: { sales: SaleRecord[]; colorFor
     <>
       {sales.map((sale, index) => (
         <div class="list-row" key={`${new Date(sale.timestamp).getTime()}-${index}`} style={{ '--i': index }}>
-          <span class="swatch swatch-lg" style={{ background: colorFor(sale.product) || 'var(--surface-3)' }} aria-hidden="true" />
+          <span class="sale-bar" style={{ background: colorFor(sale.product) || 'var(--surface-3)' }} aria-hidden="true" />
           <div class="list-main">
             <strong class="list-title">{sale.product}</strong>
             <span class="list-sub">
@@ -42,7 +53,7 @@ function ProductRow({ product, active, index, onEdit, onToggle }: { product: Pro
   return (
     <div class="product-item" style={{ '--i': index }}>
       <button class="product-edit-btn" type="button" data-name={product.name} aria-label={t('edit.named', { name: product.name })} onClick={() => onEdit(product.name)}>
-        <span class="swatch swatch-lg" style={{ background: product.color }} aria-hidden="true" />
+        <span class="sale-bar" style={{ background: product.color }} aria-hidden="true" />
         <span class="product-item-main">
           <strong class="list-title">{product.name}</strong>
           <span class="product-item-sub">
@@ -139,9 +150,7 @@ export function EventList({ events, onOpen }: { events: PastEvent[]; onOpen: (id
               }
             }}
           >
-            <span class="row-icon" aria-hidden="true">
-              <Icon name="event" />
-            </span>
+            <DateBlock value={event.startedAt} />
             <div class="list-main">
               <strong class="list-title">{event.name}</strong>
               <span class="list-sub">

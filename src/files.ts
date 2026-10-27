@@ -87,6 +87,26 @@ export async function saveAutoBackup(name: string, text: string): Promise<boolea
   return true;
 }
 
+const DAY_BACKUP_NAME = 'cntr-day-backup.json';
+
+/**
+ * Writes a safety backup for End day to Documents/CNTR/auto, replacing the previous one each time: End day
+ * can happen many times (every day of every con), so it gets one file kept up to date, not a new one each time.
+ * Returns false in the browser. Throws if the file could not be written.
+ */
+export async function saveDayBackup(text: string): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  let directory = Directory.Documents;
+  const write = () => Filesystem.writeFile({ path: `${AUTO_FOLDER}/${DAY_BACKUP_NAME}`, data: text, directory, encoding: Encoding.UTF8, recursive: true });
+  try {
+    await write();
+  } catch {
+    directory = Directory.Data;
+    await write();
+  }
+  return true;
+}
+
 /** Opens the system file picker and returns the chosen file's text, or null if nothing was chosen. */
 export function pickTextFile(input: HTMLInputElement): Promise<string | null> {
   return new Promise((resolve, reject) => {

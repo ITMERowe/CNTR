@@ -43,8 +43,7 @@ for (const width of [320, 360, 393, 412]) {
   });
   check('taps on the + circle add a sale, never undo', hits.every((h) => h === 'add'), hits.join());
 
-  await page.click('.tabbar .tab[data-tab="settingsScreen"]');
-  await page.click('#openProductsMenuBtn');
+  await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
   await page.click('.product-edit-btn');
   await page.click('#colorField');
   const drag = await page.evaluate(() => {
@@ -62,10 +61,13 @@ for (const width of [320, 360, 393, 412]) {
 
   await page.keyboard.press('Escape');
   await page.click('.tabbar .tab[data-tab="settingsScreen"]');
+  await page.evaluate(() => document.querySelector('.content').scrollTo(0, 99999)); // About sits at the bottom of Settings; pages scroll inside .content
+  const scrolled = await page.evaluate(() => document.querySelector('.content').scrollTop);
   await page.click('#openAboutMenuBtn');
   await sleep(300);
-  const about = await page.evaluate(() => ({ screen: document.querySelector('.screen.active').id, version: document.querySelector('#aboutVersion').textContent, tab: document.querySelector('.tabbar .tab.active').dataset.tab }));
+  const about = await page.evaluate(() => ({ screen: document.querySelector('.screen.active').id, version: document.querySelector('#aboutVersion').textContent, tab: document.querySelector('.tabbar .tab.active').dataset.tab, top: document.querySelector('.content').scrollTop }));
   check('About opens from Settings, shows the version, keeps Settings highlighted', about.screen === 'aboutScreen' && /\d+\.\d+\.\d+/.test(about.version) && about.tab === 'settingsScreen', about);
+  check('a new page opens at its top, not at the previous page\'s scroll position', scrolled > 0 && about.top === 0, { scrolled, top: about.top });
   const privacy = await page.evaluate(() => document.querySelector('#aboutScreen .about-text').textContent);
   check('the privacy text mentions the phone\'s own Google account backup', /Google account/.test(privacy) && !/stays on this phone/.test(privacy), privacy.slice(0, 120));
   await page.click('#aboutBackBtn');
@@ -99,10 +101,10 @@ for (const width of [320, 360, 393, 412]) {
   });
   const tab = (t) => page.click(`.tabbar .tab[data-tab="${t}"]`);
   const cases = [
-    ['colour picker closes first', async () => { await tab('settingsScreen'); await page.click('#openProductsMenuBtn'); await page.click('.product-edit-btn'); await page.click('#colorField'); }, 'productEditScreen'],
+    ['colour picker closes first', async () => { await tab('productHistoryScreen'); await page.click('.product-edit-btn'); await page.click('#colorField'); }, 'productEditScreen'],
     ['product editor -> Products', async () => {}, 'productHistoryScreen'],
-    ['Products -> Settings', async () => {}, 'settingsScreen'],
-    ['About -> Settings', async () => { await page.click('#openAboutMenuBtn'); }, 'settingsScreen'],
+    ['Products -> Sell', async () => {}, 'salesScreen'],
+    ['About -> Settings', async () => { await tab('settingsScreen'); await page.click('#openAboutMenuBtn'); }, 'settingsScreen'],
     ['open sheet closes', async () => { await tab('eventScreen'); await page.click('#openAddExpenseBtn'); }, 'eventScreen'],
     ['name sheet closes', async () => { await page.click('#eventNameBtn'); }, 'eventScreen'],
     ['past event -> History', async () => {

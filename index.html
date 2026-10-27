@@ -13,9 +13,9 @@
     <div class="app">
       <header class="topbar">
         <div class="topbar-row">
-          <div class="brand" aria-label="CNTR">CNTR</div>
+          <div class="brand" id="brand" aria-label="CNTR">CNTR</div>
           <div class="topbar-actions">
-            <button class="icon-btn icon-btn-solid" id="openProductEdit" type="button" title="Add product" data-i18n-title="add_product" aria-label="Add product" data-i18n-aria="add_product"><i data-icon="plus"></i></button>
+            <button class="icon-btn icon-btn-soft" id="openProductEdit" type="button" title="Add product" data-i18n-title="add_product" aria-label="Add product" data-i18n-aria="add_product"><i data-icon="plus"></i></button>
           </div>
         </div>
         <div class="hero" id="stats" aria-live="polite"></div>
@@ -29,9 +29,6 @@
 
         <section class="screen" id="eventScreen">
           <div class="page">
-            <div class="page-header">
-              <h1 class="page-title" data-i18n="event">Event</h1>
-            </div>
             <div class="stack" id="eventCard"></div>
           </div>
         </section>
@@ -87,12 +84,6 @@
               <h1 class="page-title" data-i18n="settings">Settings</h1>
             </div>
             <div class="stack">
-              <section class="group" data-group="products">
-                <h2 class="group-title" data-i18n="products">Products</h2>
-                <div class="group-body">
-                  <button class="group-row group-link" id="openProductsMenuBtn" type="button"><span class="group-icon"><i data-icon="package"></i></span><span class="group-row-label"><span data-i18n="manage_products">Manage products</span><small id="productsSummary"></small></span><i data-icon="chevron-right"></i></button>
-                </div>
-              </section>
               <section class="group" data-group="event">
                 <h2 class="group-title" data-i18n="event">Event</h2>
                 <div class="group-body">
@@ -100,6 +91,13 @@
                     <span class="group-row-label"><span data-i18n="products_per_day">Products per day</span><small data-i18n="one_collapsible_products_card_for_each_d">One collapsible Products card for each day</small></span>
                     <span class="switch">
                       <input type="checkbox" id="productsPerDayToggle" role="switch" />
+                      <span class="switch-track" aria-hidden="true"></span>
+                    </span>
+                  </label>
+                  <label class="group-row" for="newDayToggle">
+                    <span class="group-row-label"><span data-i18n="settings.newDay">New day when the date changes</span><small data-i18n="settings.newDayText">The first sale on a new date starts the next day by itself</small></span>
+                    <span class="switch">
+                      <input type="checkbox" id="newDayToggle" role="switch" />
                       <span class="switch-track" aria-hidden="true"></span>
                     </span>
                   </label>
@@ -132,17 +130,14 @@
                   </label>
                 </div>
               </section>
-              <section class="group" data-group="appearance">
-                <h2 class="group-title" data-i18n="settings.appearance">Appearance</h2>
+              <section class="group" data-group="looks">
+                <h2 class="group-title" data-i18n="settings.looks">Looks</h2>
                 <div class="group-body">
-                  <label class="group-row" for="themeSelect">
-                    <span class="group-row-label" data-i18n="settings.theme">Theme</span>
-                    <span class="select">
-                      <select id="themeSelect">
-                        <option value="system" data-i18n="theme.system">Phone setting</option>
-                        <option value="light" data-i18n="theme.light">Light</option>
-                        <option value="dark" data-i18n="theme.dark">Dark</option>
-                      </select>
+                  <label class="group-row" for="themeToggle">
+                    <span class="group-row-label"><span id="themeLabel" data-i18n="settings.theme">Theme</span><small id="themeState"></small></span>
+                    <span class="switch">
+                      <input type="checkbox" id="themeToggle" role="switch" />
+                      <span class="switch-track" aria-hidden="true"></span>
                     </span>
                   </label>
                   <label class="group-row" for="languageSelect">
@@ -196,9 +191,9 @@
         <section class="screen" id="productHistoryScreen">
           <div class="page">
             <div class="page-header">
-              <button class="icon-btn back-btn" id="productHistoryBackBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
               <h1 class="page-title" data-i18n="products">Products</h1>
             </div>
+            <p class="card-note page-sub" id="productsSummary"></p>
             <div class="stack" id="productHistoryList"></div>
           </div>
         </section>
@@ -285,12 +280,12 @@
               </label>
               <div class="field-row">
                 <label class="field">
-                  <span class="field-label" data-i18n="price">Price</span>
-                  <input class="input" id="editPrice" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off" />
+                  <span class="field-label" id="editPriceLabel">Price</span>
+                  <input class="input" id="editPrice" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
                 </label>
                 <label class="field">
-                  <span class="field-label" data-i18n="cost">Cost</span>
-                  <input class="input" id="editCost" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off" />
+                  <span class="field-label" id="editCostLabel">Cost</span>
+                  <input class="input" id="editCost" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
                 </label>
               </div>
               <div class="field">
@@ -305,7 +300,8 @@
 
       <nav class="tabbar" aria-label="Main" data-i18n-aria="main">
         <button class="tab" data-tab="eventScreen" type="button"><i data-icon="event"></i><span class="tab-label" data-i18n="event">Event</span></button>
-        <button class="tab active" data-tab="salesScreen" type="button"><i data-icon="sell"></i><span class="tab-label" data-i18n="sell">Sell</span></button>
+        <button class="tab" data-tab="productHistoryScreen" type="button"><i data-icon="package"></i><span class="tab-label" data-i18n="products">Products</span></button>
+        <button class="tab tab-primary active" data-tab="salesScreen" type="button"><i data-icon="sell"></i><span class="tab-label" data-i18n="sell">Sell</span></button>
         <button class="tab" data-tab="historyScreen" type="button"><i data-icon="history"></i><span class="tab-label" data-i18n="history">History</span></button>
         <button class="tab" data-tab="settingsScreen" type="button"><i data-icon="settings"></i><span class="tab-label" data-i18n="settings">Settings</span></button>
       </nav>
@@ -365,7 +361,7 @@
           </div>
           <label class="field">
             <span class="field-label" data-i18n="name">Name</span>
-            <input class="input" id="eventCostName" type="text" placeholder="e.g. Booth rental" data-i18n-placeholder="e_g_booth_rental" autocomplete="off" />
+            <input class="input" id="eventCostName" type="text" placeholder="Expense name" data-i18n-placeholder="expense.namePlaceholder" autocomplete="off" />
           </label>
           <label class="field">
             <span class="field-label" data-i18n="amount">Amount</span>

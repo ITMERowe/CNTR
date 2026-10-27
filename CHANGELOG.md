@@ -3,13 +3,31 @@
 ## 0.1 (branch `feature/signing-tests-about`)
 
 ### Added
+- Settings → Event → **New day when the date changes** (off by default): the first sale on a new date starts the next day by itself.
 - **Bahasa Indonesia**: the whole app (screens, messages, the tutorial, backup errors) in English and Indonesian. A fresh install on an Indonesian phone starts in Indonesian; people updating stay in English until they choose it in Settings → Appearance → Language. Month names follow the app language. Payment method names and CSV headers stay English.
-- **Light mode**: Settings → Appearance → Theme: Phone setting (follows the phone, live), Light or Dark. Light uses VS Code Light+ colours; all text keeps ≥ 4.5:1 contrast.
+- **Light mode**: Settings → Looks → Theme, a Light/Dark toggle. The phone's own setting only resolves the very first choice (then saved); it is not followed afterwards. Light uses VS Code Light+ colours; all text keeps ≥ 4.5:1 contrast.
+- **Products tab**: a price of 0 shows as "Free" and gets a plain counter instead of Cash/QRIS buttons, for tracking giveaways.
+- If the live event's last sale is over 3 days old, CNTR asks whether to end it before the next con's sales land in it.
+- Ending a day also makes a safety backup (replacing the previous one, unlike End event's), like ending an event already did.
+- A past event's detail screen shows its date range and day count.
 
 ### Fixed
+- Leaving an edited past event with unsaved changes (another tab, Android back) asks first: Keep editing or Discard.
+- Deleting an expense asks first.
+- Escape closes every confirm sheet.
+- A product's new price applies only to sales made after the change; earlier sales keep the price they were sold at.
+- Every page opens at its top (it kept the previous page's scroll position).
+- The tile counters no longer risk being cut off with large system text.
 - Deleting a product no longer deletes any of its sales: they stay in every report under its name.
 - Saving an edited past event shows "Saving…" and locks Save, Cancel and Android back until the save is done (Cancel used to look like it cancelled while the save still went through).
 - An empty day card says "No sales yet" instead of a misleading date.
+- Leaving an edit with unsaved changes, and every other sheet, now blocks the page behind it and returns focus to Cancel on open, and to what opened it on close.
+- Expense edit/delete buttons are a real 48px tap target, with more room between them.
+- A genuinely empty event (no sales, no expenses, no products) shows one empty state with a "Go to Sell" button, instead of three stacked ones.
+- Long product names no longer push a tile wider than the screen.
+- Compare's button is hidden until there are 2 events to compare; comparing happens as soon as a 2nd is picked.
+- The product editor's Price/Cost fields show the current currency's own symbol, not always "Rp".
+- "Products · Day 1" only shows once there's more than one day.
 
 ### Security (review: `docs/security-review-2026-10-27.md`)
 - No INTERNET permission any more; a Content-Security-Policy; CSV cells that start like a formula are neutralised; file sharing limited to CNTR's own folders; CI with a read-only token, a pinned third-party action and guaranteed keystore cleanup; the privacy text now mentions Android's own Google account backup. Commits use the GitHub no-reply address.
@@ -18,8 +36,17 @@
 - **Haptics and sound effects**: a tap on every sale, undo, stepper, switch and payment pick; a success buzz and soft chime on End day, End event, saved edits and exports; a warning buzz on refusals and failures. Settings → Sound → *Sound effects* turns the tones off (vibration stays).
 
 ### Changed
+- **Compare events** rebuilt: the older event on the left, rows lined up across both events, the change from A under each B value, expense items with the same name added up, "—" for a missing expense, no green "better" colouring.
+- Sales by hour removed from the event report.
+- Recent sales and Products: the colour bar runs the full height of the row.
 - Version names are now `0.1.<build>` (e.g. `CNTR_0.1.24.apk`): pre-release until it is ready to ship, which will be 1.0. Builds were named `1.0.<build>` before; the build number (`versionCode`) keeps rising, so 0.1.24 still installs as an update over 1.0.23.
 - The two explanation notes under Settings → Backup were removed (the About → Privacy text stays).
+- **Products is now its own tab** (between Event and Sell), not a Settings submenu.
+- "Profit" renamed to "Product profit" everywhere, so it is not confused with "Net profit" beside it.
+- Disabled buttons and unpicked payment chips are readable, not washed-out or untappable.
+- The event name is now the Event screen's own title; the "CNTR" wordmark only shows on Sell.
+- Tab bar: solid background (no blur), a thin line marks the active tab instead of a pill; Sell, the middle tab, has its own always-filled, larger icon.
+- Cut the type scale (15 font sizes to 6, 7 weights to 3) and corner radii (4 sizes to 3).
 
 ## Earlier builds, named 1.0.x (branch `feature/signing-tests-about`)
 

@@ -32,29 +32,38 @@ const settings = await run(page, `${H}
   const groups = [...document.querySelectorAll('#settingsScreen .group')].map((g) => g.dataset.group);
   return { groups, summary: document.getElementById('productsSummary').textContent, lastBackup: document.getElementById('lastBackupText').textContent };
 `);
-check('Settings order: Products, Event, Money, Appearance, Sound, Sales data, Backup, About', settings.groups.join() === 'products,event,money,appearance,sound,sales,backup,about', settings.groups);
+check('Settings order: Event, Money, Looks, Sound, Sales data, Backup, About', settings.groups.join() === 'event,money,looks,sound,sales,backup,about', settings.groups);
 
-// Appearance: follows the phone by default (live, no reload); Light or Dark sticks
+// Looks: a fresh install resolves the theme from the phone once and saves it; after that the toggle is all that matters
 const themeNow = () => page.evaluate(() => document.documentElement.dataset.theme);
 await page.emulateMedia({ colorScheme: 'light' });
-await sleep(100);
-const followLight = await themeNow();
+await run(page, `localStorage.clear()`);
+await load();
+const fresh = { theme: await themeNow(), stored: await run(page, `${H}return stored('cntrSettings').theme;`) };
 await page.emulateMedia({ colorScheme: 'dark' });
-await sleep(100);
-const followDark = await themeNow();
-const choice = await run(page, `${H}
-  const select = document.getElementById('themeSelect');
-  const before = select.value;
-  select.value = 'light'; select.dispatchEvent(new Event('change'));
+await sleep(150);
+const afterPhoneChange = await themeNow();
+const toggled = await run(page, `${H}
+  tab('settingsScreen');
+  const before = { checked: document.getElementById('themeToggle').checked, label: document.getElementById('themeState').textContent };
+  document.getElementById('themeToggle').click();
   await wait(100);
-  return { before, stored: stored('cntrSettings').theme };
+  return { before, after: { checked: document.getElementById('themeToggle').checked, label: document.getElementById('themeState').textContent }, stored: stored('cntrSettings').theme };
 `);
-await page.emulateMedia({ colorScheme: 'dark' });
-await sleep(100);
-const stuck = await themeNow();
-check('Appearance defaults to Phone setting and follows the phone live', choice.before === 'system' && followLight === 'light' && followDark === 'dark', { before: choice.before, followLight, followDark });
-check('choosing Light stores it and stays light when the phone is dark', choice.stored === 'light' && stuck === 'light', { stored: choice.stored, stuck });
-await run(page, `const s = document.getElementById('themeSelect'); s.value = 'system'; s.dispatchEvent(new Event('change'));`);
+check('a fresh install resolves the theme from the phone (light) and saves it, not "system"', fresh.theme === 'light' && fresh.stored === 'light', fresh);
+check('once resolved, the app does not keep following the phone', afterPhoneChange === 'light', afterPhoneChange);
+check('the Theme toggle switches Light/Dark, labelled, and saves the choice', !toggled.before.checked && toggled.before.label === 'Light' && toggled.after.checked && toggled.after.label === 'Dark' && toggled.stored === 'dark', toggled);
+
+// Restore the product data cleared above, for the Products tests below.
+await run(page, `
+  localStorage.cntrProducts = JSON.stringify([
+    { name: 'Gacha', price: 25000, cost: 12000, color: '#f76495' },
+    { name: 'Pin', price: 5000, cost: 1000, color: '#31b500', payments: ['E-wallet'] },
+  ]);
+  localStorage.cntrProductHistory = JSON.stringify([{ name: 'Old badge', price: 8000, cost: 3000, color: '#5f6d77' }]);
+`);
+await load();
+await run(page, `${H}tab('settingsScreen');`);
 
 // Sound effects: on by default, a sale plays one tone; switched off, a sale is silent and the choice is saved
 const sound = await run(page, `${H}
@@ -87,7 +96,7 @@ check('Backup shows the last backup plainly ("Never" before the first)', setting
 
 // 2. Products: two sections, rows show price, profit and methods; no delete button on rows
 const list = await run(page, `${H}
-  document.getElementById('openProductsMenuBtn').click();
+  tab('productHistoryScreen');
   await wait();
   const pin = document.querySelector('.product-edit-btn[data-name="Pin"]').closest('.product-item');
   return {

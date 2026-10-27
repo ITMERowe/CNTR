@@ -23,7 +23,7 @@ const H = `
   const stored = (key) => JSON.parse(localStorage.getItem(key) ?? 'null');
 `;
 
-// 1. Four tabs, Event screen follows the live counter with no save step
+// 1. Five tabs, Event screen follows the live counter with no save step
 const live = await run(page, `${H}
   const tabs = [...document.querySelectorAll('.tabbar .tab-label')].map((n) => n.textContent).join();
   const lastTab = document.querySelector('.tabbar .tab:last-child').getBoundingClientRect();
@@ -36,8 +36,8 @@ const live = await run(page, `${H}
   const profit = sales.reduce((s, x) => s + x.price - x.cost, 0);
   return { tabsFill, eyebrow: document.querySelector('#stats .eyebrow').textContent, tabs, hero: amount('#eventCard .hero-figure'), profit, dayCards: document.querySelectorAll('#eventCard .day-card').length, endDay: !!document.getElementById('endDayBtn'), endEvent: !!document.getElementById('endEventBtn') };
 `);
-check('tabs are Event, Sell, History, Settings', live.tabs === 'Event,Sell,History,Settings', live.tabs);
-check('the 4 tabs fill the tab bar', live.tabsFill, live);
+check('tabs are Event, Products, Sell, History, Settings', live.tabs === 'Event,Products,Sell,History,Settings', live.tabs);
+check('the 5 tabs fill the tab bar', live.tabsFill, live);
 check('Sell hero says Revenue before any End day', live.eyebrow === 'Revenue', live.eyebrow);
 check('Event hero = product profit with no save step', live.hero === live.profit && live.profit > 0, live);
 check('no day cards before End day; End buttons shown', live.dayCards === 0 && live.endDay && live.endEvent, live);
@@ -86,8 +86,7 @@ check('undo after End day never removes an ended day\'s sale', day.minusDisabled
 const reprice = await run(page, `${H}
   tab('eventScreen');
   const before = document.querySelector('#eventCard .day-card .day-revenue').textContent;
-  tab('settingsScreen');
-  document.getElementById('openProductsMenuBtn').click();
+  tab('productHistoryScreen');
   document.querySelector('.product-edit-btn[data-name="Gacha"]').click();
   const price = document.getElementById('editPrice'); price.value = '99000'; price.dispatchEvent(new Event('input'));
   document.getElementById('saveProductBtn').click();
@@ -195,8 +194,7 @@ check('rename while editing saved', edit2.name === 'Comifuro XXI' && edit2.title
 // 9. A deleted product still shows in the past event it sold in
 const gone = await run(page, `${H}
   document.getElementById('pastEventBackBtn').click();
-  tab('settingsScreen');
-  document.getElementById('openProductsMenuBtn').click();
+  tab('productHistoryScreen');
   document.querySelector('.product-edit-btn[data-name="Poster"]').click();
   document.getElementById('removeProductBtn').click();
   await confirmYes();
@@ -222,8 +220,8 @@ const cmp = await run(page, `${H}
   document.querySelectorAll('#compareModalList input').forEach((i) => { i.checked = true; });
   document.getElementById('compareModalList').dispatchEvent(new Event('change'));
   document.getElementById('compareModalConfirmBtn').click();
-  const cards = [...document.querySelectorAll('#compareEventCard .compare-card')];
-  const nets = cards.map((c) => { const t = c.querySelector('.compare-metric .compare-value').textContent; const n = Number(t.replace(/[^0-9]/g, '')); return /[-−]/.test(t) ? -n : n; });
+  const cards = [...document.querySelectorAll('#compareEventCard .cmp-event')];
+  const nets = [...document.querySelectorAll('#compareEventCard [data-metric="net"] .cmp-value')].map((v) => { const t = v.textContent; const n = Number(t.replace(/[^0-9]/g, '')); return /[-−]/.test(t) ? -n : n; });
   const expected = stored('cntrEvents').map((e) => e.sales.reduce((s, x) => s + x.price - x.cost, 0) - e.expenses.reduce((s, x) => s + x.amount, 0));
   return { cards: cards.length, nets, expected };
 `);
@@ -253,6 +251,80 @@ const emptyDay = await run(page, `${H}
 `);
 check('a day with sales shows the first sale\'s date and count', /^\d{1,2} \w+ \d{4} · 1 sale$/.test(emptyDay[0] ?? ''), emptyDay);
 check('the new empty day after End day says just "No sales yet"', emptyDay.at(-1) === 'No sales yet', emptyDay);
+
+// Two past events for Compare and editing: A has two "Parking" expenses, B has a "Transport" A never had
+const gacha = JSON.parse(SAMPLE_PRODUCTS)[0];
+const dayAt = (daysAgo, hour) => { const d = new Date(); d.setDate(d.getDate() - daysAgo); d.setHours(hour, 0, 0, 0); return d.toISOString(); };
+const pastEvent = (id, name, daysAgo, count, expenses) => ({
+  id, name, startedAt: dayAt(daysAgo, 10), endedAt: dayAt(daysAgo, 18), dayBreaks: [], products: [gacha], expenses,
+  sales: Array.from({ length: count }, (_, i) => ({ product: gacha.name, price: gacha.price, cost: gacha.cost, payment: 'Cash', timestamp: dayAt(daysAgo, 11 + i) })),
+});
+const EVENTS = [
+  pastEvent('a', 'Spring', 14, 2, [{ id: 'a1', name: 'Booth', amount: 50000 }, { id: 'a2', name: 'Parking', amount: 10000 }, { id: 'a3', name: 'Parking', amount: 10000 }]),
+  pastEvent('b', 'Summer', 7, 3, [{ id: 'b1', name: 'Booth', amount: 60000 }, { id: 'b2', name: 'Transport', amount: 30000 }]),
+];
+await run(page, `localStorage.clear(); localStorage.setItem('cntrMeta.tutorialOffered', 'test'); localStorage.cntrProducts = ${JSON.stringify(SAMPLE_PRODUCTS)}; localStorage.cntrEvents = ${JSON.stringify(JSON.stringify(EVENTS))};`);
+await load();
+
+const cmp2 = await run(page, `${H}
+  tab('historyScreen');
+  document.getElementById('compareEventsBtn').click();
+  document.querySelectorAll('#compareModalList input').forEach((i) => { i.checked = true; });
+  document.getElementById('compareModalList').dispatchEvent(new Event('change'));
+  document.getElementById('compareModalConfirmBtn').click();
+  const rows = [...document.querySelectorAll('#compareEventCard .cmp-row')].map((r) => [r.querySelector('.cmp-label').textContent, ...[...r.querySelectorAll('.cmp-value')].map((v) => v.textContent)].join('|'));
+  return { rows, green: document.querySelectorAll('#compareEventCard .is-positive, #compareEventCard .is-winner').length };
+`);
+check('compare: one row per expense name, same names added up, a missing one is "—"', ['Booth|Rp 50.000|Rp 60.000', 'Transport|—|Rp 30.000', 'Parking|Rp 20.000|—'].every((row) => cmp2.rows.includes(row)), cmp2.rows);
+check('compare: no "better" colouring', cmp2.green === 0, cmp2);
+
+const discard = await run(page, `${H}
+  const isOpen = () => document.getElementById('confirmModalOverlay').classList.contains('open');
+  const active = () => document.querySelector('.screen.active').id;
+  tab('historyScreen');
+  document.querySelector('#pastEventList .event-row').click();
+  document.getElementById('pastEventEditBtn').click();
+  tab('salesScreen');
+  const unchangedLeaves = !isOpen() && active() === 'salesScreen';
+  tab('historyScreen');
+  document.querySelector('#pastEventList .event-row').click();
+  document.getElementById('pastEventEditBtn').click();
+  document.querySelector('#pastEventCard [data-adjust][data-delta="1"]').click();
+  tab('salesScreen');
+  const asked = isOpen() && active() === 'pastEventScreen';
+  const labels = [document.getElementById('confirmModalCancelBtn').textContent, document.getElementById('confirmModalConfirmBtn').textContent];
+  document.getElementById('confirmModalCancelBtn').click();
+  const kept = !isOpen() && active() === 'pastEventScreen' && !document.getElementById('pastEventEditBar').hidden;
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+  tab('eventScreen');
+  const escClosed = isOpen();
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+  const afterEsc = !isOpen() && active() === 'pastEventScreen';
+  tab('eventScreen');
+  await confirmYes();
+  return { unchangedLeaves, asked, labels, kept, escClosed, afterEsc, left: active(), saved: stored('cntrEvents').map((e) => e.sales.length).join() };
+`);
+check('leaving an unchanged edit asks nothing', discard.unchangedLeaves, discard);
+check('leaving an edit with changes asks Keep editing / Discard', discard.asked && discard.labels.join() === 'Keep editing,Discard', discard);
+check('Keep editing stays in the edit', discard.kept, discard);
+check('Escape closes the confirm sheet', discard.escClosed && discard.afterEsc, discard);
+check('Discard leaves and keeps the stored event unchanged', discard.left === 'eventScreen' && discard.saved === '2,3', discard);
+
+// "New day when the date changes": off by default; on, the first sale on a new date starts Day 2
+const yesterdaySale = JSON.stringify([{ product: gacha.name, productId: undefined, price: gacha.price, cost: gacha.cost, payment: 'Cash', timestamp: dayAt(1, 12) }]);
+for (const on of [false, true]) {
+  await run(page, `localStorage.clear(); localStorage.setItem('cntrMeta.tutorialOffered', 'test'); localStorage.cntrProducts = ${JSON.stringify(SAMPLE_PRODUCTS)};
+    localStorage.cntrSales = ${JSON.stringify(yesterdaySale)}; localStorage.cntrLiveEvent = ${JSON.stringify(JSON.stringify({ id: 'live', name: null, startedAt: dayAt(1, 9), dayBreaks: [] }))};
+    ${on ? `localStorage.cntrSettings = ${JSON.stringify(JSON.stringify({ newDayOnDateChange: true }))};` : ''}`);
+  await load();
+  const nd = await run(page, `${H}
+    const toggle = document.getElementById('newDayToggle').checked;
+    tab('salesScreen'); tap('Gacha', 'Cash'); await wait();
+    return { toggle, breaks: stored('cntrLiveEvent').dayBreaks.length, toast: document.getElementById('toast').textContent, sell: document.querySelector('#stats .hero-meta').textContent };
+  `);
+  if (on) check('new-day setting on: a sale on a new date starts Day 2 and says so', nd.toggle && nd.breaks === 1 && nd.toast === 'New date: Day 2 started' && /^1 sale(?!s)/.test(nd.sell), nd);
+  else check('new-day setting is off by default: a new date stays in Day 1', !nd.toggle && nd.breaks === 0 && /^2 sales/.test(nd.sell), nd);
+}
 
 check('no uncaught exceptions', errors.length === 0, errors.join(' | '));
 await browser.close();
