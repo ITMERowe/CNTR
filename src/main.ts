@@ -305,22 +305,37 @@ function startEditing() {
   render();
 }
 
+/** True while a past-event save waits for its automatic backup; Save and Cancel are locked meanwhile. */
+let saving = false;
+
+function setSaving(on: boolean) {
+  saving = on;
+  el.pastEventSaveBtn.disabled = el.pastEventCancelBtn.disabled = on;
+  el.pastEventSaveBtn.textContent = on ? 'Saving…' : 'Save changes';
+}
+
 function cancelEditing() {
+  if (saving) return;
   draft = null;
   render();
 }
 
-function saveEditing() {
+async function saveEditing() {
   const edited = draft;
-  if (!edited) return;
-  void withAutoBackup(() => {
-    if (replacePastEvent(edited)) {
-      feedback('success');
-      showToast('Event updated');
-    }
-    draft = null;
-    render();
-  });
+  if (!edited || saving) return;
+  setSaving(true);
+  try {
+    await withAutoBackup(() => {
+      if (replacePastEvent(edited)) {
+        feedback('success');
+        showToast('Event updated');
+      }
+      draft = null;
+      render();
+    });
+  } finally {
+    setSaving(false);
+  }
 }
 
 function adjustDraft(day: number, product: string, payment: string, delta: 1 | -1) {
@@ -586,7 +601,7 @@ function wireDialogs() {
 
 /** Android back (button or gesture): close the top layer, else cancel an edit, else the screen's own back arrow, else go to Sell, else leave the app. */
 function goBack() {
-  if (tourRunning()) return; // the tour is on rails; Quit tour is the way out
+  if (tourRunning() || saving) return; // the tour is on rails (Quit tour is the way out); a save is finishing
   const sheet = document.querySelector('.sheet-overlay.open');
   const backBtn = document.querySelector<HTMLElement>('.screen.active .back-btn');
   if (el.colorPickerMenu.classList.contains('open')) closeColorPicker();

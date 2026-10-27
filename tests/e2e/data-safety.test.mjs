@@ -144,6 +144,7 @@ function fakeNative() {
       }
       if (plugin === 'Filesystem') {
         if (method === 'writeFile') {
+          await new Promise((resolve) => setTimeout(resolve, get('__delayMs', 0))); // a slow phone (B30)
           if (fail(`fs:${options.directory}`)) throw new Error('not allowed');
           const files = get('__files', []); files.push({ dir: options.directory, path: options.path, data: options.data }); put('__files', files);
           return { uri: `file:///${options.directory}/${options.path}` };
@@ -323,6 +324,43 @@ function fakeNative() {
   const after = await page.evaluate(() => JSON.parse(sessionStorage.__db));
   check('B27 Quit tour puts the real SQLite data back exactly and drops the saved copy', dataOnly(after) === before && !after['cntrMeta.tutorialSavedData'] && (await heroSales(page)) === '3');
   check('B28 no page errors during the tour on the phone', errors.length === 0, errors.join(' | '));
+  await ctx.close();
+}
+
+{
+  // Saving an edited past event waits for the automatic backup; Cancel must not interfere meanwhile.
+  const { ctx, page, errors } = await newPage(true);
+  await page.goto(URL);
+  const event = { id: 'e1', name: 'Fair', startedAt: '2026-10-20T03:00:00.000Z', endedAt: '2026-10-20T11:00:00.000Z', dayBreaks: [], products: [{ name: 'Gacha', price: 25000, cost: 12000, color: '#f76495' }], sales: [SALE(1)], expenses: [] };
+  await page.evaluate((events) => {
+    localStorage.clear(); sessionStorage.clear();
+    localStorage['cntrMeta.usingDatabase'] = '1';
+    sessionStorage.__db = JSON.stringify({ cntrEvents: events, 'cntrMeta.migratedFromLocalStorage': '2026-10-26T00:00:00.000Z', 'cntrMeta.tutorialOffered': 'test' });
+  }, JSON.stringify([event]));
+  await page.reload(); await page.waitForTimeout(1200);
+  const storedSales = () => page.evaluate(() => JSON.parse(JSON.parse(sessionStorage.__db).cntrEvents)[0].sales.length);
+  const editPlusOne = async () => {
+    await page.click('#pastEventEditBtn');
+    await page.click('#pastEventCard [data-adjust][data-delta="1"]:visible >> nth=0');
+  };
+  await page.click('.tabbar .tab[data-tab="historyScreen"]');
+  await page.click('#pastEventList .event-row >> nth=0');
+
+  await editPlusOne();
+  await page.click('#pastEventCancelBtn'); await page.waitForTimeout(300);
+  check('B31 Cancel without Save leaves the past event unchanged', (await storedSales()) === 1);
+
+  await editPlusOne();
+  await page.evaluate(() => { sessionStorage.__delayMs = '1500'; });
+  await page.click('#pastEventSaveBtn'); await page.waitForTimeout(200);
+  const during = await page.evaluate(() => ({ text: document.getElementById('pastEventSaveBtn').textContent, save: document.getElementById('pastEventSaveBtn').disabled, cancel: document.getElementById('pastEventCancelBtn').disabled }));
+  await page.dispatchEvent('#pastEventCancelBtn', 'click');
+  await page.waitForTimeout(2000);
+  await page.evaluate(() => { sessionStorage.__delayMs = '0'; });
+  check('B30 while the save waits for its backup, Save shows "Saving…" and Save and Cancel are disabled', during.text === 'Saving…' && during.save && during.cancel, during);
+  const after = { sales: await storedSales(), editing: await page.evaluate(() => !document.getElementById('pastEventEditBar').hidden), saveText: await page.evaluate(() => document.getElementById('pastEventSaveBtn').textContent) };
+  check('B30 Cancel pressed during the save cannot undo or block it: the edit is saved once and the editor closes', after.sales === 2 && !after.editing && after.saveText !== 'Saving…', after);
+  check('B32 no page errors around a slow save', errors.length === 0, errors.join(' | '));
   await ctx.close();
 }
 
