@@ -75,7 +75,9 @@ export const TOUR_STEPS: TourStep[] = [
   { id: 'undo', target: tile('Sticker', 'Cash', 'minus'), enter: () => (base = sold('Sticker', 'Cash')), done: () => sold('Sticker', 'Cash') < base },
   { id: 'totals', target: '#stats' },
   { id: 'add-open', target: '#openProductEdit', done: on('productEditScreen') },
-  { id: 'add-details', target: '#editName', allow: ['#editPrice', '#editCost'] },
+  { id: 'add-name', target: '#editName', done: () => el.editName.value.trim().length > 0 },
+  { id: 'add-price', target: '#editPrice', done: () => el.editPrice.value.trim().length > 0 },
+  { id: 'add-cost', target: '#editCost', done: () => el.editCost.value.trim().length > 0 },
   { id: 'add-payments', target: '#editPayments' },
   { id: 'add-color', target: '#colorField', allow: ['#colorPickerMenu'] },
   { id: 'add-save', target: '#saveProductBtn', enter: () => (base = state.productHistory.length), done: () => state.productHistory.length > base },
@@ -116,6 +118,7 @@ export const tourRunning = () => running;
  * rails: only the bubble and the step's target (plus its `allow` list) take taps, and the rest of the screen is dimmed.
  */
 export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
+  const dim = Object.assign(document.createElement('div'), { className: 'tour-dim' });
   const ring = Object.assign(document.createElement('div'), { className: 'tour-ring' });
   const bubble = Object.assign(document.createElement('div'), { className: 'tour-bubble' });
   bubble.setAttribute('role', 'dialog');
@@ -128,7 +131,7 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
   const next = bubble.querySelector<HTMLButtonElement>('#tourNextBtn')!;
   const quit = bubble.querySelector<HTMLButtonElement>('#tourQuitBtn')!;
   quit.textContent = t('tutorial.quit');
-  document.body.append(ring, bubble);
+  document.body.append(dim, ring, bubble);
   running = true;
 
   let index = 0;
@@ -160,7 +163,9 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
   }
 
   let placed = '';
-  /** Runs every frame, so the ring follows a sliding sheet or a scroll; it only writes styles when something moved. */
+  /** Runs every frame, so the hole follows a sliding sheet or a scroll; it only writes styles when something moved.
+   * No transition on the ring or the hole: a step's highlight appears in place, it never slides to get there, so it
+   * can't be caught mid-flight (e.g. half-grown over a sheet that is still opening). */
   function place() {
     const found = target();
     const sheet = document.querySelector('.sheet-overlay.open');
@@ -170,13 +175,14 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
     placed = where;
     ring.classList.toggle('tour-ring-full', !rect);
     if (!rect) {
-      // Nothing to point at (a look-only step): dim everything and show the bubble mid-screen.
-      Object.assign(ring.style, { transform: '', width: '100%', height: '100%' });
+      // Nothing to point at (a look-only step): dim+blur everything (no clip-path hole) and show the bubble mid-screen.
+      dim.style.clipPath = '';
       Object.assign(bubble.style, { top: '50%', transform: 'translateY(-50%)' });
       return;
     }
-    // Moved with transform (no layout, cheap to animate on a phone), not top/left.
-    Object.assign(ring.style, { transform: `translate(${rect.left - 4}px, ${rect.top - 4}px)`, width: `${rect.width + 8}px`, height: `${rect.height + 8}px` });
+    const [l, t, r, b] = [rect.left - 4, rect.top - 4, rect.right + 4, rect.bottom + 4];
+    dim.style.clipPath = `polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${l}px ${t}px, ${l}px ${b}px, ${r}px ${b}px, ${r}px ${t}px, ${l}px ${t}px)`;
+    Object.assign(ring.style, { transform: `translate(${l}px, ${t}px)`, width: `${r - l}px`, height: `${b - t}px` });
     bubble.style.transform = '';
     // The bubble goes on whichever side of the target has more room, but never under the status bar, a camera
     // cutout or the gesture bar (the safe-area insets): a target taller than the room left makes it overlap instead.
@@ -216,6 +222,7 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
     for (const type of GUARDED) window.removeEventListener(type, guard, true);
     window.removeEventListener('keydown', guardKeys, true);
     document.removeEventListener('click', onTap, true);
+    dim.remove();
     ring.remove();
     bubble.remove();
     running = false;

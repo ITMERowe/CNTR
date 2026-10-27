@@ -2482,21 +2482,31 @@ body.is-editing-event .content {
   }
 }
 
-/* Tutorial: a ring around the step's target and a hint bubble, above dialogs; taps pass through the ring */
+/* Tutorial: darken and blur everything except the step's target (a clip-path hole, not a moving spotlight),
+   a ring around the hole, and a hint bubble, all above dialogs; taps pass through. */
+.tour-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
 .tour-ring {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 40;
-  will-change: transform;
   border: 2px solid var(--text);
   border-radius: var(--r-md);
-  /* Spotlight: the huge shadow dims everything outside the target */
-  box-shadow: 0 0 0 4px rgba(231, 231, 231, 0.18), 0 0 0 200vmax rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 0 4px rgba(231, 231, 231, 0.18);
   pointer-events: none;
-  transition: transform var(--dur-2) var(--ease-out), width var(--dur-2) var(--ease-out), height var(--dur-2) var(--ease-out);
 }
 
+/* No sliding: a step's highlight appears in place, it doesn't travel there (less to track, never caught
+   mid-flight behind a sheet). Only the bubble still fades in. */
 .tour-in {
   animation: tour-in var(--dur-2) var(--ease-out);
 }
@@ -2507,12 +2517,9 @@ body.is-editing-event .content {
   }
 }
 
-/* Nothing to point at: dim the whole screen evenly */
+/* Nothing to point at: .tour-dim alone (no clip-path) dims the whole screen; hide the ring. */
 .tour-ring-full {
-  border-color: transparent;
-  border-radius: 0;
-  box-shadow: none;
-  background: rgba(0, 0, 0, 0.55);
+  opacity: 0;
 }
 
 .tour-bubble {
@@ -2547,10 +2554,4 @@ body.is-editing-event .content {
   justify-content: space-between;
   gap: var(--s2);
   margin-top: var(--s1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tour-ring {
-    transition: none;
-  }
 }

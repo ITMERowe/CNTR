@@ -48,12 +48,9 @@ export const TOUR_ACTIONS = {
   undo: (p) => p.click('.tile[data-product="Sticker"] [data-payment="Cash"][data-action="minus"]'),
   totals: tourNext,
   'add-open': (p) => p.click('#openProductEdit'),
-  'add-details': async (p) => {
-    await p.fill('#editName', 'Practice mug');
-    await p.fill('#editPrice', '30000');
-    await p.fill('#editCost', '12000');
-    await tourNext(p);
-  },
+  'add-name': (p) => p.fill('#editName', 'Practice mug'),
+  'add-price': (p) => p.fill('#editPrice', '30000'),
+  'add-cost': (p) => p.fill('#editCost', '12000'),
   'add-payments': tourNext,
   'add-color': tourNext,
   'add-save': (p) => p.click('#saveProductBtn'),

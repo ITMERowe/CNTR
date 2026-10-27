@@ -490,8 +490,8 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1793100176.071817,
-    "ast_hash": "327e314458180d7283c092d8fec65b01",
+    "mtime": 1793113124.9360006,
+    "ast_hash": "cdb78214d5575fa183e5e90142665cf8",
     "semantic_hash": ""
   },
   "docs/ARCHITECTURE.md": {
@@ -520,8 +520,8 @@
     "semantic_hash": ""
   },
   "HANDOFF.md": {
-    "mtime": 1793111400.1271431,
-    "ast_hash": "31bbe5d4c44c70cc46676c9e016d7bde",
+    "mtime": 1793117178.378094,
+    "ast_hash": "c963ed81106f186c6ef34291514f0b47",
     "semantic_hash": ""
   },
   "docs/screenshots/event.png": {
@@ -590,8 +590,8 @@
     "semantic_hash": ""
   },
   "tests/e2e/lib.mjs": {
-    "mtime": 1793109353.3687255,
-    "ast_hash": "87de5060e9b9a13024e71133d5fa9f87",
+    "mtime": 1793114943.3098965,
+    "ast_hash": "309da24ba2c29418f637779d2a83eb09",
     "semantic_hash": ""
   },
   "tests/e2e/motion.test.mjs": {
@@ -665,8 +665,8 @@
     "semantic_hash": ""
   },
   "src/tutorial.ts": {
-    "mtime": 1793094476.9582279,
-    "ast_hash": "25fa4e3b4a53c77684eb04b3b57a75fa",
+    "mtime": 1793116666.1246772,
+    "ast_hash": "44de6f2d0da89ae17932ca92cca1c290",
     "semantic_hash": ""
   },
   "tests/e2e/tutorial.test.mjs": {
@@ -700,8 +700,8 @@
     "semantic_hash": ""
   },
   "src/i18n.ts": {
-    "mtime": 1793111803.9958327,
-    "ast_hash": "6ba4e4a95d3a9462ed06da82fd566be8",
+    "mtime": 1793114925.8863719,
+    "ast_hash": "a1fb9febfc46cd6ae8bb7e3682d5bd6b",
     "semantic_hash": ""
   },
   "tests/i18n.test.ts": {
