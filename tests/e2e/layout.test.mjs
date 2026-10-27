@@ -41,21 +41,21 @@ function scan() {
   return out;
 }
 
-// Every screen in both themes (light mode, 0.1).
-for (const theme of ['dark', 'light']) for (const [width, height] of [[320, 700], [360, 800], [412, 892], [892, 412]]) {
+// Every screen in both themes, and in Bahasa Indonesia (longer words), 0.1.
+for (const [theme, language] of [['dark', 'en'], ['light', 'en'], ['dark', 'id']]) for (const [width, height] of [[320, 700], [360, 800], [412, 892], [892, 412]]) {
   const page = await browser.newPage({ viewport: { width, height }, isMobile: true, hasTouch: true });
   await page.goto(URL);
-  await page.evaluate(([p, t]) => {
+  await page.evaluate(([p, t, l]) => {
     localStorage.clear();
     // The sample products plus a one-method product, so the single full-width button and a new method colour are scanned too.
     localStorage.cntrProducts = JSON.stringify([...JSON.parse(p).slice(0, 3), { name: 'Pin', price: 5000, cost: 1000, color: '#5f6d77', payments: ['E-wallet'] }, ...JSON.parse(p).slice(3)]);
     localStorage.cntrEventCosts = JSON.stringify([{ id: 'a', name: 'Booth rental', amount: 125500000 }]);
-    localStorage.cntrSettings = JSON.stringify({ theme: t });
-  }, [SAMPLE_PRODUCTS, theme]);
+    localStorage.cntrSettings = JSON.stringify({ theme: t, language: l });
+  }, [SAMPLE_PRODUCTS, theme, language]);
   await page.reload();
   await sleep(600);
   const applied = await page.evaluate(() => ({ theme: document.documentElement.dataset.theme, bg: getComputedStyle(document.body).backgroundColor }));
-  check(`${width}x${height} ${theme}: the theme is applied`, applied.theme === theme && applied.bg === (theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(30, 30, 30)'), applied);
+  check(`${width}x${height} ${theme}${language === 'id' ? ' id' : ''}: the theme is applied`, applied.theme === theme && applied.bg === (theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(30, 30, 30)'), applied);
   const sellSome = async () => { await page.click('.tabbar .tab[data-tab="salesScreen"]'); for (let i = 0; i < 6; i++) await page.click('.tile .pay-add'); };
   const confirm = async () => { await page.click('#confirmModalConfirmBtn'); await sleep(300); };
   const assess = async (label) => {
@@ -63,7 +63,7 @@ for (const theme of ['dark', 'light']) for (const [width, height] of [[320, 700]
     const r = await page.evaluate(scan);
     const wider = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
     const problems = [...r.overflow, ...r.small, ...r.unlabeled, ...r.contrast];
-    check(`${width}x${height} ${theme} ${label}: no overflow, tap targets >= 44px, labels, contrast`, !wider && !problems.length, problems.join(' | ') || '');
+    check(`${width}x${height} ${theme}${language === 'id' ? ' id' : ''} ${label}: no overflow, tap targets >= 44px, labels, contrast`, !wider && !problems.length, problems.join(' | ') || '');
   };
   // Two days of sales with a long expense, so the day cards show.
   await sellSome();
@@ -97,7 +97,7 @@ for (const theme of ['dark', 'light']) for (const [width, height] of [[320, 700]
       probe.remove();
       return size;
     });
-    check(`412x892 ${theme}: 4 tiles fit above the tab bar`, fit.tiles >= 4, `${fit.tiles} tiles`);
+    check(`412x892 ${theme}${language === 'id' ? ' id' : ''}: 4 tiles fit above the tab bar`, fit.tiles >= 4, `${fit.tiles} tiles`);
     // Owner's choice: white stays down to 2.6:1 (pink, green, orange); dark only on lighter colours (beige, yellow).
     const dark = await page.evaluate(() => [...document.querySelectorAll('.tile.on-light')].map((t) => t.dataset.product).join());
     check('dark tile text only where white is below 2.6:1', dark === 'Photocard,Keychain', dark);

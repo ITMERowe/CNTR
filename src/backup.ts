@@ -2,6 +2,7 @@
 import { splitDays } from './events.ts';
 import { DATA_KEYS } from './migrate.ts'; // explicit extension so `node --test` can load it
 import type { SaleRecord } from './types.ts';
+import { t } from './i18n.ts';
 
 export const BACKUP_APP = 'CNTR';
 export const BACKUP_FORMAT = 1;
@@ -60,54 +61,54 @@ function checkCost(item: unknown) {
 
 /** Returns the first problem in `list`, or null. */
 function checkList(list: unknown, check: (item: unknown) => boolean, label: string): string | null {
-  if (!Array.isArray(list)) return `${label} is not a list`;
+  if (!Array.isArray(list)) return t('backup.notList', { label });
   const bad = list.findIndex((item) => !check(item));
-  return bad >= 0 ? `${label}: item ${bad + 1} is damaged or incomplete` : null;
+  return bad >= 0 ? t('backup.badItem', { label, n: bad + 1 }) : null;
 }
 
 const isDateString = (value: unknown) => isString(value) && !Number.isNaN(Date.parse(value as string));
 
 function checkLiveEvent(value: unknown): string | null {
   const ok = isObject(value) && isString(value.id) && isDateString(value.startedAt) && (value.name === null || isString(value.name)) && Array.isArray(value.dayBreaks) && value.dayBreaks.every(isDateString);
-  return ok ? null : 'Current event is damaged or incomplete';
+  return ok ? null : t('backup.badLive');
 }
 
 function checkEvent(event: unknown, index: number): string | null {
-  const label = `Event ${index + 1}`;
+  const label = t('backup.event', { n: index + 1 });
   if (!isObject(event) || !isString(event.id) || !isString(event.name) || !isDateString(event.startedAt) || !isDateString(event.endedAt) || !Array.isArray(event.dayBreaks) || !event.dayBreaks.every(isDateString)) {
-    return `${label} is damaged or incomplete`;
+    return t('backup.damaged', { label });
   }
-  return checkList(event.products, checkProduct, `${label} products`) ?? checkList(event.sales, checkSale, `${label} sales`) ?? checkList(event.expenses, checkCost, `${label} expenses`);
+  return checkList(event.products, checkProduct, t('backup.eventProducts', { label })) ?? checkList(event.sales, checkSale, t('backup.eventSales', { label })) ?? checkList(event.expenses, checkCost, t('backup.eventExpenses', { label }));
 }
 
 const CHECKS: Record<string, (value: unknown) => string | null> = {
-  cntrProducts: (value) => checkList(value, checkProduct, 'Products'),
-  cntrProductHistory: (value) => checkList(value, checkProduct, 'Product history'),
-  cntrSales: (value) => checkList(value, checkSale, 'Sales'),
-  cntrEventCosts: (value) => checkList(value, checkCost, 'Expenses'),
+  cntrProducts: (value) => checkList(value, checkProduct, t('products')),
+  cntrProductHistory: (value) => checkList(value, checkProduct, t('backup.productHistory')),
+  cntrSales: (value) => checkList(value, checkSale, t('sales')),
+  cntrEventCosts: (value) => checkList(value, checkCost, t('expenses')),
   cntrLiveEvent: checkLiveEvent,
-  cntrEvents: (value) => (Array.isArray(value) ? value.map(checkEvent).find(Boolean) ?? null : 'Events is not a list'),
-  cntrSettings: (value) => (isObject(value) ? null : 'Settings are damaged'),
+  cntrEvents: (value) => (Array.isArray(value) ? value.map(checkEvent).find(Boolean) ?? null : t('backup.eventsNotList')),
+  cntrSettings: (value) => (isObject(value) ? null : t('backup.badSettings')),
 };
 
 /** Validates a backup file completely before anything is changed. On success returns the values to store. */
 export function parseBackup(text: string): ParsedBackup {
-  if (text.length > MAX_BACKUP_BYTES) return { ok: false, error: 'This file is too large to be a CNTR backup.' };
+  if (text.length > MAX_BACKUP_BYTES) return { ok: false, error: t('backup.tooLarge') };
   let file: unknown;
   try {
     file = JSON.parse(text);
   } catch {
-    return { ok: false, error: 'This file is not a CNTR backup (it is not valid JSON). It may be damaged or cut off.' };
+    return { ok: false, error: t('backup.notJson') };
   }
-  if (!isObject(file) || file.app !== BACKUP_APP || !isObject(file.data)) return { ok: false, error: 'This file is not a CNTR backup.' };
-  if (file.format !== BACKUP_FORMAT) return { ok: false, error: 'This backup was made by a newer version of CNTR. Update the app, then try again.' };
+  if (!isObject(file) || file.app !== BACKUP_APP || !isObject(file.data)) return { ok: false, error: t('backup.notCntr') };
+  if (file.format !== BACKUP_FORMAT) return { ok: false, error: t('backup.newer') };
 
   const data = file.data;
   const values = new Map<string, string>();
   for (const key of DATA_KEYS) {
     if (!(key in data)) continue;
     const problem = CHECKS[key](data[key]);
-    if (problem) return { ok: false, error: `The backup is damaged, so nothing was changed. ${problem}.` };
+    if (problem) return { ok: false, error: t('backup.damagedFile', { problem }) };
     values.set(key, JSON.stringify(data[key]));
   }
 

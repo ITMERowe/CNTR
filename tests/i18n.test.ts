@@ -12,7 +12,8 @@ test('a fresh install follows an Indonesian phone; everything else starts in Eng
 });
 
 test('every English text has an Indonesian one with the same {placeholders}', () => {
-  const holes = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join();
+  // The set of placeholders (an English count names {n} once per form: "{n} sale|{n} sales").
+  const holes = (text: string) => [...new Set([...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]))].sort().join();
   for (const key of Object.keys(en) as (keyof typeof en)[]) {
     assert.ok(id[key]?.trim(), `${key} has no Indonesian text`);
     assert.equal(holes(id[key]), holes(en[key]), `${key} placeholders differ`);

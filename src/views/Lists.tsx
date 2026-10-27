@@ -4,11 +4,12 @@ import { paymentClass, productPayments } from '../payments';
 import type { PastEvent, Product, SaleRecord } from '../types';
 import { Icon } from './Icon';
 import { EmptyState, profitClass } from './ReportParts';
+import { t, tn } from '../i18n';
 
 const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
 export function RecentSales({ sales, colorFor }: { sales: SaleRecord[]; colorFor: (name: string) => string }) {
-  if (!sales.length) return <EmptyState icon="inbox" title="No sales yet" text="Sales you record on the Sell tab show up here." />;
+  if (!sales.length) return <EmptyState icon="inbox" title={t('sales.none')} text={t('recent.emptyText')} />;
   return (
     <>
       {sales.map((sale, index) => (
@@ -40,12 +41,12 @@ interface ProductListProps {
 function ProductRow({ product, active, index, onEdit, onToggle }: { product: Product; active: boolean; index: number; onEdit: (name: string) => void; onToggle: (name: string) => void }) {
   return (
     <div class="product-item" style={{ '--i': index }}>
-      <button class="product-edit-btn" type="button" data-name={product.name} aria-label={`Edit ${product.name}`} onClick={() => onEdit(product.name)}>
+      <button class="product-edit-btn" type="button" data-name={product.name} aria-label={t('edit.named', { name: product.name })} onClick={() => onEdit(product.name)}>
         <span class="swatch swatch-lg" style={{ background: product.color }} aria-hidden="true" />
         <span class="product-item-main">
           <strong class="list-title">{product.name}</strong>
           <span class="product-item-sub">
-            {fmt(product.price)} · profit {fmt(product.price - product.cost)}
+            {fmt(product.price)} · {t('product.profitEach', { amount: fmt(product.price - product.cost) })}
           </span>
           <span class="product-item-methods">
             {productPayments(product).map((method) => (
@@ -62,7 +63,7 @@ function ProductRow({ product, active, index, onEdit, onToggle }: { product: Pro
         data-name={product.name}
         role="switch"
         aria-checked={active}
-        aria-label={`${product.name} on the Sell tab`}
+        aria-label={t('product.onSell', { name: product.name })}
         onClick={() => onToggle(product.name)}
       >
         <span class="switch-track" aria-hidden="true" />
@@ -75,22 +76,22 @@ export function ProductList({ products, activeNames, onEdit, onToggle, onAdd }: 
   const addButton = (
     <button class="btn btn-secondary btn-block" id="addProductBtn" type="button" onClick={onAdd}>
       <Icon name="plus" />
-      Add product
+      {t('add_product')}
     </button>
   );
   if (!products.length) {
     return (
       <>
         <section class="card">
-          <EmptyState icon="package" title="No products yet" text="Add what you sell; each product becomes a tile on the Sell tab." />
+          <EmptyState icon="package" title={t('products.noneYet')} text={t('products.emptyText')} />
         </section>
         {addButton}
       </>
     );
   }
   const sections = [
-    { key: 'counter', title: 'On the counter', note: 'Shown on the Sell tab. Tap a product to edit it.', items: products.filter((product) => activeNames.has(product.name)) },
-    { key: 'hidden', title: 'Hidden', note: 'Not on the Sell tab. Sales history is kept; switch one on to sell it again.', items: products.filter((product) => !activeNames.has(product.name)) },
+    { key: 'counter', title: t('products.counter'), note: t('products.counterNote'), items: products.filter((product) => activeNames.has(product.name)) },
+    { key: 'hidden', title: t('products.hidden'), note: t('products.hiddenNote'), items: products.filter((product) => !activeNames.has(product.name)) },
   ].filter((section) => section.items.length);
   return (
     <>
@@ -114,7 +115,7 @@ export function ProductList({ products, activeNames, onEdit, onToggle, onAdd }: 
 
 /** Past events, newest first: name, dates and days, net profit. */
 export function EventList({ events, onOpen }: { events: PastEvent[]; onOpen: (id: string) => void }) {
-  if (!events.length) return <EmptyState icon="event" title="No past events yet" text="Press End event on the Event tab when an event is over; it moves here." />;
+  if (!events.length) return <EmptyState icon="event" title={t('history.none')} text={t('history.noneText')} />;
   return (
     <>
       {[...events].reverse().map((event, index) => {
@@ -144,7 +145,7 @@ export function EventList({ events, onOpen }: { events: PastEvent[]; onOpen: (id
             <div class="list-main">
               <strong class="list-title">{event.name}</strong>
               <span class="list-sub">
-                {first === last ? first : `${first} – ${last}`} · {days === 1 ? '1 day' : `${days} days`}
+                {first === last ? first : `${first} – ${last}`} · {tn('count.day', days)}
               </span>
             </div>
             <span class={`list-value ${profitClass(net)}`}>{fmt(net)}</span>
@@ -157,7 +158,7 @@ export function EventList({ events, onOpen }: { events: PastEvent[]; onOpen: (id
 
 /** Checkbox list of past events; the compare dialog reads the checked inputs when confirmed. */
 export function EventChecklist({ events, checked }: { events: PastEvent[]; checked: string[] }) {
-  if (!events.length) return <p class="card-note">No past events yet.</p>;
+  if (!events.length) return <p class="card-note">{t('history.noneShort')}</p>;
   return (
     <>
       {[...events].reverse().map((event) => (

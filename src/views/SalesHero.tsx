@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { fmt } from '../formatters';
-import { plural } from '../reports';
+import { t, tn } from '../i18n';
 
 const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
@@ -36,14 +36,14 @@ export function SalesHero({ revenue, profit, count, day }: { revenue: number; pr
   const shown = useCountUp(revenue);
   return (
     <>
-      <span class="eyebrow">{day > 1 ? `Day ${day} revenue` : 'Revenue'}</span>
+      <span class="eyebrow">{day > 1 ? t('hero.dayRevenue', { day }) : t('revenue')}</span>
       <span class="hero-figure" aria-label={fmt(revenue)} style={{ '--chars': fmt(revenue).length }}>
         {fmt(shown)}
       </span>
       <span class="hero-meta">
-        <span>{plural(count, 'sale')}</span>
+        <span>{tn('count.sale', count)}</span>
         <span class="dot" aria-hidden="true" />
-        <span class={profit < 0 ? 'is-negative' : profit > 0 ? 'is-positive' : undefined}>{fmt(profit)} profit</span>
+        <span class={profit < 0 ? 'is-negative' : profit > 0 ? 'is-positive' : undefined}>{t('profit.amount', { amount: fmt(profit) })}</span>
       </span>
     </>
   );

@@ -2,10 +2,11 @@
 import { eventSummary, formatDay, splitDays } from '../events';
 import { fmt } from '../formatters';
 import { paymentClass, productPayments, sortPayments } from '../payments';
-import { buildProductBreakdown, marginPercent, plural } from '../reports';
+import { buildProductBreakdown, marginPercent } from '../reports';
 import type { EventCost, Product, SaleRecord } from '../types';
 import { Icon } from './Icon';
 import { Card, EmptyState, Hero, HourChart, Kpi, PaymentSplit, ProductRows, profitClass } from './ReportParts';
+import { t, tn } from '../i18n';
 
 export interface EventEditHandlers {
   onAdjust: (day: number, product: string, payment: string, delta: 1 | -1) => void;
@@ -34,12 +35,12 @@ interface Props {
 
 /** A day's line under its title: the first sale's date and the count; an empty day has no meaningful date yet. */
 function daySummary(day: SaleRecord[]) {
-  return day.length ? `${formatDay(day[0].timestamp)} · ${plural(day.length, 'sale')}` : 'No sales yet';
+  return day.length ? `${formatDay(day[0].timestamp)} · ${tn('count.sale', day.length)}` : t('sales.none');
 }
 
 function DayCards({ days, live }: { days: SaleRecord[][]; live: boolean }) {
   return (
-    <Card title="Days">
+    <Card title={t('days')}>
       <div class="day-list">
         {days.map((day, index) => {
           const { revenue, productProfit } = eventSummary(day, []);
@@ -48,8 +49,8 @@ function DayCards({ days, live }: { days: SaleRecord[][]; live: boolean }) {
             <div class="day-card" key={index} style={{ '--i': index }}>
               <div class="day-main">
                 <strong class="day-title">
-                  Day {index + 1}
-                  {isToday && <span class="chip">Today · live</span>}
+                  {t('day.title', { n: index + 1 })}
+                  {isToday && <span class="chip">{t('day.todayLive')}</span>}
                 </strong>
                 <span class="day-sub">
                   {daySummary(day)}
@@ -57,7 +58,7 @@ function DayCards({ days, live }: { days: SaleRecord[][]; live: boolean }) {
               </div>
               <div class="day-figures">
                 <span class="day-revenue">{fmt(revenue)}</span>
-                <span class={`day-profit ${profitClass(productProfit)}`}>{fmt(productProfit)} profit</span>
+                <span class={`day-profit ${profitClass(productProfit)}`}>{t('profit.amount', { amount: fmt(productProfit) })}</span>
               </div>
             </div>
           );
@@ -72,7 +73,7 @@ function CountEditor({ days, products, edit }: { days: SaleRecord[][]; products:
   return (
     <>
       {days.map((day, dayIndex) => (
-        <Card title={days.length > 1 ? `Day ${dayIndex + 1} counts` : 'Counts'} key={dayIndex}>
+        <Card title={days.length > 1 ? t('counts.day', { n: dayIndex + 1 }) : t('counts')} key={dayIndex}>
           <div class="count-list">
             {products.map((product) => (
               <div class="count-row" key={product.name}>
@@ -80,7 +81,7 @@ function CountEditor({ days, products, edit }: { days: SaleRecord[][]; products:
                 <span class="count-name">{product.name}</span>
                 {sortPayments([...productPayments(product), ...day.filter((sale) => sale.product === product.name).map((sale) => sale.payment)]).map((payment) => {
                   const count = day.filter((sale) => sale.product === product.name && sale.payment === payment).length;
-                  const where = days.length > 1 ? ` on day ${dayIndex + 1}` : '';
+                  const where = days.length > 1 ? t('counts.onDay', { n: dayIndex + 1 }) : '';
                   const button = (delta: 1 | -1) => (
                     <button
                       class="step-btn"
@@ -91,7 +92,7 @@ function CountEditor({ days, products, edit }: { days: SaleRecord[][]; products:
                       data-payment={payment}
                       data-delta={delta}
                       disabled={delta === -1 && count === 0}
-                      aria-label={`${delta === 1 ? 'Add' : 'Remove'} one ${payment} ${product.name}${where}`}
+                      aria-label={t(delta === 1 ? 'stepper.add' : 'stepper.remove', { payment, name: product.name, where })}
                       onClick={() => edit.onAdjust(dayIndex, product.name, payment, delta)}
                     >
                       <Icon name={delta === 1 ? 'plus' : 'minus'} />
@@ -125,11 +126,11 @@ function ProductBreakdown({ sales, products, colorFor }: { sales: SaleRecord[]; 
       {sold.length > 0 && <ProductRows rows={sold} totalUnits={sales.length} />}
       {unsold.length > 0 && (
         <p class={sold.length ? 'card-note unsold' : 'card-note'}>
-          {sold.length ? 'Not sold yet: ' : 'No sales yet for '}
+          {sold.length ? t('products.notSold') : t('products.noSalesFor')}
           {unsold.map((row) => row.name).join(', ')}
         </p>
       )}
-      {!rows.length && <EmptyState icon="package" title="No products yet" text="Add products from the Sell tab." />}
+      {!rows.length && <EmptyState icon="package" title={t('products.noneYet')} text={t('products.addFromSell')} />}
     </>
   );
 }
@@ -144,7 +145,7 @@ export function EventScreen(props: Props) {
     <>
       <div class="event-name-row">
         {props.onRename ? (
-          <button class="event-name" id="eventNameBtn" type="button" onClick={props.onRename} aria-label={`Rename event, now ${name}`}>
+          <button class="event-name" id="eventNameBtn" type="button" onClick={props.onRename} aria-label={t('event.renameLabel', { name })}>
             <span class="event-name-text">{name}</span>
             <Icon name="pencil" />
           </button>
@@ -153,25 +154,25 @@ export function EventScreen(props: Props) {
             <span class="event-name-text">{name}</span>
           </span>
         )}
-        {live && <span class="chip chip-live">Live</span>}
+        {live && <span class="chip chip-live">{t('live')}</span>}
       </div>
 
       {isEmpty && !edit ? (
         <Card>
-          <EmptyState icon="event" title="No sales yet" text="Sell on the Sell tab; this screen keeps the event total, day by day." />
+          <EmptyState icon="event" title={t('sales.none')} text={t('event.emptyText')} />
         </Card>
       ) : (
         <>
           <Hero
-            label={summary.net < 0 ? 'Deficit' : 'Net profit'}
+            label={summary.net < 0 ? t('deficit') : t('net_profit')}
             value={fmt(summary.net)}
             tone={summary.net < 0 ? 'negative' : undefined}
-            meta={`${fmt(summary.productProfit)} product profit − ${fmt(summary.expenses)} expenses`}
+            meta={t('event.netMeta', { profit: fmt(summary.productProfit), expenses: fmt(summary.expenses) })}
           />
           <div class="kpi-row kpi-row-3">
-            <Kpi label="Revenue" value={fmt(summary.revenue)} hint={plural(summary.count, 'sale')} />
-            <Kpi label="Profit" value={fmt(summary.productProfit)} hint={`${marginPercent(summary.revenue, summary.productProfit).toFixed(1)}% margin`} tone={summary.productProfit < 0 ? 'is-negative' : undefined} />
-            <Kpi label="Expenses" value={fmt(summary.expenses)} hint={plural(expenses.length, 'item')} />
+            <Kpi label={t('revenue')} value={fmt(summary.revenue)} hint={tn('count.sale', summary.count)} />
+            <Kpi label={t('profit')} value={fmt(summary.productProfit)} hint={t('margin', { pct: marginPercent(summary.revenue, summary.productProfit).toFixed(1) })} tone={summary.productProfit < 0 ? 'is-negative' : undefined} />
+            <Kpi label={t('expenses')} value={fmt(summary.expenses)} hint={tn('count.item', expenses.length)} />
           </div>
         </>
       )}
@@ -181,10 +182,10 @@ export function EventScreen(props: Props) {
       {edit && <CountEditor days={days} products={products} edit={edit} />}
 
       <Card
-        title="Expenses"
+        title={t('expenses')}
         action={
           props.onAddExpense && (
-            <button class="icon-btn icon-btn-soft" id="openAddExpenseBtn" type="button" title="Add expense" aria-label="Add expense" onClick={props.onAddExpense}>
+            <button class="icon-btn icon-btn-soft" id="openAddExpenseBtn" type="button" title={t('add_expense')} aria-label={t('add_expense')} onClick={props.onAddExpense}>
               <Icon name="plus" />
             </button>
           )
@@ -200,10 +201,10 @@ export function EventScreen(props: Props) {
                 <span class="list-value">{fmt(cost.amount)}</span>
                 {props.onEditExpense && props.onDeleteExpense && (
                   <div class="list-actions">
-                    <button class="icon-btn icon-btn-sm edit-cost" type="button" data-id={cost.id} title="Edit expense" aria-label={`Edit ${cost.name}`} onClick={() => props.onEditExpense!(cost.id)}>
+                    <button class="icon-btn icon-btn-sm edit-cost" type="button" data-id={cost.id} title={t('expense.edit')} aria-label={t('edit.named', { name: cost.name })} onClick={() => props.onEditExpense!(cost.id)}>
                       <Icon name="pencil" />
                     </button>
-                    <button class="icon-btn icon-btn-sm icon-btn-danger delete-cost" type="button" data-id={cost.id} title="Delete expense" aria-label={`Delete ${cost.name}`} onClick={() => props.onDeleteExpense!(cost.id)}>
+                    <button class="icon-btn icon-btn-sm icon-btn-danger delete-cost" type="button" data-id={cost.id} title={t('expense.delete')} aria-label={t('delete.named', { name: cost.name })} onClick={() => props.onDeleteExpense!(cost.id)}>
                       <Icon name="trash" />
                     </button>
                   </div>
@@ -212,18 +213,18 @@ export function EventScreen(props: Props) {
             ))}
           </div>
         ) : (
-          <p class="card-note">{props.onAddExpense ? 'No expenses yet. Add booth rental, transport or staffing costs.' : 'No expenses.'}</p>
+          <p class="card-note">{props.onAddExpense ? t('expenses.none') : t('expenses.noneShort')}</p>
         )}
       </Card>
 
       {!edit && sales.length > 0 && (
-        <Card title="Payment mix">
+        <Card title={t('payment_mix')}>
           <PaymentSplit sales={sales} />
         </Card>
       )}
 
       {!edit && sales.length > 0 && (
-        <Card title="Sales by hour">
+        <Card title={t('sales_by_hour')}>
           <HourChart sales={sales} />
         </Card>
       )}
@@ -234,15 +235,15 @@ export function EventScreen(props: Props) {
             // Only the latest day starts open; `open` is set again only if that changes, so taps stick.
             <details class="card products-day" key={index} open={index === days.length - 1}>
               <summary class="products-day-head">
-                <h2 class="card-title">Products · Day {index + 1}</h2>
-                <span class="products-day-meta">{plural(day.length, 'sale')}</span>
+                <h2 class="card-title">{t('products.day', { n: index + 1 })}</h2>
+                <span class="products-day-meta">{tn('count.sale', day.length)}</span>
                 <Icon name="chevron-right" />
               </summary>
               <ProductBreakdown sales={day} products={products} colorFor={colorFor} />
             </details>
           ))
         ) : (
-          <Card title="Products">
+          <Card title={t('products')}>
             <ProductBreakdown sales={sales} products={products} colorFor={colorFor} />
           </Card>
         ))}
@@ -250,10 +251,10 @@ export function EventScreen(props: Props) {
       {live && (
         <div class="event-actions">
           <button class="btn btn-secondary" id="endDayBtn" type="button" disabled={!days[days.length - 1].length} onClick={props.onEndDay}>
-            End day
+            {t('endDay.button')}
           </button>
           <button class="btn btn-primary" id="endEventBtn" type="button" disabled={isEmpty} onClick={props.onEndEvent}>
-            End event
+            {t('endEvent.button')}
           </button>
         </div>
       )}

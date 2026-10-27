@@ -7,6 +7,7 @@ import { deleteProduct, renameSales, saveProductHistory, saveProducts, saveSales
 import { loadSettings } from '../storage';
 import { closeColorPicker, getPickerColor, initColorPicker, setPickerColor } from './colorPicker';
 import { activeScreenId, el, openConfirmModal, openScreen, showToast } from './dom';
+import { t } from '../i18n';
 
 // Exactly one of these is set while editing; neither means "add a new product".
 let editingIndex = -1;
@@ -26,7 +27,7 @@ export function openProductEditor(index: number, historyIndex: number | null = n
   const currency = loadSettings().currency;
   closeColorPicker();
 
-  el.productEditTitle.textContent = source ? 'Edit product' : 'Add product';
+  el.productEditTitle.textContent = source ? t('product.edit') : t('add_product');
   el.editName.value = source?.name ?? '';
   el.editPrice.value = source ? formatInputNumber(String(source.price), currency) : '';
   el.editCost.value = source ? formatInputNumber(String(source.cost), currency) : '';
@@ -59,7 +60,7 @@ function onPaymentOptionClick(event: MouseEvent) {
   const next = togglePayment(selectedPayments, method);
   if (next === selectedPayments) {
     feedback('warn');
-    showToast(selectedPayments.includes(method) ? 'A product needs at least 1 payment method' : `Up to ${MAX_PAYMENTS} payment methods; turn one off first`);
+    showToast(selectedPayments.includes(method) ? t('payments.needOne') : t('payments.max', { max: MAX_PAYMENTS }));
   } else {
     feedback('step');
   }
@@ -69,7 +70,7 @@ function onPaymentOptionClick(event: MouseEvent) {
 
 /** Mirrors the name and price into the tile preview on the colour field. */
 function updatePreview() {
-  el.editPreviewName.textContent = el.editName.value.trim() || 'Product name';
+  el.editPreviewName.textContent = el.editName.value.trim() || t('product_name');
   el.editPreviewPrice.textContent = el.editPrice.value || formatInputNumber('0', loadSettings().currency);
 }
 
@@ -82,7 +83,7 @@ export function editProductByName(name: string) {
   }
   const historyIndex = state.productHistory.findIndex((product) => product.name === name);
   if (historyIndex >= 0) openProductEditor(-1, historyIndex);
-  else showToast(`${name} not found`);
+  else showToast(t('toast.notFound', { name }));
 }
 
 function closeProductEditor() {
@@ -98,12 +99,12 @@ function removeEditedProduct() {
   const removed = editingIndex >= 0 ? state.products[editingIndex] : editingHistoryIndex !== null ? state.productHistory[editingHistoryIndex] : null;
   if (!removed) return;
   openConfirmModal(
-    `Delete '${removed.name}'? Its sales stay in your reports. To only take it off the Sell tab, use its switch in Products instead.`,
-    'Delete',
+    t('product.deleteMessage', { name: removed.name }),
+    t('delete'),
     () => {
       deleteProduct(removed.name);
       feedback('remove');
-      showToast(`${removed.name} deleted`);
+      showToast(t('toast.deleted', { name: removed.name }));
       closeProductEditor();
     },
   );
@@ -111,7 +112,7 @@ function removeEditedProduct() {
 
 function saveEditedProduct() {
   const currency = loadSettings().currency;
-  const name = el.editName.value.trim() || `Product ${state.products.length + 1}`;
+  const name = el.editName.value.trim() || t('product.defaultName', { n: state.products.length + 1 });
   const price = parseCurrencyInput(el.editPrice.value, currency) || 0;
   const cost = parseCurrencyInput(el.editCost.value, currency) || 0;
   const pickedColor = getPickerColor();
@@ -124,7 +125,7 @@ function saveEditedProduct() {
   const clashesWithHistory = editing !== null && name !== originalName && state.productHistory.some((product) => product.name === name);
   if (clashesWithActive || clashesWithHistory) {
     feedback('warn');
-    showToast(`A product named '${name}' already exists`);
+    showToast(t('toast.nameTaken', { name }));
     return;
   }
 
@@ -141,14 +142,14 @@ function saveEditedProduct() {
     saveProducts();
     saveSales();
     saveProductHistory();
-    showToast(`${name} saved`);
+    showToast(t('toast.saved', { name }));
   } else {
     const newProduct = { name, price, cost, color: chooseUniqueColor(state.products, color), payments: [...selectedPayments] };
     state.products.push(newProduct);
     ensureProductHistory(newProduct, state.productHistory);
     saveProducts();
     saveProductHistory();
-    showToast(`${name} added`);
+    showToast(t('toast.added', { name }));
   }
 
   feedback('step');

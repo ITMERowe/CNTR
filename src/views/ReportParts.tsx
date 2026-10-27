@@ -2,10 +2,11 @@ import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { fmt } from '../formatters';
 import { paymentClass, paymentsInUse } from '../payments';
-import { plural, type ProductTotals } from '../reports';
+import type { ProductTotals } from '../reports';
 import type { SaleRecord } from '../types';
 import type { IconName } from '../ui/icons';
 import { Icon } from './Icon';
+import { t, tn } from '../i18n';
 
 export function profitClass(value: number) {
   return value < 0 ? 'is-negative' : value === 0 ? 'is-zero' : 'is-positive';
@@ -86,7 +87,7 @@ export function PaymentSplit({ sales }: { sales: SaleRecord[] }) {
             <span class="split-share">{total ? Math.round((part.amount / total) * 100) : 0}%</span>
             <span class="split-amount">
               {fmt(part.amount)}
-              <small>{plural(part.count, 'sale')}</small>
+              <small>{tn('count.sale', part.count)}</small>
             </span>
           </div>
         ))}
@@ -108,7 +109,7 @@ export function HourChart({ sales }: { sales: SaleRecord[] }) {
   const [selected, setSelected] = useState<number | null>(null);
   if (hours.length < 2) {
     // One column is not a chart; say it in words instead.
-    return hours.length ? <p class="chart-note">All {plural(sales.length, 'sale')} were between {hourLabel(hours[0])} and {hourLabel((hours[0] + 1) % 24)}.</p> : null;
+    return hours.length ? <p class="chart-note">{t('chart.allBetween', { sales: tn('count.sale', sales.length), from: hourLabel(hours[0]), to: hourLabel((hours[0] + 1) % 24) })}</p> : null;
   }
 
   const range = Array.from({ length: hours[hours.length - 1] - hours[0] + 1 }, (_, i) => hours[0] + i);
@@ -118,10 +119,10 @@ export function HourChart({ sales }: { sales: SaleRecord[] }) {
   const labelEvery = range.length > 8 ? 2 : 1;
 
   return (
-    <figure class="chart" aria-label={`Busiest hour ${hourLabel(peak)} with ${plural(max, 'sale')}`}>
+    <figure class="chart" aria-label={t('chart.busiestLabel', { hour: hourLabel(peak), sales: tn('count.sale', max) })}>
       <figcaption class="chart-caption">
-        <strong>{hourLabel(focus)}</strong> · {plural(counts.get(focus) ?? 0, 'sale')}
-        {focus === peak && <span class="chip">Busiest</span>}
+        <strong>{hourLabel(focus)}</strong> · {tn('count.sale', counts.get(focus) ?? 0)}
+        {focus === peak && <span class="chip">{t('chart.busiest')}</span>}
       </figcaption>
       <div class="chart-plot">
         {range.map((hour, index) => {
@@ -132,7 +133,7 @@ export function HourChart({ sales }: { sales: SaleRecord[] }) {
               type="button"
               class={`chart-col${hour === peak ? ' is-peak' : ''}${hour === focus ? ' is-focus' : ''}`}
               style={{ '--i': index }}
-              aria-label={`${hourLabel(hour)}: ${plural(count, 'sale')}`}
+              aria-label={`${hourLabel(hour)}: ${tn('count.sale', count)}`}
               aria-pressed={hour === focus}
               onClick={() => setSelected(hour === selected ? null : hour)}
             >
@@ -161,10 +162,10 @@ export function ProductRows({ rows, totalUnits }: { rows: ProductTotals[]; total
             <div class="rank-main">
               <span class="swatch" style={{ background: item.color || 'var(--text-3)' }} aria-hidden="true" />
               <span class="rank-name">{item.name}</span>
-              <span class="rank-count">{plural(item.count, 'sale')}</span>
+              <span class="rank-count">{tn('count.sale', item.count)}</span>
             </div>
             <div class="rank-meta">
-              <span class={`rank-profit ${profitClass(item.profit)}`}>{fmt(item.profit)} profit</span>
+              <span class={`rank-profit ${profitClass(item.profit)}`}>{t('profit.amount', { amount: fmt(item.profit) })}</span>
               <span class="rank-revenue">{fmt(item.revenue)}</span>
             </div>
             <div class="rank-track" aria-hidden="true">

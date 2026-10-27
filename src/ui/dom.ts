@@ -1,5 +1,6 @@
 // Static elements from index.html and the shared UI chrome: toast, confirm dialog, scroll lock, navigation.
 import { state } from '../state';
+import { t } from '../i18n';
 
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -108,7 +109,7 @@ export function showToast(message: string) {
 }
 
 /** Asks before a destructive action; `onConfirm` runs only if the user confirms. */
-export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void, { title = 'Are you sure?', danger = true, cancelLabel = 'Cancel' } = {}) {
+export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void, { title = t('are_you_sure'), danger = true, cancelLabel = t('cancel') } = {}) {
   const { confirmModalOverlay: overlay, confirmModalConfirmBtn: confirmBtn } = el;
   el.confirmModalTitle.textContent = title;
   el.confirmModalMessage.textContent = message;

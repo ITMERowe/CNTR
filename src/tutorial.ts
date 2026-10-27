@@ -1,5 +1,6 @@
 // The hands-on tour: practice data to play with, the steps, and the hint bubble that walks through them.
 import { feedback } from './feedback';
+import { t, type Key } from './i18n';
 import { liveDayCount, state, todayLiveSales } from './state';
 import type { Currency, PastEvent, Product } from './types';
 import { activeScreenId, el } from './ui/dom';
@@ -30,12 +31,12 @@ export function practiceData(currency: Currency, now: Date, settings?: string) {
         const { price, cost } = products.find((item) => item.name === product)!;
         return { product, price, cost, payment, timestamp: new Date(start.getTime() + (i + 1) * 9 * 60_000) };
       }),
-      expenses: [{ id: `${id}-rent`, name: 'Booth rental', amount: rent * unit }],
+      expenses: [{ id: `${id}-rent`, name: t('practice.rent'), amount: rent * unit }],
     };
   };
   const events = [
-    event('practice-spring', 'Spring Fair (practice)', 14, [['Sticker', 'Cash', 12], ['Sticker', 'QRIS', 8], ['Keychain', 'Cash', 5], ['Keychain', 'QRIS', 6]], 10),
-    event('practice-comic', 'Comic Day (practice)', 7, [['Sticker', 'Cash', 7], ['Sticker', 'QRIS', 11], ['Keychain', 'Cash', 9], ['Keychain', 'QRIS', 8]], 12),
+    event('practice-spring', t('practice.spring'), 14, [['Sticker', 'Cash', 12], ['Sticker', 'QRIS', 8], ['Keychain', 'Cash', 5], ['Keychain', 'QRIS', 6]], 10),
+    event('practice-comic', t('practice.comic'), 7, [['Sticker', 'Cash', 7], ['Sticker', 'QRIS', 11], ['Keychain', 'Cash', 9], ['Keychain', 'QRIS', 8]], 12),
   ];
   const values = new Map([
     ['cntrProducts', JSON.stringify(products)],
@@ -50,7 +51,6 @@ export function practiceData(currency: Currency, now: Date, settings?: string) {
 
 export interface TourStep {
   id: string;
-  text: string;
   /** What to point at; the first visible match. None: the bubble just sits at the bottom. */
   target?: string;
   /** "Do" step: moves on once this is true. Without it (and without `tap`) the step has a Next button. */
@@ -70,34 +70,34 @@ const isOpen = (overlay: HTMLElement) => () => overlay.classList.contains('open'
 let base = 0;
 
 export const TOUR_STEPS: TourStep[] = [
-  { id: 'sell-cash', target: tile('Sticker', 'Cash', 'plus'), text: 'Each tile is a product. Tap Cash on Sticker to record one sale paid in cash.', done: () => sold('Sticker', 'Cash') > 0 },
-  { id: 'sell-qris', target: tile('Sticker', 'QRIS', 'plus'), text: 'Paid by QRIS? Tap QRIS instead. Every payment method is counted on its own.', done: () => sold('Sticker', 'QRIS') > 0 },
-  { id: 'undo', target: tile('Sticker', 'Cash', 'minus'), text: 'Tapped by mistake? Minus takes back the last sale. Try it.', enter: () => (base = sold('Sticker', 'Cash')), done: () => sold('Sticker', 'Cash') < base },
-  { id: 'totals', target: '#stats', text: "Today's revenue and profit go up with every sale." },
-  { id: 'add-open', target: '#openProductEdit', text: 'Add your own products here. Tap +.', done: on('productEditScreen') },
-  { id: 'add-details', target: '#editName', allow: ['#editPrice', '#editCost'], text: 'Type a name, the price and what one costs you. CNTR works out the profit.' },
-  { id: 'add-payments', target: '#editPayments', text: 'Pick how it can be paid, 1 or 2 methods. They become the buttons on its tile.' },
-  { id: 'add-color', target: '#colorField', allow: ['#colorPickerMenu'], text: 'Tap the colour to change it, so the tile is easy to spot.' },
-  { id: 'add-save', target: '#saveProductBtn', text: 'Tap Save. To change a product later, tap the pencil on its tile.', enter: () => (base = state.productHistory.length), done: () => state.productHistory.length > base },
-  { id: 'event-tab', target: tab('eventScreen'), text: 'The Event tab adds up the whole event, day by day. Open it.', done: on('eventScreen') },
-  { id: 'event-name', target: '#eventNameBtn', text: 'This is your event with its totals and payment methods. Tap the name any time to rename it.' },
-  { id: 'expense', target: '#openAddExpenseBtn', text: 'Costs like booth rental come off the profit. Tap + to add one.', done: isOpen(el.expenseModalOverlay) },
-  { id: 'expense-form', target: '#expenseModalOverlay .sheet', text: 'Type what it was and how much, then tap Add expense.', enter: () => (base = state.eventCosts.length), done: () => state.eventCosts.length > base },
-  { id: 'end-day', target: '#endDayBtn', text: 'At closing time, tap End day.', done: isOpen(el.confirmModalOverlay) },
-  { id: 'end-day-confirm', target: '#confirmModalConfirmBtn', text: 'Today is kept as Day 1 and the Sell tab starts again from zero. Tap End day.', enter: () => (base = liveDayCount()), done: () => liveDayCount() > base },
-  { id: 'end-event', target: '#endEventBtn', text: 'When the whole event is over, tap End event.', done: isOpen(el.saveModalOverlay) },
-  { id: 'end-event-name', target: '#saveModalOverlay .sheet', text: 'Give the event a name you will recognise later, then tap Next.', done: isOpen(el.confirmModalOverlay) },
-  { id: 'end-event-confirm', target: '#confirmModalConfirmBtn', text: 'Tap End event. It moves to History and a new event starts.', enter: () => (base = state.pastEvents.length), done: () => state.pastEvents.length > base },
-  { id: 'history-tab', target: tab('historyScreen'), text: 'Open History.', done: on('historyScreen') },
-  { id: 'history-open', target: '#pastEventList .event-row', text: 'Every finished event is kept here. Open the one you just ended.', done: on('pastEventScreen') },
-  { id: 'history-edit', target: '#pastEventEditBtn', text: 'Forgot to count a sale? Tap the pencil to edit the event.', done: () => !el.pastEventEditBar.hidden },
-  { id: 'history-adjust', target: '#pastEventCard [data-adjust][data-delta="1"]', text: 'Use + and − to fix a count. Tap + once.', tap: true },
-  { id: 'history-save', target: '#pastEventSaveBtn', text: 'Tap Save changes.', done: () => el.pastEventEditBar.hidden },
-  { id: 'history-back', target: '#pastEventBackBtn', text: 'Go back to History.', done: on('historyScreen') },
-  { id: 'compare-open', target: '#compareEventsBtn', text: 'Compare puts two events side by side. Tap it.', done: isOpen(el.compareModalOverlay) },
-  { id: 'compare-pick', target: '#compareModalOverlay .sheet', text: 'Pick two events, then tap Compare.', done: on('compareEventScreen') },
-  { id: 'compare-view', target: '#compareEventCard', text: 'See which event earned more, and where the money came from.' },
-  { id: 'done', text: "That's everything. Tap Finish and the practice data is removed. You can replay this tour from Settings any time." },
+  { id: 'sell-cash', target: tile('Sticker', 'Cash', 'plus'), done: () => sold('Sticker', 'Cash') > 0 },
+  { id: 'sell-qris', target: tile('Sticker', 'QRIS', 'plus'), done: () => sold('Sticker', 'QRIS') > 0 },
+  { id: 'undo', target: tile('Sticker', 'Cash', 'minus'), enter: () => (base = sold('Sticker', 'Cash')), done: () => sold('Sticker', 'Cash') < base },
+  { id: 'totals', target: '#stats' },
+  { id: 'add-open', target: '#openProductEdit', done: on('productEditScreen') },
+  { id: 'add-details', target: '#editName', allow: ['#editPrice', '#editCost'] },
+  { id: 'add-payments', target: '#editPayments' },
+  { id: 'add-color', target: '#colorField', allow: ['#colorPickerMenu'] },
+  { id: 'add-save', target: '#saveProductBtn', enter: () => (base = state.productHistory.length), done: () => state.productHistory.length > base },
+  { id: 'event-tab', target: tab('eventScreen'), done: on('eventScreen') },
+  { id: 'event-name', target: '#eventNameBtn' },
+  { id: 'expense', target: '#openAddExpenseBtn', done: isOpen(el.expenseModalOverlay) },
+  { id: 'expense-form', target: '#expenseModalOverlay .sheet', enter: () => (base = state.eventCosts.length), done: () => state.eventCosts.length > base },
+  { id: 'end-day', target: '#endDayBtn', done: isOpen(el.confirmModalOverlay) },
+  { id: 'end-day-confirm', target: '#confirmModalConfirmBtn', enter: () => (base = liveDayCount()), done: () => liveDayCount() > base },
+  { id: 'end-event', target: '#endEventBtn', done: isOpen(el.saveModalOverlay) },
+  { id: 'end-event-name', target: '#saveModalOverlay .sheet', done: isOpen(el.confirmModalOverlay) },
+  { id: 'end-event-confirm', target: '#confirmModalConfirmBtn', enter: () => (base = state.pastEvents.length), done: () => state.pastEvents.length > base },
+  { id: 'history-tab', target: tab('historyScreen'), done: on('historyScreen') },
+  { id: 'history-open', target: '#pastEventList .event-row', done: on('pastEventScreen') },
+  { id: 'history-edit', target: '#pastEventEditBtn', done: () => !el.pastEventEditBar.hidden },
+  { id: 'history-adjust', target: '#pastEventCard [data-adjust][data-delta="1"]', tap: true },
+  { id: 'history-save', target: '#pastEventSaveBtn', done: () => el.pastEventEditBar.hidden },
+  { id: 'history-back', target: '#pastEventBackBtn', done: on('historyScreen') },
+  { id: 'compare-open', target: '#compareEventsBtn', done: isOpen(el.compareModalOverlay) },
+  { id: 'compare-pick', target: '#compareModalOverlay .sheet', done: on('compareEventScreen') },
+  { id: 'compare-view', target: '#compareEventCard' },
+  { id: 'done' },
 ];
 
 // ---- The hint bubble, on rails ----
@@ -119,14 +119,15 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
   const ring = Object.assign(document.createElement('div'), { className: 'tour-ring' });
   const bubble = Object.assign(document.createElement('div'), { className: 'tour-bubble' });
   bubble.setAttribute('role', 'dialog');
-  bubble.setAttribute('aria-label', 'Tutorial');
+  bubble.setAttribute('aria-label', t('tutorial.label'));
   bubble.innerHTML =
     '<p class="tour-count"></p><p class="tour-text" aria-live="polite"></p>' +
-    '<div class="tour-actions"><button type="button" class="btn btn-secondary" id="tourQuitBtn">Quit tour</button><button type="button" class="btn btn-primary" id="tourNextBtn"></button></div>';
+    '<div class="tour-actions"><button type="button" class="btn btn-secondary" id="tourQuitBtn"></button><button type="button" class="btn btn-primary" id="tourNextBtn"></button></div>';
   const count = bubble.querySelector<HTMLElement>('.tour-count')!;
   const text = bubble.querySelector<HTMLElement>('.tour-text')!;
   const next = bubble.querySelector<HTMLButtonElement>('#tourNextBtn')!;
   const quit = bubble.querySelector<HTMLButtonElement>('#tourQuitBtn')!;
+  quit.textContent = t('tutorial.quit');
   document.body.append(ring, bubble);
   running = true;
 
@@ -180,7 +181,7 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
     // "Do" steps have no Skip: only if their target cannot be found for 2 s (something unexpected is in the way).
     const stuck = isDo() && missingSince > 0 && Date.now() - missingSince > 2000;
     next.hidden = isDo() && !stuck;
-    next.textContent = index === steps.length - 1 ? 'Finish' : stuck ? 'Skip' : 'Next';
+    next.textContent = index === steps.length - 1 ? t('tutorial.finish') : stuck ? t('skip') : t('next');
   }
 
   function show(i: number) {
@@ -189,8 +190,8 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
     missingSince = 0;
     step().enter?.();
     bubble.dataset.step = step().id;
-    count.textContent = `${i + 1} of ${steps.length}`;
-    text.textContent = step().text;
+    count.textContent = t('tutorial.count', { n: i + 1, total: steps.length });
+    text.textContent = t(`tutorial.${step().id}` as Key);
     quit.hidden = i === steps.length - 1; // the last step only has Finish
     updateNext();
     target()?.scrollIntoView({ block: 'center' });

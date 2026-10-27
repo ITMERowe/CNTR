@@ -2,6 +2,7 @@ import { fmt } from '../formatters';
 import { compareProductCounts, getEventSummary } from '../reports';
 import type { PastEvent } from '../types';
 import { EmptyState } from './ReportParts';
+import { t } from '../i18n';
 
 interface Row {
   name: string;
@@ -15,7 +16,7 @@ function Metric({ label, value, winner, negative = false }: { label: string; val
       <span class="compare-label">{label}</span>
       <span class="compare-value">
         {value}
-        {winner && <span class="sr-only"> (better)</span>}
+        {winner && <span class="sr-only">{t('better')}</span>}
       </span>
     </div>
   );
@@ -31,7 +32,7 @@ function RowList({ title, rows }: { title: string; rows: Row[] }) {
           <span class="compare-line-name">{row.name}</span>
           <span class="compare-line-value">
             {row.value}
-            {row.winner && <span class="sr-only"> (better)</span>}
+            {row.winner && <span class="sr-only">{t('better')}</span>}
           </span>
         </div>
       ))}
@@ -58,20 +59,20 @@ function CompareCard({ label, event, other, products }: { label: string; event: 
         <span class="compare-badge">{label}</span>
         <h3 class="compare-name">{event.name}</h3>
       </div>
-      <Metric label={mine.net < 0 ? 'Deficit' : 'Net profit'} value={fmt(mine.net)} winner={mine.net > theirs.net} negative={mine.net < 0} />
-      <Metric label="Revenue" value={fmt(mine.revenue)} winner={mine.revenue > theirs.revenue} />
-      <Metric label="Profit" value={fmt(mine.profit)} winner={mine.profit > theirs.profit} />
-      <Metric label="Expenses" value={fmt(mine.expenses)} winner={mine.expenses < theirs.expenses} />
-      <Metric label="Sales" value={String(mine.salesCount)} winner={mine.salesCount > theirs.salesCount} />
-      <RowList title="Expenses" rows={expenseRows} />
-      <RowList title="Units sold" rows={products} />
+      <Metric label={mine.net < 0 ? t('deficit') : t('net_profit')} value={fmt(mine.net)} winner={mine.net > theirs.net} negative={mine.net < 0} />
+      <Metric label={t('revenue')} value={fmt(mine.revenue)} winner={mine.revenue > theirs.revenue} />
+      <Metric label={t('profit')} value={fmt(mine.profit)} winner={mine.profit > theirs.profit} />
+      <Metric label={t('expenses')} value={fmt(mine.expenses)} winner={mine.expenses < theirs.expenses} />
+      <Metric label={t('sales')} value={String(mine.salesCount)} winner={mine.salesCount > theirs.salesCount} />
+      <RowList title={t('expenses')} rows={expenseRows} />
+      <RowList title={t('units_sold')} rows={products} />
     </div>
   );
 }
 
 export function CompareView({ events }: { events: PastEvent[] }) {
   const [left, right] = events;
-  if (!left || !right) return <EmptyState icon="chart" title="Nothing to compare" text="Select two past events to compare." />;
+  if (!left || !right) return <EmptyState icon="chart" title={t('compare.nothing')} text={t('compare.nothingText')} />;
 
   const counts = compareProductCounts(left, right);
   const rowsFor = (side: 'left' | 'right') =>

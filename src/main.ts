@@ -11,7 +11,7 @@ import { DATA_KEYS, DROPPED_KEYS } from './migrate';
 import { pickTextFile, saveAutoBackup, saveFile, saveSafetyCopy } from './files';
 import { adjustCount } from './events';
 import { feedback } from './feedback';
-import { plural, totals } from './reports';
+import { totals } from './reports';
 import {
   addExpense,
   deletePastEvent,
@@ -48,7 +48,7 @@ import {
   tutorialOffered,
 } from './storage';
 import { practiceData, runTour, TOUR_SESSION_KEY, TOUR_STEPS, tourRunning } from './tutorial';
-import { locale, setLanguage, translateStatic, type Lang } from './i18n';
+import { locale, setLanguage, t, tn, translateStatic, type Lang } from './i18n';
 import { applyTheme } from './theme';
 import type { AppSettings, Currency, PastEvent, Product } from './types';
 import {
@@ -90,13 +90,13 @@ function addSale(product: Product, payment: string) {
 function undoSale(product: Product, payment: string) {
   if (!removeLastSale(product.name, payment)) {
     feedback('warn');
-    showToast('Nothing to undo');
+    showToast(t('toast.nothingToUndo'));
     return;
   }
   pulse = { product: product.name, payment, direction: 'down', id: ++pulseId };
   feedback('undo');
   render();
-  showToast(`Removed one ${product.name}`);
+  showToast(t('toast.removedOne', { name: product.name }));
 }
 
 /** Today's counts per product and payment (the Sell tab starts from zero after End day). */
@@ -169,7 +169,7 @@ function renderPastEvent() {
     return;
   }
   // The name shows (and wraps) just below; a long name would be cut off in the one-line title.
-  el.pastEventTitle.textContent = draft ? 'Edit event' : 'Past event';
+  el.pastEventTitle.textContent = draft ? t('edit_event') : t('past_event');
   // Coloured from the event's own snapshot: a product may since have been renamed or deleted.
   const snapshotColor = (name: string) => event.products.find((product) => product.name === name)?.color || productColor(name);
   renderView(
@@ -225,7 +225,7 @@ function renderProductList() {
     el.productHistoryList,
   );
   const hidden = state.productHistory.length - state.products.length;
-  el.productsSummary.textContent = state.productHistory.length ? `${state.products.length} on the counter · ${hidden} hidden` : 'None yet: add your first product';
+  el.productsSummary.textContent = state.productHistory.length ? t('products.summary', { count: state.products.length, hidden }) : t('products.none');
 }
 
 /** Deactivates an active product (keeping its history), or puts an inactive one back on the counter. */
@@ -233,12 +233,12 @@ function toggleProduct(name: string) {
   const index = state.products.findIndex((product) => product.name === name);
   if (index >= 0) {
     state.products.splice(index, 1);
-    showToast(`${name} removed from counter`);
+    showToast(t('toast.offCounter', { name }));
   } else {
     const existing = state.productHistory.find((product) => product.name === name);
     if (!existing) return;
     state.products.push({ ...existing });
-    showToast(`${name} added back to counter`);
+    showToast(t('toast.backOnCounter', { name }));
   }
   feedback('step');
   saveProducts();
@@ -250,31 +250,31 @@ function toggleProduct(name: string) {
 function confirmEndDay() {
   const day = liveDayCount();
   openConfirmModal(
-    `End today? Today's sales are kept as Day ${day} and the Sell counters start again from zero.`,
-    'End day',
+    t('endDay.message', { day }),
+    t('endDay.button'),
     () => {
       if (endDay()) {
         feedback('success');
-        showToast(`Day ${day} saved`);
+        showToast(t('toast.daySaved', { day }));
       }
       render();
     },
-    { title: 'End day?', danger: false },
+    { title: t('endDay.title'), danger: false },
   );
 }
 
 function confirmEndEvent(name: string) {
   openConfirmModal(
-    `Move '${name}' to History and start a new event?`,
-    'End event',
+    t('endEvent.message', { name }),
+    t('endEvent.button'),
     () =>
       void withAutoBackup(() => {
         endEvent(name);
         render();
         feedback('success');
-        showToast('Moved to History');
+        showToast(t('toast.movedToHistory'));
       }),
-    { title: 'End event?', danger: false },
+    { title: t('endEvent.title'), danger: false },
   );
 }
 
@@ -313,7 +313,7 @@ let saving = false;
 function setSaving(on: boolean) {
   saving = on;
   el.pastEventSaveBtn.disabled = el.pastEventCancelBtn.disabled = on;
-  el.pastEventSaveBtn.textContent = on ? 'Saving…' : 'Save changes';
+  el.pastEventSaveBtn.textContent = on ? t('saving') : t('save_changes');
 }
 
 function cancelEditing() {
@@ -330,7 +330,7 @@ async function saveEditing() {
     await withAutoBackup(() => {
       if (replacePastEvent(edited)) {
         feedback('success');
-        showToast('Event updated');
+        showToast(t('toast.eventUpdated'));
       }
       draft = null;
       render();
@@ -350,11 +350,11 @@ function adjustDraft(day: number, product: string, payment: string, delta: 1 | -
 function confirmDeletePastEvent() {
   const event = viewingId ? findPastEvent(viewingId) : undefined;
   if (!event) return;
-  openConfirmModal(`Delete event '${event.name}'? This cannot be undone.`, 'Delete', () =>
+  openConfirmModal(t('deleteEvent.message', { name: event.name }), t('delete'), () =>
     void withAutoBackup(() => {
       if (deletePastEvent(event.id)) {
         feedback('remove');
-        showToast('Event deleted');
+        showToast(t('toast.eventDeleted'));
       }
       closePastEvent();
     }),
@@ -373,9 +373,9 @@ function updateSaveModalButton() {
 function openNameSheet(mode: NameSheetMode) {
   nameSheetMode = mode;
   const ending = mode === 'end-event';
-  el.saveModalTitle.textContent = ending ? 'End event' : 'Rename event';
-  el.saveModalText.textContent = ending ? 'Give the event its final name. It moves to History, where you can still view and edit it.' : 'Name this event so you can find it later.';
-  el.saveModalSaveBtn.textContent = ending ? 'Next' : 'Save';
+  el.saveModalTitle.textContent = ending ? t('endEvent.button') : t('rename_event');
+  el.saveModalText.textContent = ending ? t('endEvent.nameText') : t('name_this_event_so_you_can_find_it_later');
+  el.saveModalSaveBtn.textContent = ending ? t('next') : t('save');
   el.saveModalInput.value = mode === 'rename-draft' ? (draft?.name ?? '') : liveEventName();
   updateSaveModalButton();
   el.saveModalOverlay.classList.add('open');
@@ -398,7 +398,7 @@ function submitSaveModal() {
   if (nameSheetMode === 'rename-draft') {
     if (draft) draft = { ...draft, name };
   } else if (renameLiveEvent(name)) {
-    showToast('Event renamed');
+    showToast(t('toast.eventRenamed'));
   }
   render();
 }
@@ -420,8 +420,8 @@ function openExpenseModal(id: string | null) {
   const cost = id ? activeExpenses().find((item) => item.id === id) : null;
   if (id && !cost) return;
   editingExpenseId = cost?.id ?? null;
-  el.expenseModalTitle.textContent = cost ? 'Edit expense' : 'Add expense';
-  el.addCostBtn.textContent = cost ? 'Save changes' : 'Add expense';
+  el.expenseModalTitle.textContent = cost ? t('expense.edit') : t('add_expense');
+  el.addCostBtn.textContent = cost ? t('save_changes') : t('add_expense');
   el.eventCostName.value = cost?.name ?? '';
   el.eventCostAmount.value = cost ? formatInputNumber(String(cost.amount), loadSettings().currency) : '';
   updateExpenseButtonState();
@@ -482,7 +482,7 @@ function confirmCompareSelection() {
   const checked = checkedValues(el.compareModalList);
   if (checked.length !== 2) {
     feedback('warn');
-    showToast('Select exactly 2 events');
+    showToast(t('toast.pickTwo'));
     return;
   }
   compareSelection = checked;
@@ -637,7 +637,7 @@ const formatWhen = (iso: string) => new Date(iso).toLocaleString(locale(), { day
 
 function updateLastBackupText() {
   const last = loadLastBackup();
-  el.lastBackupText.textContent = last ? formatWhen(last) : 'Never';
+  el.lastBackupText.textContent = last ? formatWhen(last) : t('never');
 }
 
 /** Saves a file and reports where it went. Returns true if it was saved somewhere. */
@@ -646,15 +646,15 @@ async function exportFile(name: string, text: string, mime: string, what: string
     const saved = await saveFile(name, text, mime);
     if (!saved.location && !saved.shared) {
       feedback('warn');
-      showMessage(`${what} not saved`, 'This phone did not allow saving to Documents. Export again and pick an app or folder to save the file in.');
+      showMessage(t('export.notSaved', { what }), t('export.notSavedText'));
       return false;
     }
     feedback('success');
-    showMessage(`${what} saved`, saved.location ? `Saved to ${saved.location} as ${name}. Keep a copy somewhere other than this phone too.` : `${name} was sent from the share sheet.`);
+    showMessage(t('export.saved', { what }), saved.location ? t('export.savedTo', { location: saved.location, name }) : t('export.shared', { name }));
     return true;
   } catch (error) {
     feedback('warn');
-    showMessage(`${what} failed`, `The file could not be saved (${errorText(error)}). The phone may be out of storage. Your data was not changed.`);
+    showMessage(t('export.failed', { what }), t('export.failedText', { error: errorText(error) }));
     return false;
   }
 }
@@ -663,14 +663,14 @@ async function exportFile(name: string, text: string, mime: string, what: string
 function blockedByTutorial() {
   if (!tutorialActive()) return false;
   feedback('warn');
-  showToast('Not available during the tutorial');
+  showToast(t('toast.notInTutorial'));
   return true;
 }
 
 async function exportBackup() {
   if (blockedByTutorial()) return;
   const now = new Date();
-  const ok = await exportFile(`cntr-backup-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2), 'application/json', 'Backup');
+  const ok = await exportFile(`cntr-backup-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2), 'application/json', t('backup'));
   if (ok) {
     saveLastBackup(now.toISOString());
     updateLastBackupText();
@@ -680,7 +680,7 @@ async function exportBackup() {
 function exportCsv() {
   if (blockedByTutorial()) return;
   const now = new Date();
-  void exportFile(`cntr-sales-${fileStamp(now)}.csv`, salesCsv(buildBackup(storedValues(), now)), 'text/csv', 'Sales CSV');
+  void exportFile(`cntr-sales-${fileStamp(now)}.csv`, salesCsv(buildBackup(storedValues(), now)), 'text/csv', t('export.salesCsv'));
 }
 
 async function restoreBackup() {
@@ -689,23 +689,23 @@ async function restoreBackup() {
   try {
     text = await pickTextFile(el.restoreFileInput);
   } catch (error) {
-    showMessage('Could not read the file', `${errorText(error)}. Nothing was changed.`);
+    showMessage(t('restore.unreadable'), t('nothingChanged', { error: errorText(error) }));
     return;
   }
   if (text === null) return;
 
   const parsed = parseBackup(text);
   if (!parsed.ok) {
-    showMessage('Cannot restore this file', parsed.error);
+    showMessage(t('restore.cannot'), parsed.error);
     return;
   }
   const { exportedAt, sales, events, products } = parsed.summary;
-  const from = exportedAt ? `from ${formatWhen(exportedAt)}` : '';
+  const from = exportedAt ? t('restore.from', { date: formatWhen(exportedAt) }) : '';
   openConfirmModal(
-    `Replace everything on this phone with the backup ${from}? It has ${plural(sales, 'current sale')}, ${plural(events, 'past event')} and ${plural(products, 'product')}. A copy of your current data is saved first.`,
-    'Restore',
+    t('restore.message', { from, sales: tn('count.currentSale', sales), events: tn('count.pastEvent', events), products: tn('count.product', products) }),
+    t('restore.button'),
     () => void applyRestore(parsed.values),
-    { title: 'Restore backup?' },
+    { title: t('restore.title') },
   );
 }
 
@@ -714,13 +714,13 @@ async function applyRestore(values: Map<string, string>) {
   try {
     await saveSafetyCopy(`cntr-before-restore-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2));
   } catch (error) {
-    showMessage('Restore cancelled', `A copy of your current data could not be saved first (${errorText(error)}), so nothing was changed. Free up space and try again.`);
+    showMessage(t('restore.cancelled'), t('restore.cancelledText', { error: errorText(error) }));
     return;
   }
   try {
     await replaceAllData(values);
   } catch (error) {
-    showMessage('Restore failed', `Nothing was changed; your current data is still here (${errorText(error)}).`);
+    showMessage(t('restore.failed'), t('restore.failedText', { error: errorText(error) }));
     return;
   }
   location.reload(); // start fresh from the restored data
@@ -754,7 +754,7 @@ async function withAutoBackup(action: () => void) {
     await autoBackup();
   } catch (error) {
     feedback('warn');
-    openConfirmModal(`The automatic backup failed (${errorText(error)}), so nothing was changed yet. Continue anyway?`, 'Continue', action, { title: 'Backup failed' });
+    openConfirmModal(t('autoBackup.failedText', { error: errorText(error) }), t('continue'), action, { title: t('autoBackup.failed') });
     return;
   }
   action();
@@ -788,7 +788,7 @@ async function startTutorial() {
     await startTutorialData(practiceData(loadSettings().currency, new Date(), storedValues().get('cntrSettings')));
   } catch (error) {
     feedback('warn');
-    showMessage('Tutorial not started', `${errorText(error)}. Nothing was changed.`);
+    showMessage(t('tutorial.notStarted'), t('nothingChanged', { error: errorText(error) }));
     return;
   }
   sessionStorage.setItem(TOUR_SESSION_KEY, '1');
@@ -802,7 +802,7 @@ async function endTutorial() {
     await endTutorialData();
   } catch (error) {
     feedback('warn');
-    showMessage('Practice data not removed yet', `${errorText(error)}. Your own data is safe and comes back the next time CNTR opens.`);
+    showMessage(t('tutorial.notRemoved'), t('tutorial.notRemovedText', { error: errorText(error) }));
     return false;
   }
   location.reload();
@@ -815,8 +815,8 @@ function confirmStartTutorial() {
     void startTutorial();
     return;
   }
-  openConfirmModal('Your sales, products and events are put aside during the tour and come back exactly as they are when it ends.', 'Start tour', () => void startTutorial(), {
-    title: 'Show the tutorial?',
+  openConfirmModal(t('tutorial.replayText'), t('tutorial.start'), () => void startTutorial(), {
+    title: t('tutorial.replayTitle'),
     danger: false,
   });
 }
@@ -824,10 +824,10 @@ function confirmStartTutorial() {
 /** First launch on an empty app: offer the tour once. */
 function offerTutorial() {
   markTutorialOffered();
-  openConfirmModal('Take a 3-minute hands-on tour with practice products. Everything you do in it is wiped afterwards.', 'Start tour', () => void startTutorial(), {
-    title: 'New to CNTR?',
+  openConfirmModal(t('tutorial.offerText'), t('tutorial.start'), () => void startTutorial(), {
+    title: t('tutorial.offerTitle'),
     danger: false,
-    cancelLabel: 'Skip',
+    cancelLabel: t('skip'),
   });
 }
 

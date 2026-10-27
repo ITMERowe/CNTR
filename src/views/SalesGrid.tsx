@@ -3,6 +3,7 @@ import { productPayments } from '../payments';
 import type { Product } from '../types';
 import type { IconName } from '../ui/icons';
 import { Icon } from './Icon';
+import { t } from '../i18n';
 
 const PAYMENT_ICONS: Record<string, IconName> = { Cash: 'banknote', QRIS: 'qr', Transfer: 'landmark', Card: 'credit-card', 'E-wallet': 'wallet' };
 
@@ -28,8 +29,8 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit }: Pr
   if (!products.length) {
     return (
       <div class="grid-empty">
-        <strong>No products on the counter</strong>
-        <span>Tap + to add one, or turn one on in Settings → Products.</span>
+        <strong>{t('sell.empty')}</strong>
+        <span>{t('sell.emptyText')}</span>
       </div>
     );
   }
@@ -45,7 +46,7 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit }: Pr
                 <h2 class="product-name">{product.name}</h2>
                 <span class="product-price">{fmt(product.price)}</span>
               </div>
-              <button class="tile-edit settings-btn" type="button" aria-label={`Edit ${product.name}`} onClick={() => onEdit(product)}>
+              <button class="tile-edit settings-btn" type="button" aria-label={t('edit.named', { name: product.name })} onClick={() => onEdit(product)}>
                 <Icon name="pencil" />
               </button>
             </div>
@@ -60,7 +61,7 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit }: Pr
                       type="button"
                       data-payment={payment}
                       data-action="plus"
-                      aria-label={`Add ${payment} sale of ${product.name}, ${count} so far`}
+                      aria-label={t('sell.addLabel', { payment, name: product.name, count })}
                       onClick={() => onAdd(product, payment)}
                     >
                       <span class="pay-label">
@@ -82,7 +83,7 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit }: Pr
                       type="button"
                       data-payment={payment}
                       data-action="minus"
-                      aria-label={`Undo last ${payment} sale of ${product.name}`}
+                      aria-label={t('sell.undoLabel', { payment, name: product.name })}
                       disabled={count === 0}
                       onClick={() => onUndo(product, payment)}
                     >

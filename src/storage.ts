@@ -1,4 +1,4 @@
-import { initialLanguage } from './i18n';
+import { initialLanguage, t } from './i18n';
 import { localStorageStore, openSqliteStore, type KvStore } from './kv';
 import { DATA_KEYS, migrateFromLegacy } from './migrate';
 import type { AppSettings, Currency, EventCost, LiveEventMeta, PastEvent, Product, SaleRecord } from './types';
@@ -68,7 +68,7 @@ function flush(): Promise<void> {
           // Keep the batch for the retry, unless a newer value for the same key arrived meanwhile.
           for (const [key, value] of batch) if (!pending.has(key)) pending.set(key, value);
           console.error('Saving failed', error);
-          setSaveProblem(`Your latest changes could not be saved (${errorText(error)}). The phone may be out of storage. CNTR keeps trying; free up space and export a backup.`);
+          setSaveProblem(t('storage.saveFailing', { error: errorText(error) }));
           window.clearTimeout(retryTimer);
           retryTimer = window.setTimeout(() => void flush(), 5000);
           return;
@@ -107,11 +107,11 @@ export async function initStorage(isNative: boolean): Promise<StorageStartup> {
       console.error('Opening the database failed', error);
       if (localStorage.getItem(USING_DATABASE_FLAG)) {
         // The newest data is in the database; the old localStorage copy is stale, so do not run on it.
-        return { ok: false, error: `CNTR could not open its data (${errorText(error)}). Nothing was changed or deleted. Close CNTR completely and open it again.` };
+        return { ok: false, error: t('storage.cannotOpen', { error: errorText(error) }) };
       }
       // Never migrated: localStorage still holds the only, current copy. Keep using it and retry next launch.
       store = localStorageStore;
-      startupProblem = `Your data could not be moved to safer storage yet (${errorText(error)}). It is still on this phone and CNTR will try again next time. Export a backup now.`;
+      startupProblem = t('storage.notMoved', { error: errorText(error) });
     }
     if (usingDatabase) {
       try {
@@ -125,7 +125,7 @@ export async function initStorage(isNative: boolean): Promise<StorageStartup> {
     for (const [key, value] of await store.readAll()) cache.set(key, value);
     freshInstall = ![...cache.keys()].some((key) => DATA_KEYS.includes(key) || key.startsWith('cntrMeta.tutorial'));
   } catch (error) {
-    return { ok: false, error: `CNTR could not read its data (${errorText(error)}). Nothing was changed or deleted. Close CNTR completely and open it again.` };
+    return { ok: false, error: t('storage.cannotRead', { error: errorText(error) }) };
   }
   return { ok: true, usingDatabase };
 }
