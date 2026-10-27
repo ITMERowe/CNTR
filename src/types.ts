@@ -56,4 +56,6 @@ export interface AppSettings {
   compactMoney: boolean;
   /** Event screen: one Products card per day instead of one for the whole event. */
   productsPerDay: boolean;
+  /** Soft tones on sales, undo and finished actions (vibration is separate and always on). */
+  sound: boolean;
 }

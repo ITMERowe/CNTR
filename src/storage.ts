@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   currency: 'IDR',
   compactMoney: false,
   productsPerDay: true,
+  sound: true,
 };
 
 /** Sales are stored with ISO string timestamps. */
@@ -137,6 +138,42 @@ export async function replaceAllData(values: Map<string, string>) {
   await store.write(new Map(DATA_KEYS.map((key) => [key, values.get(key) ?? null])));
 }
 
+// ---- Tutorial: practice data in place of the real data ----
+// The real data waits under TUTORIAL_KEY (not a data key, so never in a backup). Both swaps are one
+// all-or-nothing write, so a crash leaves either the real data or the practice data plus the saved copy.
+const TUTORIAL_KEY = 'cntrMeta.tutorialSavedData';
+const TUTORIAL_OFFERED_KEY = 'cntrMeta.tutorialOffered';
+
+/** True while practice data is in place (the real data is waiting to come back). */
+export const tutorialActive = () => cache.has(TUTORIAL_KEY);
+
+export const tutorialOffered = () => cache.has(TUTORIAL_OFFERED_KEY);
+
+export function markTutorialOffered() {
+  persist(TUTORIAL_OFFERED_KEY, new Date().toISOString());
+}
+
+/** Puts the real data aside and the practice data in its place. The caller reloads the app afterwards. */
+export async function startTutorialData(practice: Map<string, string>) {
+  await flush();
+  if (pending.size) throw new Error('Earlier changes have not been saved yet');
+  const changes = new Map<string, string | null>(DATA_KEYS.map((key) => [key, practice.get(key) ?? null]));
+  changes.set(TUTORIAL_KEY, JSON.stringify([...storedValues()]));
+  await store.write(changes);
+}
+
+/** Brings the real data back exactly as it was and drops the practice data. The caller reloads the app afterwards. */
+export async function endTutorialData() {
+  const raw = cache.get(TUTORIAL_KEY);
+  if (raw === undefined) return;
+  const saved = new Map<string, string>(JSON.parse(raw) as [string, string][]);
+  await flush(); // let practice writes finish first, so none land after the real data is back
+  const changes = new Map<string, string | null>(DATA_KEYS.map((key) => [key, saved.get(key) ?? null]));
+  changes.set(TUTORIAL_KEY, null);
+  pending.clear(); // a practice write still failing must not be retried over the real data
+  await store.write(changes);
+}
+
 function readJson<T>(key: string, fallback: T): T {
   const stored = cache.get(key);
   if (!stored) return fallback;
@@ -243,6 +280,7 @@ export function loadSettings(): AppSettings {
     compactMoney: Boolean(stored.compactMoney),
     // Settings saved before this option (or a damaged value) get the default.
     productsPerDay: typeof stored.productsPerDay === 'boolean' ? stored.productsPerDay : DEFAULT_SETTINGS.productsPerDay,
+    sound: typeof stored.sound === 'boolean' ? stored.sound : DEFAULT_SETTINGS.sound,
   };
   return { ...cachedSettings };
 }

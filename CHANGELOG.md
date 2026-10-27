@@ -1,6 +1,16 @@
 # Changelog
 
-## Unreleased (branch `feature/signing-tests-about`)
+## 0.1 (branch `feature/signing-tests-about`)
+
+### Added
+- **Hands-on tutorial**: a 28-step tour on rails (like a game tutorial: only the highlighted button responds, the rest is dimmed) with practice products and events (sell, undo, add a product, expenses, End day, End event, edit a past event, Compare). Offered once on an empty first launch; replay from Settings → Show tutorial. The real data is put aside and comes back exactly as it was on Finish, Quit, or the next launch after a crash. No backup files are written during the tour, and Export/Restore wait until it ends.
+- **Haptics and sound effects**: a tap on every sale, undo, stepper, switch and payment pick; a success buzz and soft chime on End day, End event, saved edits and exports; a warning buzz on refusals and failures. Settings → Sound → *Sound effects* turns the tones off (vibration stays).
+
+### Changed
+- Version names are now `0.1.<build>` (e.g. `CNTR_0.1.24.apk`): pre-release until it is ready to ship, which will be 1.0. Builds were named `1.0.<build>` before; the build number (`versionCode`) keeps rising, so 0.1.24 still installs as an update over 1.0.23.
+- The two explanation notes under Settings → Backup were removed (the About → Privacy text stays).
+
+## Earlier builds, named 1.0.x (branch `feature/signing-tests-about`)
 
 ### Changed (events)
 - **Reports and Event are one always-live Event screen.** Every sale counts at once; no Save report, Save event report, Import sales or Clear buttons. 4 tabs: Event, Sell, History, Settings.

@@ -130,6 +130,18 @@
                   </label>
                 </div>
               </section>
+              <section class="group" data-group="sound">
+                <h2 class="group-title">Sound</h2>
+                <div class="group-body">
+                  <label class="group-row" for="soundToggle">
+                    <span class="group-row-label">Sound effects<small>Soft clicks when you sell, undo or finish something</small></span>
+                    <span class="switch">
+                      <input type="checkbox" id="soundToggle" role="switch" />
+                      <span class="switch-track" aria-hidden="true"></span>
+                    </span>
+                  </label>
+                </div>
+              </section>
               <section class="group" data-group="sales">
                 <h2 class="group-title">Sales data</h2>
                 <div class="group-body">
@@ -143,13 +155,12 @@
                   <button class="group-row group-link" id="exportBackupBtn" type="button"><span class="group-icon"><i data-icon="backup"></i></span><span class="group-row-label">Export backup<small>Saves all data as one file you can restore</small></span><i data-icon="chevron-right"></i></button>
                   <button class="group-row group-link" id="restoreBackupBtn" type="button"><span class="group-icon"><i data-icon="restore"></i></span><span class="group-row-label">Restore from backup<small>Replaces all data on this phone</small></span><i data-icon="chevron-right"></i></button>
                 </div>
-                <p class="group-note">Your data lives only on this phone. Uninstalling CNTR or losing the phone deletes it, so keep a backup file somewhere else.</p>
-                <p class="group-note">CNTR also keeps automatic copies in Documents/CNTR/auto before you end, change or delete an event.</p>
                 <input type="file" id="restoreFileInput" hidden />
               </section>
               <section class="group" data-group="about">
                 <div class="group-body">
                   <button class="group-row group-link" id="openAboutMenuBtn" type="button"><span class="group-icon"><i data-icon="info"></i></span><span class="group-row-label">About</span><i data-icon="chevron-right"></i></button>
+                  <button class="group-row group-link" id="startTutorialBtn" type="button"><span class="group-icon"><i data-icon="tutorial"></i></span><span class="group-row-label">Show tutorial<small>A hands-on tour with practice data</small></span><i data-icon="chevron-right"></i></button>
                 </div>
               </section>
             </div>

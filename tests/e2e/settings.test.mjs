@@ -32,7 +32,34 @@ const settings = await run(page, `${H}
   const groups = [...document.querySelectorAll('#settingsScreen .group')].map((g) => g.dataset.group);
   return { groups, summary: document.getElementById('productsSummary').textContent, lastBackup: document.getElementById('lastBackupText').textContent };
 `);
-check('Settings order: Products, Event, Money, Sales data, Backup, About', settings.groups.join() === 'products,event,money,sales,backup,about', settings.groups);
+check('Settings order: Products, Event, Money, Sound, Sales data, Backup, About', settings.groups.join() === 'products,event,money,sound,sales,backup,about', settings.groups);
+
+// Sound effects: on by default, a sale plays one tone; switched off, a sale is silent and the choice is saved
+const sound = await run(page, `${H}
+  let tones = 0;
+  const Real = window.OscillatorNode;
+  window.OscillatorNode = class extends Real { constructor(...args) { super(...args); tones++; } };
+  const toggle = document.getElementById('soundToggle');
+  const onByDefault = toggle.checked;
+  tab('salesScreen');
+  const sell = () => document.querySelector('.tile[data-product="Gacha"] [data-payment="Cash"][data-action="plus"]').click();
+  sell();
+  const onTones = tones;
+  tab('settingsScreen');
+  toggle.click();
+  tones = 0;
+  tab('salesScreen');
+  sell();
+  const offTones = tones;
+  await wait();
+  const saved = stored('cntrSettings').sound;
+  tab('settingsScreen');
+  toggle.click(); // back on
+  window.OscillatorNode = Real;
+  return { onByDefault, onTones, offTones, saved };
+`);
+check('Sound effects is on by default and a sale plays one soft tone', sound.onByDefault && sound.onTones === 1, sound);
+check('with Sound effects off a sale is silent, and the choice is saved', sound.offTones === 0 && sound.saved === false, sound);
 check('Products row says how many are on the counter and hidden', settings.summary === '2 on the counter · 1 hidden', settings.summary);
 check('Backup shows the last backup plainly ("Never" before the first)', settings.lastBackup === 'Never', settings.lastBackup);
 

@@ -2,7 +2,7 @@
 // Part A: browser build (localStorage). Part B: a fake Android bridge with an in-memory SQLite stand-in
 // (kept in sessionStorage so it survives reloads), fake Filesystem/Share, and switchable failures.
 import { readFileSync } from 'node:fs';
-import { URL, checks, launch, SAMPLE_PRODUCTS } from './lib.mjs';
+import { URL, checks, launch, playTour, SAMPLE_PRODUCTS } from './lib.mjs';
 
 const { check, done } = checks();
 const b = await launch();
@@ -110,7 +110,7 @@ function fakeNative() {
       { name: 'CapacitorSQLite', methods: methods(['createConnection', 'checkConnectionsConsistency', 'open', 'isDBOpen', 'execute', 'query', 'executeSet', 'closeConnection']) },
       { name: 'Filesystem', methods: methods(['writeFile', 'requestPermissions', 'checkPermissions', 'readdir', 'deleteFile']) },
       { name: 'Share', methods: methods(['share']) },
-      { name: 'Haptics', methods: methods(['impact']) },
+      { name: 'Haptics', methods: methods(['impact', 'notification']) },
       { name: 'App', methods: [{ name: 'addListener', rtype: 'callback' }, ...methods(['minimizeApp', 'removeListener'])] },
     ],
     nativeCallback: () => 'cb',
@@ -286,6 +286,36 @@ function fakeNative() {
   await page.reload(); await page.waitForTimeout(900);
   const again = await page.evaluate(() => JSON.parse(sessionStorage.__files ?? '[]').filter((f) => f.path.startsWith('CNTR/auto/')).length);
   check('B24 that backup is taken once, not on every launch', again === files.length, `${files.length} then ${again}`);
+  await ctx.close();
+}
+
+{
+  // Tutorial on the phone: practice data swaps in and out of SQLite in one write each; no automatic backups.
+  const { ctx, page, errors } = await newPage(true);
+  await page.goto(URL);
+  await page.evaluate(([s, p]) => {
+    localStorage.clear(); sessionStorage.clear();
+    localStorage['cntrMeta.usingDatabase'] = '1';
+    sessionStorage.__db = JSON.stringify({ cntrSales: s, cntrProducts: p, 'cntrMeta.migratedFromLocalStorage': '2026-10-26T00:00:00.000Z', 'cntrMeta.tutorialOffered': 'test' });
+  }, [legacySales, SAMPLE_PRODUCTS]);
+  await page.reload(); await page.waitForTimeout(1200);
+  const dataOnly = (d) => JSON.stringify(Object.fromEntries(Object.entries(d).filter(([key]) => !key.startsWith('cntrMeta.')).sort()));
+  const before = dataOnly(await page.evaluate(() => JSON.parse(sessionStorage.__db)));
+  await toSettings(page);
+  await page.click('#startTutorialBtn'); await page.click('#confirmModalConfirmBtn');
+  await page.waitForLoadState('load'); await page.waitForTimeout(1200);
+  const during = await page.evaluate(() => JSON.parse(sessionStorage.__db));
+  check('B25 starting the tour puts practice data in SQLite and keeps the real data aside', JSON.parse(during.cntrProducts)[0].name === 'Sticker' && JSON.parse(during['cntrMeta.tutorialSavedData']).length > 0);
+  const stuck = await playTour(page, 'history-tab'); // on rails up to and including End event
+  await page.waitForTimeout(500);
+  check('B29 the tour runs on the phone up to End event', !stuck, stuck ?? '');
+  const autoDuring = await page.evaluate(() => JSON.parse(sessionStorage.__files ?? '[]').filter((f) => f.path.startsWith('CNTR/auto/')).length);
+  check('B26 ending a practice event writes no automatic backup', autoDuring === 0, `${autoDuring} files`);
+  await page.click('#tourQuitBtn');
+  await page.waitForLoadState('load'); await page.waitForTimeout(1200);
+  const after = await page.evaluate(() => JSON.parse(sessionStorage.__db));
+  check('B27 Quit tour puts the real SQLite data back exactly and drops the saved copy', dataOnly(after) === before && !after['cntrMeta.tutorialSavedData'] && (await heroSales(page)) === '3');
+  check('B28 no page errors during the tour on the phone', errors.length === 0, errors.join(' | '));
   await ctx.close();
 }
 

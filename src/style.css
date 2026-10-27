@@ -2161,13 +2161,6 @@ p {
   font-size: 14px;
 }
 
-.group-note {
-  padding: var(--s2) var(--s1) 0;
-  color: var(--text-3);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
 .startup-error {
   display: grid;
   gap: var(--s4);
@@ -2434,5 +2427,65 @@ p {
 
   .kpi-row-3 .kpi-value {
     font-size: 15px;
+  }
+}
+
+/* Tutorial: a ring around the step's target and a hint bubble, above dialogs; taps pass through the ring */
+.tour-ring {
+  position: fixed;
+  z-index: 40;
+  border: 2px solid var(--text);
+  border-radius: var(--r-md);
+  /* Spotlight: the huge shadow dims everything outside the target */
+  box-shadow: 0 0 0 4px rgba(231, 231, 231, 0.18), 0 0 0 200vmax rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  transition: top var(--dur-1) var(--ease-out), left var(--dur-1) var(--ease-out), width var(--dur-1) var(--ease-out), height var(--dur-1) var(--ease-out);
+}
+
+/* Nothing to point at: dim the whole screen evenly */
+.tour-ring-full {
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.tour-bubble {
+  position: fixed;
+  left: var(--s4);
+  right: var(--s4);
+  z-index: 41;
+  max-width: 480px;
+  margin: 0 auto;
+  display: grid;
+  gap: var(--s2);
+  padding: var(--s4);
+  background: var(--surface-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  color: var(--text);
+}
+
+.tour-count {
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+.tour-text {
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.tour-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s2);
+  margin-top: var(--s1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-ring {
+    transition: none;
   }
 }

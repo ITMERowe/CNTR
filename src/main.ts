@@ -2,7 +2,6 @@ import '@fontsource-variable/plus-jakarta-sans';
 import './style.css';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { h, render as renderView } from 'preact';
 import { generateUUID } from './data';
 import { formatInputNumber, parseCurrencyInput } from './formatters';
@@ -11,6 +10,7 @@ import { buildBackup, parseBackup, salesCsv } from './backup';
 import { DATA_KEYS, DROPPED_KEYS } from './migrate';
 import { pickTextFile, saveAutoBackup, saveFile, saveSafetyCopy } from './files';
 import { adjustCount } from './events';
+import { feedback } from './feedback';
 import { plural, totals } from './reports';
 import {
   addExpense,
@@ -32,7 +32,22 @@ import {
   todayLiveSales,
   updateExpense,
 } from './state';
-import { initStorage, loadLastBackup, loadSettings, onStorageProblem, replaceAllData, saveLastBackup, saveSettings, storedValues } from './storage';
+import {
+  endTutorialData,
+  initStorage,
+  loadLastBackup,
+  loadSettings,
+  markTutorialOffered,
+  onStorageProblem,
+  replaceAllData,
+  saveLastBackup,
+  saveSettings,
+  startTutorialData,
+  storedValues,
+  tutorialActive,
+  tutorialOffered,
+} from './storage';
+import { practiceData, runTour, TOUR_SESSION_KEY, TOUR_STEPS, tourRunning } from './tutorial';
 import type { Currency, PastEvent, Product } from './types';
 import {
   activeScreenId,
@@ -62,26 +77,22 @@ let pulse: TapPulse | null = null;
 let pulseId = 0;
 const isNative = Capacitor.isNativePlatform();
 
-/** A short tap on the phone's motor; harmless no-op in the browser. */
-function haptic(style: ImpactStyle) {
-  if (isNative) Haptics.impact({ style }).catch(() => {});
-}
-
 function addSale(product: Product, payment: string) {
   recordSale(product, payment);
   pulse = { product: product.name, payment, direction: 'up', id: ++pulseId };
-  haptic(ImpactStyle.Light);
+  feedback('sale');
   render();
   showToast(`${product.name} · ${payment}`);
 }
 
 function undoSale(product: Product, payment: string) {
   if (!removeLastSale(product.name, payment)) {
+    feedback('warn');
     showToast('Nothing to undo');
     return;
   }
   pulse = { product: product.name, payment, direction: 'down', id: ++pulseId };
-  haptic(ImpactStyle.Medium);
+  feedback('undo');
   render();
   showToast(`Removed one ${product.name}`);
 }
@@ -227,6 +238,7 @@ function toggleProduct(name: string) {
     state.products.push({ ...existing });
     showToast(`${name} added back to counter`);
   }
+  feedback('step');
   saveProducts();
   productsChanged();
 }
@@ -239,7 +251,10 @@ function confirmEndDay() {
     `End today? Today's sales are kept as Day ${day} and the Sell counters start again from zero.`,
     'End day',
     () => {
-      if (endDay()) showToast(`Day ${day} saved`);
+      if (endDay()) {
+        feedback('success');
+        showToast(`Day ${day} saved`);
+      }
       render();
     },
     { title: 'End day?', danger: false },
@@ -254,6 +269,7 @@ function confirmEndEvent(name: string) {
       void withAutoBackup(() => {
         endEvent(name);
         render();
+        feedback('success');
         showToast('Moved to History');
       }),
     { title: 'End event?', danger: false },
@@ -298,7 +314,10 @@ function saveEditing() {
   const edited = draft;
   if (!edited) return;
   void withAutoBackup(() => {
-    if (replacePastEvent(edited)) showToast('Event updated');
+    if (replacePastEvent(edited)) {
+      feedback('success');
+      showToast('Event updated');
+    }
     draft = null;
     render();
   });
@@ -307,6 +326,7 @@ function saveEditing() {
 function adjustDraft(day: number, product: string, payment: string, delta: 1 | -1) {
   if (!draft) return;
   draft = adjustCount(draft, day, product, payment, delta);
+  feedback('step');
   render();
 }
 
@@ -315,7 +335,10 @@ function confirmDeletePastEvent() {
   if (!event) return;
   openConfirmModal(`Delete event '${event.name}'? This cannot be undone.`, 'Delete', () =>
     void withAutoBackup(() => {
-      if (deletePastEvent(event.id)) showToast('Event deleted');
+      if (deletePastEvent(event.id)) {
+        feedback('remove');
+        showToast('Event deleted');
+      }
       closePastEvent();
     }),
   );
@@ -416,6 +439,7 @@ function submitExpense() {
 function deleteExpense(id: string) {
   if (editingPastEvent()) draft = { ...draft!, expenses: draft!.expenses.filter((cost) => cost.id !== id) };
   else removeExpense(id);
+  feedback('remove');
   render();
 }
 
@@ -440,6 +464,7 @@ function closeCompareModal() {
 function confirmCompareSelection() {
   const checked = checkedValues(el.compareModalList);
   if (checked.length !== 2) {
+    feedback('warn');
     showToast('Select exactly 2 events');
     return;
   }
@@ -509,6 +534,11 @@ function wireSettings() {
     saveSettings({ ...loadSettings(), productsPerDay: el.productsPerDayToggle.checked });
     render();
   });
+  el.soundToggle.checked = loadSettings().sound;
+  el.soundToggle.addEventListener('change', () => {
+    saveSettings({ ...loadSettings(), sound: el.soundToggle.checked });
+    feedback('sale'); // a sample of what it sounds like (silent when just turned off)
+  });
 }
 
 function wireDialogs() {
@@ -556,6 +586,7 @@ function wireDialogs() {
 
 /** Android back (button or gesture): close the top layer, else cancel an edit, else the screen's own back arrow, else go to Sell, else leave the app. */
 function goBack() {
+  if (tourRunning()) return; // the tour is on rails; Quit tour is the way out
   const sheet = document.querySelector('.sheet-overlay.open');
   const backBtn = document.querySelector<HTMLElement>('.screen.active .back-btn');
   if (el.colorPickerMenu.classList.contains('open')) closeColorPicker();
@@ -583,18 +614,30 @@ async function exportFile(name: string, text: string, mime: string, what: string
   try {
     const saved = await saveFile(name, text, mime);
     if (!saved.location && !saved.shared) {
+      feedback('warn');
       showMessage(`${what} not saved`, 'This phone did not allow saving to Documents. Export again and pick an app or folder to save the file in.');
       return false;
     }
+    feedback('success');
     showMessage(`${what} saved`, saved.location ? `Saved to ${saved.location} as ${name}. Keep a copy somewhere other than this phone too.` : `${name} was sent from the share sheet.`);
     return true;
   } catch (error) {
+    feedback('warn');
     showMessage(`${what} failed`, `The file could not be saved (${errorText(error)}). The phone may be out of storage. Your data was not changed.`);
     return false;
   }
 }
 
+/** Backups and restores would mix practice data with real files and data, so they wait until the tour ends. */
+function blockedByTutorial() {
+  if (!tutorialActive()) return false;
+  feedback('warn');
+  showToast('Not available during the tutorial');
+  return true;
+}
+
 async function exportBackup() {
+  if (blockedByTutorial()) return;
   const now = new Date();
   const ok = await exportFile(`cntr-backup-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2), 'application/json', 'Backup');
   if (ok) {
@@ -604,11 +647,13 @@ async function exportBackup() {
 }
 
 function exportCsv() {
+  if (blockedByTutorial()) return;
   const now = new Date();
   void exportFile(`cntr-sales-${fileStamp(now)}.csv`, salesCsv(buildBackup(storedValues(), now)), 'text/csv', 'Sales CSV');
 }
 
 async function restoreBackup() {
+  if (blockedByTutorial()) return;
   let text: string | null;
   try {
     text = await pickTextFile(el.restoreFileInput);
@@ -670,9 +715,14 @@ async function backUpDroppedReports() {
 
 /** Runs a destructive `action` after an automatic backup; if the backup fails, asks before going ahead. */
 async function withAutoBackup(action: () => void) {
+  if (tutorialActive()) {
+    action(); // practice data: no backup files to pile up
+    return;
+  }
   try {
     await autoBackup();
   } catch (error) {
+    feedback('warn');
     openConfirmModal(`The automatic backup failed (${errorText(error)}), so nothing was changed yet. Continue anyway?`, 'Continue', action, { title: 'Backup failed' });
     return;
   }
@@ -687,6 +737,59 @@ function wireBackup() {
   onStorageProblem((message) => {
     el.storageAlert.hidden = !message;
     el.storageAlert.textContent = message ?? '';
+  });
+}
+
+// ---- Tutorial ----
+
+const hasOwnData = () => state.productHistory.length > 0 || state.sales.length > 0 || state.pastEvents.length > 0;
+
+async function startTutorial() {
+  markTutorialOffered();
+  try {
+    await startTutorialData(practiceData(loadSettings().currency, new Date(), storedValues().get('cntrSettings')));
+  } catch (error) {
+    feedback('warn');
+    showMessage('Tutorial not started', `${errorText(error)}. Nothing was changed.`);
+    return;
+  }
+  sessionStorage.setItem(TOUR_SESSION_KEY, '1');
+  location.reload();
+}
+
+/** Puts the real data back and reloads. Returns false (and says so) if that failed; the real data stays safe and is tried again next launch. */
+async function endTutorial() {
+  sessionStorage.removeItem(TOUR_SESSION_KEY);
+  try {
+    await endTutorialData();
+  } catch (error) {
+    feedback('warn');
+    showMessage('Practice data not removed yet', `${errorText(error)}. Your own data is safe and comes back the next time CNTR opens.`);
+    return false;
+  }
+  location.reload();
+  return true;
+}
+
+function confirmStartTutorial() {
+  if (tutorialActive()) return;
+  if (!hasOwnData()) {
+    void startTutorial();
+    return;
+  }
+  openConfirmModal('Your sales, products and events are put aside during the tour and come back exactly as they are when it ends.', 'Start tour', () => void startTutorial(), {
+    title: 'Show the tutorial?',
+    danger: false,
+  });
+}
+
+/** First launch on an empty app: offer the tour once. */
+function offerTutorial() {
+  markTutorialOffered();
+  openConfirmModal('Take a 3-minute hands-on tour with practice products. Everything you do in it is wiped afterwards.', 'Start tour', () => void startTutorial(), {
+    title: 'New to CNTR?',
+    danger: false,
+    cancelLabel: 'Skip',
   });
 }
 
@@ -710,9 +813,11 @@ async function start() {
     showStartupError(startup.error);
     return;
   }
-  if (initState()) void backUpDroppedReports();
+  // Practice data without a tour running (the app was closed mid-tour): bring the real data back first.
+  if (tutorialActive() && !sessionStorage.getItem(TOUR_SESSION_KEY) && (await endTutorial())) return;
+  if (initState() && !tutorialActive()) void backUpDroppedReports();
   hydrateIcons();
-  // The installed app's version on the phone (e.g. 1.0.42 from CI); package.json in the browser.
+  // The installed app's version on the phone (e.g. 0.1.42 from CI); package.json in the browser.
   el.aboutVersion.textContent = isNative ? (await App.getInfo().catch(() => ({ version: packageVersion }))).version : `${packageVersion} (browser)`;
   wireNavigation();
   wireHeader();
@@ -720,8 +825,14 @@ async function start() {
   wireDialogs();
   wireBackup();
   initProductEditor(productsChanged);
+  onClick(el.startTutorialBtn, confirmStartTutorial);
   openScreen(activeScreenId());
   render();
+  if (tutorialActive()) {
+    if (sessionStorage.getItem(TOUR_SESSION_KEY)) runTour(TOUR_STEPS, () => void endTutorial());
+  } else if (!tutorialOffered() && !hasOwnData()) {
+    offerTutorial();
+  }
 }
 
 void start();

@@ -75,9 +75,9 @@ npm run dev        # http://localhost:5173 (also reachable from a phone on the s
 
 Requires Android 7.0 (API 24) or newer; the app targets API 36.
 
-**From CI (no local Android tooling needed):** every push runs the **Build APK** workflow. Open the run under **Actions** and download the artifact `CNTR_1.0.<build>.apk` (you need to be signed in to GitHub). The last number is the CI run number and also the app's `versionCode`.
+**From CI (no local Android tooling needed):** every push runs the **Build APK** workflow. Open the run under **Actions** and download the artifact `CNTR_0.1.<build>.apk` (you need to be signed in to GitHub). The last number is the CI run number and also the app's `versionCode`.
 
-> **Signing.** When the repository has the release key in its secrets (`CNTR_KEYSTORE_BASE64`, `CNTR_KEYSTORE_PASSWORD`, `CNTR_KEY_ALIAS`), CI builds a **release** APK signed with that one permanent key, plus `CNTR_1.0.<build>.aab` for Google Play. Each new release APK installs as an update and keeps the app's data. Without those secrets CI builds a **debug** APK signed with a temporary key: Android will not install it over a different build, so you must uninstall first, and **uninstalling deletes the app's data**. Switching from a debug build to the first release build also needs one uninstall.
+> **Signing.** When the repository has the release key in its secrets (`CNTR_KEYSTORE_BASE64`, `CNTR_KEYSTORE_PASSWORD`, `CNTR_KEY_ALIAS`), CI builds a **release** APK signed with that one permanent key, plus `CNTR_0.1.<build>.aab` for Google Play. Each new release APK installs as an update and keeps the app's data. Without those secrets CI builds a **debug** APK signed with a temporary key: Android will not install it over a different build, so you must uninstall first, and **uninstalling deletes the app's data**. Switching from a debug build to the first release build also needs one uninstall.
 
 **Locally** (needs JDK 21 and the Android SDK 36, e.g. via Android Studio):
 
@@ -85,7 +85,7 @@ Requires Android 7.0 (API 24) or newer; the app targets API 36.
 npm run build
 npx cap sync android
 cd android && ./gradlew assembleDebug     # Windows: gradlew.bat assembleDebug
-# → android/app/build/outputs/apk/debug/CNTR_1.0.1.apk
+# → android/app/build/outputs/apk/debug/CNTR_0.1.1.apk
 ```
 
 Or run `npx cap open android` and press Run in Android Studio.

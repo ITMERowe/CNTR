@@ -13,6 +13,8 @@ src/
   migrate.ts           One-time, verified copy of legacy localStorage data into SQLite
   backup.ts            Backup format, validation and CSV (no runtime imports; tested by tests/)
   files.ts             Save backup files (Documents/CNTR + share sheet) and pick a file to restore
+  tutorial.ts          The hands-on tour: practice data, the steps, and the hint bubble
+  feedback.ts          Haptics (phone) and soft Web Audio tones (Settings → Sound)
   reports.ts           Pure report maths: totals, product breakdowns, compare rows
   formatters.ts        Money formatting/parsing, colour helpers
   data.ts              Default products, product-history helper, UUIDs
@@ -66,7 +68,7 @@ Data is a set of JSON values under these keys. On the phone they live in an SQLi
 | `cntrEventCosts` | The live event's expenses |
 | `cntrLiveEvent` | The live event's name, start and day breaks (`LiveEventMeta`); created on first launch from the existing sales |
 | `cntrEvents` | Past events (`PastEvent[]`), oldest first |
-| `cntrSettings` | Currency and compact-money preference |
+| `cntrSettings` | Currency, compact money, products per day, sound effects |
 
 - List loaders only accept arrays, so corrupt data falls back to empty instead of crashing startup.
 - Settings are cached in memory (`fmt()` runs for every amount on screen); `saveSettings()` invalidates the cache.
@@ -78,6 +80,7 @@ Data is a set of JSON values under these keys. On the phone they live in an SQLi
 - **Backup** (`backup.ts`): `{ app: "CNTR", format: 1, exportedAt, data: { <key>: <parsed value> } }`. `parseBackup()` validates every record before anything changes and rejects the whole file on any problem. Restore saves a safety copy (`Documents/CNTR/cntr-before-restore-*.json`, else app-private storage), writes all keys in one SQLite transaction (keys missing from the backup are deleted), then reloads.
 - `cntrMeta.lastBackup` (when the last backup was exported) is not part of backups.
 - **Automatic backups** (`main.ts` `withAutoBackup()`, `files.ts` `saveAutoBackup()`): before ending an event, saving an edit to a past event or deleting one, a full backup is written to `Documents/CNTR/auto/cntr-auto-<timestamp>.json` (app-private storage if Documents is refused); the newest 20 are kept. If it fails before a destructive action, the user is asked before going ahead. Native only; the browser build writes nothing.
+- **Tutorial** (`tutorial.ts`, `storage.ts` `startTutorialData()` / `endTutorialData()`): offered once on an empty first launch (`cntrMeta.tutorialOffered`), and from Settings → Show tutorial. Starting writes, in one all-or-nothing step, the practice data over the data keys and a copy of the real data under `cntrMeta.tutorialSavedData` (not a data key, so never in a backup), then reloads with `cntrTourRunning` in `sessionStorage`. Finish or Quit writes the real data back and drops the copy, again in one step. A launch that finds the copy but no `cntrTourRunning` (the app was closed mid-tour) puts the real data back before anything else. While practice data is in place, automatic backups are skipped and Export, CSV and Restore are refused. The tour polls each step's `done()` every 250 ms. It is on rails: a capture-phase guard on `window` swallows taps outside the bubble, the step's target and its `allow` list (and Cancel/close/back buttons inside the target), Escape is swallowed, and `goBack()` does nothing while `tourRunning()`.
 
 ## Tile colours
 

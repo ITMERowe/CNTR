@@ -67,7 +67,7 @@ jobs:
             echo "$KEYSTORE_BASE64" | base64 -d > "$CNTR_KEYSTORE_FILE"
             ./gradlew assembleRelease bundleRelease
             cp app/build/outputs/apk/release/CNTR_*.apk ../dist-apk/
-            cp app/build/outputs/bundle/release/app-release.aab "../dist-apk/CNTR_1.0.${BUILD_NUMBER}.aab"
+            cp app/build/outputs/bundle/release/app-release.aab "../dist-apk/CNTR_0.1.${BUILD_NUMBER}.aab"
             rm -f "$CNTR_KEYSTORE_FILE"
           else
             echo "::warning::No release key in secrets; building a debug APK (installing it needs an uninstall first)."

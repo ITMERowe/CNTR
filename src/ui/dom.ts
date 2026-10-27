@@ -48,9 +48,11 @@ export const el = {
   currencySelect: byId<HTMLSelectElement>('currencySelect'),
   compactMoneyToggle: byId<HTMLInputElement>('compactMoneyToggle'),
   productsPerDayToggle: byId<HTMLInputElement>('productsPerDayToggle'),
+  soundToggle: byId<HTMLInputElement>('soundToggle'),
   openProductsMenuBtn: byId<HTMLButtonElement>('openProductsMenuBtn'),
   productsSummary: byId<HTMLElement>('productsSummary'),
   openAboutMenuBtn: byId<HTMLButtonElement>('openAboutMenuBtn'),
+  startTutorialBtn: byId<HTMLButtonElement>('startTutorialBtn'),
   aboutBackBtn: byId<HTMLButtonElement>('aboutBackBtn'),
   aboutVersion: byId<HTMLSpanElement>('aboutVersion'),
   productHistoryBackBtn: byId<HTMLButtonElement>('productHistoryBackBtn'),
@@ -104,12 +106,13 @@ export function showToast(message: string) {
 }
 
 /** Asks before a destructive action; `onConfirm` runs only if the user confirms. */
-export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void, { title = 'Are you sure?', danger = true } = {}) {
+export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void, { title = 'Are you sure?', danger = true, cancelLabel = 'Cancel' } = {}) {
   const { confirmModalOverlay: overlay, confirmModalConfirmBtn: confirmBtn } = el;
   el.confirmModalTitle.textContent = title;
   el.confirmModalMessage.textContent = message;
   confirmBtn.textContent = confirmLabel;
   confirmBtn.className = danger ? 'btn btn-danger' : 'btn btn-primary';
+  el.confirmModalCancelBtn.textContent = cancelLabel;
   el.confirmModalCancelBtn.hidden = false;
   overlay.classList.add('open');
 

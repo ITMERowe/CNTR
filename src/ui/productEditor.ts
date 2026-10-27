@@ -1,5 +1,6 @@
 // Add / edit / remove a product.
 import { ensureProductHistory } from '../data';
+import { feedback } from '../feedback';
 import { chooseUniqueColor, formatInputNumber, parseCurrencyInput } from '../formatters';
 import { DEFAULT_PAYMENTS, MAX_PAYMENTS, PAYMENT_METHODS, paymentClass, productPayments, togglePayment } from '../payments';
 import { deleteProduct, renameSales, saveProductHistory, saveProducts, saveSales, state } from '../state';
@@ -56,7 +57,12 @@ function onPaymentOptionClick(event: MouseEvent) {
   const method = (event.target as HTMLElement).closest<HTMLElement>('.payment-option')?.dataset.method;
   if (!method) return;
   const next = togglePayment(selectedPayments, method);
-  if (next === selectedPayments) showToast(selectedPayments.includes(method) ? 'A product needs at least 1 payment method' : `Up to ${MAX_PAYMENTS} payment methods; turn one off first`);
+  if (next === selectedPayments) {
+    feedback('warn');
+    showToast(selectedPayments.includes(method) ? 'A product needs at least 1 payment method' : `Up to ${MAX_PAYMENTS} payment methods; turn one off first`);
+  } else {
+    feedback('step');
+  }
   selectedPayments = next;
   renderPaymentOptions();
 }
@@ -96,6 +102,7 @@ function removeEditedProduct() {
     'Delete',
     () => {
       deleteProduct(removed.name);
+      feedback('remove');
       showToast(`${removed.name} deleted`);
       closeProductEditor();
     },
@@ -116,6 +123,7 @@ function saveEditedProduct() {
   const clashesWithActive = state.products.some((product) => product.name === name && product.name !== originalName);
   const clashesWithHistory = editing !== null && name !== originalName && state.productHistory.some((product) => product.name === name);
   if (clashesWithActive || clashesWithHistory) {
+    feedback('warn');
     showToast(`A product named '${name}' already exists`);
     return;
   }
@@ -143,6 +151,7 @@ function saveEditedProduct() {
     showToast(`${name} added`);
   }
 
+  feedback('step');
   closeProductEditor();
 }
 
