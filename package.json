@@ -9,7 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "build:watch": "chokidar \"src/**/*\" -c \"npm run build\"",
     "preview": "vite preview",
-    "test": "node --test --experimental-strip-types tests/storage.test.ts tests/events.test.ts tests/payments.test.ts tests/config.test.ts",
+    "test": "node --test --experimental-strip-types tests/storage.test.ts tests/events.test.ts tests/payments.test.ts tests/config.test.ts tests/i18n.test.ts",
     "test:e2e": "node tests/e2e/run.mjs",
     "cap:sync": "npx cap sync"
   },

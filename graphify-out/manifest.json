@@ -45,13 +45,13 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1793081041.660406,
-    "ast_hash": "8a5ba50b85a9454725a8f3f7f37c8455",
+    "mtime": 1793083701.3237624,
+    "ast_hash": "7b53048b7d28e04e38650f7a761dcc62",
     "semantic_hash": ""
   },
   "src/main.ts": {
-    "mtime": 1793083072.1066227,
-    "ast_hash": "241888fdcea67d38ca9df4f42772b05f",
+    "mtime": 1793083891.9952397,
+    "ast_hash": "3f71e0fe407d8a0b0ef59345dbea7883",
     "semantic_hash": ""
   },
   "tsconfig.json": {
@@ -180,8 +180,8 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1793083052.9328616,
-    "ast_hash": "7cea2e87bf0325e1f43dabdc3f5743ac",
+    "mtime": 1793083881.677375,
+    "ast_hash": "d9ec40703e2114f42ddd35835eefcdab",
     "semantic_hash": ""
   },
   "android/app/src/main/res/drawable-land-hdpi/splash.png": {
@@ -345,13 +345,13 @@
     "semantic_hash": ""
   },
   "src/storage.ts": {
-    "mtime": 1793083050.578924,
-    "ast_hash": "ef00d29e2e201ec9e522b88c1204855d",
+    "mtime": 1793083881.4810655,
+    "ast_hash": "ba6d309a6d898a6dc417fe311cd4d68e",
     "semantic_hash": ""
   },
   "src/types.ts": {
-    "mtime": 1793083069.4947162,
-    "ast_hash": "0e526b56b2392bab7f108ea5893d4a4f",
+    "mtime": 1793083907.804999,
+    "ast_hash": "2c88a83d437e422d18b1cdee0f15122b",
     "semantic_hash": ""
   },
   ".claude/settings.json": {
@@ -465,8 +465,8 @@
     "semantic_hash": ""
   },
   "src/ui/dom.ts": {
-    "mtime": 1793083054.339982,
-    "ast_hash": "afc57e9f2ca16129a508a9deac6d6ea0",
+    "mtime": 1793083881.8569846,
+    "ast_hash": "55a880629cef000fb28fc4f19156e63f",
     "semantic_hash": ""
   },
   "src/ui/productEditor.ts": {
@@ -605,8 +605,8 @@
     "semantic_hash": ""
   },
   "src/events.ts": {
-    "mtime": 1793069183.6890266,
-    "ast_hash": "feb179b7238033faf4f962433bde6771",
+    "mtime": 1793083776.2559738,
+    "ast_hash": "b601e40a15fb24d0fc3823f88985e3ff",
     "semantic_hash": ""
   },
   "src/views/EventScreen.tsx": {
@@ -620,8 +620,8 @@
     "semantic_hash": ""
   },
   "tests/events.test.ts": {
-    "mtime": 1793069173.459096,
-    "ast_hash": "a0f0ce4893df9fd4ccce860e3d9ee703",
+    "mtime": 1793083761.8934042,
+    "ast_hash": "671f8e7a65ff7668a4baf555f4f32e97",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-10-27-events.md": {
@@ -670,8 +670,8 @@
     "semantic_hash": ""
   },
   "tests/e2e/tutorial.test.mjs": {
-    "mtime": 1793077214.6120844,
-    "ast_hash": "3117235471db6d857a44d3edb1f90ae7",
+    "mtime": 1793084024.7528772,
+    "ast_hash": "62f791c3b221e05da991a3497e9c4907",
     "semantic_hash": ""
   },
   "tests/config.test.ts": {
@@ -697,6 +697,16 @@
   "src/theme.ts": {
     "mtime": 1793083051.468796,
     "ast_hash": "939e31b56c9f70f4f08fc3d3caf50ae8",
+    "semantic_hash": ""
+  },
+  "src/i18n.ts": {
+    "mtime": 1793083745.5385444,
+    "ast_hash": "aea9b4ebc701fac34b9b0cda2dcd623c",
+    "semantic_hash": ""
+  },
+  "tests/i18n.test.ts": {
+    "mtime": 1793083698.7818303,
+    "ast_hash": "6ad91a309919af9146e0b231ad95f3cc",
     "semantic_hash": ""
   }
 }

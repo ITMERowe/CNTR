@@ -1,3 +1,4 @@
+import { initialLanguage } from './i18n';
 import { localStorageStore, openSqliteStore, type KvStore } from './kv';
 import { DATA_KEYS, migrateFromLegacy } from './migrate';
 import type { AppSettings, Currency, EventCost, LiveEventMeta, PastEvent, Product, SaleRecord } from './types';
@@ -18,6 +19,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   productsPerDay: true,
   sound: true,
   theme: 'system',
+  language: 'en',
 };
 
 /** Sales are stored with ISO string timestamps. */
@@ -121,6 +123,7 @@ export async function initStorage(isNative: boolean): Promise<StorageStartup> {
   }
   try {
     for (const [key, value] of await store.readAll()) cache.set(key, value);
+    freshInstall = ![...cache.keys()].some((key) => DATA_KEYS.includes(key) || key.startsWith('cntrMeta.tutorial'));
   } catch (error) {
     return { ok: false, error: `CNTR could not read its data (${errorText(error)}). Nothing was changed or deleted. Close CNTR completely and open it again.` };
   }
@@ -269,6 +272,9 @@ export function saveLastBackup(iso: string) {
   persist(LAST_BACKUP_KEY, iso);
 }
 
+/** Nothing stored yet when the app started: a first launch, not an update. */
+let freshInstall = false;
+
 // Settings are read on every money format call, so keep the parsed value in memory.
 let cachedSettings: AppSettings | null = null;
 
@@ -283,7 +289,10 @@ export function loadSettings(): AppSettings {
     productsPerDay: typeof stored.productsPerDay === 'boolean' ? stored.productsPerDay : DEFAULT_SETTINGS.productsPerDay,
     sound: typeof stored.sound === 'boolean' ? stored.sound : DEFAULT_SETTINGS.sound,
     theme: stored.theme === 'light' || stored.theme === 'dark' ? stored.theme : DEFAULT_SETTINGS.theme,
+    language: stored.language === 'en' || stored.language === 'id' ? stored.language : initialLanguage(navigator.language, freshInstall),
   };
+  // The first choice is saved at once, so it never changes on its own later (e.g. after the phone's language changes).
+  if (stored.language !== cachedSettings.language) persist(SETTINGS_KEY, JSON.stringify({ ...stored, language: cachedSettings.language }));
   return { ...cachedSettings };
 }
 

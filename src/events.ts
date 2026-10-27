@@ -1,4 +1,5 @@
-// Event maths: days, totals and History edits. Pure and type-only imports, so Node can test it directly.
+// Event maths: days, totals and History edits. Imports only pure modules, so Node can test it directly.
+import { locale, t } from './i18n.ts';
 import type { EventCost, PastEvent, Product, SaleRecord } from './types.ts';
 
 const time = (value: Date | string) => new Date(value).getTime();
@@ -42,11 +43,12 @@ export function eventSummary(sales: SaleRecord[], expenses: EventCost[]) {
   return { revenue, productProfit, expenses: expenseTotal, net: productProfit - expenseTotal, count: sales.length };
 }
 
-export const formatDay = (value: Date | string) => new Date(value).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+/** In the app's language (month names), not the phone's. */
+export const formatDay = (value: Date | string) => new Date(value).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' });
 
 export function defaultEventName(sales: SaleRecord[], now: Date): string {
   const first = sales.reduce<Date | null>((min, sale) => (!min || time(sale.timestamp) < min.getTime() ? new Date(sale.timestamp) : min), null);
-  return `Event ${formatDay(first ?? now)}`;
+  return t('event.defaultName', { date: formatDay(first ?? now) });
 }
 
 /** One product per name sold: the latest sale's price and cost, the colour from `known` ('' if unknown). */

@@ -48,6 +48,7 @@ import {
   tutorialOffered,
 } from './storage';
 import { practiceData, runTour, TOUR_SESSION_KEY, TOUR_STEPS, tourRunning } from './tutorial';
+import { locale, setLanguage, translateStatic, type Lang } from './i18n';
 import { applyTheme } from './theme';
 import type { AppSettings, Currency, PastEvent, Product } from './types';
 import {
@@ -550,6 +551,14 @@ function wireSettings() {
     saveSettings({ ...loadSettings(), productsPerDay: el.productsPerDayToggle.checked });
     render();
   });
+  el.languageSelect.value = loadSettings().language;
+  el.languageSelect.addEventListener('change', () => {
+    const language = el.languageSelect.value as Lang;
+    saveSettings({ ...loadSettings(), language });
+    applyLanguage(language);
+    updateLastBackupText();
+    render();
+  });
   el.themeSelect.value = loadSettings().theme;
   el.themeSelect.addEventListener('change', () => {
     const theme = el.themeSelect.value as AppSettings['theme'];
@@ -624,7 +633,7 @@ function goBack() {
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 const pad = (n: number) => String(n).padStart(2, '0');
 const fileStamp = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-const formatWhen = (iso: string) => new Date(iso).toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const formatWhen = (iso: string) => new Date(iso).toLocaleString(locale(), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 function updateLastBackupText() {
   const last = loadLastBackup();
@@ -762,6 +771,13 @@ function wireBackup() {
   });
 }
 
+/** Switches every text on screen to `lang`; dynamic views follow on the next render(). */
+function applyLanguage(lang: Lang) {
+  setLanguage(lang);
+  document.documentElement.lang = lang;
+  translateStatic(document);
+}
+
 // ---- Tutorial ----
 
 const hasOwnData = () => state.productHistory.length > 0 || state.sales.length > 0 || state.pastEvents.length > 0;
@@ -839,6 +855,7 @@ async function start() {
   if (tutorialActive() && !sessionStorage.getItem(TOUR_SESSION_KEY) && (await endTutorial())) return;
   if (initState() && !tutorialActive()) void backUpDroppedReports();
   applyTheme(loadSettings().theme);
+  applyLanguage(loadSettings().language);
   hydrateIcons();
   // The installed app's version on the phone (e.g. 0.1.42 from CI); package.json in the browser.
   el.aboutVersion.textContent = isNative ? (await App.getInfo().catch(() => ({ version: packageVersion }))).version : `${packageVersion} (browser)`;

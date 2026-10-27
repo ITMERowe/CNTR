@@ -7,8 +7,8 @@ const browser = await launch({ welcome: true });
 const errors = [];
 const DATA_KEYS = ['cntrProducts', 'cntrProductHistory', 'cntrSales', 'cntrEventCosts', 'cntrLiveEvent', 'cntrEvents', 'cntrSettings'];
 
-async function freshPage() {
-  const context = await browser.newContext({ viewport: { width: 412, height: 892 }, acceptDownloads: true });
+async function freshPage(locale = 'en-US') {
+  const context = await browser.newContext({ viewport: { width: 412, height: 892 }, acceptDownloads: true, locale });
   const page = await context.newPage();
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(URL);
@@ -143,6 +143,28 @@ async function startFromSettings(page) {
   const state = await relaunched.evaluate(() => ({ bubble: !!document.querySelector('.tour-bubble'), saved: localStorage.getItem('cntrMeta.tutorialSavedData') }));
   check('a crash mid-tour: the next launch has the real data back exactly', after === before, after === before ? '' : after.slice(0, 300));
   check('a crash mid-tour: the tour does not resume and no saved copy is left', !state.bubble && state.saved === null, state);
+  await context.close();
+}
+
+// 5. Language on first launch: a fresh install follows an Indonesian phone; an updating user stays English
+{
+  const { context, page } = await freshPage('id-ID');
+  const fresh = await page.evaluate(() => ({ stored: JSON.parse(localStorage.cntrSettings ?? '{}').language, select: document.getElementById('languageSelect').value, html: document.documentElement.lang }));
+  check('a fresh install on an Indonesian phone starts in Indonesian (and remembers it)', fresh.stored === 'id' && fresh.select === 'id' && fresh.html === 'id', fresh);
+  await context.close();
+}
+{
+  const { context, page } = await freshPage('id-ID');
+  await page.evaluate(() => { localStorage.clear(); localStorage.cntrProducts = JSON.stringify([{ name: 'Gacha', price: 25000, cost: 12000, color: '#f76495' }]); });
+  await page.reload();
+  await afterReload(page);
+  const updating = await page.evaluate(() => ({ stored: JSON.parse(localStorage.cntrSettings ?? '{}').language, select: document.getElementById('languageSelect').value }));
+  check('an updating user (data, no language saved) on an Indonesian phone stays in English', updating.stored === 'en' && updating.select === 'en', updating);
+  await page.click('.tabbar .tab[data-tab="settingsScreen"]');
+  await page.selectOption('#languageSelect', 'id');
+  await sleep(200);
+  const switched = await page.evaluate(() => ({ stored: JSON.parse(localStorage.cntrSettings).language, theme: document.querySelector('label[for="themeSelect"] .group-row-label').textContent }));
+  check('choosing Bahasa Indonesia in Settings switches without a reload and is saved', switched.stored === 'id' && switched.theme === 'Tema', switched);
   await context.close();
 }
 

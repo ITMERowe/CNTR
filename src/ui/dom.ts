@@ -50,6 +50,7 @@ export const el = {
   productsPerDayToggle: byId<HTMLInputElement>('productsPerDayToggle'),
   soundToggle: byId<HTMLInputElement>('soundToggle'),
   themeSelect: byId<HTMLSelectElement>('themeSelect'),
+  languageSelect: byId<HTMLSelectElement>('languageSelect'),
   openProductsMenuBtn: byId<HTMLButtonElement>('openProductsMenuBtn'),
   productsSummary: byId<HTMLElement>('productsSummary'),
   openAboutMenuBtn: byId<HTMLButtonElement>('openAboutMenuBtn'),

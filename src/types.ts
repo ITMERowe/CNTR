@@ -60,4 +60,6 @@ export interface AppSettings {
   sound: boolean;
   /** Colour theme; 'system' follows the phone's light/dark setting. */
   theme: 'system' | 'light' | 'dark';
+  /** App language; chosen once on first launch (see initialLanguage), then only by the user. */
+  language: 'en' | 'id';
 }

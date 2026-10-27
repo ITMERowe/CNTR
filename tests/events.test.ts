@@ -1,7 +1,8 @@
 // Event maths: days, totals, History edits. Run with `npm test`.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { adjustCount, breakTime, defaultEventName, eventSummary, saleTime, snapshotProducts, splitDays, todaySales } from '../src/events.ts';
+import { adjustCount, breakTime, defaultEventName, eventSummary, formatDay, saleTime, snapshotProducts, splitDays, todaySales } from '../src/events.ts';
+import { setLanguage } from '../src/i18n.ts';
 import type { PastEvent, SaleRecord } from '../src/types.ts';
 
 const sale = (product: string, iso: string, payment = 'Cash', price = 25000, cost = 12000): SaleRecord => ({ product, price, cost, payment, timestamp: new Date(iso) });
@@ -75,7 +76,7 @@ test('snapshotProducts keeps a product that is no longer known, with no colour',
 
 test('defaultEventName uses the first sale\'s date, else now', () => {
   const now = new Date('2026-11-01T05:00:00.000Z');
-  const date = (iso: string) => new Date(iso).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+  const date = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   assert.equal(defaultEventName([sale('Poster', T1)], now), `Event ${date(T1)}`);
   assert.equal(defaultEventName([], now), `Event ${date(now.toISOString())}`);
 });
@@ -98,4 +99,13 @@ test('End day is never stamped before today\'s last sale, so those sales end up 
 test('snapshotProducts keeps each product\'s payment methods', () => {
   const [poster] = snapshotProducts([sale('Poster', T1)], [{ name: 'Poster', price: 1, cost: 1, color: '#123456', payments: ['Transfer'] }]);
   assert.deepEqual(poster.payments, ['Transfer']);
+});
+
+test('dates and the default event name follow the app language, not the phone', () => {
+  setLanguage('en');
+  assert.equal(formatDay('2026-10-05T12:00:00.000Z'), '5 Oct 2026');
+  setLanguage('id');
+  assert.equal(formatDay('2026-10-05T12:00:00.000Z'), '5 Okt 2026');
+  assert.equal(defaultEventName([], new Date('2026-10-05T12:00:00.000Z')), 'Acara 5 Okt 2026');
+  setLanguage('en');
 });

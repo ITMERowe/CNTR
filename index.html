@@ -133,15 +133,24 @@
                 </div>
               </section>
               <section class="group" data-group="appearance">
-                <h2 class="group-title">Appearance</h2>
+                <h2 class="group-title" data-i18n="settings.appearance">Appearance</h2>
                 <div class="group-body">
                   <label class="group-row" for="themeSelect">
-                    <span class="group-row-label">Theme</span>
+                    <span class="group-row-label" data-i18n="settings.theme">Theme</span>
                     <span class="select">
                       <select id="themeSelect">
-                        <option value="system">Phone setting</option>
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
+                        <option value="system" data-i18n="theme.system">Phone setting</option>
+                        <option value="light" data-i18n="theme.light">Light</option>
+                        <option value="dark" data-i18n="theme.dark">Dark</option>
+                      </select>
+                    </span>
+                  </label>
+                  <label class="group-row" for="languageSelect">
+                    <span class="group-row-label" data-i18n="settings.language">Language</span>
+                    <span class="select">
+                      <select id="languageSelect">
+                        <option value="en">English</option>
+                        <option value="id">Bahasa Indonesia</option>
                       </select>
                     </span>
                   </label>
