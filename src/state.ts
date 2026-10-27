@@ -42,6 +42,10 @@ export function initState() {
     storage.saveLiveEvent(state.liveEvent);
   }
   syncProductState();
+  if (assignProductIds()) {
+    storage.saveProducts(state.products);
+    storage.saveProductHistory(state.productHistory);
+  }
   return !live;
 }
 
@@ -67,6 +71,23 @@ function syncProductState() {
 
   products.splice(0, products.length, ...uniqueProducts);
   productHistory.splice(0, productHistory.length, ...mergedHistory);
+}
+
+/** Gives products from before ids one; an active product shares its history entry's id. Returns true if any changed. */
+function assignProductIds() {
+  let changed = false;
+  for (const product of state.productHistory) {
+    if (product.id) continue;
+    product.id = generateUUID();
+    changed = true;
+  }
+  for (const product of state.products) {
+    const id = state.productHistory.find((item) => item.name === product.name)?.id;
+    if (product.id === id) continue;
+    product.id = id;
+    changed = true;
+  }
+  return changed;
 }
 
 export function saveProducts() {
@@ -95,7 +116,8 @@ export function productColor(name: string) {
 export function renameSales(oldName: string, product: Product) {
   const today = new Set(todayLiveSales());
   for (const sale of state.sales) {
-    if (sale.product !== oldName) continue;
+    // By id, so a deleted product's sales never follow a new product with its name; older sales have no id.
+    if (sale.productId ? sale.productId !== product.id : sale.product !== oldName) continue;
     sale.product = product.name;
     if (today.has(sale)) {
       sale.price = product.price;
@@ -115,7 +137,7 @@ export function deleteProduct(name: string) {
 }
 
 export function recordSale(product: Product, payment: string) {
-  state.sales.push({ product: product.name, price: product.price, cost: product.cost, payment, timestamp: saleTime(new Date(), state.liveEvent.dayBreaks) });
+  state.sales.push({ product: product.name, productId: product.id, price: product.price, cost: product.cost, payment, timestamp: saleTime(new Date(), state.liveEvent.dayBreaks) });
   saveSales();
 }
 

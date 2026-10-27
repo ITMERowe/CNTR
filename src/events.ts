@@ -75,9 +75,9 @@ export function adjustCount(event: PastEvent, day: number, product: string, paym
 
   const priced = latest ?? event.products.find((item) => item.name === product);
   if (!priced) return event;
-  // Inside the day: just before its End day, or after everything else for the last day.
+  // Inside the day: just before its End day, or after everything else for the last day (but not after the event ended).
   const end = event.dayBreaks[day];
   const latestTime = Math.max(time(event.startedAt), ...event.dayBreaks.map(time), ...event.sales.map((sale) => time(sale.timestamp)));
-  const timestamp = new Date(end !== undefined ? time(end) - 1 : latestTime + 1);
+  const timestamp = new Date(end !== undefined ? time(end) - 1 : Math.min(latestTime + 1, time(event.endedAt)));
   return { ...event, sales: [...event.sales, { product, price: priced.price, cost: priced.cost, payment, timestamp }] };
 }

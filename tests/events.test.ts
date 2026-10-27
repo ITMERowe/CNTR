@@ -58,6 +58,12 @@ test('adjustCount +1 on a day without that product uses the snapshot price', () 
   assert.deepEqual([added[0].product, added[0].payment, added[0].price, added[0].cost], ['Poster', 'QRIS', 30000, 10000]);
 });
 
+test('adjustCount +1 on the last day is never timed after the event ended', () => {
+  const ended = '2026-10-26T12:00:00.000Z';
+  const after = adjustCount(event([sale('Poster', ended)]), 0, 'Poster', 'Cash', 1);
+  assert.ok(after.sales.every((s) => s.timestamp.getTime() <= Date.parse(ended)));
+});
+
 test('adjustCount -1 removes one matching sale on that day only, then does nothing', () => {
   const start = event([sale('Poster', T1), sale('Poster', T3)], [BREAK]);
   const once = adjustCount(start, 1, 'Poster', 'Cash', -1);

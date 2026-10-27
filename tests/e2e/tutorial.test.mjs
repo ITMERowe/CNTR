@@ -146,6 +146,22 @@ async function startFromSettings(page) {
   await context.close();
 }
 
+// 4b. Reloaded mid-tour (same session): the real data comes back; the tour does not restart on changed practice data
+{
+  const { context, page } = await realDataPage();
+  const before = await snapshot(page);
+  await startFromSettings(page);
+  await TOUR_ACTIONS['sell-cash'](page);
+  await sleep(300);
+  await page.reload();
+  await afterReload(page); // ends the tutorial, which reloads again
+  await afterReload(page);
+  const state = await page.evaluate(() => ({ bubble: !!document.querySelector('.tour-bubble'), saved: localStorage.getItem('cntrMeta.tutorialSavedData'), session: sessionStorage.getItem('cntrTourRunning') }));
+  check('a reload mid-tour puts the real data back exactly', (await snapshot(page)) === before);
+  check('a reload mid-tour does not restart the tour at step 1', !state.bubble && state.saved === null && state.session === null, state);
+  await context.close();
+}
+
 // 5. Language on first launch: a fresh install follows an Indonesian phone; an updating user stays English
 {
   const { context, page } = await freshPage('id-ID');
@@ -155,7 +171,11 @@ async function startFromSettings(page) {
 }
 {
   const { context, page } = await freshPage('id-ID');
-  await page.evaluate(() => { localStorage.clear(); localStorage.cntrProducts = JSON.stringify([{ name: 'Gacha', price: 25000, cost: 12000, color: '#f76495' }]); });
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.cntrProducts = JSON.stringify([{ name: 'Gacha', price: 25000, cost: 12000, color: '#f76495' }]);
+    localStorage.cntrEvents = JSON.stringify([{ id: 'e1', name: 'Fair', startedAt: '2026-10-20T03:00:00.000Z', endedAt: '2026-10-20T11:00:00.000Z', dayBreaks: [], products: [], sales: [], expenses: [] }]);
+  });
   await page.reload();
   await afterReload(page);
   const updating = await page.evaluate(() => ({ stored: JSON.parse(localStorage.cntrSettings ?? '{}').language, select: document.getElementById('languageSelect').value }));
@@ -165,6 +185,33 @@ async function startFromSettings(page) {
   await sleep(200);
   const switched = await page.evaluate(() => ({ stored: JSON.parse(localStorage.cntrSettings).language, theme: document.querySelector('label[for="themeSelect"] .group-row-label').textContent }));
   check('choosing Bahasa Indonesia in Settings switches without a reload and is saved', switched.stored === 'id' && switched.theme === 'Tema', switched);
+
+  // A dialog open during a language switch is closed, not left in the old language.
+  await page.click('#startTutorialBtn');
+  const dialog = await page.evaluate(() => {
+    const open = () => document.getElementById('confirmModalOverlay').classList.contains('open');
+    const before = open();
+    const select = document.getElementById('languageSelect');
+    select.value = 'en';
+    select.dispatchEvent(new Event('change'));
+    return { before, after: open() };
+  });
+  check('switching language closes an open dialog', dialog.before && !dialog.after, dialog);
+  await page.selectOption('#languageSelect', 'id');
+  await sleep(200);
+
+  // Restoring a backup from before 0.1 (no language in it) keeps Bahasa Indonesia.
+  const old = JSON.stringify({ app: 'CNTR', format: 1, exportedAt: new Date().toISOString(), data: { cntrProducts: [{ name: 'Gacha', price: 25000, cost: 12000, color: '#f76495' }], cntrSettings: { currency: 'IDR', compactMoney: false } } });
+  const chooser = page.waitForEvent('filechooser');
+  await page.click('#restoreBackupBtn');
+  await (await chooser).setFiles({ name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(old) });
+  await sleep(400);
+  const warning = await page.textContent('#confirmModalMessage');
+  check('restoring a backup with no past events says History will be emptied', /Riwayat di ponsel ini akan kosong/.test(warning), warning);
+  await page.click('#confirmModalConfirmBtn');
+  await afterReload(page);
+  const restored = await page.evaluate(() => ({ stored: JSON.parse(localStorage.cntrSettings).language, currency: JSON.parse(localStorage.cntrSettings).currency, html: document.documentElement.lang }));
+  check('restoring a backup from before 0.1 keeps the current language', restored.stored === 'id' && restored.html === 'id' && restored.currency === 'IDR', restored);
   await context.close();
 }
 

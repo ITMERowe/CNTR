@@ -1,21 +1,21 @@
 # Graph Report - CNTR  (2026-10-27)
 
 ## Corpus Check
-- 110 files · ~111,019 words
+- 110 files · ~112,483 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1005 nodes · 1964 edges · 73 communities (60 shown, 13 thin omitted)
+- 1010 nodes · 1983 edges · 76 communities (63 shown, 13 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 63 edges (avg confidence: 0.62)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2ba8b458`
+- Built from commit: `94dd52b3`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- t
+- EventScreen.tsx
 - storage.ts
 - dependencies
 - How it works (decided)
@@ -55,12 +55,13 @@
 - Changelog
 - HANDOFF
 - Product
+- backup.ts
 - lib.mjs
 - devDependencies
 - main.ts
 - productEditor.ts
 - Running Custom Playwright Code
-- @capacitor/haptics
+- t
 - scripts
 - package.json
 - CNTR 0.1: fixes, light mode, Indonesian, security review
@@ -69,12 +70,14 @@
 - element-attributes.md
 - preact
 - Video Recording
-- colorPicker.ts
-- feedback
+- formatters.ts
+- confirmDeletePastEvent
 - tutorial.ts
+- start
 - render
 - Advanced Mocking with run-code
 - @capacitor/filesystem
+- @capacitor/android
 - Attaching Screenshots and Videos to Pull Requests
 - Trace Output Files
 - Security review: CNTR repository and app (2026-10-27)
@@ -83,7 +86,7 @@
 ## God Nodes (most connected - your core abstractions)
 1. `t()` - 76 edges
 2. `render()` - 35 edges
-3. `start()` - 28 edges
+3. `start()` - 30 edges
 4. `feedback` - 26 edges
 5. `loadSettings()` - 24 edges
 6. `fmt()` - 19 edges
@@ -111,19 +114,19 @@
 - **APK build pipeline** — _github_workflows_build_apk_build_apk, _github_workflows_build_apk_capacitor_sync, _github_workflows_build_apk_gradle_assembledebug, _github_workflows_build_apk_cntr_debug_apk [EXTRACTED 1.00]
 - **Graphify-first agent instructions** — _claude_claude_graphify_first_workflow, agents_graphify_required_workflow, claude_graphify_rules, claude_graphify_knowledge_graph [INFERRED 0.95]
 
-## Communities (73 total, 13 thin omitted)
+## Communities (76 total, 13 thin omitted)
 
-### Community 0 - "t"
+### Community 0 - "EventScreen.tsx"
 Cohesion: 0.06
-Nodes (84): adjustCount(), breakTime(), defaultEventName(), eventSummary(), formatDay(), saleTime(), splitDays(), time() (+76 more)
+Nodes (75): adjustCount(), breakTime(), defaultEventName(), eventSummary(), formatDay(), saleTime(), snapshotProducts(), splitDays() (+67 more)
 
 ### Community 1 - "storage.ts"
-Cohesion: 0.05
-Nodes (62): BACKUP_APP, BACKUP_FORMAT, BackupFile, BackupSummary, checkCost(), checkEvent(), checkList(), checkLiveEvent() (+54 more)
+Cohesion: 0.07
+Nodes (45): localStorageStore, openSqliteStore(), cache, CURRENCIES, DEFAULT_SETTINGS, endTutorialData(), errorText(), EVENT_COST_STORAGE_KEY (+37 more)
 
 ### Community 2 - "dependencies"
 Cohesion: 0.13
-Nodes (15): @capacitor/android, @capacitor/app, @capacitor/core, @capacitor/ios, @capacitor/share, @fontsource-variable/plus-jakarta-sans, lucide, dependencies (+7 more)
+Nodes (15): @capacitor/app, @capacitor/core, @capacitor/haptics, @capacitor/ios, @capacitor/share, @fontsource-variable/plus-jakarta-sans, lucide, dependencies (+7 more)
 
 ### Community 3 - "How it works (decided)"
 Cohesion: 0.12
@@ -210,8 +213,8 @@ Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
 ### Community 39 - "state.ts"
-Cohesion: 0.22
-Nodes (16): generateUUID(), snapshotProducts(), submitExpense(), addExpense(), dedupeByName(), endEvent(), initState(), newLiveEvent() (+8 more)
+Cohesion: 0.23
+Nodes (17): generateUUID(), addExpense(), assignProductIds(), dedupeByName(), deleteProduct(), endEvent(), initState(), newLiveEvent() (+9 more)
 
 ### Community 40 - "Cookies"
 Cohesion: 0.06
@@ -238,32 +241,40 @@ Cohesion: 0.09
 Nodes (22): 0.1 (branch `feature/signing-tests-about`), 2026-10-26 (merged to `main`), 2026-10-26 (merged to `main` from `ui/revamp`), Added, Added, Added, Build, Changed (+14 more)
 
 ### Community 46 - "HANDOFF"
-Cohesion: 0.25
-Nodes (7): Goal, HANDOFF, Ideas not chosen yet (ask the owner first), Known issues (unresolved), Owner to-dos, Standing owner decisions, Start here
+Cohesion: 0.18
+Nodes (10): Calls made during the 0.1 build (owner to check), Deferred minors, Goal, HANDOFF, Ideas not chosen yet (ask the owner first), Known issues (unresolved), Other known limits, Owner to-dos (+2 more)
 
 ### Community 47 - "Product"
 Cohesion: 0.17
 Nodes (11): Accessibility & Inclusion, Brand Commitments, Capabilities and Constraints, Evidence on Hand, Operating Context, Platform, Positioning, Product (+3 more)
 
+### Community 48 - "backup.ts"
+Cohesion: 0.11
+Nodes (28): BACKUP_APP, BACKUP_FORMAT, BackupFile, BackupSummary, checkCost(), checkEvent(), checkList(), checkLiveEvent() (+20 more)
+
 ### Community 49 - "lib.mjs"
 Cohesion: 0.05
-Nodes (52): { check, done }, fakeNative(), legacySales, message(), newPage(), restoreWith(), toSettings(), { check, done } (+44 more)
+Nodes (53): language(), { check, done }, fakeNative(), legacySales, message(), newPage(), restoreWith(), toSettings() (+45 more)
 
 ### Community 50 - "devDependencies"
 Cohesion: 0.15
 Nodes (13): @capacitor/cli, chokidar-cli, devDependencies, @capacitor/cli, chokidar-cli, @playwright/cli, playwright-core, typescript (+5 more)
 
 ### Community 51 - "main.ts"
-Cohesion: 0.06
-Nodes (77): buildBackup(), download(), pickTextFile(), saveAutoBackup(), SavedFile, saveFile(), saveSafetyCopy(), translateStatic() (+69 more)
+Cohesion: 0.11
+Nodes (35): download(), pickTextFile(), saveAutoBackup(), SavedFile, saveFile(), saveSafetyCopy(), parseCurrencyInput(), activeExpenses() (+27 more)
 
 ### Community 52 - "productEditor.ts"
-Cohesion: 0.15
-Nodes (30): ensureProductHistory(), chooseUniqueColor(), escapeForRegExp(), formatInputNumber(), parseCurrencyInput(), PRESET_COLORS, openExpenseModal(), renderProductList() (+22 more)
+Cohesion: 0.20
+Nodes (22): ensureProductHistory(), formatInputNumber(), renameSales(), state, loadSettings(), closeColorPicker(), getPickerColor(), el (+14 more)
 
 ### Community 53 - "Running Custom Playwright Code"
 Cohesion: 0.15
 Nodes (13): Clipboard, Complex Workflows, Error Handling, File Downloads, Frames and Iframes, Geolocation, JavaScript Execution, Media Emulation (+5 more)
+
+### Community 54 - "t"
+Cohesion: 0.15
+Nodes (31): buildBackup(), t(), applyRestore(), blockedByTutorial(), confirmEndEvent(), endTutorial(), errorText(), exportBackup() (+23 more)
 
 ### Community 55 - "scripts"
 Cohesion: 0.25
@@ -285,21 +296,25 @@ Nodes (13): CNTR 0.1 Update Implementation Plan, Global Constraints, Review Focu
 Cohesion: 0.20
 Nodes (10): 1. Use Descriptive Filenames, 2. Record entire hero scripts., 3. Attach the recording to the pull request, Basic Recording, Best Practices, Cursor, Target Highlight and Click Point, Limitations, Overlay API Summary (+2 more)
 
-### Community 63 - "colorPicker.ts"
-Cohesion: 0.26
-Nodes (14): needsDarkText(), normalizeHex(), HSV, applyCurrentColor(), clamp(), closeColorPicker(), currentHSV, hexToRgb() (+6 more)
+### Community 63 - "formatters.ts"
+Cohesion: 0.14
+Nodes (23): chooseUniqueColor(), CURRENCY_LOCALES, CURRENCY_SEPARATORS, CURRENCY_SYMBOLS, escapeForRegExp(), formatMoney(), formatNumeric(), needsDarkText() (+15 more)
 
-### Community 64 - "feedback"
-Cohesion: 0.23
-Nodes (12): feedback, isNative, NOTES, play(), confirmDeletePastEvent(), confirmEndEvent(), saveEditing(), setSaving() (+4 more)
+### Community 64 - "confirmDeletePastEvent"
+Cohesion: 0.21
+Nodes (14): cancelEditing(), closePastEvent(), confirmDeletePastEvent(), goBack(), goTo(), openPastEvent(), saveEditing(), setSaving() (+6 more)
 
 ### Community 65 - "tutorial.ts"
-Cohesion: 0.13
-Nodes (14): state, GUARDED, on(), runTour(), TOUR_SESSION_KEY, TOUR_STEPS, TourStep, visible() (+6 more)
+Cohesion: 0.15
+Nodes (12): Key, salesCounts(), todayLiveSales(), GUARDED, on(), runTour(), sold(), TOUR_SESSION_KEY (+4 more)
+
+### Community 66 - "start"
+Cohesion: 0.31
+Nodes (10): translateStatic(), applyLanguage(), confirmStartTutorial(), hasOwnData(), productsChanged(), start(), wireSettings(), tutorialActive() (+2 more)
 
 ### Community 67 - "render"
-Cohesion: 0.14
-Nodes (21): activeExpenses(), addSale(), adjustDraft(), confirmEndDay(), deleteExpense(), editingPastEvent(), openNameSheet(), openPastEvent() (+13 more)
+Cohesion: 0.16
+Nodes (19): feedback, isNative, NOTES, play(), addSale(), adjustDraft(), confirmEndDay(), deleteExpense() (+11 more)
 
 ### Community 68 - "Advanced Mocking with run-code"
 Cohesion: 0.22
@@ -318,24 +333,24 @@ Cohesion: 0.50
 Nodes (3): Checked and fine, Findings, most serious first, Security review: CNTR repository and app (2026-10-27)
 
 ## Knowledge Gaps
-- **430 isolated node(s):** `name`, `private`, `license`, `type`, `dev` (+425 more)
+- **432 isolated node(s):** `name`, `private`, `license`, `type`, `dev` (+427 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `language()` connect `t` to `lib.mjs`?**
-  _High betweenness centrality (0.050) - this node is a cross-community bridge._
-- **Why does `t()` connect `t` to `feedback`, `storage.ts`, `tutorial.ts`, `render`, `main.ts`, `productEditor.ts`?**
-  _High betweenness centrality (0.021) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `dependencies` to `@capacitor/filesystem`, `@capacitor-community/sqlite`, `@capacitor/haptics`, `package.json`, `preact`?**
+- **Why does `language()` connect `lib.mjs` to `EventScreen.tsx`, `main.ts`, `t`?**
+  _High betweenness centrality (0.046) - this node is a cross-community bridge._
+- **Why does `dependencies` connect `dependencies` to `@capacitor/filesystem`, `@capacitor/android`, `@capacitor-community/sqlite`, `package.json`, `preact`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
+- **Why does `t()` connect `t` to `EventScreen.tsx`, `confirmDeletePastEvent`, `start`, `render`, `storage.ts`, `tutorial.ts`, `backup.ts`, `main.ts`, `productEditor.ts`?**
+  _High betweenness centrality (0.014) - this node is a cross-community bridge._
 - **Are the 10 inferred relationships involving `render()` (e.g. with `addSale()` and `confirmEndDay()`) actually correct?**
   _`render()` has 10 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 3 inferred relationships involving `start()` (e.g. with `confirmStartTutorial()` and `goBack()`) actually correct?**
   _`start()` has 3 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `private`, `license` to the rest of the system?**
-  _430 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `t` be split into smaller, more focused modules?**
-  _Cohesion score 0.05952380952380952 - nodes in this community are weakly interconnected._
+  _432 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `EventScreen.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.062038073908174694 - nodes in this community are weakly interconnected._

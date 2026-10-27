@@ -38,18 +38,19 @@ let retryTimer = 0;
 const USING_DATABASE_FLAG = 'cntrMeta.usingDatabase';
 
 let saveProblem: string | null = null;
-let startupProblem: string | null = null;
+// Made when shown, not at startup, so it is in the saved language (read after the data loads).
+let startupProblem: (() => string) | null = null;
 let onProblem: (message: string | null) => void = () => {};
 
 /** Called with a message whenever saving is failing, and with null once it works again. */
 export function onStorageProblem(listener: (message: string | null) => void) {
   onProblem = listener;
-  listener(saveProblem ?? startupProblem);
+  listener(saveProblem ?? startupProblem?.() ?? null);
 }
 
 function setSaveProblem(message: string | null) {
   saveProblem = message;
-  onProblem(saveProblem ?? startupProblem);
+  onProblem(saveProblem ?? startupProblem?.() ?? null);
 }
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -111,7 +112,7 @@ export async function initStorage(isNative: boolean): Promise<StorageStartup> {
       }
       // Never migrated: localStorage still holds the only, current copy. Keep using it and retry next launch.
       store = localStorageStore;
-      startupProblem = t('storage.notMoved', { error: errorText(error) });
+      startupProblem = () => t('storage.notMoved', { error: errorText(error) });
     }
     if (usingDatabase) {
       try {

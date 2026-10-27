@@ -48,11 +48,11 @@ function checkProduct(item: unknown) {
   // `payments` is optional (older backups have none): 1 or 2 method names.
   const payments = isObject(item) ? item.payments : undefined;
   const paymentsOk = payments === undefined || (Array.isArray(payments) && payments.length >= 1 && payments.length <= 2 && payments.every(isString));
-  return isObject(item) && isString(item.name) && isNumber(item.price) && isNumber(item.cost) && isString(item.color) && paymentsOk;
+  return isObject(item) && (item.id === undefined || isString(item.id)) && isString(item.name) && isNumber(item.price) && isNumber(item.cost) && isString(item.color) && paymentsOk;
 }
 
 function checkSale(item: unknown) {
-  return isObject(item) && isString(item.product) && isNumber(item.price) && isNumber(item.cost) && isString(item.payment) && isString(item.timestamp) && !Number.isNaN(Date.parse(item.timestamp as string));
+  return isObject(item) && isString(item.product) && (item.productId === undefined || isString(item.productId)) && isNumber(item.price) && isNumber(item.cost) && isString(item.payment) && isString(item.timestamp) && !Number.isNaN(Date.parse(item.timestamp as string));
 }
 
 function checkCost(item: unknown) {

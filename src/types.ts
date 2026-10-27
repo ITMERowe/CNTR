@@ -1,6 +1,8 @@
 export type Currency = 'IDR' | 'USD' | 'EUR' | 'SGD' | 'AUD' | 'GBP' | 'JPY' | 'MYR';
 
 export interface Product {
+  /** Links sales to the product (a new product reusing a deleted one's name gets a new id). Given at load to older data. */
+  id?: string;
   name: string;
   price: number;
   cost: number;
@@ -11,6 +13,8 @@ export interface Product {
 
 export interface SaleRecord {
   product: string;
+  /** The product's id; missing on sales from before ids, which match by name. */
+  productId?: string;
   price: number;
   cost: number;
   payment: string;

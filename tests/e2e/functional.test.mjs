@@ -126,6 +126,32 @@ const orphan = await run(page, `
 `);
 check('deactivated product still in sales breakdown', orphan);
 
+// 9. A new product reusing a deleted product's name is a different product: editing it leaves the old one's sales alone
+const reuse = await run(page, `
+  document.querySelector('.tabbar .tab[data-tab="salesScreen"]').click();
+  const ids = JSON.parse(localStorage.cntrProducts).map((p) => p.id);
+  const sell = () => document.querySelector('.tile[data-product="Gacha"] [data-payment="Cash"][data-action="plus"]').click();
+  sell();
+  const editGacha = () => { document.getElementById('openProductsMenuBtn').click(); document.querySelector('.product-edit-btn[data-name="Gacha"]').click(); };
+  editGacha();
+  document.getElementById('removeProductBtn').click();
+  document.getElementById('confirmModalConfirmBtn').click();
+  document.querySelector('.tabbar .tab[data-tab="salesScreen"]').click();
+  document.getElementById('openProductEdit').click();
+  document.getElementById('editName').value = 'Gacha';
+  document.getElementById('editPrice').value = '1000';
+  document.getElementById('saveProductBtn').click();
+  sell();
+  editGacha();
+  document.getElementById('editPrice').value = '2000';
+  document.getElementById('saveProductBtn').click();
+  await new Promise((r) => setTimeout(r, 30));
+  const gacha = JSON.parse(localStorage.cntrSales).filter((s) => s.product === 'Gacha');
+  return { ids: ids.every(Boolean), prices: gacha.map((s) => s.price), linked: gacha.at(-1).productId === JSON.parse(localStorage.cntrProducts).find((p) => p.name === 'Gacha').id };
+`);
+check('older products get an id on load', reuse.ids, JSON.stringify(reuse));
+check("editing a re-created product reprices only its own sales, not the deleted one's", reuse.prices.at(-1) === 2000 && reuse.prices.slice(0, -1).every((p) => p !== 2000) && reuse.linked, JSON.stringify(reuse));
+
 // 12. Corrupt storage doesn't crash startup
 await run(page, `localStorage.cntrSales = '{"oops":1}'; localStorage.cntrEvents = 'null'; localStorage.cntrLiveEvent = '[]';`);
 errors.length = 0;

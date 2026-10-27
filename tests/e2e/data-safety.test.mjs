@@ -130,6 +130,7 @@ function fakeNative() {
         if (method === 'isDBOpen') return { result: false };
         if (method === 'query') return { values: Object.entries(db).map(([key, value]) => ({ key, value })) };
         if (method === 'executeSet') {
+          await new Promise((resolve) => setTimeout(resolve, get('__sqlDelayMs', 0))); // a slow database write (B35)
           if (fail('executeSet')) throw new Error('disk I/O error (disk full)');
           const next = { ...db }; // all-or-nothing, like a transaction
           for (const { statement, values } of options.set) {
@@ -270,7 +271,11 @@ function fakeNative() {
   const alert = await page.evaluate(() => !document.querySelector('#storageAlert').hidden && document.querySelector('#storageAlert').textContent);
   check('B16 first migration failing keeps the app usable on the old data, with a warning', (await heroSales(page)) === '3' && /could not be moved/.test(String(alert)), String(alert).slice(0, 60));
   await sell(page, 1);
-  await page.evaluate(() => { sessionStorage.__fail = '{}'; });
+  await page.evaluate(() => { localStorage.cntrSettings = JSON.stringify({ language: 'id' }); });
+  await page.reload(); await page.waitForTimeout(900);
+  const translated = await page.evaluate(() => document.querySelector('#storageAlert').textContent);
+  check('B36 that warning is in the saved language (Indonesian here), not always English', /belum bisa dipindahkan/.test(translated), translated.slice(0, 60));
+  await page.evaluate(() => { sessionStorage.__fail = '{}'; localStorage.cntrSettings = JSON.stringify({ language: 'en' }); });
   await page.reload(); await page.waitForTimeout(900);
   check('B17 next launch migrates the up-to-date data (4 sales) into SQLite', (await heroSales(page)) === '4' && JSON.parse((await page.evaluate(() => JSON.parse(sessionStorage.__db))).cntrSales).length === 4);
   await ctx.close();
@@ -310,8 +315,14 @@ function fakeNative() {
   const dataOnly = (d) => JSON.stringify(Object.fromEntries(Object.entries(d).filter(([key]) => !key.startsWith('cntrMeta.')).sort()));
   const before = dataOnly(await page.evaluate(() => JSON.parse(sessionStorage.__db)));
   await toSettings(page);
+  await page.evaluate(() => { sessionStorage.__sqlDelayMs = '800'; });
   await page.click('#startTutorialBtn'); await page.click('#confirmModalConfirmBtn');
+  await page.waitForTimeout(200);
+  const swapping = await page.evaluate(() => document.body.inert && document.body.style.pointerEvents === 'none');
+  check('B35 while the practice data is being swapped in, the screen takes no taps (no sale can land in the wrong data)', swapping);
+  await page.waitForTimeout(2000); // two delayed writes (offer seen, then the swap) before the reload
   await page.waitForLoadState('load'); await page.waitForTimeout(1200);
+  await page.evaluate(() => { sessionStorage.__sqlDelayMs = '0'; });
   const during = await page.evaluate(() => JSON.parse(sessionStorage.__db));
   check('B25 starting the tour puts practice data in SQLite and keeps the real data aside', JSON.parse(during.cntrProducts)[0].name === 'Sticker' && JSON.parse(during['cntrMeta.tutorialSavedData']).length > 0);
   const stuck = await playTour(page, 'history-tab'); // on rails up to and including End event

@@ -1,5 +1,5 @@
 // Add / edit / remove a product.
-import { ensureProductHistory } from '../data';
+import { ensureProductHistory, generateUUID } from '../data';
 import { feedback } from '../feedback';
 import { chooseUniqueColor, formatInputNumber, parseCurrencyInput } from '../formatters';
 import { DEFAULT_PAYMENTS, MAX_PAYMENTS, PAYMENT_METHODS, paymentClass, productPayments, togglePayment } from '../payments';
@@ -144,7 +144,7 @@ function saveEditedProduct() {
     saveProductHistory();
     showToast(t('toast.saved', { name }));
   } else {
-    const newProduct = { name, price, cost, color: chooseUniqueColor(state.products, color), payments: [...selectedPayments] };
+    const newProduct = { id: generateUUID(), name, price, cost, color: chooseUniqueColor(state.products, color), payments: [...selectedPayments] };
     state.products.push(newProduct);
     ensureProductHistory(newProduct, state.productHistory);
     saveProducts();

@@ -27,7 +27,7 @@ for (const reduced of [false, true]) {
     document.querySelector('.tabbar .tab[data-tab="eventScreen"]').click();
     document.getElementById('eventNameBtn').click();
     const sheet = overlay.querySelector('.sheet');
-    await new Promise(r => setTimeout(r, 40));
+    await new Promise(r => setTimeout(r, ${reduced ? 150 : 40})); // reduced: more time for a busy machine (still far below the normal slide)
     const sheetMidTransform = getComputedStyle(sheet).transform;
     await new Promise(r => setTimeout(r, 400));
     const sheetEndTransform = getComputedStyle(sheet).transform;

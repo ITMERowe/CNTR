@@ -48,7 +48,7 @@ import {
   tutorialOffered,
 } from './storage';
 import { practiceData, runTour, TOUR_SESSION_KEY, TOUR_STEPS, tourRunning } from './tutorial';
-import { locale, setLanguage, t, tn, translateStatic, type Lang } from './i18n';
+import { initialLanguage, language, locale, setLanguage, t, tn, translateStatic, type Lang } from './i18n';
 import { applyTheme } from './theme';
 import type { AppSettings, Currency, PastEvent, Product } from './types';
 import {
@@ -555,6 +555,8 @@ function wireSettings() {
   el.languageSelect.addEventListener('change', () => {
     const language = el.languageSelect.value as Lang;
     saveSettings({ ...loadSettings(), language });
+    // A dialog's text is set when it opens; close it so none stays in the old language.
+    document.querySelectorAll<HTMLElement>('.sheet-overlay.open [id$="CloseBtn"]').forEach((button) => button.click());
     applyLanguage(language);
     updateLastBackupText();
     render();
@@ -701,8 +703,10 @@ async function restoreBackup() {
   }
   const { exportedAt, sales, events, products } = parsed.summary;
   const from = exportedAt ? t('restore.from', { date: formatWhen(exportedAt) }) : '';
+  // Backups from before events (1.0.21 and older) have none: say History will be emptied, not just "0 past events".
+  const emptiesHistory = events === 0 && state.pastEvents.length > 0 ? ` ${t('restore.emptiesHistory')}` : '';
   openConfirmModal(
-    t('restore.message', { from, sales: tn('count.currentSale', sales), events: tn('count.pastEvent', events), products: tn('count.product', products) }),
+    t('restore.message', { from, sales: tn('count.currentSale', sales), events: tn('count.pastEvent', events), products: tn('count.product', products) }) + emptiesHistory,
     t('restore.button'),
     () => void applyRestore(parsed.values),
     { title: t('restore.title') },
@@ -717,13 +721,24 @@ async function applyRestore(values: Map<string, string>) {
     showMessage(t('restore.cancelled'), t('restore.cancelledText', { error: errorText(error) }));
     return;
   }
+  // Backups from before 0.1 have no language; keep the current one instead of falling back to English.
+  const settings = JSON.parse(values.get('cntrSettings') ?? '{}') as Partial<AppSettings>;
+  if (!settings.language) values.set('cntrSettings', JSON.stringify({ ...settings, language: language() }));
+  lockForReload(true);
   try {
     await replaceAllData(values);
   } catch (error) {
+    lockForReload(false);
     showMessage(t('restore.failed'), t('restore.failedText', { error: errorText(error) }));
     return;
   }
   location.reload(); // start fresh from the restored data
+}
+
+/** Blocks taps from a data swap until its reload: a sale written in between would land in the wrong data. */
+function lockForReload(locked: boolean) {
+  document.body.inert = locked;
+  document.body.style.pointerEvents = locked ? 'none' : ''; // older WebViews without `inert`
 }
 
 /** Writes an automatic backup on the phone (Documents/CNTR/auto). Throws if it could not be saved. */
@@ -780,18 +795,23 @@ function applyLanguage(lang: Lang) {
 
 // ---- Tutorial ----
 
+// The session marker says "starting" only for the launch right after Start tour; once the tour runs it says "running".
+const TOUR_STARTING = 'starting';
+
 const hasOwnData = () => state.productHistory.length > 0 || state.sales.length > 0 || state.pastEvents.length > 0;
 
 async function startTutorial() {
   markTutorialOffered();
+  lockForReload(true);
   try {
     await startTutorialData(practiceData(loadSettings().currency, new Date(), storedValues().get('cntrSettings')));
   } catch (error) {
+    lockForReload(false);
     feedback('warn');
     showMessage(t('tutorial.notStarted'), t('nothingChanged', { error: errorText(error) }));
     return;
   }
-  sessionStorage.setItem(TOUR_SESSION_KEY, '1');
+  sessionStorage.setItem(TOUR_SESSION_KEY, TOUR_STARTING);
   location.reload();
 }
 
@@ -801,9 +821,11 @@ async function startTutorial() {
  */
 async function endTutorial() {
   sessionStorage.removeItem(TOUR_SESSION_KEY);
+  lockForReload(true);
   try {
     await endTutorialData();
   } catch (error) {
+    lockForReload(false);
     feedback('warn');
     showStartupError(t('tutorial.endFailed', { error: errorText(error) }));
     return;
@@ -848,19 +870,21 @@ async function start() {
     document.body.classList.add('capacitor-native');
     App.addListener('backButton', goBack);
   }
+  setLanguage(initialLanguage(navigator.language, true)); // the phone's language until the saved one can be read
   const startup = await initStorage(isNative);
   if (!startup.ok) {
     showStartupError(startup.error);
     return;
   }
-  // Practice data without a tour running (the app was closed mid-tour): bring the real data back first.
-  if (tutorialActive() && !sessionStorage.getItem(TOUR_SESSION_KEY)) {
+  applyLanguage(loadSettings().language);
+  // Practice data without a tour just starting (the app was closed, or reloaded, mid-tour): bring the real data back.
+  // The tour does not resume: its practice data has moved on from step 1.
+  if (tutorialActive() && sessionStorage.getItem(TOUR_SESSION_KEY) !== TOUR_STARTING) {
     await endTutorial(); // reloads, or blocks with Try again
     return;
   }
   if (initState() && !tutorialActive()) void backUpDroppedReports();
   applyTheme(loadSettings().theme);
-  applyLanguage(loadSettings().language);
   hydrateIcons();
   // The installed app's version on the phone (e.g. 0.1.42 from CI); package.json in the browser.
   el.aboutVersion.textContent = isNative ? (await App.getInfo().catch(() => ({ version: packageVersion }))).version : `${packageVersion} (browser)`;
@@ -874,7 +898,8 @@ async function start() {
   openScreen(activeScreenId());
   render();
   if (tutorialActive()) {
-    if (sessionStorage.getItem(TOUR_SESSION_KEY)) runTour(TOUR_STEPS, () => void endTutorial());
+    sessionStorage.setItem(TOUR_SESSION_KEY, 'running');
+    runTour(TOUR_STEPS, () => void endTutorial());
   } else if (!tutorialOffered() && !hasOwnData()) {
     offerTutorial();
   }

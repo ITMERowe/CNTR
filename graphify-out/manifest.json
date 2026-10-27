@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/main.ts": {
-    "mtime": 1793086580.7761,
-    "ast_hash": "c92f95de0c2160f4100bc8401f834dc6",
+    "mtime": 1793089057.284512,
+    "ast_hash": "0e1dd0708e19af4cd92adf5bda81d516",
     "semantic_hash": ""
   },
   "tsconfig.json": {
@@ -345,13 +345,13 @@
     "semantic_hash": ""
   },
   "src/storage.ts": {
-    "mtime": 1793084885.8808234,
-    "ast_hash": "e70348346f073eba1ac58d1b0c99737b",
+    "mtime": 1793088143.1604052,
+    "ast_hash": "712a5e322758c553f97b78dc9d7d1684",
     "semantic_hash": ""
   },
   "src/types.ts": {
-    "mtime": 1793083907.804999,
-    "ast_hash": "2c88a83d437e422d18b1cdee0f15122b",
+    "mtime": 1793088115.3847432,
+    "ast_hash": "66e1a753b26b8b603c630bf6ceb91a45",
     "semantic_hash": ""
   },
   ".claude/settings.json": {
@@ -455,8 +455,8 @@
     "semantic_hash": ""
   },
   "src/state.ts": {
-    "mtime": 1793081650.7775378,
-    "ast_hash": "20f8336a7ed991e424aa224f8cd298f3",
+    "mtime": 1793088115.388754,
+    "ast_hash": "27287f8d658c9419ff2b637404d84c3f",
     "semantic_hash": ""
   },
   "src/ui/colorPicker.ts": {
@@ -470,8 +470,8 @@
     "semantic_hash": ""
   },
   "src/ui/productEditor.ts": {
-    "mtime": 1793084885.584325,
-    "ast_hash": "9c8bc214b55049f98da7b9ace52770c6",
+    "mtime": 1793088115.3917542,
+    "ast_hash": "b6b56d3b2a175daf6e110ddc9387b1c9",
     "semantic_hash": ""
   },
   "src/views/Compare.tsx": {
@@ -520,8 +520,8 @@
     "semantic_hash": ""
   },
   "HANDOFF.md": {
-    "mtime": 1793087145.2926588,
-    "ast_hash": "7e6b0a9bcf3aa97d3eaf1eed31204afd",
+    "mtime": 1793089513.0543427,
+    "ast_hash": "f3ab52b58a5b1e2754e42c5d16b38206",
     "semantic_hash": ""
   },
   "docs/screenshots/event.png": {
@@ -545,8 +545,8 @@
     "semantic_hash": ""
   },
   "src/backup.ts": {
-    "mtime": 1793084886.2642465,
-    "ast_hash": "db470031ed6b9c70c40593341c918338",
+    "mtime": 1793088115.3937936,
+    "ast_hash": "4472aaf1827d505847675176ee1bb26e",
     "semantic_hash": ""
   },
   "src/files.ts": {
@@ -570,13 +570,13 @@
     "semantic_hash": ""
   },
   "tests/e2e/data-safety.test.mjs": {
-    "mtime": 1793086454.4232943,
-    "ast_hash": "71e58693bab21b194d301f576f1e5b45",
+    "mtime": 1793088682.34537,
+    "ast_hash": "1226c78f5d4ca965b00c596ba249a0ad",
     "semantic_hash": ""
   },
   "tests/e2e/functional.test.mjs": {
-    "mtime": 1793069415.1228611,
-    "ast_hash": "49f4ad9895fb40c90ee4227750cd7890",
+    "mtime": 1793088231.456533,
+    "ast_hash": "1e98291f715b9dfa40a0be4f773a6483",
     "semantic_hash": ""
   },
   "tests/e2e/interaction.test.mjs": {
@@ -595,8 +595,8 @@
     "semantic_hash": ""
   },
   "tests/e2e/motion.test.mjs": {
-    "mtime": 1793069415.1258695,
-    "ast_hash": "26fc41f82ae609dbbef48a9bc2a856a0",
+    "mtime": 1793089027.716894,
+    "ast_hash": "451973c736ff633a9eb4a2e5ae161eea",
     "semantic_hash": ""
   },
   "tests/e2e/run.mjs": {
@@ -605,8 +605,8 @@
     "semantic_hash": ""
   },
   "src/events.ts": {
-    "mtime": 1793083776.2559738,
-    "ast_hash": "b601e40a15fb24d0fc3823f88985e3ff",
+    "mtime": 1793089027.715882,
+    "ast_hash": "35095760f15c69fded78f9088c2c0b23",
     "semantic_hash": ""
   },
   "src/views/EventScreen.tsx": {
@@ -620,8 +620,8 @@
     "semantic_hash": ""
   },
   "tests/events.test.ts": {
-    "mtime": 1793083761.8934042,
-    "ast_hash": "671f8e7a65ff7668a4baf555f4f32e97",
+    "mtime": 1793089027.715882,
+    "ast_hash": "917b1f76d852e3d671fd936ba4eefc1d",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-10-27-events.md": {
@@ -670,8 +670,8 @@
     "semantic_hash": ""
   },
   "tests/e2e/tutorial.test.mjs": {
-    "mtime": 1793084024.7528772,
-    "ast_hash": "62f791c3b221e05da991a3497e9c4907",
+    "mtime": 1793089057.2875113,
+    "ast_hash": "ba247fd3699ab729d19cf440c670dd8b",
     "semantic_hash": ""
   },
   "tests/config.test.ts": {
@@ -700,8 +700,8 @@
     "semantic_hash": ""
   },
   "src/i18n.ts": {
-    "mtime": 1793086593.5655732,
-    "ast_hash": "cf4929a1cbd9bb6aa8c5a954881f18d4",
+    "mtime": 1793089057.2835107,
+    "ast_hash": "0ba1cd8075a2865809680a560e4e1fb7",
     "semantic_hash": ""
   },
   "tests/i18n.test.ts": {
