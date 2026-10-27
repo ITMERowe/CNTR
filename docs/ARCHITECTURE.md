@@ -15,6 +15,8 @@ src/
   files.ts             Save backup files (Documents/CNTR + share sheet) and pick a file to restore
   tutorial.ts          The hands-on tour: practice data, the steps, and the hint bubble
   feedback.ts          Haptics (phone) and soft Web Audio tones (Settings → Sound)
+  theme.ts             Light/dark: sets <html data-theme>; "Phone setting" follows prefers-color-scheme live
+  i18n.ts              English + Bahasa Indonesia dictionaries, t() / tn(), locale(), first-launch language, data-i18n markup
   reports.ts           Pure report maths: totals, product breakdowns, compare rows
   formatters.ts        Money formatting/parsing, colour helpers
   data.ts              Default products, product-history helper, UUIDs
@@ -68,7 +70,7 @@ Data is a set of JSON values under these keys. On the phone they live in an SQLi
 | `cntrEventCosts` | The live event's expenses |
 | `cntrLiveEvent` | The live event's name, start and day breaks (`LiveEventMeta`); created on first launch from the existing sales |
 | `cntrEvents` | Past events (`PastEvent[]`), oldest first |
-| `cntrSettings` | Currency, compact money, products per day, sound effects |
+| `cntrSettings` | Currency, compact money, products per day, sound effects, `theme` (system/light/dark), `language` (en/id; saved on first launch: `id` only for a fresh install on an Indonesian phone) |
 
 - List loaders only accept arrays, so corrupt data falls back to empty instead of crashing startup.
 - Settings are cached in memory (`fmt()` runs for every amount on screen); `saveSettings()` invalidates the cache.
@@ -121,3 +123,8 @@ Tiles take the product colour as `--tile`. `needsDarkText()` (`formatters.ts`) g
 Versioning: `android/app/build.gradle` reads `BUILD_NUMBER` (CI passes the GitHub Actions run number; local builds use 1) and sets `versionCode = BUILD_NUMBER` and `versionName = 1.0.BUILD_NUMBER`, so every CI build is a newer version, as Android and Google Play require.
 
 Platform: Capacitor 8, Android `compileSdk`/`targetSdk` 36, `minSdk` 24 (Android 7.0), Android Gradle Plugin 8.13, Gradle 8.14.3, JDK 21.
+
+## Themes and languages
+
+- **Themes**: `:root` holds the Dark+ tokens; `:root[data-theme="light"]` overrides them with Light+ (`--bg #ffffff`, `--surface-1 #f3f3f3`, `--text #1e1e1e`, `--positive #116329`, `--negative #c72c1c`, `--on-negative`, `--bar-bg`). `applyTheme()` resolves "Phone setting" with `matchMedia` and also updates `<meta name="theme-color">`. Tile colours do not change with the theme.
+- **Languages**: every user-facing string is a key in `src/i18n.ts` (`en`, and `id: Record<Key, string>` so a missing translation fails the build). Static markup uses `data-i18n` (text) and `data-i18n-aria` / `-title` / `-placeholder`; `translateStatic()` fills them on start and on a language change, then `render()` redraws the views. Counts use `tn()` with English `"one|other"` forms. Never translated: payment method names, CSV headers, user-typed text. `tests/e2e/i18n.test.mjs` walks every screen in Indonesian and fails on leftover English words.

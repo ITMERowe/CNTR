@@ -3,6 +3,17 @@
 ## 0.1 (branch `feature/signing-tests-about`)
 
 ### Added
+- **Bahasa Indonesia**: the whole app (screens, messages, the tutorial, backup errors) in English and Indonesian. A fresh install on an Indonesian phone starts in Indonesian; people updating stay in English until they choose it in Settings → Appearance → Language. Month names follow the app language. Payment method names and CSV headers stay English.
+- **Light mode**: Settings → Appearance → Theme: Phone setting (follows the phone, live), Light or Dark. Light uses VS Code Light+ colours; all text keeps ≥ 4.5:1 contrast.
+
+### Fixed
+- Deleting a product no longer deletes any of its sales: they stay in every report under its name.
+- Saving an edited past event shows "Saving…" and locks Save, Cancel and Android back until the save is done (Cancel used to look like it cancelled while the save still went through).
+- An empty day card says "No sales yet" instead of a misleading date.
+
+### Security (review: `docs/security-review-2026-10-27.md`)
+- No INTERNET permission any more; a Content-Security-Policy; CSV cells that start like a formula are neutralised; file sharing limited to CNTR's own folders; CI with a read-only token, a pinned third-party action and guaranteed keystore cleanup; the privacy text now mentions Android's own Google account backup. Commits use the GitHub no-reply address.
+
 - **Hands-on tutorial**: a 28-step tour on rails (like a game tutorial: only the highlighted button responds, the rest is dimmed) with practice products and events (sell, undo, add a product, expenses, End day, End event, edit a past event, Compare). Offered once on an empty first launch; replay from Settings → Show tutorial. The real data is put aside and comes back exactly as it was on Finish, Quit, or the next launch after a crash. No backup files are written during the tour, and Export/Restore wait until it ends.
 - **Haptics and sound effects**: a tap on every sale, undo, stepper, switch and payment pick; a success buzz and soft chime on End day, End event, saved edits and exports; a warning buzz on refusals and failures. Settings → Sound → *Sound effects* turns the tones off (vibration stays).
 

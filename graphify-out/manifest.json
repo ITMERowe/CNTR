@@ -175,8 +175,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1793077678.1179502,
-    "ast_hash": "fb04b32dd0c3e28935b2f3e13eabcf4c",
+    "mtime": 1793086199.8339984,
+    "ast_hash": "cd7a7d1f915c8282da260dd4b9edd601",
     "semantic_hash": ""
   },
   "index.html": {
@@ -490,13 +490,13 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1793077694.2942514,
-    "ast_hash": "d74d904172d77f0a8135a3f761a2b462",
+    "mtime": 1793086178.3850877,
+    "ast_hash": "65da28e4152a19759c51dcac31b201bc",
     "semantic_hash": ""
   },
   "docs/ARCHITECTURE.md": {
-    "mtime": 1793077621.133402,
-    "ast_hash": "8aa2d397e573d966bb4b5c22205f5850",
+    "mtime": 1793086188.901951,
+    "ast_hash": "c3b00c027bde6151b430f330573d13a4",
     "semantic_hash": ""
   },
   "src/ui/icons.ts": {
@@ -520,8 +520,8 @@
     "semantic_hash": ""
   },
   "HANDOFF.md": {
-    "mtime": 1793081350.0904834,
-    "ast_hash": "55860fd279bb2390848e3d6257e0319b",
+    "mtime": 1793086168.9117582,
+    "ast_hash": "e9687b16c1cf2b3b4548e2433f5cc42d",
     "semantic_hash": ""
   },
   "docs/screenshots/event.png": {

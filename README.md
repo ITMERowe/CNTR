@@ -20,6 +20,9 @@ It runs entirely on the device: no server, no account, no network needed.
 - **Products**: a new install starts empty; add, edit (name, price, cost, colour, payment methods), take off the counter without losing history, or delete permanently.
 - **Settings**: 8 currencies (IDR, USD, EUR, SGD, AUD, GBP, JPY, MYR), an optional compact format (`Rp 1,5M`), and *Products per day* (one collapsible Products card for each day of an event).
 - **Backup**: export all data to a JSON file (and sales to CSV), and restore from a backup after checking it.
+- **Tutorial**: an optional hands-on tour on practice data, offered on first launch and replayable from Settings; your own data is put aside and comes back exactly.
+- **Light and dark**, following the phone or chosen in Settings; **English and Bahasa Indonesia**.
+- **Sound and haptics**: soft tones (can be turned off) and vibration on sales and finished actions.
 - **Offline by design**: the font and icons are bundled into the app.
 - Respects the system "reduce motion" setting.
 - **Android back** (button or gesture) steps back inside the app: it closes the open sheet or menu, then goes back a screen, then to Sell; on Sell it sends the app to the background.
@@ -94,7 +97,7 @@ Or run `npx cap open android` and press Run in Android Studio.
 
 ## Data and backups
 
-- CNTR works fully offline and has no server, account or sync. All data (products, the live event, past events, settings) stays on the device.
+- CNTR works fully offline and has no server, account or sync (it does not even ask for internet access). All data (products, the live event, past events, settings) is stored on the device; Android's own Auto Backup may include it in the user's Google account backup if that is turned on.
 - On the phone, data is stored in an **SQLite database** in the app's private storage (`@capacitor-community/sqlite`), which the OS does not clear the way it can clear WebView storage. Older versions stored it in WebView `localStorage`; the first launch after updating copies it into the database, verifies the copy, and leaves the old copy untouched. Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#storage).
 - **Settings → Backup**: *Export backup* saves a JSON file of all data to `Documents/CNTR` and opens the share sheet so you can keep a copy elsewhere; *Export sales as CSV* is for spreadsheets; *Restore from backup* checks the whole file first, saves a copy of the current data, then replaces everything in one step.
 - **No storage survives uninstalling the app, clearing its data, or losing the phone.** Export a backup after every event and keep it off the phone.
