@@ -5,6 +5,9 @@ on:
     branches: [ '**' ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -25,7 +28,7 @@ jobs:
           javac -version
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
 
       - name: Setup Node
         uses: actions/setup-node@v7
@@ -64,11 +67,11 @@ jobs:
           mkdir -p ../dist-apk
           if [ -n "$KEYSTORE_BASE64" ]; then
             export CNTR_KEYSTORE_FILE="$RUNNER_TEMP/cntr-release.p12"
+            trap 'rm -f "$CNTR_KEYSTORE_FILE"' EXIT
             echo "$KEYSTORE_BASE64" | base64 -d > "$CNTR_KEYSTORE_FILE"
             ./gradlew assembleRelease bundleRelease
             cp app/build/outputs/apk/release/CNTR_*.apk ../dist-apk/
             cp app/build/outputs/bundle/release/app-release.aab "../dist-apk/CNTR_0.1.${BUILD_NUMBER}.aab"
-            rm -f "$CNTR_KEYSTORE_FILE"
           else
             echo "::warning::No release key in secrets; building a debug APK (installing it needs an uninstall first)."
             ./gradlew assembleDebug

@@ -120,7 +120,8 @@ export function parseBackup(text: string): ParsedBackup {
 }
 
 const csvCell = (value: string | number) => {
-  const text = String(value);
+  // A name starting like a formula would run as one in Excel or Sheets; a leading ' makes it plain text.
+  const text = typeof value === 'string' && /^[=+\-@\t\r]/.test(value) ? `'${value}` : String(value);
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 

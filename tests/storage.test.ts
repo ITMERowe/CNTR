@@ -190,6 +190,20 @@ test('CSV lists the live event and past events with day numbers, quoting commas 
   assert.match(csv, /^"Day 1, ""Comic""",2,2026-10-26T03:00:00.000Z,Gacha,QRIS,/m);
 });
 
+test('CSV neutralises cells that start like a formula', () => {
+  const sale = (product: string) => ({ product, price: 1000, cost: -5, payment: 'Cash', timestamp: '2026-10-26T10:00:00.000Z' });
+  const data = new Map([
+    ['cntrSales', JSON.stringify([sale('=HYPERLINK("http://x","y")'), sale('+cmd'), sale('-1'), sale('@a')])],
+    ['cntrLiveEvent', JSON.stringify({ id: 'live', name: '\tTabbed', startedAt: '2026-10-26T09:00:00.000Z', dayBreaks: [] })],
+  ]);
+  const csv = salesCsv(buildBackup(data));
+  assert.match(csv, /,"'=HYPERLINK\(""http:\/\/x"",""y""\)",Cash,/);
+  assert.match(csv, /,'\+cmd,Cash,1000,-5\r$/m);
+  assert.match(csv, /,'-1,Cash,/);
+  assert.match(csv, /,'@a,Cash,/);
+  assert.match(csv, /^'\tTabbed,1,/m);
+});
+
 test('products with payment methods restore; a damaged method list is rejected', () => {
   const withMethods = buildBackup(new Map([['cntrProducts', JSON.stringify([{ name: 'Poster', price: 1, cost: 0, color: '#123456', payments: ['Cash', 'Card'] }])]]));
   assert.ok(parseBackup(JSON.stringify(withMethods)).ok);

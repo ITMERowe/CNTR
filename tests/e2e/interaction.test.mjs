@@ -66,6 +66,8 @@ for (const width of [320, 360, 393, 412]) {
   await sleep(300);
   const about = await page.evaluate(() => ({ screen: document.querySelector('.screen.active').id, version: document.querySelector('#aboutVersion').textContent, tab: document.querySelector('.tabbar .tab.active').dataset.tab }));
   check('About opens from Settings, shows the version, keeps Settings highlighted', about.screen === 'aboutScreen' && /\d+\.\d+\.\d+/.test(about.version) && about.tab === 'settingsScreen', about);
+  const privacy = await page.evaluate(() => document.querySelector('#aboutScreen .about-text').textContent);
+  check('the privacy text mentions the phone\'s own Google account backup', /Google account/.test(privacy) && !/stays on this phone/.test(privacy), privacy.slice(0, 120));
   await page.click('#aboutBackBtn');
   check('About back arrow returns to Settings', (await page.evaluate(() => document.querySelector('.screen.active').id)) === 'settingsScreen');
   await page.close();

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1e1e1e" />
     <meta name="color-scheme" content="dark" />
+    <!-- Only the app's own files run or load; nothing goes to the network (inline style attributes are used). -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
     <title>CNTR</title>
   </head>
   <body>
@@ -194,7 +196,8 @@
               <section class="group">
                 <h2 class="group-title">Privacy</h2>
                 <div class="card about-text">
-                  <p>CNTR has no account, server, ads or analytics, and never uses the internet. Everything you record stays on this phone.</p>
+                  <p>CNTR has no account, server, ads or analytics, and never uses the internet. What you record is stored on this phone and CNTR never sends it anywhere.</p>
+                  <p>If backup is turned on in the phone's settings, Android may include CNTR's data in the phone's own backup to your Google account.</p>
                   <p>A file leaves the phone only when you export a backup or CSV and choose where to send it.</p>
                   <p>Uninstalling CNTR or clearing its data deletes everything on the phone, so export a backup regularly.</p>
                 </div>

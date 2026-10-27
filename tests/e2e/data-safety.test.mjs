@@ -18,6 +18,11 @@ async function newPage(native) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   if (native) await page.addInitScript(fakeNative);
+  // Records anything the Content-Security-Policy blocks (A12).
+  await page.addInitScript(() => {
+    window.__csp = [];
+    document.addEventListener('securitypolicyviolation', (e) => window.__csp.push(`${e.violatedDirective} ${e.blockedURI}`));
+  });
   return { ctx, page, requests, errors };
 }
 
@@ -93,6 +98,8 @@ async function restoreWith(page, buffer, confirm = true) {
   await toSettings(page); const dl2 = page.waitForEvent('download'); await page.click('#exportBackupBtn'); await dl2; await closeMessage(page);
   const foreign = requests.filter((u) => !u.startsWith(URL) && !u.startsWith('blob:') && !u.startsWith('data:'));
   check('A11 offline: everything works and no request leaves localhost', foreign.length === 0 && errors.length === 0, foreign.join(' ') || `${requests.length} local requests, ${errors.length} errors`);
+  const csp = await page.evaluate(() => ({ policy: document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content ?? '', blocked: window.__csp }));
+  check('A12 the page has a Content-Security-Policy and nothing the app does breaks it', /default-src 'self'/.test(csp.policy) && csp.blocked.length === 0, csp.blocked.join(' | ') || csp.policy.slice(0, 60));
   await ctx.close();
 }
 
