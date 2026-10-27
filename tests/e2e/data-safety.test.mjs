@@ -130,9 +130,10 @@ function fakeNative() {
         if (method === 'isDBOpen') return { result: false };
         if (method === 'query') return { values: Object.entries(db).map(([key, value]) => ({ key, value })) };
         if (method === 'executeSet') {
-          await new Promise((resolve) => setTimeout(resolve, get('__sqlDelayMs', 0))); // a slow database write (B35)
+          const delay = get('__sqlDelayMs', 0); // a slow database write (B35)
+          if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
           if (fail('executeSet')) throw new Error('disk I/O error (disk full)');
-          const next = { ...db }; // all-or-nothing, like a transaction
+          const next = { ...get('__db', {}) }; // read after the wait, so the write never drops data stored meanwhile; all-or-nothing
           for (const { statement, values } of options.set) {
             if (statement.startsWith('DELETE')) delete next[values[0]];
             else next[values[0]] = values[1];
