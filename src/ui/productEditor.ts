@@ -98,7 +98,7 @@ function removeEditedProduct() {
   const removed = editingIndex >= 0 ? state.products[editingIndex] : editingHistoryIndex !== null ? state.productHistory[editingHistoryIndex] : null;
   if (!removed) return;
   openConfirmModal(
-    `Permanently delete '${removed.name}'? Its sales in the current event are deleted too; past events keep theirs. To only take it off the Sell tab, use its switch in Products instead.`,
+    `Delete '${removed.name}'? Its sales stay in your reports. To only take it off the Sell tab, use its switch in Products instead.`,
     'Delete',
     () => {
       deleteProduct(removed.name);

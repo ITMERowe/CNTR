@@ -74,6 +74,6 @@
   "72": "Trace Output Files",
   "73": "Security review: CNTR repository and app (2026-10-27)",
   "74": "element-attributes.md",
-  "75": "@capacitor/android",
+  "75": "@capacitor-community/sqlite",
   "76": "config.test.ts"
 }

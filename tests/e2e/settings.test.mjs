@@ -94,7 +94,7 @@ check('tapping a row opens that product in the editor', moves.editor.screen === 
 // 4. Delete lives in the editor: asks first, then removes the product everywhere
 const del = await run(page, `${H}
   document.getElementById('removeProductBtn').click();
-  const asked = document.getElementById('confirmModalOverlay').classList.contains('open') && /Permanently delete/.test(document.getElementById('confirmModalMessage').textContent);
+  const asked = document.getElementById('confirmModalOverlay').classList.contains('open') && /^Delete 'Pin'?/.test(document.getElementById('confirmModalMessage').textContent);
   document.getElementById('confirmModalConfirmBtn').click();
   await wait();
   return { asked, screen: document.querySelector('.screen.active').id, active: stored('cntrProducts').map((p) => p.name), history: stored('cntrProductHistory').map((p) => p.name) };
@@ -113,6 +113,45 @@ const delHidden = await run(page, `${H}
   return { visible, history: stored('cntrProductHistory').map((p) => p.name) };
 `);
 check('a hidden product can be deleted from its editor', delHidden.visible && !delHidden.history.includes('Old badge'), delHidden);
+
+// 6. Deleting a product keeps all its sales, from earlier days and today
+await run(page, `
+  const day = 86400000, now = Date.now();
+  const sale = (product, price, at) => ({ product, price, cost: 1000, payment: 'Cash', timestamp: new Date(at).toISOString() });
+  localStorage.clear();
+  localStorage.setItem('cntrMeta.tutorialOffered', 'test');
+  localStorage.cntrProducts = localStorage.cntrProductHistory = JSON.stringify([
+    { name: 'Gacha', price: 25000, cost: 12000, color: '#f76495' },
+    { name: 'Pin', price: 5000, cost: 1000, color: '#31b500' },
+  ]);
+  localStorage.cntrLiveEvent = JSON.stringify({ id: 'live', name: null, startedAt: new Date(now - 2 * day).toISOString(), dayBreaks: [new Date(now - day).toISOString()] });
+  localStorage.cntrSales = JSON.stringify([sale('Pin', 5000, now - 1.5 * day), sale('Pin', 5000, now - 1.4 * day), sale('Pin', 5000, now - 60000), sale('Gacha', 25000, now - 30000)]);
+`);
+await load();
+const deleted = await run(page, `${H}
+  document.querySelector('.tile[data-product="Pin"] .tile-edit').click();
+  document.getElementById('removeProductBtn').click();
+  const message = document.getElementById('confirmModalMessage').textContent;
+  document.getElementById('confirmModalConfirmBtn').click();
+  await wait(200);
+  tab('eventScreen');
+  const pinRow = [...document.querySelectorAll('#eventCard .swatch')].map((s) => s.parentElement).find((row) => /Pin/.test(row.textContent));
+  const swatch = pinRow ? getComputedStyle(pinRow.querySelector('.swatch')).backgroundColor : 'no row';
+  return { message, pinSales: stored('cntrSales').filter((s) => s.product === 'Pin').length, onCounter: stored('cntrProducts').map((p) => p.name), swatch };
+`);
+check('deleting a product asks with "Its sales stay in your reports"', /Its sales stay in your reports/.test(deleted.message), deleted.message);
+check('deleting a product keeps all 3 of its sales (2 earlier days, 1 today) and takes it off the counter', deleted.pinSales === 3 && !deleted.onCounter.includes('Pin'), deleted);
+check('a deleted product still shows on the Event screen with a visible colour', !/no row|rgba\(0, 0, 0, 0\)|transparent/.test(deleted.swatch), deleted.swatch);
+const recreated = await run(page, `${H}
+  tab('salesScreen');
+  document.getElementById('openProductEdit').click();
+  const set = (id, value) => { const input = document.getElementById(id); input.value = value; input.dispatchEvent(new Event('input', { bubbles: true })); };
+  set('editName', 'Pin'); set('editPrice', '9000');
+  document.getElementById('saveProductBtn').click();
+  await wait(200);
+  return stored('cntrSales').filter((s) => s.product === 'Pin').map((s) => s.price);
+`);
+check('re-creating a product with the same name keeps the old sales at their old price', recreated.join() === '5000,5000,5000', recreated);
 
 check('no uncaught exceptions', errors.length === 0, errors.join(' | '));
 await browser.close();

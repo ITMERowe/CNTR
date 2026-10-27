@@ -1,16 +1,16 @@
 # Graph Report - CNTR  (2026-10-27)
 
 ## Corpus Check
-- 106 files · ~104,722 words
+- 106 files · ~105,021 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 972 nodes · 1804 edges · 77 communities (64 shown, 13 thin omitted)
+- 972 nodes · 1803 edges · 77 communities (64 shown, 13 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 62 edges (avg confidence: 0.62)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `af96c1a3`
+- Built from commit: `cc5d68db`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -82,7 +82,7 @@
 - Trace Output Files
 - Security review: CNTR repository and app (2026-10-27)
 - element-attributes.md
-- @capacitor/android
+- @capacitor-community/sqlite
 
 ## God Nodes (most connected - your core abstractions)
 1. `render()` - 35 edges
@@ -127,7 +127,7 @@ Nodes (27): openSqliteStore(), cache, CURRENCIES, DEFAULT_SETTINGS, errorText(),
 
 ### Community 2 - "dependencies"
 Cohesion: 0.13
-Nodes (15): @capacitor/app, @capacitor-community/sqlite, @capacitor/core, @capacitor/ios, @capacitor/share, @fontsource-variable/plus-jakarta-sans, lucide, dependencies (+7 more)
+Nodes (15): @capacitor/android, @capacitor/app, @capacitor/core, @capacitor/ios, @capacitor/share, @fontsource-variable/plus-jakarta-sans, lucide, dependencies (+7 more)
 
 ### Community 3 - "How it works (decided)"
 Cohesion: 0.12
@@ -347,7 +347,7 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `tab()` connect `tutorial.ts` to `lib.mjs`?**
   _High betweenness centrality (0.056) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `dependencies` to `@capacitor/haptics`, `@capacitor/android`, `package.json`, `@capacitor/filesystem`, `preact`?**
+- **Why does `dependencies` connect `dependencies` to `@capacitor/haptics`, `@capacitor-community/sqlite`, `package.json`, `@capacitor/filesystem`, `preact`?**
   _High betweenness centrality (0.022) - this node is a cross-community bridge._
 - **Are the 10 inferred relationships involving `render()` (e.g. with `addSale()` and `confirmEndDay()`) actually correct?**
   _`render()` has 10 INFERRED edges - model-reasoned connections that need verification._

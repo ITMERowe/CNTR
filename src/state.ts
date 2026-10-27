@@ -109,10 +109,9 @@ export function deleteProduct(name: string) {
   const keep = <T>(list: T[], predicate: (item: T) => boolean) => list.splice(0, list.length, ...list.filter(predicate));
   keep(state.productHistory, (product) => product.name !== name);
   keep(state.products, (product) => product.name !== name);
-  keep(state.sales, (sale) => sale.product !== name);
+  // Its sales stay: reports must not change when a product is renamed, split or retired.
   saveProductHistory();
   saveProducts();
-  saveSales();
 }
 
 export function recordSale(product: Product, payment: string) {

@@ -455,8 +455,8 @@
     "semantic_hash": ""
   },
   "src/state.ts": {
-    "mtime": 1793069255.542887,
-    "ast_hash": "818462397c7e07733f6ec50d7371435a",
+    "mtime": 1793081650.7775378,
+    "ast_hash": "20f8336a7ed991e424aa224f8cd298f3",
     "semantic_hash": ""
   },
   "src/ui/colorPicker.ts": {
@@ -470,8 +470,8 @@
     "semantic_hash": ""
   },
   "src/ui/productEditor.ts": {
-    "mtime": 1793073869.640126,
-    "ast_hash": "ef4a6bf29d8797e7166f6b8d80251fae",
+    "mtime": 1793081651.668902,
+    "ast_hash": "9c47a6ed69b459fd93d2accd1933e32b",
     "semantic_hash": ""
   },
   "src/views/Compare.tsx": {
@@ -655,8 +655,8 @@
     "semantic_hash": ""
   },
   "tests/e2e/settings.test.mjs": {
-    "mtime": 1793074183.9232116,
-    "ast_hash": "2982ed57cf7b52a9afa741337f685abe",
+    "mtime": 1793081658.7560704,
+    "ast_hash": "5798c62186a99c5bfdbe79ebe5168ac9",
     "semantic_hash": ""
   },
   "src/feedback.ts": {
