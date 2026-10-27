@@ -1,6 +1,6 @@
 // Layout and accessibility on every tab: no text cut off or page overflow, 44px tap targets, labelled controls,
 // text contrast (including names on product tiles), and 4 tiles visible on the owner's 412x892 phone.
-import { URL, checks, launch, sleep } from './lib.mjs';
+import { URL, checks, launch, sleep, SAMPLE_PRODUCTS } from './lib.mjs';
 
 const { check, done } = checks();
 const browser = await launch();
@@ -35,7 +35,8 @@ function scan() {
     const [hi, lo] = [lum(fg), lum(background(e))].sort((a, b) => b - a);
     const ratio = (hi + 0.05) / (lo + 0.05);
     const large = parseFloat(s.fontSize) >= 24 || (parseFloat(s.fontSize) >= 18.66 && +s.fontWeight >= 700);
-    if (ratio < (large ? 3 : 4.5)) out.contrast.push(`${name(e)} "${e.textContent.trim().slice(0, 18)}" ${ratio.toFixed(2)}`);
+    // Text on product tiles: the owner keeps white down to 2.6:1 (see needsDarkText); everywhere else WCAG AA.
+    if (ratio < (e.closest('.tile') ? 2.6 : large ? 3 : 4.5)) out.contrast.push(`${name(e)} "${e.textContent.trim().slice(0, 18)}" ${ratio.toFixed(2)}`);
   }
   return out;
 }
@@ -43,10 +44,12 @@ function scan() {
 for (const [width, height] of [[320, 700], [360, 800], [412, 892], [892, 412]]) {
   const page = await browser.newPage({ viewport: { width, height }, isMobile: true, hasTouch: true });
   await page.goto(URL);
-  await page.evaluate(() => {
+  await page.evaluate((p) => {
     localStorage.clear();
+    // The sample products plus a one-method product, so the single full-width button and a new method colour are scanned too.
+    localStorage.cntrProducts = JSON.stringify([...JSON.parse(p).slice(0, 3), { name: 'Pin', price: 5000, cost: 1000, color: '#5f6d77', payments: ['E-wallet'] }, ...JSON.parse(p).slice(3)]);
     localStorage.cntrEventCosts = JSON.stringify([{ id: 'a', name: 'Booth rental', amount: 125500000 }]);
-  });
+  }, SAMPLE_PRODUCTS);
   await page.reload();
   await sleep(600);
   const sellSome = async () => { await page.click('.tabbar .tab[data-tab="salesScreen"]'); for (let i = 0; i < 6; i++) await page.click('.tile .pay-add'); };
@@ -67,6 +70,9 @@ for (const [width, height] of [[320, 700], [360, 800], [412, 892], [892, 412]]) 
     await page.click(`.tabbar .tab[data-tab="${tab}"]`);
     await assess(tab);
   }
+  await page.click('#openProductsMenuBtn');
+  await assess('Products (Settings)');
+  await page.click('#productHistoryBackBtn');
   if (width === 412) {
     await page.click('.tabbar .tab[data-tab="salesScreen"]');
     await sleep(300);
@@ -88,6 +94,9 @@ for (const [width, height] of [[320, 700], [360, 800], [412, 892], [892, 412]]) 
       return size;
     });
     check('412x892: 4 tiles fit above the tab bar', fit.tiles >= 4, `${fit.tiles} tiles`);
+    // Owner's choice: white stays down to 2.6:1 (pink, green, orange); dark only on lighter colours (beige, yellow).
+    const dark = await page.evaluate(() => [...document.querySelectorAll('.tile.on-light')].map((t) => t.dataset.product).join());
+    check('dark tile text only where white is below 2.6:1', dark === 'Photocard,Keychain', dark);
     check('Sell revenue figure is 3/4 of the report figure', Math.abs(fit.sell / report - 0.75) < 0.01, `${fit.sell}px vs ${report}px`);
   }
   // End the event, then the History list, the past event and its edit mode.

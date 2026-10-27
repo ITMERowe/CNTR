@@ -24,8 +24,12 @@
   /* Meaning */
   --positive: #4ade80;
   --negative: #ff6b5e;
-  --cash: #c08024; /* validated categorical pair (dataviz, dark surface) */
+  /* Payment methods, in their fixed order (payments.ts). dataviz-validated on #252526 for adjacent pairs; every use is also labelled by name. */
+  --cash: #c08024;
   --qris: #4d8df0;
+  --transfer: #199e70;
+  --card: #9085e9;
+  --ewallet: #d55181;
   --chart-rest: #46464d;
 
   /* Shape & space (4/8 rhythm) */
@@ -484,6 +488,55 @@ p {
   gap: var(--s2);
 }
 
+/* A product that takes one payment method gets one full-width button */
+.tile-pay-single {
+  grid-template-columns: 1fr;
+}
+
+/* Product editor: payment method toggles */
+.payment-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.payment-option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 44px;
+  padding: 0 var(--s4);
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-1);
+  color: var(--text-2);
+  font-weight: 650;
+  font-size: 14px;
+  transition: background-color var(--dur-tap), transform var(--dur-tap) var(--ease-out);
+}
+
+.payment-option::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--chip-color);
+}
+
+.payment-option[aria-pressed='true'] {
+  background: var(--surface-3);
+  border-color: var(--chip-color);
+  color: var(--text);
+}
+
+.payment-option[aria-disabled='true'] {
+  opacity: 0.45;
+}
+
+.payment-option:active {
+  transform: scale(0.97);
+}
+
 .pay {
   position: relative;
 }
@@ -756,11 +809,6 @@ p {
   border-bottom: 0;
 }
 
-.list-row.is-inactive .list-main,
-.list-row.is-inactive .swatch {
-  opacity: 0.45;
-}
-
 .list-row-link {
   cursor: pointer;
   border-radius: var(--r-sm);
@@ -798,16 +846,6 @@ p {
 }
 
 /* One amount per line, so neither is cut off on a phone */
-.list-sub-text {
-  display: block;
-}
-
-.list-sub-text > span {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* Expense names wrap rather than hide behind "…" next to a long amount on narrow phones */
 .cost-item .list-title {
   white-space: normal;
@@ -871,12 +909,25 @@ p {
   background: var(--chip-color, var(--text-3));
 }
 
+/* One class per payment method sets its colour; chips, bar segments, legend swatches and stepper dots read it. */
 .pay-cash {
   --chip-color: var(--cash);
 }
 
 .pay-qris {
   --chip-color: var(--qris);
+}
+
+.pay-transfer {
+  --chip-color: var(--transfer);
+}
+
+.pay-card {
+  --chip-color: var(--card);
+}
+
+.pay-ewallet {
+  --chip-color: var(--ewallet);
 }
 
 /* Product on/off switch in the Products list */
@@ -886,6 +937,80 @@ p {
   height: 44px;
   display: grid;
   place-items: center;
+}
+
+/* Products screen: sections (On the counter / Hidden) of rows you tap to edit */
+.product-section-title {
+  margin: 0 0 var(--s1) var(--s1);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.product-section-note {
+  margin: 0 0 var(--s2) var(--s1);
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.product-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  border-bottom: 1px solid var(--line);
+  animation: rise var(--dur-2) var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 8) * 30ms);
+}
+
+.product-item:last-child {
+  border-bottom: 0;
+}
+
+.product-edit-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 72px;
+  padding: var(--s3) 0;
+  text-align: left;
+  border-radius: var(--r-sm);
+  transition: background-color var(--dur-tap);
+}
+
+.product-edit-btn:active {
+  background: var(--surface-2);
+}
+
+.product-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.product-item-main .list-title {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.product-item-sub {
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.product-item-methods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+  margin-top: 2px;
+}
+
+#productHistoryList .product-section + .product-section {
+  margin-top: var(--s2);
 }
 
 .switch-track {
@@ -981,12 +1106,9 @@ p {
   animation-delay: 60ms;
 }
 
-.seg-cash {
-  background: var(--cash);
-}
-
-.seg-qris {
-  background: var(--qris);
+.split-seg,
+.split-item .swatch {
+  background: var(--chip-color, var(--chart-rest));
 }
 
 .seg-empty {
@@ -1862,6 +1984,47 @@ p {
   color: var(--negative);
 }
 
+/* Settings → Products per day: each day's Products card collapses */
+.products-day-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.products-day-head::-webkit-details-marker {
+  display: none;
+}
+
+.products-day-head .card-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.products-day-meta {
+  font-size: 12px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.products-day-head .icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--text-3);
+  transition: transform var(--dur-1) var(--ease-out);
+}
+
+.products-day[open] > .products-day-head {
+  margin-bottom: var(--s3);
+}
+
+.products-day[open] > .products-day-head .icon {
+  transform: rotate(90deg);
+}
+
 .event-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1923,12 +2086,8 @@ p {
   border-radius: 50%;
 }
 
-.pay-cash .stepper-label::before {
-  background: var(--cash);
-}
-
-.pay-qris .stepper-label::before {
-  background: var(--qris);
+.stepper-label::before {
+  background: var(--chip-color, var(--text-3));
 }
 
 .stepper-value {
@@ -2006,6 +2165,7 @@ p {
   padding: var(--s2) var(--s1) 0;
   color: var(--text-3);
   font-size: 13px;
+  line-height: 1.45;
 }
 
 .startup-error {

@@ -1,6 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { fmt } from '../formatters';
+import { paymentClass, paymentsInUse } from '../payments';
 import { plural, type ProductTotals } from '../reports';
 import type { SaleRecord } from '../types';
 import type { IconName } from '../ui/icons';
@@ -58,9 +59,9 @@ export function EmptyState({ icon, title, text, action }: { icon: IconName; titl
   );
 }
 
-/** Cash vs QRIS as one part-to-whole bar with a labelled legend (never colour alone). */
+/** The payment methods used, as one part-to-whole bar with a labelled legend (never colour alone). */
 export function PaymentSplit({ sales }: { sales: SaleRecord[] }) {
-  const parts = (['Cash', 'QRIS'] as const).map((payment) => {
+  const parts = paymentsInUse(sales).map((payment) => {
     const matching = sales.filter((sale) => sale.payment === payment);
     return { payment, count: matching.length, amount: matching.reduce((sum, sale) => sum + sale.price, 0) };
   });
@@ -72,7 +73,7 @@ export function PaymentSplit({ sales }: { sales: SaleRecord[] }) {
         {total > 0 ? (
           parts
             .filter((part) => part.amount > 0)
-            .map((part) => <span key={part.payment} class={`split-seg seg-${part.payment.toLowerCase()}`} style={{ flexGrow: part.amount }} />)
+            .map((part) => <span key={part.payment} class={`split-seg ${paymentClass(part.payment)}`} style={{ flexGrow: part.amount }} />)
         ) : (
           <span class="split-seg seg-empty" style={{ flexGrow: 1 }} />
         )}
@@ -80,7 +81,7 @@ export function PaymentSplit({ sales }: { sales: SaleRecord[] }) {
       <div class="split-legend">
         {parts.map((part) => (
           <div class="split-item" key={part.payment}>
-            <span class={`swatch seg-${part.payment.toLowerCase()}`} aria-hidden="true" />
+            <span class={`swatch ${paymentClass(part.payment)}`} aria-hidden="true" />
             <span class="split-name">{part.payment}</span>
             <span class="split-share">{total ? Math.round((part.amount / total) * 100) : 0}%</span>
             <span class="split-amount">

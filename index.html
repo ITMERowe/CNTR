@@ -85,7 +85,25 @@
               <h1 class="page-title">Settings</h1>
             </div>
             <div class="stack">
-              <section class="group">
+              <section class="group" data-group="products">
+                <h2 class="group-title">Products</h2>
+                <div class="group-body">
+                  <button class="group-row group-link" id="openProductsMenuBtn" type="button"><span class="group-icon"><i data-icon="package"></i></span><span class="group-row-label">Manage products<small id="productsSummary"></small></span><i data-icon="chevron-right"></i></button>
+                </div>
+              </section>
+              <section class="group" data-group="event">
+                <h2 class="group-title">Event</h2>
+                <div class="group-body">
+                  <label class="group-row" for="productsPerDayToggle">
+                    <span class="group-row-label">Products per day<small>One collapsible Products card for each day</small></span>
+                    <span class="switch">
+                      <input type="checkbox" id="productsPerDayToggle" role="switch" />
+                      <span class="switch-track" aria-hidden="true"></span>
+                    </span>
+                  </label>
+                </div>
+              </section>
+              <section class="group" data-group="money">
                 <h2 class="group-title">Money</h2>
                 <div class="group-body">
                   <label class="group-row" for="currencySelect">
@@ -112,23 +130,24 @@
                   </label>
                 </div>
               </section>
-              <section class="group">
-                <h2 class="group-title">Data</h2>
+              <section class="group" data-group="sales">
+                <h2 class="group-title">Sales data</h2>
                 <div class="group-body">
-                  <button class="group-row group-link" id="openProductsMenuBtn" type="button"><span class="group-icon"><i data-icon="package"></i></span><span class="group-row-label">Products</span><i data-icon="chevron-right"></i></button>
+                  <button class="group-row group-link" id="exportCsvBtn" type="button"><span class="group-icon"><i data-icon="csv"></i></span><span class="group-row-label">Export sales as CSV<small>Every sale, for a spreadsheet. Not a backup.</small></span><i data-icon="chevron-right"></i></button>
                 </div>
               </section>
-              <section class="group">
+              <section class="group" data-group="backup">
                 <h2 class="group-title">Backup</h2>
                 <div class="group-body">
-                  <button class="group-row group-link" id="exportBackupBtn" type="button"><span class="group-icon"><i data-icon="backup"></i></span><span class="group-row-label">Export backup<small id="lastBackupText">No backup yet</small></span><i data-icon="chevron-right"></i></button>
-                  <button class="group-row group-link" id="exportCsvBtn" type="button"><span class="group-icon"><i data-icon="csv"></i></span><span class="group-row-label">Export sales as CSV<small>For a spreadsheet; cannot be restored</small></span><i data-icon="chevron-right"></i></button>
+                  <div class="group-row"><span class="group-row-label">Last backup</span><span class="about-value" id="lastBackupText">Never</span></div>
+                  <button class="group-row group-link" id="exportBackupBtn" type="button"><span class="group-icon"><i data-icon="backup"></i></span><span class="group-row-label">Export backup<small>Saves all data as one file you can restore</small></span><i data-icon="chevron-right"></i></button>
                   <button class="group-row group-link" id="restoreBackupBtn" type="button"><span class="group-icon"><i data-icon="restore"></i></span><span class="group-row-label">Restore from backup<small>Replaces all data on this phone</small></span><i data-icon="chevron-right"></i></button>
                 </div>
-                <p class="group-note">Your data is stored only on this phone and never needs internet. Uninstalling CNTR, clearing its data, or losing the phone deletes it. Export a backup after every event and keep a copy somewhere else. CNTR also saves automatic copies on this phone (in Documents/CNTR/auto, newest 20 kept) before you end an event, change a past one or delete one.</p>
+                <p class="group-note">Your data lives only on this phone. Uninstalling CNTR or losing the phone deletes it, so keep a backup file somewhere else.</p>
+                <p class="group-note">CNTR also keeps automatic copies in Documents/CNTR/auto before you end, change or delete an event.</p>
                 <input type="file" id="restoreFileInput" hidden />
               </section>
-              <section class="group">
+              <section class="group" data-group="about">
                 <div class="group-body">
                   <button class="group-row group-link" id="openAboutMenuBtn" type="button"><span class="group-icon"><i data-icon="info"></i></span><span class="group-row-label">About</span><i data-icon="chevron-right"></i></button>
                 </div>
@@ -143,7 +162,7 @@
               <button class="icon-btn back-btn" id="productHistoryBackBtn" type="button" title="Back" aria-label="Back"><i data-icon="arrow-left"></i></button>
               <h1 class="page-title">Products</h1>
             </div>
-            <div class="list list-card" id="productHistoryList"></div>
+            <div class="stack" id="productHistoryList"></div>
           </div>
         </section>
 
@@ -235,6 +254,10 @@
                   <span class="field-label">Cost</span>
                   <input class="input" id="editCost" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off" />
                 </label>
+              </div>
+              <div class="field">
+                <span class="field-label" id="editPaymentsLabel">Payment methods · pick 1 or 2</span>
+                <div class="payment-options" id="editPayments" role="group" aria-labelledby="editPaymentsLabel"></div>
               </div>
               <button class="btn btn-primary btn-block" id="saveProductBtn" type="button">Save</button>
             </div>

@@ -1,6 +1,6 @@
 // App state and the rules for changing it. No DOM access here: screens read from `state`
 // and call these functions, then re-render.
-import { defaultProducts, generateUUID } from './data';
+import { generateUUID } from './data';
 import { breakTime, defaultEventName, saleTime, snapshotProducts, splitDays, todaySales } from './events';
 import * as storage from './storage';
 import type { EventCost, LiveEventMeta, PastEvent, Product, SaleRecord } from './types';
@@ -55,12 +55,6 @@ function dedupeByName(list: Product[]) {
 /** Dedupes products and history, and makes sure every active product is also in history. */
 function syncProductState() {
   const { products, productHistory } = state;
-  // Fresh install: seed the defaults before building history so they show up under Products too.
-  // Do NOT repopulate active products from history when the user intentionally removed all products.
-  if (products.length === 0 && productHistory.length === 0) {
-    products.push(...defaultProducts.map((product) => ({ ...product })));
-  }
-
   const uniqueProducts = dedupeByName(products);
   const uniqueHistory = dedupeByName(productHistory);
   const activeNames = new Set(uniqueProducts.map((product) => product.name));

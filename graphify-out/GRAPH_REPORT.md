@@ -1,16 +1,16 @@
 # Graph Report - CNTR  (2026-10-27)
 
 ## Corpus Check
-- 95 files · ~94,524 words
+- 99 files · ~98,383 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 881 nodes · 1553 edges · 60 communities (49 shown, 11 thin omitted)
-- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 58 edges (avg confidence: 0.63)
+- 907 nodes · 1643 edges · 62 communities (51 shown, 11 thin omitted)
+- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 58 edges (avg confidence: 0.62)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e286b820`
+- Built from commit: `22e4514a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -61,24 +61,26 @@
 - main.ts
 - productEditor.ts
 - state.ts
-- @capacitor/android
+- storage.test.ts
 - scripts
 - package.json
+- readArray
 - @capacitor-community/sqlite
 - @capacitor/filesystem
 - preact
+- @capacitor/haptics
 
 ## God Nodes (most connected - your core abstractions)
-1. `render()` - 33 edges
-2. `HANDOFF` - 21 edges
+1. `render()` - 35 edges
+2. `HANDOFF` - 24 edges
 3. `fmt()` - 19 edges
-4. `start()` - 17 edges
-5. `compilerOptions` - 17 edges
-6. `wireDialogs()` - 16 edges
-7. `loadSettings()` - 16 edges
+4. `loadSettings()` - 18 edges
+5. `start()` - 17 edges
+6. `compilerOptions` - 17 edges
+7. `wireDialogs()` - 16 edges
 8. `showToast()` - 16 edges
-9. `Browser Automation with playwright-cli` - 16 edges
-10. `Product` - 13 edges
+9. `openProductEditor()` - 16 edges
+10. `Browser Automation with playwright-cli` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Graphify-first token-efficient workflow` --semantically_similar_to--> `AGENTS.md Graphify required workflow`  [INFERRED] [semantically similar]
@@ -89,8 +91,8 @@
   .github/workflows/build-apk.yml → android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 - `Android launcher icon (blue cross logo)` --semantically_similar_to--> `iOS splash screen (centered blue cross logo)`  [INFERRED] [semantically similar]
   android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png → ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png
-- `splitDays()` --indirect_call--> `sale()`  [INFERRED]
-  src/events.ts → tests/events.test.ts
+- `Capacitor sync android` --references--> `CNTR HTML app shell`  [INFERRED]
+  .github/workflows/build-apk.yml → index.html
 
 ## Import Cycles
 - None detected.
@@ -99,19 +101,19 @@
 - **APK build pipeline** — _github_workflows_build_apk_build_apk, _github_workflows_build_apk_capacitor_sync, _github_workflows_build_apk_gradle_assembledebug, _github_workflows_build_apk_cntr_debug_apk [EXTRACTED 1.00]
 - **Graphify-first agent instructions** — _claude_claude_graphify_first_workflow, agents_graphify_required_workflow, claude_graphify_rules, claude_graphify_knowledge_graph [INFERRED 0.95]
 
-## Communities (60 total, 11 thin omitted)
+## Communities (62 total, 11 thin omitted)
 
 ### Community 0 - "EventScreen.tsx"
 Cohesion: 0.08
-Nodes (49): defaultProducts, eventSummary(), formatDay(), fmt(), buildProductBreakdown(), compareProductCounts(), getEventSummary(), marginPercent() (+41 more)
+Nodes (54): eventSummary(), formatDay(), fmt(), DEFAULT_PAYMENTS, MAX_PAYMENTS, order(), PAYMENT_METHODS, paymentClass() (+46 more)
 
 ### Community 1 - "storage.ts"
-Cohesion: 0.08
-Nodes (40): localStorageStore, openSqliteStore(), cache, CURRENCIES, DEFAULT_SETTINGS, errorText(), EVENT_COST_STORAGE_KEY, flush() (+32 more)
+Cohesion: 0.10
+Nodes (29): openSqliteStore(), cache, CURRENCIES, DEFAULT_SETTINGS, errorText(), EVENT_COST_STORAGE_KEY, flush(), initStorage() (+21 more)
 
 ### Community 2 - "dependencies"
 Cohesion: 0.13
-Nodes (15): @capacitor/app, @capacitor/core, @capacitor/haptics, @capacitor/ios, @capacitor/share, @fontsource-variable/plus-jakarta-sans, lucide, dependencies (+7 more)
+Nodes (15): @capacitor/android, @capacitor/app, @capacitor/core, @capacitor/ios, @capacitor/share, @fontsource-variable/plus-jakarta-sans, lucide, dependencies (+7 more)
 
 ### Community 3 - "How it works (decided)"
 Cohesion: 0.12
@@ -226,20 +228,20 @@ Cohesion: 0.11
 Nodes (17): 2026-10-26 (merged to `main`), 2026-10-26 (merged to `main` from `ui/revamp`), Added, Added, Build, Changed, Changed, Changed (+9 more)
 
 ### Community 46 - "HANDOFF"
-Cohesion: 0.09
-Nodes (21): Cleanup session: files changed (committed), Commits and push, Compact layout session (2026-10-26). Committed in `96bd03b`, merged to `main`, Current state (verified 2026-10-26), Decisions, GitHub metadata to apply (owner), Goal, HANDOFF (+13 more)
+Cohesion: 0.08
+Nodes (24): Cleanup session: files changed (committed), Commits and push, Compact layout session (2026-10-26). Committed in `96bd03b`, merged to `main`, Current state (verified 2026-10-26), Decisions, GitHub metadata to apply (owner), Goal, HANDOFF (+16 more)
 
 ### Community 47 - "Product"
 Cohesion: 0.17
 Nodes (11): Accessibility & Inclusion, Brand Commitments, Capabilities and Constraints, Evidence on Hand, Operating Context, Platform, Positioning, Product (+3 more)
 
 ### Community 48 - "backup.ts"
-Cohesion: 0.11
-Nodes (28): BACKUP_APP, BACKUP_FORMAT, BackupFile, BackupSummary, checkCost(), checkEvent(), checkList(), checkLiveEvent() (+20 more)
+Cohesion: 0.23
+Nodes (19): BACKUP_APP, BACKUP_FORMAT, BackupFile, BackupSummary, checkCost(), checkEvent(), checkList(), checkLiveEvent() (+11 more)
 
 ### Community 49 - "data-safety.test.mjs"
-Cohesion: 0.09
-Nodes (27): { check, done }, fakeNative(), legacySales, message(), newPage(), restoreWith(), toSettings(), { check, done } (+19 more)
+Cohesion: 0.08
+Nodes (34): { check, done }, fakeNative(), legacySales, message(), newPage(), restoreWith(), toSettings(), { check, done } (+26 more)
 
 ### Community 50 - "devDependencies"
 Cohesion: 0.15
@@ -247,15 +249,19 @@ Nodes (13): @capacitor/cli, chokidar-cli, devDependencies, @capacitor/cli, choki
 
 ### Community 51 - "main.ts"
 Cohesion: 0.06
-Nodes (94): buildBackup(), download(), pickTextFile(), saveAutoBackup(), SavedFile, saveFile(), saveSafetyCopy(), activeExpenses() (+86 more)
+Nodes (97): buildBackup(), download(), pickTextFile(), saveAutoBackup(), SavedFile, saveFile(), saveSafetyCopy(), activeExpenses() (+89 more)
 
 ### Community 52 - "productEditor.ts"
-Cohesion: 0.12
-Nodes (37): ensureProductHistory(), chooseUniqueColor(), CURRENCY_LOCALES, CURRENCY_SEPARATORS, CURRENCY_SYMBOLS, escapeForRegExp(), formatInputNumber(), formatMoney() (+29 more)
+Cohesion: 0.11
+Nodes (41): ensureProductHistory(), chooseUniqueColor(), CURRENCY_LOCALES, CURRENCY_SEPARATORS, CURRENCY_SYMBOLS, escapeForRegExp(), formatInputNumber(), formatMoney() (+33 more)
 
 ### Community 53 - "state.ts"
 Cohesion: 0.15
 Nodes (30): generateUUID(), adjustCount(), breakTime(), defaultEventName(), saleTime(), snapshotProducts(), splitDays(), time() (+22 more)
+
+### Community 54 - "storage.test.ts"
+Cohesion: 0.17
+Nodes (10): KvStore, localStorageStore, DATA_KEYS, MIGRATED_FLAG, migrateFromLegacy(), MigrationResult, fullData, PAST_EVENT (+2 more)
 
 ### Community 55 - "scripts"
 Cohesion: 0.25
@@ -265,15 +271,19 @@ Nodes (8): scripts, build, build:watch, cap:sync, dev, preview, test, test:e2e
 Cohesion: 0.33
 Nodes (5): license, name, private, type, version
 
+### Community 57 - "readArray"
+Cohesion: 0.25
+Nodes (9): loadEventCosts(), loadLiveEvent(), loadPastEvents(), loadProductHistory(), loadProducts(), loadSales(), readArray(), readJson() (+1 more)
+
 ## Knowledge Gaps
-- **395 isolated node(s):** `name`, `private`, `license`, `type`, `dev` (+390 more)
+- **401 isolated node(s):** `name`, `private`, `license`, `type`, `dev` (+396 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `dependencies` connect `dependencies` to `@capacitor/android`, `package.json`, `@capacitor-community/sqlite`, `@capacitor/filesystem`, `preact`?**
+- **Why does `dependencies` connect `dependencies` to `@capacitor/haptics`, `package.json`, `@capacitor-community/sqlite`, `@capacitor/filesystem`, `preact`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
 - **Why does `devDependencies` connect `devDependencies` to `package.json`?**
   _High betweenness centrality (0.011) - this node is a cross-community bridge._
@@ -282,8 +292,8 @@ _Questions this graph is uniquely positioned to answer:_
 - **Are the 2 inferred relationships involving `start()` (e.g. with `goBack()` and `productsChanged()`) actually correct?**
   _`start()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `private`, `license` to the rest of the system?**
-  _395 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _401 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `EventScreen.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.0819252432155658 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07726075504828797 - nodes in this community are weakly interconnected._
 - **Should `storage.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.07781649245063879 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10114942528735632 - nodes in this community are weakly interconnected._

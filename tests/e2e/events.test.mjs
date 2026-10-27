@@ -1,5 +1,5 @@
 // The event flow: live Event screen, End day, End event, History view, compare, edit.
-import { URL, checks, launch, run, sleep } from './lib.mjs';
+import { URL, checks, launch, run, sleep, SAMPLE_PRODUCTS } from './lib.mjs';
 
 const { check, done } = checks();
 const browser = await launch();
@@ -9,7 +9,7 @@ page.on('pageerror', (error) => errors.push(error.message));
 const load = async () => { await page.goto(URL); await sleep(1200); };
 
 await load();
-await run(page, `localStorage.clear()`);
+await run(page, `localStorage.clear(); localStorage.cntrProducts = ${JSON.stringify(SAMPLE_PRODUCTS)};`);
 await load();
 
 // Helpers inside the page: tap a tile's +/−, read the hero amount as a number, wait for writes.
@@ -97,6 +97,30 @@ const reprice = await run(page, `${H}
 `);
 check('editing a product price does not change an ended day', reprice.before === reprice.after, reprice);
 
+// 4c. Settings → Products per day (on by default): one collapsible Products card per day (latest open); off = one card
+const perDay = await run(page, `${H}
+  tab('settingsScreen');
+  const toggle = document.getElementById('productsPerDayToggle');
+  const onByDefault = toggle.checked;
+  tab('eventScreen');
+  const cards = [...document.querySelectorAll('#eventCard details.products-day')];
+  const on = { onByDefault, cards: cards.length, open: cards.map((c) => c.open), titles: cards.map((c) => c.querySelector('summary').textContent) };
+  cards[0].querySelector('summary').click();
+  const firstOpens = cards[0].open;
+  tab('settingsScreen');
+  toggle.click();
+  await wait();
+  tab('eventScreen');
+  const off = { offCards: document.querySelectorAll('#eventCard details.products-day').length, offSetting: stored('cntrSettings').productsPerDay };
+  tab('settingsScreen');
+  toggle.click(); // back on for the rest of the run
+  await wait();
+  return { ...on, firstOpens, ...off, backOn: stored('cntrSettings').productsPerDay };
+`);
+check('Products per day is on by default: one card per day, only the latest open', perDay.onByDefault && perDay.cards === 2 && perDay.open.join() === 'false,true' && /Day 1/.test(perDay.titles[0]) && /Day 2/.test(perDay.titles[1]), perDay);
+check('a day card opens when tapped', perDay.firstOpens, perDay);
+check('turning it off shows one Products card again, and the choice is saved', perDay.offCards === 0 && perDay.offSetting === false && perDay.backOn === true, perDay);
+
 // 5. End event moves it to History and starts fresh
 const end = await run(page, `${H}
   tap('Poster', 'QRIS');
@@ -173,7 +197,8 @@ const gone = await run(page, `${H}
   document.getElementById('pastEventBackBtn').click();
   tab('settingsScreen');
   document.getElementById('openProductsMenuBtn').click();
-  document.querySelector('.product-delete-btn[data-name="Poster"]').click();
+  document.querySelector('.product-edit-btn[data-name="Poster"]').click();
+  document.getElementById('removeProductBtn').click();
   await confirmYes();
   tab('historyScreen');
   document.querySelector('#pastEventList .event-row').click();

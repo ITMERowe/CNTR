@@ -15,11 +15,9 @@ export function totals(sales: SaleRecord[]) {
     (acc, sale) => {
       acc.revenue += sale.price;
       acc.profit += sale.price - sale.cost;
-      if (sale.payment === 'Cash') acc.cash += sale.price;
-      if (sale.payment === 'QRIS') acc.qris += sale.price;
       return acc;
     },
-    { revenue: 0, profit: 0, cash: 0, qris: 0 },
+    { revenue: 0, profit: 0 },
   );
 }
 

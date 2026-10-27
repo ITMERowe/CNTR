@@ -44,7 +44,10 @@ const isNumber = (value: unknown) => typeof value === 'number' && Number.isFinit
 const isString = (value: unknown) => typeof value === 'string';
 
 function checkProduct(item: unknown) {
-  return isObject(item) && isString(item.name) && isNumber(item.price) && isNumber(item.cost) && isString(item.color);
+  // `payments` is optional (older backups have none): 1 or 2 method names.
+  const payments = isObject(item) ? item.payments : undefined;
+  const paymentsOk = payments === undefined || (Array.isArray(payments) && payments.length >= 1 && payments.length <= 2 && payments.every(isString));
+  return isObject(item) && isString(item.name) && isNumber(item.price) && isNumber(item.cost) && isString(item.color) && paymentsOk;
 }
 
 function checkSale(item: unknown) {

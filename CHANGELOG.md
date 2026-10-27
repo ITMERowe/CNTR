@@ -10,6 +10,12 @@
 - Old saved reports are no longer shown (dropped, not deleted); the first launch saves one automatic backup that still contains them. Restoring an older backup restores its live sales and expenses.
 - Changing a product's price no longer reprices sales from ended days.
 - CSV export: one row per sale with the event name and day number.
+- **Payment methods per product**: pick 1 or 2 of Cash, QRIS, Transfer, Card, E-wallet in the product editor. One method gives one full-width button on the tile. The payment mix, History edit and backups follow each product's methods. Existing products keep Cash + QRIS. Colours for the new methods are dataviz-validated (adjacent pairs) and always shown with the method's name.
+- Tile text stays white down to 2.6:1 contrast (pink, green, orange tiles are white again); only lighter colours (yellow, beige, pastels) get dark text.
+- **Settings reworked**: Products first (with a live "3 on the counter · 1 hidden" summary), then Event, Money, Sales data (CSV, labelled "Not a backup"), Backup (a plain "Last backup" row, Export, Restore, two short notes) and About.
+- **Products screen**: "On the counter" and "Hidden" sections with counts; rows show price, profit per item and payment methods; tap a row to edit; the switch moves a product between sections; an Add product button at the end. The delete button left the rows: deleting is done in the product editor (works for hidden products too), always with a confirm.
+- **No starter products**: a fresh install starts with an empty counter. Existing products are untouched.
+- Settings → Event → *Products per day* (on by default): the Event screen's Products card is one collapsible card per day (the latest open); turn it off for one card for the whole event.
 - A multi-key change (End event) is saved in one all-or-nothing write.
 
 ### Added

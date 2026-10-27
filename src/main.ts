@@ -15,7 +15,6 @@ import { plural, totals } from './reports';
 import {
   addExpense,
   deletePastEvent,
-  deleteProduct,
   endDay,
   endEvent,
   findPastEvent,
@@ -127,6 +126,7 @@ function render() {
       expenses: state.eventCosts,
       products: state.products,
       colorFor: productColor,
+      productsPerDay: loadSettings().productsPerDay,
       live: true,
       onRename: () => openNameSheet('rename-live'),
       onAddExpense: () => openExpenseModal(null),
@@ -167,6 +167,7 @@ function renderPastEvent() {
       expenses: event.expenses,
       products: event.products,
       colorFor: snapshotColor,
+      productsPerDay: loadSettings().productsPerDay,
       live: false,
       ...(draft
         ? {
@@ -206,15 +207,12 @@ function renderProductList() {
       activeNames: new Set(state.products.map((product) => product.name)),
       onEdit: editProductByName,
       onToggle: toggleProduct,
-      onDelete: (name: string) =>
-        openConfirmModal(`Permanently delete product '${name}'? This cannot be undone.`, 'Delete', () => {
-          deleteProduct(name);
-          productsChanged();
-          showToast(`${name} permanently deleted`);
-        }),
+      onAdd: () => openProductEditor(-1),
     }),
     el.productHistoryList,
   );
+  const hidden = state.productHistory.length - state.products.length;
+  el.productsSummary.textContent = state.productHistory.length ? `${state.products.length} on the counter · ${hidden} hidden` : 'None yet: add your first product';
 }
 
 /** Deactivates an active product (keeping its history), or puts an inactive one back on the counter. */
@@ -506,6 +504,11 @@ function wireSettings() {
     saveSettings({ ...loadSettings(), compactMoney: el.compactMoneyToggle.checked });
     productsChanged();
   });
+  el.productsPerDayToggle.checked = loadSettings().productsPerDay;
+  el.productsPerDayToggle.addEventListener('change', () => {
+    saveSettings({ ...loadSettings(), productsPerDay: el.productsPerDayToggle.checked });
+    render();
+  });
 }
 
 function wireDialogs() {
@@ -572,7 +575,7 @@ const formatWhen = (iso: string) => new Date(iso).toLocaleString([], { day: 'num
 
 function updateLastBackupText() {
   const last = loadLastBackup();
-  el.lastBackupText.textContent = last ? `Last backup ${formatWhen(last)}` : 'No backup yet';
+  el.lastBackupText.textContent = last ? formatWhen(last) : 'Never';
 }
 
 /** Saves a file and reports where it went. Returns true if it was saved somewhere. */

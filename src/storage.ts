@@ -15,6 +15,7 @@ export const CURRENCIES: Currency[] = ['IDR', 'USD', 'EUR', 'SGD', 'AUD', 'GBP',
 export const DEFAULT_SETTINGS: AppSettings = {
   currency: 'IDR',
   compactMoney: false,
+  productsPerDay: true,
 };
 
 /** Sales are stored with ISO string timestamps. */
@@ -240,6 +241,8 @@ export function loadSettings(): AppSettings {
   cachedSettings = {
     currency: CURRENCIES.includes(stored.currency as Currency) ? (stored.currency as Currency) : DEFAULT_SETTINGS.currency,
     compactMoney: Boolean(stored.compactMoney),
+    // Settings saved before this option (or a damaged value) get the default.
+    productsPerDay: typeof stored.productsPerDay === 'boolean' ? stored.productsPerDay : DEFAULT_SETTINGS.productsPerDay,
   };
   return { ...cachedSettings };
 }

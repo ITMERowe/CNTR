@@ -1,0 +1,92 @@
+// Settings and Products: order of sections, product summary, counter/hidden sections, row tap to edit, delete only in the editor.
+import { URL, checks, launch, run, sleep } from './lib.mjs';
+
+const { check, done } = checks();
+const browser = await launch();
+const page = await browser.newPage({ viewport: { width: 412, height: 892 } });
+const errors = [];
+page.on('pageerror', (error) => errors.push(error.message));
+const load = async () => { await page.goto(URL); await sleep(1200); };
+
+await load();
+await run(page, `
+  localStorage.clear();
+  localStorage.cntrProducts = JSON.stringify([
+    { name: 'Gacha', price: 25000, cost: 12000, color: '#f76495' },
+    { name: 'Pin', price: 5000, cost: 1000, color: '#31b500', payments: ['E-wallet'] },
+  ]);
+  localStorage.cntrProductHistory = JSON.stringify([{ name: 'Old badge', price: 8000, cost: 3000, color: '#5f6d77' }]);
+`);
+await load();
+
+const H = `
+  const wait = (ms = 60) => new Promise((r) => setTimeout(r, ms));
+  const tab = (id) => document.querySelector('.tabbar .tab[data-tab="' + id + '"]').click();
+  const stored = (key) => JSON.parse(localStorage.getItem(key) ?? 'null');
+  const rows = (section) => [...document.querySelectorAll('#productHistoryList [data-section="' + section + '"] .product-edit-btn')].map((b) => b.dataset.name);
+`;
+
+// 1. Settings order: Products first, Backup second to last, About last; the Products row summarises the counter
+const settings = await run(page, `${H}
+  tab('settingsScreen');
+  const groups = [...document.querySelectorAll('#settingsScreen .group')].map((g) => g.dataset.group);
+  return { groups, summary: document.getElementById('productsSummary').textContent, lastBackup: document.getElementById('lastBackupText').textContent };
+`);
+check('Settings order: Products, Event, Money, Sales data, Backup, About', settings.groups.join() === 'products,event,money,sales,backup,about', settings.groups);
+check('Products row says how many are on the counter and hidden', settings.summary === '2 on the counter · 1 hidden', settings.summary);
+check('Backup shows the last backup plainly ("Never" before the first)', settings.lastBackup === 'Never', settings.lastBackup);
+
+// 2. Products: two sections, rows show price, profit and methods; no delete button on rows
+const list = await run(page, `${H}
+  document.getElementById('openProductsMenuBtn').click();
+  await wait();
+  const pin = document.querySelector('.product-edit-btn[data-name="Pin"]').closest('.product-item');
+  return {
+    counter: rows('counter'), hidden: rows('hidden'),
+    heads: [...document.querySelectorAll('#productHistoryList .product-section-title')].map((h) => h.textContent),
+    pinText: pin.textContent, deleteButtons: document.querySelectorAll('#productHistoryList .product-delete-btn, #productHistoryList .icon-btn-danger').length,
+    addButton: !!document.getElementById('addProductBtn'),
+  };
+`);
+check('Products split into On the counter and Hidden, with counts', list.counter.join() === 'Gacha,Pin' && list.hidden.join() === 'Old badge' && list.heads.join() === 'On the counter · 2,Hidden · 1', list);
+check('a row shows price, profit per item and its payment methods', /Rp 5\.000/.test(list.pinText) && /profit Rp 4\.000/.test(list.pinText) && /E-wallet/.test(list.pinText), list.pinText);
+check('no delete buttons on rows; an Add product button at the end', list.deleteButtons === 0 && list.addButton, list);
+
+// 3. Tapping the switch moves a product between sections; tapping a row opens the editor
+const moves = await run(page, `${H}
+  document.querySelector('.product-toggle-btn[data-name="Old badge"]').click();
+  await wait();
+  const afterOn = { counter: rows('counter'), hidden: rows('hidden'), sell: stored('cntrProducts').map((p) => p.name) };
+  document.querySelector('.product-edit-btn[data-name="Pin"]').click();
+  const editor = { screen: document.querySelector('.screen.active').id, name: document.getElementById('editName').value };
+  return { afterOn, editor };
+`);
+check('the switch moves a hidden product onto the counter', moves.afterOn.hidden.length === 0 && moves.afterOn.sell.includes('Old badge'), moves.afterOn);
+check('tapping a row opens that product in the editor', moves.editor.screen === 'productEditScreen' && moves.editor.name === 'Pin', moves.editor);
+
+// 4. Delete lives in the editor: asks first, then removes the product everywhere
+const del = await run(page, `${H}
+  document.getElementById('removeProductBtn').click();
+  const asked = document.getElementById('confirmModalOverlay').classList.contains('open') && /Permanently delete/.test(document.getElementById('confirmModalMessage').textContent);
+  document.getElementById('confirmModalConfirmBtn').click();
+  await wait();
+  return { asked, screen: document.querySelector('.screen.active').id, active: stored('cntrProducts').map((p) => p.name), history: stored('cntrProductHistory').map((p) => p.name) };
+`);
+check('editor delete asks first, then removes the product from the counter and the list', del.asked && del.screen === 'productHistoryScreen' && !del.active.includes('Pin') && !del.history.includes('Pin'), del);
+
+// 5. A hidden product can be deleted from its editor too
+const delHidden = await run(page, `${H}
+  document.querySelector('.product-toggle-btn[data-name="Old badge"]').click();
+  await wait();
+  document.querySelector('.product-edit-btn[data-name="Old badge"]').click();
+  const visible = getComputedStyle(document.getElementById('removeProductBtn')).display !== 'none';
+  document.getElementById('removeProductBtn').click();
+  document.getElementById('confirmModalConfirmBtn').click();
+  await wait();
+  return { visible, history: stored('cntrProductHistory').map((p) => p.name) };
+`);
+check('a hidden product can be deleted from its editor', delHidden.visible && !delHidden.history.includes('Old badge'), delHidden);
+
+check('no uncaught exceptions', errors.length === 0, errors.join(' | '));
+await browser.close();
+done();

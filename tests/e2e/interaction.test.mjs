@@ -1,5 +1,5 @@
 // Colour picker fit and drag, the undo/+ tap areas, Android back (through a simulated native bridge), About.
-import { URL, checks, launch, sleep } from './lib.mjs';
+import { URL, checks, launch, sleep, SAMPLE_PRODUCTS } from './lib.mjs';
 
 const { check, done } = checks();
 const browser = await launch();
@@ -29,7 +29,7 @@ for (const width of [320, 360, 393, 412]) {
 {
   const page = await browser.newPage({ viewport: { width: 412, height: 892 } });
   await page.goto(URL);
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate((p) => { localStorage.clear(); localStorage.cntrProducts = p; }, SAMPLE_PRODUCTS);
   await page.reload();
   await sleep(600);
   await page.click('.tile .pay-add');
@@ -84,7 +84,7 @@ for (const width of [320, 360, 393, 412]) {
     };
   });
   await page.goto(URL);
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate((p) => { localStorage.clear(); localStorage.cntrProducts = p; }, SAMPLE_PRODUCTS);
   await page.reload();
   await sleep(800);
   const back = async () => {

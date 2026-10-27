@@ -4,9 +4,9 @@
 
 ## Platform
 
-web
+android
 
-A web UI (Preact) packaged with Capacitor. Android is the shipping target, iOS is included but never built. The design follows its own web language, not Material or iOS conventions.
+A web UI (Preact) packaged with Capacitor as an Android app, the shipping target (Google Play). iOS is included but never built. The design follows its own visual language, not Material, but respects Android behaviour (back button and gesture, touch targets, system text size, edge-to-edge).
 
 ## Users
 

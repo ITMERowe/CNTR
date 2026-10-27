@@ -101,7 +101,10 @@ export function normalizeHex(value: string) {
   return `#${hex.toUpperCase()}`;
 }
 
-/** True when dark text (#1e1e1e) has more contrast than white on `hex`, e.g. on yellow or pastel tiles. */
+/** White text on tiles unless it would fall below this contrast (owner's choice: white still reads well on pink, green, orange). */
+const MIN_WHITE_CONTRAST = 2.6;
+
+/** True when white text would be too faint on `hex` (e.g. yellow, beige, pastels), so the tile uses dark text (#1e1e1e). */
 export function needsDarkText(hex: string) {
   const value = parseInt(normalizeHex(hex).slice(1), 16);
   if (Number.isNaN(value)) return false;
@@ -110,8 +113,7 @@ export function needsDarkText(hex: string) {
     return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
   };
   const luminance = 0.2126 * channel(16) + 0.7152 * channel(8) + 0.0722 * channel(0);
-  const dark = 0.0137; // luminance of #1e1e1e
-  return (luminance + 0.05) / (dark + 0.05) > 1.05 / (luminance + 0.05);
+  return 1.05 / (luminance + 0.05) < MIN_WHITE_CONTRAST; // white's contrast ratio on this colour
 }
 
 /** Returns `candidate` unless another product already uses it, then the first unused preset. */

@@ -1,6 +1,7 @@
 // The Event screen: the live event, or a past event from History (read-only or being edited).
 import { eventSummary, formatDay, splitDays } from '../events';
 import { fmt } from '../formatters';
+import { paymentClass, productPayments, sortPayments } from '../payments';
 import { buildProductBreakdown, marginPercent, plural } from '../reports';
 import type { EventCost, Product, SaleRecord } from '../types';
 import { Icon } from './Icon';
@@ -19,6 +20,8 @@ interface Props {
   products: Product[];
   colorFor: (name: string) => string;
   live: boolean;
+  /** One collapsible Products card per day (Settings → Products per day). */
+  productsPerDay: boolean;
   onRename?: () => void;
   onAddExpense?: () => void;
   onEditExpense?: (id: string) => void;
@@ -28,7 +31,6 @@ interface Props {
   edit?: EventEditHandlers;
 }
 
-const PAYMENTS = ['Cash', 'QRIS'] as const;
 
 /** Day N's date: its first sale, else the day it started. */
 function dayDate(day: SaleRecord[], index: number, dayBreaks: string[], startedAt: string) {
@@ -66,7 +68,7 @@ function DayCards({ days, dayBreaks, startedAt, live }: { days: SaleRecord[][]; 
   );
 }
 
-/** Per day, per product: Cash and QRIS counts with − / +. */
+/** Per day, per product: counts per payment method (the product's methods, plus any its sales used) with − / +. */
 function CountEditor({ days, products, edit }: { days: SaleRecord[][]; products: Product[]; edit: EventEditHandlers }) {
   return (
     <>
@@ -77,7 +79,7 @@ function CountEditor({ days, products, edit }: { days: SaleRecord[][]; products:
               <div class="count-row" key={product.name}>
                 <span class="swatch" style={{ background: product.color || 'var(--text-3)' }} aria-hidden="true" />
                 <span class="count-name">{product.name}</span>
-                {PAYMENTS.map((payment) => {
+                {sortPayments([...productPayments(product), ...day.filter((sale) => sale.product === product.name).map((sale) => sale.payment)]).map((payment) => {
                   const count = day.filter((sale) => sale.product === product.name && sale.payment === payment).length;
                   const where = days.length > 1 ? ` on day ${dayIndex + 1}` : '';
                   const button = (delta: 1 | -1) => (
@@ -97,7 +99,7 @@ function CountEditor({ days, products, edit }: { days: SaleRecord[][]; products:
                     </button>
                   );
                   return (
-                    <span class={`stepper pay-${payment.toLowerCase()}`} key={payment}>
+                    <span class={`stepper ${paymentClass(payment)}`} key={payment}>
                       <span class="stepper-label">{payment}</span>
                       {button(-1)}
                       <span class="stepper-value">{count}</span>
@@ -114,14 +116,30 @@ function CountEditor({ days, products, edit }: { days: SaleRecord[][]; products:
   );
 }
 
+/** Per-product rows for a set of sales, then the products not sold in it. */
+function ProductBreakdown({ sales, products, colorFor }: { sales: SaleRecord[]; products: Product[]; colorFor: (name: string) => string }) {
+  const rows = buildProductBreakdown(sales, products, colorFor).sort((a, b) => b.count - a.count || b.revenue - a.revenue);
+  const sold = rows.filter((row) => row.count > 0);
+  const unsold = rows.filter((row) => row.count === 0);
+  return (
+    <>
+      {sold.length > 0 && <ProductRows rows={sold} totalUnits={sales.length} />}
+      {unsold.length > 0 && (
+        <p class={sold.length ? 'card-note unsold' : 'card-note'}>
+          {sold.length ? 'Not sold yet: ' : 'No sales yet for '}
+          {unsold.map((row) => row.name).join(', ')}
+        </p>
+      )}
+      {!rows.length && <EmptyState icon="package" title="No products yet" text="Add products from the Sell tab." />}
+    </>
+  );
+}
+
 export function EventScreen(props: Props) {
   const { name, sales, dayBreaks, expenses, products, colorFor, live, edit } = props;
   const summary = eventSummary(sales, expenses);
   const days = splitDays(sales, dayBreaks);
   const startedAt = sales.length ? new Date(Math.min(...sales.map((sale) => new Date(sale.timestamp).getTime()))).toISOString() : new Date().toISOString();
-  const rows = buildProductBreakdown(sales, products, colorFor).sort((a, b) => b.count - a.count || b.revenue - a.revenue);
-  const sold = rows.filter((row) => row.count > 0);
-  const unsold = rows.filter((row) => row.count === 0);
   const isEmpty = !sales.length && !expenses.length;
 
   return (
@@ -212,18 +230,24 @@ export function EventScreen(props: Props) {
         </Card>
       )}
 
-      {!edit && (
-        <Card title="Products">
-          {sold.length > 0 && <ProductRows rows={sold} totalUnits={sales.length} />}
-          {unsold.length > 0 && (
-            <p class={sold.length ? 'card-note unsold' : 'card-note'}>
-              {sold.length ? 'Not sold yet: ' : 'No sales yet for '}
-              {unsold.map((row) => row.name).join(', ')}
-            </p>
-          )}
-          {!rows.length && <EmptyState icon="package" title="No products yet" text="Add products from the Sell tab." />}
-        </Card>
-      )}
+      {!edit &&
+        (props.productsPerDay ? (
+          days.map((day, index) => (
+            // Only the latest day starts open; `open` is set again only if that changes, so taps stick.
+            <details class="card products-day" key={index} open={index === days.length - 1}>
+              <summary class="products-day-head">
+                <h2 class="card-title">Products · Day {index + 1}</h2>
+                <span class="products-day-meta">{plural(day.length, 'sale')}</span>
+                <Icon name="chevron-right" />
+              </summary>
+              <ProductBreakdown sales={day} products={products} colorFor={colorFor} />
+            </details>
+          ))
+        ) : (
+          <Card title="Products">
+            <ProductBreakdown sales={sales} products={products} colorFor={colorFor} />
+          </Card>
+        ))}
 
       {live && (
         <div class="event-actions">

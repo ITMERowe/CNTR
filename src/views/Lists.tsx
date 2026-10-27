@@ -1,5 +1,6 @@
 import { eventSummary, formatDay } from '../events';
 import { fmt } from '../formatters';
+import { paymentClass, productPayments } from '../payments';
 import type { PastEvent, Product, SaleRecord } from '../types';
 import { Icon } from './Icon';
 import { EmptyState, profitClass } from './ReportParts';
@@ -16,7 +17,7 @@ export function RecentSales({ sales, colorFor }: { sales: SaleRecord[]; colorFor
           <div class="list-main">
             <strong class="list-title">{sale.product}</strong>
             <span class="list-sub">
-              <span class={`pay-chip pay-${sale.payment.toLowerCase()}`}>{sale.payment}</span>
+              <span class={`pay-chip ${paymentClass(sale.payment)}`}>{sale.payment}</span>
               {formatTime(new Date(sale.timestamp))}
             </span>
           </div>
@@ -31,49 +32,82 @@ interface ProductListProps {
   products: Product[];
   activeNames: Set<string>;
   onEdit: (name: string) => void;
-  onDelete: (name: string) => void;
   onToggle: (name: string) => void;
+  onAdd: () => void;
 }
 
-export function ProductList({ products, activeNames, onEdit, onDelete, onToggle }: ProductListProps) {
-  if (!products.length) return <EmptyState icon="package" title="No products yet" text="Tap + at the top to add your first product." />;
+/** One product: tap the row to edit; the switch puts it on or takes it off the Sell tab. */
+function ProductRow({ product, active, index, onEdit, onToggle }: { product: Product; active: boolean; index: number; onEdit: (name: string) => void; onToggle: (name: string) => void }) {
+  return (
+    <div class="product-item" style={{ '--i': index }}>
+      <button class="product-edit-btn" type="button" data-name={product.name} aria-label={`Edit ${product.name}`} onClick={() => onEdit(product.name)}>
+        <span class="swatch swatch-lg" style={{ background: product.color }} aria-hidden="true" />
+        <span class="product-item-main">
+          <strong class="list-title">{product.name}</strong>
+          <span class="product-item-sub">
+            {fmt(product.price)} · profit {fmt(product.price - product.cost)}
+          </span>
+          <span class="product-item-methods">
+            {productPayments(product).map((method) => (
+              <span class={`pay-chip ${paymentClass(method)}`} key={method}>
+                {method}
+              </span>
+            ))}
+          </span>
+        </span>
+      </button>
+      <button
+        class="product-toggle-btn"
+        type="button"
+        data-name={product.name}
+        role="switch"
+        aria-checked={active}
+        aria-label={`${product.name} on the Sell tab`}
+        onClick={() => onToggle(product.name)}
+      >
+        <span class="switch-track" aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+export function ProductList({ products, activeNames, onEdit, onToggle, onAdd }: ProductListProps) {
+  const addButton = (
+    <button class="btn btn-secondary btn-block" id="addProductBtn" type="button" onClick={onAdd}>
+      <Icon name="plus" />
+      Add product
+    </button>
+  );
+  if (!products.length) {
+    return (
+      <>
+        <section class="card">
+          <EmptyState icon="package" title="No products yet" text="Add what you sell; each product becomes a tile on the Sell tab." />
+        </section>
+        {addButton}
+      </>
+    );
+  }
+  const sections = [
+    { key: 'counter', title: 'On the counter', note: 'Shown on the Sell tab. Tap a product to edit it.', items: products.filter((product) => activeNames.has(product.name)) },
+    { key: 'hidden', title: 'Hidden', note: 'Not on the Sell tab. Sales history is kept; switch one on to sell it again.', items: products.filter((product) => !activeNames.has(product.name)) },
+  ].filter((section) => section.items.length);
   return (
     <>
-      {products.map((product, index) => {
-        const isActive = activeNames.has(product.name);
-        return (
-          <div class={isActive ? 'list-row' : 'list-row is-inactive'} key={product.name} style={{ '--i': index }}>
-            <span class="swatch swatch-lg" style={{ background: product.color }} aria-hidden="true" />
-            <div class="list-main">
-              <strong class="list-title">{product.name}</strong>
-              <span class="list-sub list-sub-text">
-                <span>{fmt(product.price)}</span>
-                <span>cost {fmt(product.cost)}</span>
-              </span>
-            </div>
-            <div class="list-actions">
-              <button class="icon-btn icon-btn-sm product-edit-btn" type="button" data-name={product.name} title={`Edit ${product.name}`} aria-label={`Edit ${product.name}`} onClick={() => onEdit(product.name)}>
-                <Icon name="pencil" />
-              </button>
-              <button class="icon-btn icon-btn-sm icon-btn-danger product-delete-btn" type="button" data-name={product.name} title={`Delete ${product.name}`} aria-label={`Delete ${product.name}`} onClick={() => onDelete(product.name)}>
-                <Icon name="trash" />
-              </button>
-              <button
-                class="product-toggle-btn"
-                type="button"
-                data-name={product.name}
-                role="switch"
-                aria-checked={isActive}
-                aria-label={`${product.name} on counter`}
-                title={isActive ? 'On the counter' : 'Hidden from the counter'}
-                onClick={() => onToggle(product.name)}
-              >
-                <span class="switch-track" aria-hidden="true" />
-              </button>
-            </div>
+      {sections.map((section) => (
+        <section class="product-section" data-section={section.key} key={section.key}>
+          <h2 class="product-section-title">
+            {section.title} · {section.items.length}
+          </h2>
+          <p class="product-section-note">{section.note}</p>
+          <div class="list list-card">
+            {section.items.map((product, index) => (
+              <ProductRow key={product.name} product={product} active={section.key === 'counter'} index={index} onEdit={onEdit} onToggle={onToggle} />
+            ))}
           </div>
-        );
-      })}
+        </section>
+      ))}
+      {addButton}
     </>
   );
 }

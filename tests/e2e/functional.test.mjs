@@ -1,5 +1,5 @@
 // Core flows: selling, expenses, products, corrupt storage. The event flow is in events.test.mjs.
-import { URL, checks, launch, run, sleep } from './lib.mjs';
+import { URL, checks, launch, run, sleep, SAMPLE_PRODUCTS } from './lib.mjs';
 
 const { check, done } = checks();
 const browser = await launch();
@@ -9,7 +9,7 @@ page.on('pageerror', (error) => errors.push(error.message));
 const load = async () => { await page.goto(URL); await sleep(1200); };
 
 await load();
-await run(page, `localStorage.clear()`);
+await run(page, `localStorage.clear(); localStorage.cntrProducts = ${JSON.stringify(SAMPLE_PRODUCTS)};`);
 await load();
 
 // 1. Counters update and sales record

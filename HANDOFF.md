@@ -10,7 +10,7 @@ _Last updated: 2026-10-27, events build session (merged Event screen, multi-day 
 - **Waiting on the owner:** add the 3 GitHub secrets for release signing (`CNTR_KEYSTORE_BASE64`, `CNTR_KEYSTORE_PASSWORD`, `CNTR_KEY_ALIAS` = `cntr`; values in `C:/Users/User/CNTR-signing`, see its `README.txt`) and back that folder up off this computer. **Then push** the branch (owner approval for the push still needed; it was deferred until the secrets exist so the first CI build is release-signed).
 - **After the push, check CI:** run should show the release APK `CNTR_1.0.N.apk` + `CNTR_1.0.N.aab`, and the new "Browser tests" step (`npm run test:e2e`, Chrome on Ubuntu) must pass; both are untested on CI so far. Then the owner merges (they used a GitHub PR for #2; ask which way).
 - **On the phone (owner has `CNTR_1.0.21.apk`, a debug build):** export a backup in 1.0.21 → uninstall → install the first release APK → restore. That is the last forced uninstall.
-- **Events build (2026-10-27): done in the working tree, UNCOMMITTED** (owner approval needed to commit). See "Task list: merged Event screen + multi-day events" below.
+- **Events build (2026-10-27): committed `22e4514` and pushed** (owner approved) to `origin/feature/signing-tests-about`. CI run #22 (40381607702) **success**: unit tests, browser tests on Linux/Chrome (first time on CI: pass), APK `CNTR_1.0.22.apk` (13.4 MB). It is a **debug** build (no `.aab`, "Upload Play bundle" skipped): the signing secrets were not set yet. Owner then added the 3 secrets and re-ran: run #22 attempt 2 **success, release-signed**: `CNTR_1.0.22.apk` (12.1 MB) + `CNTR_1.0.22.aab` (8.2 MB), "Upload Play bundle" ran. Signing works on CI (verified via public API: artifacts + step results). Not yet verified: installing it on the phone (needs one last uninstall from debug 1.0.21; backup → uninstall → install → restore). See "Task list: merged Event screen + multi-day events" below.
 - **Uncommitted on purpose (owner's, machine-specific):** `.claude/settings.json`, `.claude/skills/playwright-cli/`, `.playwright/`. Do not commit.
 - **How to verify locally:** `npx tsc --noEmit`, `npm run build`, `npm test` (22 unit), `npm run test:e2e` (6 suites, 134 checks; serves `dist/` on port 4320, Edge on Windows). Last run 2026-10-27 on the events code: all pass.
 - **Tooling notes:** no JDK/Android SDK, Xcode or `gh` on this machine (APK builds only via CI; GitHub API read-only, 60 req/h). In Git Bash, piping node+playwright output into `grep` can swallow it: write to a file first.
@@ -24,7 +24,7 @@ _Last updated: 2026-10-27, events build session (merged Event screen, multi-day 
 - **Before that:** polish with all applicable skills, and make Android back (button/gesture) step back inside the app (see "Multi-skill polish + Android back").
 - **Earlier:** make the Sell and Event screens compact, so 4 tiles fit and amounts in the millions are not cut off.
 - **Task before that:** clean up the project locally and on GitHub; rewrite the README; add a license (owner chose **MIT**); prepare the GitHub description and topics.
-- **Standing design decisions from the owner:** VS Code-dark palette (`#1e1e1e` bg, `#252526` panels); product tiles use the **original product colours**; text and icons are white, or dark (`#1e1e1e`) on light colours where that has more contrast (owner chose this on 2026-10-26, replacing "always white"). Sell revenue figure is 3/4 the size of the report figures (owner's request).
+- **Standing design decisions from the owner:** VS Code-dark palette (`#1e1e1e` bg, `#252526` panels); product tiles use the **original product colours**; text and icons are white, or dark (`#1e1e1e`) only where white would be below 2.6:1 (owner raised the cutoff on 2026-10-27: pink #f76495 2.91, green #31b500 2.71, orange #f16900 3.11 stay white; beige 2.50 and yellow get dark). The layout test allows 2.6:1 for tile text only. Sell revenue figure is 3/4 the size of the report figures (owner's request).
 
 ## Current state (verified 2026-10-26)
 
@@ -235,6 +235,26 @@ Steps for me, in order (tick as done; record verification here):
 - [x] 11. Verify fresh (2026-10-27, after review fixes: tsc 0, npm test 22/22, build 0, test:e2e 38+26+15+20+30+5 = 134 pass; screenshots checked at 412×892). Whole-change review (fresh Opus reviewer): 0 critical; 4 important fixed with RED→GREEN tests (old saved reports backed up once on first launch; clock set back can't move sales between days; price edits don't reprice ended days; past event starts at its first sale). Deferred minors are listed under Known issues. Ledger: `.superpowers/sdd/2026-10-27-events/progress.md` (git-ignored locally). `npx tsc --noEmit`, `npm test`, `npm run build`, `npm run test:e2e`; screenshots at 412×892.
 - [x] 12. Docs (README + new screenshots incl. history.png, reports.png removed; ARCHITECTURE, PRODUCT, CHANGELOG; graphify update done): README (+ screenshots), ARCHITECTURE, CHANGELOG, PRODUCT if needed, this file; `graphify update .`.
 - [ ] 13. Commit (ask owner), push only with owner approval; owner tests on the phone (migration of real data: export a backup first).
+
+## Products per day setting (2026-10-27, owner request). Uncommitted
+
+- Settings → Event → *Products per day* (`AppSettings.productsPerDay`, default ON since the owner asked; older saved settings get the default). On: the Event screen (live and past) shows one `<details class="card products-day">` per day, latest open, others collapsed; tap to open. Off: one Products card as before.
+- Files: `index.html`, `src/types.ts`, `src/storage.ts`, `src/ui/dom.ts`, `src/main.ts`, `src/views/EventScreen.tsx` (`ProductBreakdown` extracted), `src/style.css`, `tests/e2e/events.test.mjs` (check 4c, RED then GREEN), README, CHANGELOG.
+- Verified: tsc 0, npm test 22/22, test:e2e all 6 suites pass (events 29/29), screenshot at 412×892 checked. Not verified on the phone.
+
+## Payment methods per product + no starter products (2026-10-27, owner request). Uncommitted
+
+- Owner chose: methods Cash, QRIS, Transfer, Card, E-wallet; 1 or 2 per product; default Cash + QRIS (old products without `payments` behave the same).
+- `src/payments.ts` (rules, unit-tested in `tests/payments.test.ts`), `Product.payments?`, editor picker (`#editPayments`, max 2 / min 1), tiles (`.tile-pay-single` for one method; icons landmark/credit-card/wallet), payment mix and History steppers follow the methods used, backup validates `payments`, `snapshotProducts` copies it. Starter products (`defaultProducts`) removed; suites seed `SAMPLE_PRODUCTS` (tests/e2e/lib.mjs).
+- Colours `--transfer #199e70`, `--card #9085e9`, `--ewallet #d55181`: dataviz validator passes on adjacent pairs in the fixed order; no 5-colour set passes all pairs, so every use carries the method's name (legend, chips, labels). Weakest pairs: Card vs QRIS, E-wallet vs Transfer (deutan).
+- Verified: tsc 0, npm test 29/29, test:e2e 7 suites pass (new `payments` 13/13), screenshots checked. Not verified on the phone.
+
+## Settings rework (2026-10-27, owner request; impeccable + ui-ux-pro-max; the "taste" skill is not installed). Uncommitted
+
+- Owner chose: Backup second to last, About last (rest my call: Products, Event, Money, Sales data, Backup, About); no backup-overdue warning; delete removed from Products rows.
+- Settings: `data-group` sections; `#productsSummary` live count; CSV in its own "Sales data" group; Backup = "Last backup" row (`#lastBackupText`: date or "Never"), Export, Restore, two short notes.
+- Products (`ProductList` in `Lists.tsx`): sections `data-section="counter|hidden"`, rows `.product-item` with `.product-edit-btn` (tap to edit) and `.product-toggle-btn`, `#addProductBtn`. Editor trash = permanent `deleteProduct()` for active and hidden products (before: only "remove from counter", which the switch already does).
+- Tests: new `tests/e2e/settings.test.mjs` (11); layout scans the Products screen at 320/360/412/landscape. Verified: tsc 0, npm test 29/29, test:e2e 8 suites pass; impeccable detector: only the old `--ease-emphasis` advisory. Not verified on the phone.
 
 ## Known issues / blockers (unresolved)
 

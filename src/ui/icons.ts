@@ -4,12 +4,14 @@ import {
   ArchiveRestore,
   ArrowLeft,
   Banknote,
+  CreditCard,
   ChartColumn,
   ChevronRight,
   DatabaseBackup,
   FileSpreadsheet,
   HandCoins,
   History,
+  Landmark,
   Inbox,
   Info,
   Minus,
@@ -22,6 +24,7 @@ import {
   Trash2,
   X,
   type IconNode,
+  Wallet,
 } from 'lucide';
 
 export const ICONS = {
@@ -30,6 +33,9 @@ export const ICONS = {
   csv: FileSpreadsheet,
   restore: ArchiveRestore,
   banknote: Banknote,
+  'credit-card': CreditCard,
+  landmark: Landmark,
+  wallet: Wallet,
   chart: ChartColumn,
   'chevron-right': ChevronRight,
   sell: HandCoins,

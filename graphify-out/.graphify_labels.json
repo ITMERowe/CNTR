@@ -53,10 +53,12 @@
   "51": "main.ts",
   "52": "productEditor.ts",
   "53": "state.ts",
-  "54": "@capacitor/android",
+  "54": "storage.test.ts",
   "55": "scripts",
   "56": "package.json",
+  "57": "readArray",
   "59": "@capacitor-community/sqlite",
   "60": "@capacitor/filesystem",
-  "61": "preact"
+  "61": "preact",
+  "66": "@capacitor/haptics"
 }

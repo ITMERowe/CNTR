@@ -2,7 +2,7 @@
 // Part A: browser build (localStorage). Part B: a fake Android bridge with an in-memory SQLite stand-in
 // (kept in sessionStorage so it survives reloads), fake Filesystem/Share, and switchable failures.
 import { readFileSync } from 'node:fs';
-import { URL, checks, launch } from './lib.mjs';
+import { URL, checks, launch, SAMPLE_PRODUCTS } from './lib.mjs';
 
 const { check, done } = checks();
 const b = await launch();
@@ -41,7 +41,7 @@ async function restoreWith(page, buffer, confirm = true) {
 // ---------------- Part A: browser (localStorage) ----------------
 {
   const { ctx, page, requests, errors } = await newPage(false);
-  await page.goto(URL); await page.evaluate(() => localStorage.clear()); await page.reload(); await page.waitForTimeout(700);
+  await page.goto(URL); await page.evaluate((p) => { localStorage.clear(); localStorage.cntrProducts = p; }, SAMPLE_PRODUCTS); await page.reload(); await page.waitForTimeout(700);
   await sell(page, 3);
   await page.reload(); await page.waitForTimeout(700);
   check('A1 sales persist across restart', (await heroSales(page)) === '3', `hero shows ${await heroSales(page)}`);
@@ -54,7 +54,7 @@ async function restoreWith(page, buffer, confirm = true) {
   const backup = JSON.parse(backupText);
   check('A2 export backup file is a CNTR backup with the 3 sales', backup.app === 'CNTR' && backup.data.cntrSales.length === 3, download.suggestedFilename());
   await closeMessage(page);
-  check('A3 last backup date shown', /Last backup/.test(await page.textContent('#lastBackupText')), await page.textContent('#lastBackupText'));
+  check('A3 last backup date shown', /\d{4}/.test(await page.textContent('#lastBackupText')), await page.textContent('#lastBackupText'));
 
   const dlCsv = page.waitForEvent('download');
   await page.click('#exportCsvBtn');
@@ -157,7 +157,7 @@ function fakeNative() {
   const setFail = (f) => page.evaluate((f) => { sessionStorage.__fail = JSON.stringify(f); }, f);
   await page.goto(URL);
   // An existing user from before this update: data only in localStorage.
-  await page.evaluate((s) => { localStorage.clear(); sessionStorage.clear(); localStorage.cntrSales = s; }, legacySales);
+  await page.evaluate(([s, p]) => { localStorage.clear(); sessionStorage.clear(); localStorage.cntrSales = s; localStorage.cntrProducts = p; }, [legacySales, SAMPLE_PRODUCTS]);
   await page.reload(); await page.waitForTimeout(900);
   let d = await db();
   check('B1 first launch migrates localStorage into SQLite and verifies it', d.cntrSales === legacySales && Boolean(d['cntrMeta.migratedFromLocalStorage']), Object.keys(d).join(','));
@@ -257,7 +257,7 @@ function fakeNative() {
   // A user whose database never opened (never migrated): keeps working on localStorage, with a warning.
   const { ctx, page } = await newPage(true);
   await page.goto(URL);
-  await page.evaluate((s) => { localStorage.clear(); sessionStorage.clear(); localStorage.cntrSales = s; sessionStorage.__fail = JSON.stringify({ open: true }); }, legacySales);
+  await page.evaluate(([s, p]) => { localStorage.clear(); sessionStorage.clear(); localStorage.cntrSales = s; localStorage.cntrProducts = p; sessionStorage.__fail = JSON.stringify({ open: true }); }, [legacySales, SAMPLE_PRODUCTS]);
   await page.reload(); await page.waitForTimeout(900);
   const alert = await page.evaluate(() => !document.querySelector('#storageAlert').hidden && document.querySelector('#storageAlert').textContent);
   check('B16 first migration failing keeps the app usable on the old data, with a warning', (await heroSales(page)) === '3' && /could not be moved/.test(String(alert)), String(alert).slice(0, 60));

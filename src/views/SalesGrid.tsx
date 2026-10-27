@@ -1,8 +1,10 @@
 import { fmt, needsDarkText } from '../formatters';
+import { productPayments } from '../payments';
 import type { Product } from '../types';
+import type { IconName } from '../ui/icons';
 import { Icon } from './Icon';
 
-const PAYMENTS = ['Cash', 'QRIS'] as const;
+const PAYMENT_ICONS: Record<string, IconName> = { Cash: 'banknote', QRIS: 'qr', Transfer: 'landmark', Card: 'credit-card', 'E-wallet': 'wallet' };
 
 /** The last counter change, so only that counter animates and in the right direction. */
 export interface TapPulse {
@@ -35,6 +37,7 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit }: Pr
   return (
     <>
       {products.map((product, index) => {
+        const payments = productPayments(product);
         return (
           <article class={needsDarkText(product.color) ? 'tile on-light' : 'tile'} key={product.name} data-product={product.name} style={{ '--tile': product.color, '--i': index }}>
             <div class="tile-head">
@@ -46,8 +49,8 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit }: Pr
                 <Icon name="pencil" />
               </button>
             </div>
-            <div class="tile-pay">
-              {PAYMENTS.map((payment) => {
+            <div class={payments.length === 1 ? 'tile-pay tile-pay-single' : 'tile-pay'}>
+              {payments.map((payment) => {
                 const count = counts.get(`${payment}\u0000${product.name}`) ?? 0;
                 const pulsed = pulse && pulse.product === product.name && pulse.payment === payment ? pulse : null;
                 return (
@@ -61,7 +64,7 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit }: Pr
                       onClick={() => onAdd(product, payment)}
                     >
                       <span class="pay-label">
-                        <Icon name={payment === 'Cash' ? 'banknote' : 'qr'} />
+                        <Icon name={PAYMENT_ICONS[payment] ?? 'banknote'} />
                         {payment}
                       </span>
                       <span class="pay-count" aria-hidden="true">

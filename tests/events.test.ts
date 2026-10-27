@@ -94,3 +94,8 @@ test('End day is never stamped before today\'s last sale, so those sales end up 
   assert.equal(splitDays([late], [stamped])[0].length, 1);
   assert.equal(breakTime(new Date(T3), [sale('Poster', T1)], []), T3);
 });
+
+test('snapshotProducts keeps each product\'s payment methods', () => {
+  const [poster] = snapshotProducts([sale('Poster', T1)], [{ name: 'Poster', price: 1, cost: 1, color: '#123456', payments: ['Transfer'] }]);
+  assert.deepEqual(poster.payments, ['Transfer']);
+});

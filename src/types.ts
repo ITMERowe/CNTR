@@ -5,6 +5,8 @@ export interface Product {
   price: number;
   cost: number;
   color: string;
+  /** 1 or 2 of PAYMENT_METHODS (payments.ts); missing on older data, which means Cash + QRIS. */
+  payments?: string[];
 }
 
 export interface SaleRecord {
@@ -52,4 +54,6 @@ export interface PastEvent {
 export interface AppSettings {
   currency: Currency;
   compactMoney: boolean;
+  /** Event screen: one Products card per day instead of one for the whole event. */
+  productsPerDay: boolean;
 }

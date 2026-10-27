@@ -13,12 +13,12 @@ It runs entirely on the device: no server, no account, no network needed.
 
 ## Features
 
-- **Sell**: one tile per product. Each Cash and QRIS half is a single large tap target; a small − undoes the last sale of that kind. Today's revenue and profit are shown at the top. On a phone, every tap gives haptic feedback.
+- **Sell**: one tile per product, with a large tap target for each of its 1 or 2 payment methods (Cash, QRIS, Transfer, Card, E-wallet; chosen per product in the editor); a small − undoes the last sale of that kind. Today's revenue and profit are shown at the top. On a phone, every tap gives haptic feedback.
 - **Event** (always live): every sale counts towards the current event at once. Net profit (product profit − expenses) leads, then revenue, profit, expenses, the Cash/QRIS split, sales by hour and a per-product breakdown. Tap the name to rename it.
 - **Multi-day events**: *End day* freezes today as Day 1, 2, ... (shown as day cards) and the Sell counters start again from zero; the event total keeps counting. *End event* asks for the final name and moves the event to History.
 - **History**: past events with their net profit. Open one to see it in full, **edit** it (rename, fix Cash/QRIS counts per product per day, add/change/delete expenses; Save or Cancel), delete it, or compare two side by side.
-- **Products**: add, edit (name, price, cost, colour), take off the counter without losing history, or delete permanently.
-- **Settings**: 8 currencies (IDR, USD, EUR, SGD, AUD, GBP, JPY, MYR) and an optional compact format (`Rp 1,5M`).
+- **Products**: a new install starts empty; add, edit (name, price, cost, colour, payment methods), take off the counter without losing history, or delete permanently.
+- **Settings**: 8 currencies (IDR, USD, EUR, SGD, AUD, GBP, JPY, MYR), an optional compact format (`Rp 1,5M`), and *Products per day* (one collapsible Products card for each day of an event).
 - **Backup**: export all data to a JSON file (and sales to CSV), and restore from a backup after checking it.
 - **Offline by design**: the font and icons are bundled into the app.
 - Respects the system "reduce motion" setting.

@@ -16,6 +16,7 @@ export const el = {
   editPrice: byId<HTMLInputElement>('editPrice'),
   editCost: byId<HTMLInputElement>('editCost'),
   saveProductBtn: byId<HTMLButtonElement>('saveProductBtn'),
+  editPayments: byId<HTMLDivElement>('editPayments'),
   // Colour picker
   colorField: byId<HTMLDivElement>('colorField'),
   editColorHex: byId<HTMLSpanElement>('editColorHex'),
@@ -46,7 +47,9 @@ export const el = {
   // Settings and its sub-screens
   currencySelect: byId<HTMLSelectElement>('currencySelect'),
   compactMoneyToggle: byId<HTMLInputElement>('compactMoneyToggle'),
+  productsPerDayToggle: byId<HTMLInputElement>('productsPerDayToggle'),
   openProductsMenuBtn: byId<HTMLButtonElement>('openProductsMenuBtn'),
+  productsSummary: byId<HTMLElement>('productsSummary'),
   openAboutMenuBtn: byId<HTMLButtonElement>('openAboutMenuBtn'),
   aboutBackBtn: byId<HTMLButtonElement>('aboutBackBtn'),
   aboutVersion: byId<HTMLSpanElement>('aboutVersion'),

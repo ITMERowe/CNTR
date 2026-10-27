@@ -1,5 +1,5 @@
 // Motion: counters roll, the hero counts up, sheets slide; with reduced motion they jump straight to the end.
-import { URL, checks, launch, run, sleep } from './lib.mjs';
+import { URL, checks, launch, run, sleep, SAMPLE_PRODUCTS } from './lib.mjs';
 
 const { check, done } = checks();
 const browser = await launch();
@@ -8,7 +8,7 @@ for (const reduced of [false, true]) {
   const page = await browser.newPage({ viewport: { width: 420, height: 900 } });
   await page.emulateMedia({ reducedMotion: reduced ? 'reduce' : 'no-preference' });
   await page.goto(URL);
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate((p) => { localStorage.clear(); localStorage.cntrProducts = p; }, SAMPLE_PRODUCTS);
   await page.reload();
   await sleep(1000);
   const mode = reduced ? '[reduced motion]' : '[normal]';

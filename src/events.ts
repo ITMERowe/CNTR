@@ -53,7 +53,8 @@ export function defaultEventName(sales: SaleRecord[], now: Date): string {
 export function snapshotProducts(sales: SaleRecord[], known: Product[]): Product[] {
   const byName = new Map<string, Product>();
   for (const sale of [...sales].sort((a, b) => time(a.timestamp) - time(b.timestamp))) {
-    byName.set(sale.product, { name: sale.product, price: sale.price, cost: sale.cost, color: known.find((product) => product.name === sale.product)?.color ?? '' });
+    const match = known.find((product) => product.name === sale.product);
+    byName.set(sale.product, { name: sale.product, price: sale.price, cost: sale.cost, color: match?.color ?? '', ...(match?.payments && { payments: [...match.payments] }) });
   }
   return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
 }

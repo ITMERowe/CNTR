@@ -189,3 +189,14 @@ test('CSV lists the live event and past events with day numbers, quoting commas 
   assert.match(csv, /^"Day 1, ""Comic""",1,2026-10-25T03:00:00.000Z,Gacha,Cash,/m);
   assert.match(csv, /^"Day 1, ""Comic""",2,2026-10-26T03:00:00.000Z,Gacha,QRIS,/m);
 });
+
+test('products with payment methods restore; a damaged method list is rejected', () => {
+  const withMethods = buildBackup(new Map([['cntrProducts', JSON.stringify([{ name: 'Poster', price: 1, cost: 0, color: '#123456', payments: ['Cash', 'Card'] }])]]));
+  assert.ok(parseBackup(JSON.stringify(withMethods)).ok);
+  for (const payments of ['Cash', [], ['Cash', 'QRIS', 'Card'], [7]]) {
+    const bad = buildBackup(new Map([['cntrProducts', JSON.stringify([{ name: 'Poster', price: 1, cost: 0, color: '#123456', payments }])]]));
+    const parsed = parseBackup(JSON.stringify(bad));
+    assert.ok(!parsed.ok, JSON.stringify(payments));
+    assert.match(parsed.error, /Products: item 1/);
+  }
+});

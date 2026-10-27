@@ -38,7 +38,7 @@ Dependencies point one way: `views/` and `ui/` read `state.ts`; `state.ts` never
 
 | Type | Meaning |
 |---|---|
-| `Product` | `name`, `price`, `cost`, `color`. **The name is the identity key**: sales, history and reports all refer to products by name. |
+| `Product` | `name`, `price`, `cost`, `color`, `payments` (1–2 of `PAYMENT_METHODS` in `src/payments.ts`; missing on older data = Cash + QRIS). **The name is the identity key**: sales, history and reports all refer to products by name. |
 | `SaleRecord` | One tap of **+**: product name, price and cost *at the time*, payment (`Cash`/`QRIS`), timestamp. |
 | `EventCost` | An event expense: `id`, `name`, `amount`. |
 | `LiveEventMeta` | The live event's `id`, `name` (null = default "Event <date>"), `startedAt` and `dayBreaks` (times End day was pressed). Its sales and expenses are the live `cntrSales` / `cntrEventCosts`. |
@@ -81,7 +81,7 @@ Data is a set of JSON values under these keys. On the phone they live in an SQLi
 
 ## Tile colours
 
-Tiles take the product colour as `--tile`. `needsDarkText()` (`formatters.ts`) compares the WCAG contrast of white and `#1e1e1e` on that colour; when dark wins, the tile (and the product editor's preview) gets `.on-light`, which swaps the `--ink` tokens to dark.
+Tiles take the product colour as `--tile`. `needsDarkText()` (`formatters.ts`) gives dark text only when white would fall below 2.6:1 on that colour (owner's choice: white stays on pink, green, orange; yellow, beige and pastels get dark); then the tile (and the product editor's preview) gets `.on-light`, which swaps the `--ink` tokens to dark.
 
 ## Rendering
 
