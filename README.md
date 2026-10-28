@@ -112,7 +112,7 @@ Before merging:
 
 ## Contributing
 
-Work on a branch and open a pull request against `main`. Follow the conventions in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#conventions): new UI as Preact components, colors and motion from the CSS tokens, and confirmation before destructive actions. Record notable changes in [CHANGELOG.md](CHANGELOG.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, conventions and the checks to run, and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report security problems privately as described in [SECURITY.md](SECURITY.md). Our accessibility commitments and known limits are in [ACCESSIBILITY.md](ACCESSIBILITY.md).
 
 ## License
 
