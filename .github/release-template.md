@@ -14,7 +14,7 @@
 - CNTR works offline: no account, no internet access, no tracking.
 
 <details>
-<summary><strong>Full list of changes</strong></summary>
+<summary><strong>Main changes</strong></summary>
 
 {{CHANGES}}
 

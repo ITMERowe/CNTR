@@ -26,12 +26,40 @@ const details = subsections.filter((s) => s !== highlights);
 const text = (lines) => lines.join('\n').trim();
 if (!highlights || !text(highlights.body)) throw new Error(`CHANGELOG.md "## ${version}" needs a "### Highlights" list before releasing.`);
 
+// Release pages stay short: per section, the first MAX_POINTS bullets (CHANGELOG.md lists the biggest first),
+// each cut to its first sentence or clause without the details in brackets, at most about MAX_CHARS long;
+// the rest is linked.
+const MAX_POINTS = 5;
+const MAX_CHARS = 140;
+const clip = (line) => {
+  if (line.length <= MAX_CHARS) return line;
+  const cut = line.lastIndexOf(', ', MAX_CHARS);
+  return `${line.slice(0, cut > 40 ? cut : MAX_CHARS).trim()}…`;
+};
+const changelogUrl = `https://github.com/${repo}/blob/${process.env.CHANGELOG_REF || tag}/CHANGELOG.md`;
+const short = (bullet) =>
+  bullet
+    .replace(/^\s*[-*]\s+/, '')
+    .replace(/\s*\([^()]*\)/g, '')
+    .split(/(?<=[.!?])\s+(?=[A-Z*])/)[0]
+    .split(/;\s+/)[0]
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .replace(/[^.!?…:]$/, '$&.');
+const summarize = (section) => {
+  const bullets = section.body.filter((line) => /^\s*[-*]\s+/.test(line));
+  const shown = bullets.slice(0, MAX_POINTS).map((bullet) => `- ${clip(short(bullet))}`);
+  const more = bullets.length - shown.length;
+  if (more > 0) shown.push(`- …and ${more} more in the [full changelog](${changelogUrl})`);
+  return `### ${section.title}\n\n${shown.join('\n')}`;
+};
+
 const template = readFileSync('.github/release-template.md', 'utf8');
 const fill = {
   VERSION: version,
   HIGHLIGHTS: text(highlights.body),
-  CHANGES: details.map((s) => `### ${s.title}\n\n${text(s.body)}`).join('\n\n') || '_No other changes._',
-  CHANGELOG_URL: `https://github.com/${repo}/blob/${tag}/CHANGELOG.md`,
+  CHANGES: details.map(summarize).join('\n\n') || '_No other changes._',
+  CHANGELOG_URL: changelogUrl,
   COMPARE: previousTag ? ` · [Compare with ${previousTag}](https://github.com/${repo}/compare/${previousTag}...${tag})` : '',
 };
 writeFileSync('release-notes.md', template.replace(/\{\{(\w+)\}\}/g, (_, key) => fill[key] ?? ''));
