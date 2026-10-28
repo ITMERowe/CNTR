@@ -1,25 +1,28 @@
 # CNTR
 
-An offline sales counter for booths at conventions and pop-up events. Tap a product's Cash or QRIS button to record a sale; CNTR keeps running totals, a sales report, and an event report that subtracts your booth expenses.
+An offline sales counter for booths at conventions and pop-up events. Tap a product's Cash or QRIS button to record a sale; CNTR keeps a live event total, day by day, and the net profit after your booth expenses. No saving, importing or adding up by hand.
 
 It runs entirely on the device: no server, no account, no network needed.
 
 <p>
   <img src="docs/screenshots/sell.png" alt="Sell screen with product tiles" width="200" />
-  <img src="docs/screenshots/reports.png" alt="Reports screen" width="200" />
-  <img src="docs/screenshots/event.png" alt="Event report screen" width="200" />
+  <img src="docs/screenshots/event.png" alt="Event screen: live net profit and day cards" width="200" />
+  <img src="docs/screenshots/history.png" alt="History of past events" width="200" />
   <img src="docs/screenshots/product-editor.png" alt="Product editor with colour picker" width="200" />
 </p>
 
 ## Features
 
-- **Sell**: one tile per product. Each Cash and QRIS half is a single large tap target; a small − undoes the last sale of that kind. Revenue and profit are shown at the top. On a phone, every tap gives haptic feedback.
-- **Reports**: revenue, profit and margin, average sale, the Cash/QRIS split, sales by hour (busiest hour highlighted), and a per-product breakdown.
-- **Event**: import the live sales and/or saved sales reports, add expenses (booth rental, transport, ...), and see net profit or deficit.
-- **Saved reports**: save sales or event snapshots, rename or delete them, and compare any two side by side.
-- **Products**: add, edit (name, price, cost, colour), take off the counter without losing history, or delete permanently.
-- **Settings**: 8 currencies (IDR, USD, EUR, SGD, AUD, GBP, JPY, MYR) and an optional compact format (`Rp 1,5M`).
+- **Sell**: one tile per product, with a large tap target for each of its 1 or 2 payment methods (Cash, QRIS, Transfer, Card, E-wallet; chosen per product in the editor); a small − undoes the last sale of that kind. Today's revenue and profit are shown at the top. On a phone, every tap gives haptic feedback.
+- **Event** (always live): every sale counts towards the current event at once. Net profit (product profit − expenses) leads, then revenue, profit, expenses, the Cash/QRIS split, sales by hour and a per-product breakdown. Tap the name to rename it.
+- **Multi-day events**: *End day* freezes today as Day 1, 2, ... (shown as day cards) and the Sell counters start again from zero; the event total keeps counting. *End event* asks for the final name and moves the event to History.
+- **History**: past events with their net profit. Open one to see it in full, **edit** it (rename, fix Cash/QRIS counts per product per day, add/change/delete expenses; Save or Cancel), delete it, or compare two side by side.
+- **Products**: a new install starts empty; add, edit (name, price, cost, colour, payment methods), take off the counter without losing history, or delete permanently.
+- **Settings**: 8 currencies (IDR, USD, EUR, SGD, AUD, GBP, JPY, MYR), an optional compact format (`Rp 1,5M`), and *Products per day* (one collapsible Products card for each day of an event).
 - **Backup**: export all data to a JSON file (and sales to CSV), and restore from a backup after checking it.
+- **Tutorial**: an optional hands-on tour on practice data, offered on first launch and replayable from Settings; your own data is put aside and comes back exactly.
+- **Light and dark**, following the phone or chosen in Settings; **English and Bahasa Indonesia**.
+- **Sound and haptics**: soft tones (can be turned off) and vibration on sales and finished actions.
 - **Offline by design**: the font and icons are bundled into the app.
 - Respects the system "reduce motion" setting.
 - **Android back** (button or gesture) steps back inside the app: it closes the open sheet or menu, then goes back a screen, then to Sell; on Sell it sends the app to the background.
@@ -32,7 +35,7 @@ It runs entirely on the device: no server, no account, no network needed.
 | Build | [Vite](https://vitejs.dev) 5, TypeScript 5 (strict, unused-code checks on) |
 | Native | [Capacitor](https://capacitorjs.com) 8 (Android; iOS project included), `@capacitor/haptics`, `@capacitor/app`, `@capacitor-community/sqlite` (storage), `@capacitor/filesystem` + `@capacitor/share` (backup files) |
 | Assets | [Lucide](https://lucide.dev) SVG icons, Plus Jakarta Sans (bundled via Fontsource) |
-| CI | GitHub Actions builds a debug APK on every push |
+| CI | GitHub Actions runs the tests and builds an APK on every push (release-signed when the key is in secrets) |
 
 Code layout (details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)):
 
@@ -45,7 +48,7 @@ src/kv.ts           The SQLite and localStorage stores
 src/migrate.ts      One-time copy of older localStorage data into SQLite
 src/backup.ts       Backup file format, validation, CSV
 src/files.ts        Saving backup files and picking one to restore
-tests/              Unit tests (`npm test`)
+tests/              Unit tests (`npm test`); browser tests in tests/e2e (`npm run test:e2e`)
 src/reports.ts      Report calculations
 src/formatters.ts   Money formatting and parsing, colour helpers
 src/views/          Preact components for every screen
@@ -75,9 +78,9 @@ npm run dev        # http://localhost:5173 (also reachable from a phone on the s
 
 Requires Android 7.0 (API 24) or newer; the app targets API 36.
 
-**From CI (no local Android tooling needed):** every push runs the **Build APK** workflow. Open the run under **Actions** and download the artifact `CNTR_1.0.<build>.apk` (you need to be signed in to GitHub). The last number is the CI run number and also the app's `versionCode`.
+**From CI (no local Android tooling needed):** every push runs the **Build APK** workflow. Open the run under **Actions** and download the artifact `CNTR_0.1.<build>.apk` (you need to be signed in to GitHub). The last number is the CI run number and also the app's `versionCode`.
 
-> These are **debug** builds, each signed with a temporary key. Android will not install one over a different build, so uninstall first. **Uninstalling deletes the app's data.**
+> **Signing.** When the repository has the release key in its secrets (`CNTR_KEYSTORE_BASE64`, `CNTR_KEYSTORE_PASSWORD`, `CNTR_KEY_ALIAS`), CI builds a **release** APK signed with that one permanent key, plus `CNTR_0.1.<build>.aab` for Google Play. Each new release APK installs as an update and keeps the app's data. Without those secrets CI builds a **debug** APK signed with a temporary key: Android will not install it over a different build, so you must uninstall first, and **uninstalling deletes the app's data**. Switching from a debug build to the first release build also needs one uninstall.
 
 **Locally** (needs JDK 21 and the Android SDK 36, e.g. via Android Studio):
 
@@ -85,7 +88,7 @@ Requires Android 7.0 (API 24) or newer; the app targets API 36.
 npm run build
 npx cap sync android
 cd android && ./gradlew assembleDebug     # Windows: gradlew.bat assembleDebug
-# → android/app/build/outputs/apk/debug/CNTR_1.0.1.apk
+# → android/app/build/outputs/apk/debug/CNTR_0.1.1.apk
 ```
 
 Or run `npx cap open android` and press Run in Android Studio.
@@ -94,7 +97,7 @@ Or run `npx cap open android` and press Run in Android Studio.
 
 ## Data and backups
 
-- CNTR works fully offline and has no server, account or sync. All data (products, sales, expenses, saved reports, settings) stays on the device.
+- CNTR works fully offline and has no server, account or sync (it does not even ask for internet access). All data (products, the live event, past events, settings) is stored on the device; Android's own Auto Backup may include it in the user's Google account backup if that is turned on.
 - On the phone, data is stored in an **SQLite database** in the app's private storage (`@capacitor-community/sqlite`), which the OS does not clear the way it can clear WebView storage. Older versions stored it in WebView `localStorage`; the first launch after updating copies it into the database, verifies the copy, and leaves the old copy untouched. Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#storage).
 - **Settings → Backup**: *Export backup* saves a JSON file of all data to `Documents/CNTR` and opens the share sheet so you can keep a copy elsewhere; *Export sales as CSV* is for spreadsheets; *Restore from backup* checks the whole file first, saves a copy of the current data, then replaces everything in one step.
 - **No storage survives uninstalling the app, clearing its data, or losing the phone.** Export a backup after every event and keep it off the phone.
@@ -103,10 +106,11 @@ Or run `npx cap open android` and press Run in Android Studio.
 
 Before merging, at minimum:
 
-1. `npm test` passes (unit tests for migration, backup validation and CSV; Node's built-in runner, no extra dependencies). CI runs it too.
+1. `npm test` passes (unit tests for migration, backup validation and CSV; Node's built-in runner).
 2. `npm run build` passes (it includes the TypeScript check).
-3. Run `npm run dev` and check the flows you touched in a phone-sized browser window (Sell, Reports, Event, Products, saved reports, Compare).
-4. For native changes, install the CI APK on a real device.
+3. `npm run test:e2e` passes: browser tests of the built app in `tests/e2e/` (data safety including a simulated Android bridge for SQLite and backup files, core flows, Android back, layout and accessibility at 320-412px and landscape, motion). It serves `dist/` on port 4320 and uses Edge on Windows, Chrome elsewhere (`CNTR_BROWSER` overrides). CI runs both test commands on every push.
+4. Run `npm run dev` and check the flows you touched in a phone-sized browser window (Sell, Event, End day / End event, History, edit, Compare, Products).
+5. For native changes, install the CI APK on a real device.
 
 ## Contributing
 

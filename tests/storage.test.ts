@@ -95,13 +95,27 @@ test('migration never changes the legacy data', async () => {
   assert.equal(JSON.stringify(legacy), before);
 });
 
+const PAST_EVENT = {
+  id: 'e1',
+  name: 'Day 1, "Comic"',
+  startedAt: '2026-10-25T02:00:00.000Z',
+  endedAt: '2026-10-26T12:00:00.000Z',
+  dayBreaks: ['2026-10-25T12:00:00.000Z'],
+  products: JSON.parse(PRODUCTS),
+  sales: [
+    { product: 'Gacha', price: 25000, cost: 12000, payment: 'Cash', timestamp: '2026-10-25T03:00:00.000Z' },
+    { product: 'Gacha', price: 25000, cost: 12000, payment: 'QRIS', timestamp: '2026-10-26T03:00:00.000Z' },
+  ],
+  expenses: [{ id: 'c2', name: 'Booth', amount: 500000 }],
+};
+
 const fullData = new Map([
   ['cntrSales', SALES],
   ['cntrProducts', PRODUCTS],
   ['cntrProductHistory', PRODUCTS],
   ['cntrEventCosts', JSON.stringify([{ id: 'c1', name: 'Booth', amount: 750000 }])],
-  ['cntrSavedReports', JSON.stringify([{ id: 'r1', name: 'Day 1, "Comic"', createdAt: '2026-10-25T10:00:00.000Z', type: 'sales', products: JSON.parse(PRODUCTS), sales: JSON.parse(SALES), eventCosts: [] }])],
-  ['cntrImportedEventReport', JSON.stringify({ sales: JSON.parse(SALES), products: JSON.parse(PRODUCTS) })],
+  ['cntrLiveEvent', JSON.stringify({ id: 'live', name: null, startedAt: '2026-10-26T09:00:00.000Z', dayBreaks: [] })],
+  ['cntrEvents', JSON.stringify([PAST_EVENT])],
   ['cntrSettings', JSON.stringify({ currency: 'IDR', compactMoney: true })],
 ]);
 
@@ -109,7 +123,27 @@ test('backup round trip restores exactly the stored values', () => {
   const parsed = parseBackup(JSON.stringify(buildBackup(fullData)));
   assert.ok(parsed.ok);
   for (const [key, value] of fullData) assert.equal(parsed.values.get(key), value, key);
-  assert.deepEqual({ ...parsed.summary, exportedAt: '' }, { exportedAt: '', sales: 1, savedReports: 1, products: 1 });
+  assert.deepEqual({ ...parsed.summary, exportedAt: '' }, { exportedAt: '', sales: 1, events: 1, products: 1 });
+});
+
+test('an old backup (saved reports, no events) restores its live sales and expenses and ignores saved reports', () => {
+  const old = {
+    app: 'CNTR',
+    format: 1,
+    exportedAt: '2026-10-26T10:00:00.000Z',
+    data: {
+      cntrSales: JSON.parse(SALES),
+      cntrEventCosts: [{ id: 'c1', name: 'Booth', amount: 750000 }],
+      cntrSavedReports: [{ id: 'r1', name: 'Old', createdAt: '2026-10-25T10:00:00.000Z', type: 'sales', products: [], sales: [], eventCosts: [] }],
+      cntrImportedEventReport: null,
+    },
+  };
+  const parsed = parseBackup(JSON.stringify(old));
+  assert.ok(parsed.ok);
+  assert.equal(parsed.values.get('cntrSales'), SALES);
+  assert.ok(parsed.values.has('cntrEventCosts'));
+  assert.ok(!parsed.values.has('cntrSavedReports'));
+  assert.ok(!parsed.values.has('cntrImportedEventReport'));
 });
 
 test('malformed, truncated or foreign files are rejected', () => {
@@ -135,16 +169,48 @@ test('a backup with one damaged record is rejected whole, naming the problem', (
   assert.ok(!parsed.ok);
   assert.match(parsed.error, /Sales: item 1/);
 
-  const reportBackup = buildBackup(fullData);
-  (reportBackup.data.cntrSavedReports as { sales: { timestamp: string }[] }[])[0].sales[0].timestamp = 'yesterday';
-  const reportParsed = parseBackup(JSON.stringify(reportBackup));
-  assert.ok(!reportParsed.ok);
-  assert.match(reportParsed.error, /Saved report 1 sales/);
+  const eventBackup = buildBackup(fullData);
+  (eventBackup.data.cntrEvents as { sales: { timestamp: string }[] }[])[0].sales[0].timestamp = 'yesterday';
+  const eventParsed = parseBackup(JSON.stringify(eventBackup));
+  assert.ok(!eventParsed.ok);
+  assert.match(eventParsed.error, /Event 1 sales/);
+
+  const liveBackup = buildBackup(fullData);
+  (liveBackup.data.cntrLiveEvent as { dayBreaks: unknown }).dayBreaks = 'monday';
+  const liveParsed = parseBackup(JSON.stringify(liveBackup));
+  assert.ok(!liveParsed.ok);
+  assert.match(liveParsed.error, /Current event/);
 });
 
-test('CSV lists current and saved sales, quoting commas and quotes', () => {
+test('CSV lists the live event and past events with day numbers, quoting commas and quotes', () => {
   const csv = salesCsv(buildBackup(fullData));
-  assert.ok(csv.startsWith('﻿Report,Report type,Time,Product,Payment,Price,Cost\r\n'));
-  assert.match(csv, /^Current sales,live,2026-10-26T10:00:00.000Z,Gacha,Cash,25000,12000\r$/m);
-  assert.match(csv, /^"Day 1, ""Comic""",sales,/m);
+  assert.ok(csv.startsWith('\uFEFFEvent,Day,Time,Product,Payment,Price,Cost\r\n'));
+  assert.match(csv, /^Current event,1,2026-10-26T10:00:00.000Z,Gacha,Cash,25000,12000\r$/m);
+  assert.match(csv, /^"Day 1, ""Comic""",1,2026-10-25T03:00:00.000Z,Gacha,Cash,/m);
+  assert.match(csv, /^"Day 1, ""Comic""",2,2026-10-26T03:00:00.000Z,Gacha,QRIS,/m);
+});
+
+test('CSV neutralises cells that start like a formula', () => {
+  const sale = (product: string) => ({ product, price: 1000, cost: -5, payment: 'Cash', timestamp: '2026-10-26T10:00:00.000Z' });
+  const data = new Map([
+    ['cntrSales', JSON.stringify([sale('=HYPERLINK("http://x","y")'), sale('+cmd'), sale('-1'), sale('@a')])],
+    ['cntrLiveEvent', JSON.stringify({ id: 'live', name: '\tTabbed', startedAt: '2026-10-26T09:00:00.000Z', dayBreaks: [] })],
+  ]);
+  const csv = salesCsv(buildBackup(data));
+  assert.match(csv, /,"'=HYPERLINK\(""http:\/\/x"",""y""\)",Cash,/);
+  assert.match(csv, /,'\+cmd,Cash,1000,-5\r$/m);
+  assert.match(csv, /,'-1,Cash,/);
+  assert.match(csv, /,'@a,Cash,/);
+  assert.match(csv, /^'\tTabbed,1,/m);
+});
+
+test('products with payment methods restore; a damaged method list is rejected', () => {
+  const withMethods = buildBackup(new Map([['cntrProducts', JSON.stringify([{ name: 'Poster', price: 1, cost: 0, color: '#123456', payments: ['Cash', 'Card'] }])]]));
+  assert.ok(parseBackup(JSON.stringify(withMethods)).ok);
+  for (const payments of ['Cash', [], ['Cash', 'QRIS', 'Card'], [7]]) {
+    const bad = buildBackup(new Map([['cntrProducts', JSON.stringify([{ name: 'Poster', price: 1, cost: 0, color: '#123456', payments }])]]));
+    const parsed = parseBackup(JSON.stringify(bad));
+    assert.ok(!parsed.ok, JSON.stringify(payments));
+    assert.match(parsed.error, /Products: item 1/);
+  }
 });

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { fmt } from '../formatters';
-import { plural } from '../reports';
+import { fmt, splitFigure } from '../formatters';
+import { t, tn } from '../i18n';
 
 const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
@@ -31,19 +31,21 @@ function useCountUp(value: number, duration = 420) {
   return shown;
 }
 
-/** Live totals at the top of the Sell screen. */
-export function SalesHero({ revenue, profit, count }: { revenue: number; profit: number; count: number }) {
+/** Today's totals at the top of the Sell screen; after End day the label says which day. */
+export function SalesHero({ revenue, profit, count, day }: { revenue: number; profit: number; count: number; day: number }) {
   const shown = useCountUp(revenue);
+  const { sign, symbol, number } = splitFigure(fmt(shown));
   return (
     <>
-      <span class="eyebrow">Revenue</span>
+      <span class="eyebrow">{day > 1 ? t('hero.dayRevenue', { day }) : t('revenue')}</span>
       <span class="hero-figure" aria-label={fmt(revenue)} style={{ '--chars': fmt(revenue).length }}>
-        {fmt(shown)}
+        {sign}
+        <span class="hero-figure-symbol">{symbol}</span> {number}
       </span>
       <span class="hero-meta">
-        <span>{plural(count, 'sale')}</span>
+        <span>{tn('count.sale', count)}</span>
         <span class="dot" aria-hidden="true" />
-        <span class={profit < 0 ? 'is-negative' : profit > 0 ? 'is-positive' : undefined}>{fmt(profit)} profit</span>
+        <span class={profit < 0 ? 'is-negative' : profit > 0 ? 'is-positive' : undefined}>{t('profit.amount', { amount: fmt(profit) })}</span>
       </span>
     </>
   );

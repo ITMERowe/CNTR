@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Files the share sheet may hand to other apps: only CNTR's own exports (files.ts FOLDER). -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
-    <cache-path name="my_cache_images" path="." />
+    <external-path name="cntr_documents" path="Documents/CNTR/" />
+    <cache-path name="cntr_cache" path="CNTR/" />
 </paths>

@@ -5,6 +5,9 @@ on:
     branches: [ '**' ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -25,7 +28,7 @@ jobs:
           javac -version
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
 
       - name: Setup Node
         uses: actions/setup-node@v7
@@ -42,21 +45,50 @@ jobs:
       - name: Build web app
         run: npm run build
 
+      # Uses the Google Chrome that GitHub's Ubuntu runners come with; no browser download.
+      - name: Browser tests
+        run: npm run test:e2e
+
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Build debug APK
+      # With the release key in GitHub secrets: a signed release APK (installs as an update) and a Play .aab.
+      # Without it (e.g. forks): a debug APK, signed with a throwaway key as before.
+      - name: Build APK
         env:
           BUILD_NUMBER: ${{ github.run_number }}
+          KEYSTORE_BASE64: ${{ secrets.CNTR_KEYSTORE_BASE64 }}
+          CNTR_KEYSTORE_PASSWORD: ${{ secrets.CNTR_KEYSTORE_PASSWORD }}
+          CNTR_KEY_ALIAS: ${{ secrets.CNTR_KEY_ALIAS }}
+          CNTR_KEY_PASSWORD: ${{ secrets.CNTR_KEYSTORE_PASSWORD }}
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          mkdir -p ../dist-apk
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            export CNTR_KEYSTORE_FILE="$RUNNER_TEMP/cntr-release.p12"
+            trap 'rm -f "$CNTR_KEYSTORE_FILE"' EXIT
+            echo "$KEYSTORE_BASE64" | base64 -d > "$CNTR_KEYSTORE_FILE"
+            ./gradlew assembleRelease bundleRelease
+            cp app/build/outputs/apk/release/CNTR_*.apk ../dist-apk/
+            cp app/build/outputs/bundle/release/app-release.aab "../dist-apk/CNTR_0.1.${BUILD_NUMBER}.aab"
+          else
+            echo "::warning::No release key in secrets; building a debug APK (installing it needs an uninstall first)."
+            ./gradlew assembleDebug
+            cp app/build/outputs/apk/debug/CNTR_*.apk ../dist-apk/
+          fi
 
-      # archive: false uploads the .apk itself (no zip), so it can be opened straight on a phone.
+      # archive: false uploads each file itself (no zip), so the .apk opens straight on a phone.
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
-          path: android/app/build/outputs/apk/debug/CNTR_*.apk
+          path: dist-apk/CNTR_*.apk
           archive: false
           if-no-files-found: error
+
+      - name: Upload Play bundle
+        if: hashFiles('dist-apk/*.aab') != ''
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist-apk/CNTR_*.aab
+          archive: false

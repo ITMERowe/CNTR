@@ -1,258 +1,136 @@
 # HANDOFF
 
-Session-to-session context for CNTR. **Read this before starting work; update it at the end of each session, after milestones, and when a blocker or decision comes up.** If this file disagrees with the code, trust the code and fix this file.
+Session-to-session context for CNTR. **Read this before starting work; update it at the end of each session, after milestones, and when a blocker or decision comes up.** If this file disagrees with the code, trust the code and fix this file. Past session details live in `CHANGELOG.md` and git history, not here.
 
-_Last updated: 2026-10-26, end of the safe-storage session: SQLite storage + backup/restore **committed and pushed** on branch `feature/safe-storage` (not merged; see "Safe storage session"). `main` = `a09eb61` (pushed)._
+_Last updated: 2026-10-28 (release polish pass with 5 subagents; Sell drag-reorder and ⋮ menu; tutorial fixes)._
 
 ## Goal
 
-- **Project:** CNTR, an offline sales counter for convention/pop-up booths (TypeScript + Preact + Vite, packaged with Capacitor 8 for Android). Owner wants it **published on Google Play**.
-- **Last task (latest session):** make data storage reliable and 100% offline: SQLite instead of localStorage, safe migration, JSON/CSV export, validated restore, failure handling, tests (see "Safe storage session").
-- **Before that:** clean up, verify, commit, push, and merge everything into `main` (owner authorized the push and merge).
-- **Before that:** polish with all applicable skills, and make Android back (button/gesture) step back inside the app (see "Multi-skill polish + Android back").
-- **Earlier:** make the Sell and Event screens compact, so 4 tiles fit and amounts in the millions are not cut off.
-- **Task before that:** clean up the project locally and on GitHub; rewrite the README; add a license (owner chose **MIT**); prepare the GitHub description and topics.
-- **Standing design decisions from the owner:** VS Code-dark palette (`#1e1e1e` bg, `#252526` panels); product tiles use the **original product colours** with **white** text and icons.
+CNTR is an offline sales counter for convention/pop-up booths (TypeScript + Preact + Vite, Capacitor 8 for Android). The owner wants it **published on Google Play**. Product context: `PRODUCT.md` (platform: android). Architecture: `docs/ARCHITECTURE.md`.
 
-## Current state (verified 2026-10-26)
+## Current state
 
-| Branch | State |
-|---|---|
-| `main` | Everything: the earlier fixes plus the whole `ui/revamp` branch, merged in `ac94981` (pushed; remote verified). See "Merge session" for CI. |
-| `ui/revamp` | Fully merged into `main`. Kept (not deleted); safe to delete once the owner agrees. |
-| `fix/bugs-ui-docs` | Fully merged into `main`; safe to delete (owner approval needed, not done). |
-| `agents/app-overview-explanation` | **Local only**, checked out as a worktree at `../CNTR.worktrees/app-overview-explanation`, at old commit `6edd319`. Not created in these sessions; left untouched. Owner to decide. |
+- **Branch:** all work through 2026-10-28 is committed on `feature/signing-tests-about`, pushed, and merged into `main` (merge commit, done locally and pushed; no PR). CI builds an APK on every push (`0.1.<run number>`), so the `main` push produces the build to install. Older branch notes below are history.
+- **Phone-feedback round on 0.1.25 (committed):** Done in code:
+  1. Tutorial animations felt laggy → ring and bubble follow the target every frame (`requestAnimationFrame` in `tutorial.ts`, styles written only when something moved), the ring moves with `transform`, each new hint fades in (opacity).
+  2. Haptics and sound did nothing (silent mode on or off) → haptics go through the system's touch haptics (`android/.../TapFeedbackPlugin.java`, registered in `MainActivity.java`), with the Haptics plugin's vibration as fallback when the phone's touch feedback is off; tones louder and longer (gain 0.3 for 0.16 s, was 0.06 for 0.11 s). Cause not proven: the plugin was wired correctly before.
+  3. Theme is 3 radio rows (Phone setting / Light / Dark), not a dropdown.
+  4. Every page opens at its top (`openScreen` in `ui/dom.ts` resets `.content`, where pages scroll, and the window).
+  5. The tutorial bubble stays inside the safe area (never under the status bar, a cutout or the gesture bar).
+  6. Enter moves to the next text field on the same screen/sheet and closes the keyboard on the last one; the key shows "next"/"done" (`main.ts` `wireDialogs`). The event-name sheet keeps Enter = save.
+  7. Recent sales and Settings → Products: the big colour square is now a thin colour bar down the row's left edge (`.sale-bar`).
+- **Last full check (2026-10-27, after the council items below):** `tsc` clean, 38 unit, build OK, **all 10 browser suites pass (318 checks)**. Screenshots of new Compare (light/dark), colour bars, Event screen and the new setting looked right; the Discard sheet itself was not screenshotted (tests cover its behaviour).
+- **Phone-feedback round notes:** all items tested in the browser. Item 4 (page opens at its top) **was broken**: `openScreen` reset the window, but pages scroll inside `.content`; fixed in `ui/dom.ts` (resets both) and the test now scrolls `.content`. The Java has never been compiled (no Android SDK here; CI is the first compile).
+- **Design council review (2026-10-27):** 78 items with marked screenshots in `C:/Users/User/Downloads/CNTR-council-review.pdf`. Owner answered items 1–10 (rest still under review). **Done, committed:** (tests added in `events.test.mjs` and `functional.test.mjs`) (1) leaving a past-event edit with changes (tab, Android back) asks Keep editing / Discard; unchanged edits leave silently. (2) Deleting an expense asks first ("Delete Booth (Rp 50.000)?"). (3) Sales by hour chart removed (component, CSS, strings). (4) Compare rebuilt (`views/Compare.tsx`, `.cmp-*` CSS): A = the older event, B = newer; Results (net, net per day for multi-day, revenue, profit, expenses, sales), Units sold (all products), Expense items (same names added up, "—" when missing); B shows ▲/▼ change from A in neutral grey; no "better" green, red only for negative money. (5) Escape closes the confirm sheet. (8) Counter digits box grows with the text (unitless line-height, no fixed height); still check on the phone at the largest font. (9) A new price applies only to later sales; `renameSales` no longer reprices (owner: day-one sales keep the price they were sold at). (10) Setting Event → "New day when the date changes" (`newDayOnDateChange`, **off by default**): the first sale on a new calendar date starts the next day, toast "New date: Day N started". Skipped by the owner: 6 (undo tap area is fine), 7. Also: the colour bar in Recent sales and Products now runs the full row height. Not done from the review: 39 (a long product name makes the tile wider than the screen, pushing the pencil and + off the right edge: a real bug, worth fixing even if not picked) and items 11+. The owner replies with item numbers from the PDF; descriptions and proposals are in it.
+- **Council items 11–20 (2026-10-27): done, committed.** Owner answered with changes from the proposals noted below.
+  1. (11) Startup check: if the live event's last sale is over 3 days old, asks "Still at {name}?" (Same event / End it and start new) — `checkStaleEvent()` in `main.ts`, runs once after the tutorial-offer check.
+  2. (12) End day now also writes a safety backup, but to one **replacing** file (`cntr-day-backup.json` in `Documents/CNTR/auto`, written by `saveDayBackup()` in `files.ts`), not a new timestamped one each time like End event's — owner didn't want End day (which can happen many times) piling up files. `withAutoBackup()` in `main.ts` now takes which backup function to run.
+  3. (13) Price 0 is "Free" everywhere it's shown (tile, product editor preview) instead of "Rp 0", and a free product gets one plain grey counter (`FREE_PAYMENT = 'Free'` in `payments.ts`) instead of Cash/QRIS buttons, since nothing is actually paid — owner's reasoning: track how many freebies were given away. Stored as the sale's `payment` value, same mechanism as a real payment method, so no schema change.
+  4. (14) Ending an event with 0 expenses recorded now adds "No expenses recorded. Are you sure?" to the End event name sheet (text only, Next still works) — owner's own wording, simpler than the original Add-expense-link proposal, since other kinds of sellers besides event booths are expected to use the app eventually.
+  5. (15) Removed the duplicate "{profit} product profit − {expenses} expenses" line under the big Event number (`Hero`'s now-unused `meta` prop, removed from `ReportParts.tsx`) — it just repeated the Profit/Expenses tiles below. Kept the existing 2-then-1 wrap of the stats row as is (owner: the `kpi-row-3` class was already misleadingly named — the grid is still 2 columns — but a real 3-in-a-row would cramp big numbers, see item 7).
+  6. (16) The generic "Event" page title is gone; the live event's own name (with pencil + Live badge) is now styled as the page title (`index.html`, `.event-name`/`.event-name-row` in `style.css`).
+  7. (17) The "CNTR" wordmark (`#brand`) now only shows on Sell (`openScreen()` in `ui/dom.ts`); `.topbar-actions` now right-aligns itself via `margin-left: auto` instead of the row's `justify-content: space-between`, so the add-product button doesn't jump when the wordmark is hidden.
+  8. (18) In History edit mode, the Save/Cancel bar now docks flush at the bottom (replacing the tab bar, which hides via `body.is-editing-event .tabbar{display:none}`) instead of floating above it with rows peeking around it. The bar's side margin tracks `.page`'s own padding through a `--page-x` custom property, so it still sits flush under the small-phone breakpoint (≤360px, where `.page`'s padding itself shrinks).
+  9. (19) Unpicked payment chips in the product editor are no longer faded/untappable (removed the `aria-disabled` styling and its ~2.5:1 contrast). A third tap now swaps out the oldest pick instead of being refused (`togglePayment()` in `payments.ts` takes the oldest pick; `paymentPickOrder` tracks selection order in `ui/productEditor.ts`).
+  10. (20) Disabled buttons (`.btn:disabled`) now use the panel colour with grey text in both themes, instead of the old washed-out opacity (white-on-grey was ~2.3:1 in light theme).
+  - **Verified (2026-10-27):** `tsc` clean, 38 unit tests pass, build OK, all 10 browser suites pass (no failures) after fixing two e2e tests that assumed the old payment-chip-refusal behaviour (`tests/e2e/payments.test.mjs`) and a 4px edit-bar overflow at ≤360px widths that the `--page-x` fix above addresses (`tests/e2e/layout.test.mjs`). Not checked on the phone.
+- **Council items 21–30 (2026-10-27): done, committed.**
+  1. (21, 22) Already satisfied by the Compare rebuild (item 4 above) — verified in the current code, nothing to change: `Diff` is neutral grey (never green), `Row`'s net-profit label never switches to "Deficit", red only on negative values.
+  2. (23) Compare's button is `hidden` (not just disabled) until 2 past events exist; ticking a 2nd event in the compare sheet now compares immediately — the sheet's own Compare button still works as a fallback (`main.ts`, the `compareModalList` `change` listener).
+  3. (24) The empty Sell state (`.grid-empty` in `SalesGrid.tsx`) is now a `<button>` that opens the add-product page; was previously inert text with the + only reachable top-right.
+  4. (25) A genuinely empty event (no sales, no expenses, **and no products**) shows one empty state with a "Go to Sell" button instead of three stacked empty cards (`EventScreen.tsx`'s `allEmpty`); the Expenses card still always shows, since expenses make sense before any sale. An event with products but no sales yet is unchanged (already correct).
+  5. (26) Sheets (`openSheet`/`closeSheet` in `ui/dom.ts`) now `inert` the header/content/tab-bar behind them and move focus to Cancel (the safe action) on open, returning focus to whatever opened the sheet on close. The rename/end-event sheet still focuses its text input after that, for typing.
+  6. (27) Expense edit/delete buttons are 48px (`icon-btn-sm`, was 36px with an unreliable invisible 44px hit-area hack, now removed), with more gap between them (`.list-actions`, s1→s3).
+  7. (28) **Products is now its own tab** (between Event and Sell, `package` icon), removed entirely from Settings (no more "Manage products" row or its back button — `productHistoryScreen` is a primary destination now, its "N on counter · M hidden" summary moved to a subtitle under its own title). Sell is the middle tab (`.tab-primary`): an always-filled ink pill (not just when active) and a bigger icon — only the icon takes `--on-ink`, not the label, which sits on the ordinary bar.
+  8. (29) Recent sales staying under History: **kept as is** (owner declined).
+  9. (30) Settings: Theme and Language stay together, but the group is renamed "Appearance" → "Looks" (`settings.looks`). Theme is now a single Light/Dark toggle (`themeToggle`), not 3 radios — "Phone setting" is gone as an ongoing choice. The phone's `prefers-color-scheme` is read only once, in `storage.ts`'s `loadSettings()`, to resolve the theme when none is stored yet (same pattern as the first-install language choice); that resolved value is saved immediately and never re-read afterwards — `theme.ts`'s live-follow `matchMedia` listener is gone, and `AppSettings['theme']` is now `'light' | 'dark'` (no more `'system'`).
+  - **Verified (2026-10-27):** `tsc` clean, 38 unit tests pass, build OK, all 10 browser suites pass (no failures). Updated for the new behaviour: `tests/e2e/settings.test.mjs` (Settings order, the old "follow the phone live" theme test replaced with "resolves once, then only the toggle matters"), `tests/e2e/layout.test.mjs` (Products via its own tab; a real bug this caught: the `.tab-primary` fill recoloured the Sell label too, near-invisible on the bar — fixed by scoping `--on-ink` to just the icon), `tests/e2e/i18n.test.mjs`, `tests/e2e/events.test.mjs`, `tests/e2e/functional.test.mjs`, `tests/e2e/interaction.test.mjs` (all the `openProductsMenuBtn`/`productHistoryBackBtn` references, now the Products tab; Android back from Products now falls through to Sell, like History already did, since Products lost its own back button), `tests/e2e/lib.mjs` (the tour's compare-pick step no longer taps a separate Compare button). Not checked on the phone.
+- **Council items 31–40 (2026-10-27): done, committed.**
+  1. (31) Settings section labels (`.group-title`) no longer have a stray 4px left margin — they line up with the page edge now.
+  2. (32) Sheets' side padding matches pages (16px, was 20px); bottom padding (above the safe area) is unchanged.
+  3. (33) Sell: no Cash/QRIS split — **kept as is** (owner declined).
+  4. (34) "Profit" renamed to "Product profit" (`'profit'` key in `i18n.ts`) everywhere it's shown (Event screen's Kpi, Compare), so it's never confused with "Net profit" beside it.
+  5. (35) A past event's detail screen now shows its date range under the name — `{first date}` or `{first} – {last}` · `{n} days`, the same format History's list rows already used (`EventScreen.tsx`'s new `dates` prop, wired only for past events in `renderPastEvent()`; the live event keeps showing the Live chip instead).
+  6. (36) History rows: the generic tent icon is now a compact day/month block (`DateBlock` in `Lists.tsx`, the event's start date) — rows are told apart at a glance now, as proposed.
+  7. (37) Product editor: "Price"/"Cost" fields are now labelled "Price ({symbol})"/"Cost per item ({symbol})" with the **current currency's own symbol** (not hardcoded "Rp" — `CURRENCY_SYMBOLS`, now exported from `formatters.ts`, set on `#editPriceLabel`/`#editCostLabel` each time the editor opens), and their placeholders are empty.
+  8. (38) Add expense: **kept as is** (no Rp-prefixed input, no past-expense chips, no "copy from last event") — owner declined the proposal, but changed the name field's placeholder from "e.g. Booth rental" to "Expense name" (`expense.namePlaceholder`).
+  9. (39) Long product names no longer break the tile. Two parts: `.sales-grid` now has an explicit `grid-template-columns: minmax(0, 1fr)` (it had none — an unbroken long name could force the implicit column, and the whole tile, wider than the screen); and `.product-name` is capped to one payment button's width via a CSS container query (`container-type: inline-size` on `.tile`, `max-width: calc((100cqw - var(--s2)) / 2)`, matching `.tile-pay`'s own `1fr 1fr` math) — per the owner's own spec: a long name first shrinks its font-size (`is-long`, 14px), and only past a further length also wraps to 2 lines (`is-wrap`, `-webkit-line-clamp: 2`), picked by character count in `SalesGrid.tsx`'s `nameClass()` (>14 shrinks, >22 also wraps). No JS text measurement; thresholds are a judgment call, not measured against real device rendering.
+  10. (40) "Products · Day 1" is plain "Products" until there's more than one day (`EventScreen.tsx`: `days.length > 1 ? t('products.day', ...) : t('products')`) — applies to past single-day events too, not just the live event before its first End day, which seemed like the more consistent reading of "Day 1 hints at days the seller never set up".
+  - **Verified (2026-10-27):** `tsc` clean, 38 unit tests pass, build OK, all 10 browser suites pass (no failures); no existing e2e test needed updating for this batch (checked for stale text/selector assumptions on the changed labels, placeholders and row markup — none found). Not checked on the phone; item 39's font-size/wrap thresholds and the `cqw`-based max-width especially are worth a real look at various name lengths.
+- **Council items 41–54 (2026-10-27): done, committed and pushed for phone testing.**
+  1. (41) "Colour" → "Color" in the tutorial's add-color step, to match the editor's own US spelling.
+  2. (42) Tutorial offer text no longer says data is "wiped afterwards" (could read as deleting the owner's own data) or claims "3-minute" (doubtful for 28 steps): now "Take a hands-on tour with practice data. Your own data is untouched and comes back when the tour ends."
+  3. (43) End day / End event sizing: **kept as is** (owner declined).
+  4. (44) The screen entrance animation (`screen-in`) now plays once per screen per session, not on every tab switch back to it (`ui/dom.ts`'s `openScreen()` tracks which screens have already entered and sets `animation: none` inline on repeat visits — `display:none`↔`block` always restarts a CSS animation, so a class alone can't do this).
+  5. (45) Removed uppercase + letter-spacing from `.eyebrow` (CASH/REVENUE-style labels), now normal sentence case.
+  6. (46) Cut the type scale from 15 fixed font-sizes to 6 (11/12/14/15/18/26px — the fluid `.hero-figure` clamp() sizes are untouched, they're not part of this) and font-weight from 7 to 3 (600/700/800), via a nearest-value remap across `style.css`. **One deliberate exception:** `.payment-value`'s small-phone (≤360px) override stays at 24px rather than folding into the scale — it needs to stay clearly smaller than the new 26px base, and the next scale step down (18px) felt like too big a drop for the Sell tile's tap counter, the one number that most needs to stay legible mid-rush. This item touches nearly every piece of text in the app and could not be visually verified here — worth a real look on the phone.
+  7. (47) Corner radii cut from 4 sizes to 3 (`--r-xl` merged into `--r-lg`, 26px → 20px, used by `.grid-empty`, the color-swatch preview and sheets). Also nudged `.tile-edit` (the pencil button on a tile) from `--r-md` to `--r-sm`, closer to actually fitting inside `.tile`'s own corner. This is a spot-fix, not an exhaustive audit of every nested corner pair in the app.
+  8. (48) Stats tile numbers (`.kpi-value`) now use `font-variant-numeric: tabular-nums`, so digits line up.
+  9. (49) The "+" at the top of Sell changed from `icon-btn-solid` (filled) to `icon-btn-soft` (the same quieter style as the add-expense button).
+  10. (50) The "+" circle on each tile is fainter (`--ink-soft` background instead of solid `--ink`, icon now `--ink`-colored instead of tile-colored) — the whole half is already the tappable area.
+  11. (51) Tab bar: dropped the blur (`backdrop-filter`) and the active-tab pill; the bar is now solid (`var(--bg)`, so `--bar-bg` is gone) with a thin 2px line on the active tab (`.tab::after`) instead. Sell's own always-filled pill (item 28, a deliberate exception since prominence is the point of that one tab) is unaffected, just no longer sharing the removed `.tab::before` base rule — it's self-contained now.
+  12. (52) The currency symbol (and sign, so a deficit still reads red) in the big Hero figures (Sell revenue, Event net profit) is now smaller and greyer than the number (`splitFigure()` in `formatters.ts`, used by `Hero` in `ReportParts.tsx` and `SalesHero.tsx`). Scoped to the two Hero components only, not every money value in the app (e.g. Compare's `.cmp-value`, KPI tiles).
+  13. (53) Cash/QRIS cells in a darker shade of the product colour: **nope** (owner declined).
+  14. (54) Empty states (`.empty`) are left-aligned instead of centered, and the icon has no circular badge behind it anymore, just a plain icon.
+  - **Verified (2026-10-27):** `tsc` clean, 38 unit tests pass, build OK, all 10 browser suites pass (no failures); none needed updating (checked for stale class/selector/text assumptions from the removed pill, solid/soft button swap, type-scale change and split hero figure — the automated contrast scan still passes on `--text-3`, which the design system already guarantees ≥4.5:1 on every surface). **This is the batch with the most that needs an actual look on the phone** — items 46 and 47 especially touch almost every screen's type and corners, and were sized by reading the stylesheet, not by seeing them rendered.
+- **Next steps:** owner installs the APK from the `main` push and tests on the phone: tutorial (blur 1px + 0.4 dim, ring on sheets, Next on name/price/cost), Sell hold-to-drag, ⋮ menu (sort, compact tiles), the polish-pass fixes; then answers the "For the owner" list in the polish-pass entry. Earlier: (0.1.<CI run>) → reports back what needs adjusting, especially the type scale (46) and corner radii (47) → owner reviews items 55–78 → implement approved ones → commit → push → repeat. Already pushed, pending the phone check: everything in this update plus items 11–40 from earlier today. Offered, not answered: hide the tab bar while the keyboard is open.
+- **Phone feedback on 0.1.26 (committed in `0575143`):** two findings from testing the 0.1.26 push on the phone.
+  1. Tutorial's `add-details` step pointed the ring at `#editName` only (price/cost were just in its `allow` list, never spotlighted) while the bubble text asked for all three — so a real user following the ring would type a name and never be shown where to enter price or cost. Split into three guided steps (`add-name` → `add-price` → `add-cost`), each with its own target and a `done` condition (the field has a value), matching every other "do" step in the tour. The tour is now 30 steps, not 28 (`tests/e2e/lib.mjs`'s `TOUR_ACTIONS` and `tutorial.test.mjs` already use `Object.keys(TOUR_ACTIONS).length`, no hardcoded count to fix). Verified: tsc, unit tests, build, all 10 e2e suites (incl. a real-taps run through all 30 steps) pass.
+  2. Tutorial ring/bubble animation still felt laggy on the phone (not a Preact/React or platform issue — this is imperative DOM code, not component re-renders). Root cause found: the ring had its own `transition` (280ms) on `transform`/`width`/`height`, separate from and longer than a sheet's own opening transition (200ms); since the per-frame loop (`place()`) re-reads the target's rect every frame while a sheet is still sliding open, it kept re-triggering the ring's transition before the previous one finished, compounding into a visible lag/chase that could leave the ring looking stuck mid-size for a while — which is also why a highlighted field inside an opening sheet could show up looking "cut off" (screenshot: the `expense-form` step, ring caught mid-grow). **Fixed and redesigned** per the owner's own spec, not just patched: `.tour-ring` has no transition any more — a step's highlight now appears in place rather than sliding to get there, so it can never be caught mid-flight. Dimming moved off the ring's `box-shadow` spotlight trick onto a new full-screen `.tour-dim` element (`background` + `backdrop-filter: blur(6px)`) with a `clip-path` polygon cut out over the target, so the rest of the screen is now blurred as well as darkened, not just darkened. `.tour-ring` is just the border now. Verified: tsc, unit tests, build, all 10 e2e suites pass. Not yet checked on the phone — backdrop-filter performance on the actual WebView is worth a look, though the per-frame loop only touches styles when the target's rect actually changes (unchanged from before), so it shouldn't repaint continuously while idle.
 
-Architecture (details in `docs/ARCHITECTURE.md`):
-- `src/state.ts`: state and rules (no DOM).
-- `src/storage.ts`: localStorage.
-- `src/reports.ts`: report maths.
-- `src/ui/`: DOM chrome (`dom.ts`, `productEditor.ts`, `colorPicker.ts`, `icons.ts`).
-- `src/views/*.tsx`: Preact screens, including `SalesGrid.tsx` (tiles) and `SalesHero.tsx`.
-- `src/main.ts`: controller.
-- `src/style.css`: design tokens.
-- CI: `.github/workflows/build-apk.yml` runs on every branch push and uploads `CNTR_1.0.<run_number>.apk`.
+- **Phone feedback round 3 (2026-10-28), committed:** (1) tutorial blur cut from 6px to 1px (`.tour-dim`; owner asked for "super slight, like 0.01" — 0.01px renders as no blur, so 1px); dim lightened from 0.55 to 0.4 black. Owner's intent: the rest of the screen stays readable, just not the focus. (2) Name/price/cost tutorial steps jumped on after the first typed character (they were `done` steps polled every 250 ms); now they show Next, disabled until the field has a value (new `ready` on `TourStep`). (3) The ring around a sheet was cut off at the screen edges and its corners didn't match the target's: the ring and the dim's hole are now kept 2px inside the screen and copy the target's own corner radii (+4px), the hole drawn as a `clip-path: path(evenodd, …)` rounded rect (was a square polygon). Screenshots of the expense sheet and name field looked right. Verified: tsc, unit, build, all 10 e2e suites. Not checked on the phone.
+- **Sell reorder + ⋮ menu (2026-10-28), committed.** Owner's spec; choices from the owner's answers:
+  1. Hold a tile 400 ms, then drag up/down to move it (`src/ui/tileDrag.ts`, wired in `main.ts` `wireHeader`). The order is `state.products`' order, saved. A hold never sells (the click after it is swallowed); moving >8 px before the hold is up counts as scrolling. Light tap on pick-up and drop. Limit: no auto-scroll at the screen edge, so a tile can only move within what's on screen (`shortcut:` comment).
+  2. ⋮ button next to + on Sell only (`#sellMenuBtn`, dropdown `#sellMenu` of Settings-style switch rows). Closes on a tap outside (that tap doesn't sell), Escape, Android back.
+  3. **Sort by best sellers** (`autoSort`, off by default): today's units sold, most first; ties keep the hand-made order. The order is frozen while Sell is on screen and re-sorted on the next visit (or right away when the switch is turned on), so a tile never jumps mid-rush. Dragging is off while it's on; the hand-made order is kept and comes back when it's off.
+  4. **Compact tiles** (`compactTiles`, off by default): no price, no + circle, each payment half is one row (label, count, −); tile 104px vs 144px at 412px wide (`.is-compact` on `#grid`).
+  - Verified: tsc, 38 unit, build, all 10 e2e suites (interaction suite now 32 checks: drag moves and saves, hold doesn't sell, tap still sells, compact, sort timing, no drag while sorting, outside tap). Screenshots (menu dark, compact light, mid-drag) looked right. Not checked on the phone: long-press feel, whether Android's own long-press (text select/vibrate) interferes, and that scrolling is blocked mid-drag.
+- **Release polish pass (2026-10-28), DONE, committed and merged into `main`** (together with the same day's tutorial fixes, Sell drag-reorder and ⋮ menu above). Owner's brief: polish only, no new features. Five parallel subagents with file ownership: UI polish (`style.css` minus mobile selectors, `views/*.tsx` presentation); Mobile UI (`index.html`, `ui/dom.ts`, `ui/tileDrag.ts`, `tutorial.ts`, `ui/colorPicker.ts`, and `@media`/sheet/topbar/tabbar/tour/menu/safe-area CSS); Bug fixes (`state/storage/events/reports/backup/files/migrate/kv/formatters/payments/data.ts`, `main.ts`, `android/`, unit tests); Cleanup (`i18n.ts` incl. translations, `ui/productEditor.ts`, `ui/icons.ts`, `feedback.ts`, `theme.ts`, `types.ts`, `views/Icon.tsx`; reports dead code elsewhere); QA (`tests/e2e/` only, sole user of `dist/` and port 4320). Owner added: the pass must cover today's newest features too (drag-reorder, ⋮ menu, auto sort, compact tiles, tutorial ring/blur/Next gating); all five agents were told. Results:
+  - Cleanup (done): `i18n.ts` copy fixes (empty Sell text now says "the Products tab"; "recognize"; "from/to the counter"; ID `backup.eventsNotList`); `productEditor.ts` `editedProduct()` dedup. Coordinator: tutorial name/price/cost text now ends "then tap Next"/"lalu ketuk Lanjut"; `compact_tiles_hint` full stop. All i18n keys and icons are in use. Unused CSS not audited.
+  - Bugs (done): compact money showed "1.000K" for 999,500–999,999 → now "1M" (`formatters.ts`); renaming a product while best-sellers sort is frozen moved it to the end → order keyed by product id (`main.ts` `sortKey`). Coordinator: `storage.ts` damaged past event without `sales` no longer crashes startup; `compactMoney`/`autoSort`/`compactTiles` read only a real `true`.
+  - UI polish (done): compact tiles at 360px had "TRANSFER" under its count and "E-WALLET" wrapping → `.pay-add` columns `minmax(0,1fr) auto` + gap, payment name in `.pay-name` (ellipsis safety net, `SalesGrid.tsx`), compact padding/letter-spacing tweak; Products tab section title/note lost a stray 4px indent (same fix `.group-title` got in 2a3f91f). Type scale and weights already consistent. Left alone: drag-lift shadow faint in dark mode; shadow strengths vary (no tokens); Currency/Language selects differ in width; light-theme inputs share the sheet surface. Not checked: Compare, past event, colour picker visuals.
+  - Mobile (done): empty top bar row (44px of dead space above the title on Event/History/Settings/About/editor) is now `hidden` except on Sell and Products (`ui/dom.ts` `updateHeaderActions`); closing the ⋮ menu returns focus to its button if focus was inside; `aria-haspopup` dropped from `#sellMenuBtn` (the panel holds switches, not menu items); left/right safe-area padding on `.topbar`, `.content`, `.tabbar` for landscape (no orientation lock). Toast position checked: correct, taps pass through. Its run against its own build: layout 117/117, interaction 50/50, tutorial 28/28. Coordinator: cleanup proposals applied (`tutorial.ts` `filled()` helper, `tileDrag.ts` no `drag!`), behaviour unchanged. Left alone: on ≤360x640 with the keyboard open, the tutorial bubble covers the top of the expense / end-event-name sheet (fields still reachable); a `pointercancel` mid-drag drops the tile where it is rather than returning it. Device-only: landscape insets, keyboard resize, large system text, Android long-press during drag.
+  - QA (done): no defects found walking every workflow at 360x780 and 412x892. New e2e checks: interaction 32→50 (Android back closes the ⋮ menu / asks Keep editing-Discard on a changed past-event edit; order survives reload; Escape; rename while sorted keeps position; menu only on Sell; sort off restores hand order; real-touch drag/swipe/tap; drag with a hidden product, in compact, with one tile; compact tiles of every kind), tutorial 26→28 (ring/hole on screen at every step; name/price/cost Next gated), functional 19→20 (compact money 999.500 → Rp 1M), data-safety 52→53 (A13: past event without sales doesn't stop startup).
+  - **Final verification by the coordinator, on the combined tree:** `tsc` clean, 38/38 unit, build OK, **all 10 e2e suites pass, 351 checks** (data-safety 53, events 40, functional 20, i18n 5, interaction 50, layout 117, motion 5, payments 13, settings 20, tutorial 28). Not checked on a phone.
+  - Files touched by the pass: `src/formatters.ts`, `src/main.ts`, `src/storage.ts`, `src/i18n.ts`, `src/ui/productEditor.ts`, `src/ui/dom.ts`, `src/ui/tileDrag.ts`, `src/tutorial.ts`, `src/style.css`, `src/views/SalesGrid.tsx`, `index.html`, `tests/e2e/{interaction,tutorial,functional,data-safety}.test.mjs`.
+  - **For the owner (not changed):** (1) History/past-event date range ends at the day the event was *ended*, not its last sale (`endedAt = now` in `state.ts` `endEvent`); with the "Still at X?" prompt this can show e.g. "1 Oct – 10 Oct". (2) Money inputs accept whole numbers only, so $2.50 can't be entered in USD/EUR etc. (since the first commit). (3) End event has no double-run guard while the automatic backup writes (very unlikely to hit). (4) "Soft clicks" Sound setting text predates tones; "End it and start new" is owner wording. (5) Dragging a tile can't scroll the page, so with 8+ products moving the bottom tile to the top takes several drags (`shortcut:` in `tileDrag.ts`). (6) With the ⋮ menu open, a tap on a tab only closes the menu (a 2nd tap switches); consistent with "outside tap only closes", confirm it's wanted. (7) Tutorial bubble covers the top of the expense/end-event sheet on ≤360x640 with the keyboard open. (8) Drag-lift shadow is faint in dark mode.
 
-## Cleanup session: files changed (committed)
+## How to work here
 
-Created:
-- `LICENSE`: MIT, "Copyright (c) 2026 ITMERowe" (owner approved MIT).
-- `docs/screenshots/{sell,reports,event,product-editor}.png`: README screenshots (headless-browser renders of `ui/revamp` with sample data, 412px wide, about 50 KB each).
-- `HANDOFF.md`: this file.
+- **Verify locally:** `npx tsc --noEmit`, `npm test` (38 unit), `npm run build`, `npm run test:e2e` (10 suites, 351 checks; serves `dist/` on port 4320 with Edge, so stop any preview on 4320 first). Run `graphify update .` after code changes.
+- **Do not commit** (owner's machine-specific files): `.claude/settings.json`, `.claude/skills/playwright-cli/`, `.playwright/`. Commits use `38850947+ITMERowe@users.noreply.github.com`.
+- **Tooling:** no JDK/Android SDK, Xcode or `gh`: APKs are built only by CI (`build-apk.yml`, runs the browser tests on Linux/Chrome first). The GitHub API is read-only without sign-in (60 requests/hour) and job logs need sign-in: ask the owner to paste failing lines. Playwright's own Chromium is at `%LOCALAPPDATA%/ms-playwright/chromium-1181` (needs `executablePath`; the `chromium` channel does not match). In Git Bash, write node+playwright output to a file, then read it.
+- **CI timing:** CI is slower than this machine. Fake-native tests must not depend on timing; the fake SQLite reads the database after its optional `__sqlDelayMs` wait (a stale read once wiped test data on CI).
 
-Modified:
-- `README.md`: rewritten from the code. Purpose, features, stack, layout, setup, commands, Android (CI and local), iOS status, data/backup limits, testing, contributing, license and third-party licenses.
-- `docs/ARCHITECTURE.md`: removed stale `escapeHtml` and "legacy string templates" mentions; updated rendering and navigation wording.
-- `CHANGELOG.md`: relabelled sections ("Unreleased (branch `ui/revamp`)" vs "2026-10-26 (merged to `main`)"); added a Project entry.
-- `package.json` / `package-lock.json`: added `"license": "MIT"`; **removed unused `@types/node`**.
-- `src/formatters.ts`: removed the unused `escapeHtml` (no screen builds HTML strings any more).
-- `src/style.css`: removed the unused `.nowrap`.
-- `CLAUDE.md`, `AGENTS.md`: added a "Session handoff" rule (read and maintain `HANDOFF.md`).
-- `graphify-out/*`: regenerated by `graphify update .`.
+## Standing owner decisions
 
-Deliberately **not** changed:
-- `chokidar-cli` kept: it powers `build:watch`, which type-checks on every rebuild; `vite build --watch` would drop that.
-- Agent tooling kept as tracked (`.claude/skills/graphify`, `.codex/`, `graphify-out/`). `.claude/settings.json` and `.codex/hooks.json` contain machine-specific absolute paths, which would break hooks for other machines (pre-existing).
-- Owner's uncommitted work left alone: `.claude/settings.json` (local edit), `.claude/skills/playwright-cli/`, `.playwright/cli.config.json`.
-- Ignored local build output (`android/build`, `android/.gradle`, `dist/`, ...) left on disk; it is correctly ignored and regenerable.
+- VS Code dark palette (`#1e1e1e` background, `#252526` panels); light mode = VS Code Light+ (`#ffffff`, `#f3f3f3`, `#1e1e1e` text), money green `#116329`, red `#c72c1c`. Theme: a Light/Dark toggle in Settings → Looks. The phone's own setting only resolves the very first choice (then saved); it is not followed afterwards (owner, 2026-10-27). Every text ≥ 4.5:1 in both themes, except tile text (≥ 2.6:1; white, or `#1e1e1e` only where white is below 2.6:1).
+- Product tiles use the product's own colour; in lists the colour is a thin left bar. Sell revenue figure is 3/4 the size of the report figures.
+- **Events:** always one live event; optional End day (confirm only, no undo), or automatic with the "New day when the date changes" setting (off by default: some sellers keep a multi-day con as one day); End event (name, automatic backup) moves it to History. Sell shows today only. Net profit = product profit − expenses everywhere. Day cards show profit before expenses. No sales-by-hour chart (owner: not useful). Compare = 2 events, older one as A, B shows the change from A in neutral colours (no "better" green). Leaving an edit with changes asks Keep editing / Discard; deleting an expense asks first. The undo (−) tap area is fine as it is (owner).
+- **Products:** no starter products. Each takes 1–2 payment methods of Cash, QRIS, Transfer, Card, E-wallet (default Cash + QRIS; colours Cash `#c08024`, QRIS `#4d8df0`, Transfer `#199e70`, Card `#9085e9`, E-wallet `#d55181`, always with the name). Products per day (Settings → Event) on by default. Deleted only from the product editor, with a confirm. **Deleting never deletes sales**: they stay in reports under the name. **Products have an id** and new sales store `productId`, so editing a product changes only its own sales (older sales match by name); reports, tiles and undo group by name. **A sale keeps the price it was sold at**: a price change applies only to later sales (owner, 2026-10-27).
+- **Haptics and sound** (`src/feedback.ts`, one `feedback(kind)`): sale = light tap + high tone; undo = strong tap + low tone; steppers, switches, picks, product saved = light tap; deletes = strong tap; End day/event, event edit saved, export = confirm buzz + two-note chime; refusals/failures = reject buzz. Tones via Web Audio. Settings → Sound → Sound effects (on by default) turns tones off; vibration is always on.
+- **Language:** English and Bahasa Indonesia (casual "kamu"; `src/i18n.ts`). Fresh install follows the phone; updating users stay English until they choose. Not translated: payment method names, CSV (headers and "Current event"), user text. Owner to review the Indonesian copy.
+- **Settings order:** Event, Money, Looks (Theme, Language), Sound, Sales data, Backup, About. Products is its own tab, not in Settings (owner, 2026-10-27). No backup-overdue warning, no notes under Backup.
+- **Tutorial** (`src/tutorial.ts`): 30 hands-on steps on rails (only the target and bubble take taps) on practice data; no Settings pass. Offered once on an empty first launch; Settings → About → Show tutorial replays it (asks first if real data exists). Real data comes back exactly on Finish, Quit, a crash or a reload mid-tour (the tour never resumes). Taps are blocked from any data swap (tour start/end, restore) until its reload. No backups/exports/restores during the tour.
+- **Version:** `0.1.<CI run number>` until the app is ready to ship (1.0 is reserved). `versionCode` keeps rising, so builds install over earlier ones.
+- License MIT. Data stays on the phone (SQLite); Android Auto Backup kept. No INTERNET permission; Content-Security-Policy (`docs/security-review-2026-10-27.md`).
 
-## Inspection results
+## Owner to-dos
 
-- Secrets: none found in tracked files or anywhere in git history (scanned for keystores/env/credential files and key/token patterns).
-- `.gitignore` already covers node_modules, dist, keystores/`keystore.properties`, env files, logs, editor/OS files, Playwright CLI output and graphify caches. No change needed.
-- Dependencies: all used except `@types/node` (removed). Licenses: Preact/Capacitor/Vite MIT, Lucide ISC, Plus Jakarta Sans OFL-1.1, all compatible with MIT.
-- Dead code: one unused export (`escapeHtml`) and one unused CSS class, both removed.
-- No linter, formatter or automated test suite is configured in the repo (pre-existing; not added).
+1. Re-test on the phone after the next build: tutorial smoothness and bubble position, haptics and sound, Enter key, the new Products tab and Theme toggle, page scroll, colour bars. The old "does Theme follow the phone while CNTR is open" check no longer applies: that live-following behaviour was deliberately removed (2026-10-27). Still never checked: export/share/restore and automatic backups without the INTERNET permission, Indonesian copy.
+2. GitHub → Settings → Emails: *Keep my email address private* and *Block command line pushes that expose my email*.
+3. Back up `C:/Users/User/CNTR-signing` (release key + password) off this computer; losing it means no more Play updates.
+4. Decide how to merge into `main`, and whether to delete `feature/safe-storage`, `ui/revamp`, `fix/bugs-ui-docs` and the worktree `../CNTR.worktrees/app-overview-explanation`.
+5. GitHub repo About: description `Offline sales counter for convention and pop-up booths: tap-to-sell tiles, Cash/QRIS totals, sales and event profit reports. Preact + Capacitor Android app.`; topics `point-of-sale`, `sales-tracker`, `offline-first`, `capacitor`, `preact`, `typescript`, `vite`, `android`, `mobile-app`.
+6. Play Store: hosted privacy policy (About text is the basis), store listing and screenshots, then the 12-tester / 14-day closed test.
 
-## Decisions
+## Known issues and limits
 
-- **License: MIT** (owner's choice). Anyone may reuse or republish the code, including on app stores, with attribution.
-- **Cleanup lives on `ui/revamp`**, so the README describes the code that exists on that branch; it reaches `main` when `ui/revamp` is merged.
-- Earlier decisions still stand: Preact; bundled fonts and icons (offline); Cash/QRIS colours `#C08024`/`#4D8DF0` validated on `#252526` (re-validate if changed); original tile colours; Gradle 8.14.3 / AGP 8.13.0.
+- **Device-only, unverified:** native SQLite, backups via Filesystem/Share, haptics, Android back gesture, safe areas, large system text, the tour's `sessionStorage` across `location.reload()`. Everything else is tested in a browser and against a fake native bridge. iOS never built.
+- Open minor (owner: "forget about CSV for now"): CSV calls an unnamed live event "Current event" while the screen says "Event <date>".
+- Tile text on pink/green/orange is below 4.5:1 (owner's choice). A sale is written a few ms after the tap; killing the app in that instant can lose it. Uninstalling or clearing data deletes everything unless a backup was exported.
+- The impeccable detector flags the `--ease-emphasis` overshoot curve (advisory). No DESIGN.md. `git stash` holds an obsolete "Live Event screen" entry that can be dropped.
 
-## Compact layout session (2026-10-26). Committed in `96bd03b`, merged to `main`
+## Ideas not chosen yet (ask the owner first)
 
-Now committed (`96bd03b`) and merged to `main`. Files: `src/style.css`, `src/views/ReportParts.tsx`, `src/views/SalesHero.tsx`, `HANDOFF.md`, `graphify-out/*`.
-
-Owner's phone is about **412×892 CSS px** (1280×2772 physical). Use that size for layout checks.
-
-1. **Sell tiles compact** (owner wanted at least 4 tiles visible). In `src/style.css`:
-   - name and price on one line (the name gets "…" if too long);
-   - Cash/QRIS halves `min-height: 80px` (were 92px); counts 28px (24px at ≤360px);
-   - +/− circles 26px and the edit button 32px; edit and undo keep larger tap areas through `::after { inset: -6px }`;
-   - tile padding 12px, radius `--r-lg`, grid gap 8px.
-   - Result: tiles are 144px (were about 194px). At 412×892 the 4th tile ends at 795px and the nav starts at 824px.
-   - 70px was tried first, but the undo button's tap area then overlapped the + circle (a low tap undid a sale). At 80px there is a 12px gap and no overlap (verified with `elementFromPoint`).
-2. **Event KPI cards**: `.kpi-row-3` is now a 2-column grid. Revenue and Profit are on the first row; Expenses wraps to the second row at the **same width**, with an empty space beside it. The owner rejected a full-width Expenses card as awkward. Values are 17px (15px at ≤360px).
-3. **Hero figure overflow (existing bug fixed)**: a long amount (e.g. `-Rp 124.500.000`) made the whole page wider than the screen. Fix:
-   - `.hero-figure` font-size `min(clamp(40px, 12vw, 52px), calc((min(100vw, 520px) - 40px) / (var(--chars, 1) * 0.6)))`;
-   - `--chars` (the text length) is set inline in `Hero` (`ReportParts.tsx`) and `SalesHero.tsx`;
-   - `.report-hero { min-width: 0 }`.
-   - Short amounts keep their old size. `0.6` is an estimated character width for Plus Jakarta Sans bold.
-
-Verified (headless Edge via `playwright-core`, `vite preview` on port 4317):
-- `npx tsc --noEmit` and `npm run build` pass.
-- At 412, 360 and 320px with a Rp 125.500.000 expense: no KPI value or hero cut off, and the page is no wider than the screen.
-- At 900px wide, `-Rp 1.124.500.000` fits at 47px.
-
-Not verified:
-- Real phone: tap accuracy with the smaller buttons, fonts.
-- A billion-rupiah KPI value at 320px would still be cut off with "…" (accepted; unlikely).
-
-Test scripts live in this session's scratchpad (`shot.mjs`, `event.mjs`, `fix.mjs`), not in the repo. They import `playwright-core` from an older session's scratchpad (`...\67ae2af9-914b-4f40-abfd-0726aac79ea7\scratchpad\ci-check\node_modules`), because `playwright` is not installed in the project. To see Event data in the browser, you must click **Import sales**, tick "current-live" and confirm.
-
-## Polish pass (2026-10-26, impeccable `polish`). Committed in `96bd03b`, merged to `main`
-
-The impeccable skill is now installed. A polish pass across all 21 screens/states, with screenshots at 412 and 320px, found three defects. All other screens (Sell, Reports, Event, History, compare, modals, colour picker, saved reports) needed no change.
-1. **Products list cut off the cost** ("cost Rp 12...." at 412px). Price and cost now sit on their own lines (`Lists.tsx` spans + `.list-sub-text > span` in `style.css`). At 412px everything shows in full; at 320px the cost still gets "…" (the edit/delete/switch buttons take the width; accepted).
-2. **Report hero was inset 4px** from the page title and the Sell hero: `.report-hero` horizontal padding is now 0.
-3. **Text selection used the browser default**: added `::selection` with VS Code's selection blue `#264f78`.
-
-Verified: `npx tsc --noEmit` and `npm run build` pass. A scan of all 5 tabs at 320, 360 and 412px found no overflowing text and no page wider than the screen (scripts `shots.mjs` and `overflow.mjs` are in this session's scratchpad; they now import `playwright-core` from the project's own `node_modules`). The impeccable detector found only the existing `--ease-emphasis` overshoot curve (advisory; left as is).
-Note: an old `vite preview` is still holding port 4179 from an earlier session; this session used port 4318.
-Not verified: real phone.
-
-Owner requests still open:
-- The `ui-ux-pro-max` polish offered earlier was replaced by the impeccable polish above.
-
-## Multi-skill polish + Android back (2026-10-26). Committed in `a13e3af` + `96bd03b`, merged to `main`
-
-Skills used: ui-ux-pro-max (touch targets, contrast, 375px/landscape checklist), dataviz (charts), impeccable `audit` checklist, superpowers `verification-before-completion`. The owner has since written `PRODUCT.md` (impeccable product context).
-
-Changes:
-1. **Android back (button and gesture)** (`src/main.ts` `goBack()`, `@capacitor/app` ^8.1.2 added, `npx cap sync android` done; `android/app/capacitor.build.gradle` and `android/capacitor.settings.gradle` changed by the sync). Before, back closed the app. Order: colour picker → options menu → open sheet (its X button) → the screen's visible `.back-btn` → Sell tab → `App.minimizeApp()` (app goes to the background; data is kept). It runs only on native.
-2. **Colour picker drag stuck after `pointercancel`** (`src/ui/colorPicker.ts`): Android cancels the pointer on system gestures, and the drag then followed any later finger movement. It now ends on cancel.
-3. **44px tap areas** (`style.css`): undo `::after` inset −9px (was −6px; 38→44px; the + circle still ends 3px above it); `.btn-small` gets an invisible 44px hit area (Event "Import sales"); currency `select` is 44px tall (was 40).
-4. `--selection` token for the `::selection` colour (no raw hex outside `:root`).
-
-No change needed (checked): the Cash/QRIS palette passes the dataviz validator on `#252526` (CVD ΔE 27.8); the charts have text labels, aria, and tap-to-read; reduced motion handled; heading structure fine; colour picker uses `touch-action: none`.
-
-Verified (fresh run, final code): `npx tsc --noEmit` exit 0; `npm run build` exit 0. Audit at 412×892, 375×812 and 892×412 (landscape): no tap target under 44px, no unlabeled control, no page wider than the screen. Overflow scan at 320/360/412: none. Android back: simulated the native bridge in headless Edge (`back.mjs`); all 10 cases behave as listed above. Picker fix red-green: without the fix the colour changed after cancel (`#F1EAEC → #0E0005`); with it, it stays.
-Known, accepted: white text on light tile colours (contrast 1.95–3.1:1; owner decision). Products cost still gets "…" at 320px.
-Not verified: real Android device (the back gesture on a phone, predictive back animation on Android 14+, haptics); large system font size (Android text zoom was not emulated).
-Tooling note: in this shell, piping node+playwright output into `grep` swallows it; write the output to a file and read that instead. Scripts are in this session's scratchpad (`audit.mjs`, `overflow.mjs`, `back.mjs`, `check.mjs`, `shots.mjs`); server: `npx vite preview --port 4318`.
-
-## Impeccable init (2026-10-26). `PRODUCT.md` committed in `049b3a6`, merged to `main`
-
-- Created `PRODUCT.md` from the repo plus the owner's answers:
-  - users are any small booth seller (a public Play Store app, mainly Indonesia);
-  - the edge is one-tap speed, working offline, and event profit;
-  - the platform is `web` (a custom design language, not Material).
-- Not done: no DESIGN.md (run `/impeccable document` if wanted). No `.impeccable/config.json` (no image generation available). Live mode not configured.
-- Also rebuilt `graphify-out/` this session. The vendored graphify skill docs were left out of the graph, with the owner's approval.
-
-## Safe storage session (2026-10-26). Committed and pushed on branch `feature/safe-storage` (from `main` `a09eb61`); not merged
-
-Decision: **SQLite** (`@capacitor-community/sqlite` 8.1.1) over `@capacitor/preferences`. Preferences is a small key-value store (Android rewrites one XML file per save; no multi-key atomicity), unsuitable for growing sales history. SQLite gives transactional writes, so a restore is all-or-nothing. Data model unchanged: one table `kv(key, value)` holding the same JSON strings as before, so backups, the browser build and migration all use one format. Also added `@capacitor/filesystem` 8.1.5 and `@capacitor/share` 8.0.3 (backup files). All offline; no network at runtime.
-
-Files:
-- New: `src/kv.ts` (SQLite + localStorage stores; localStorage write rolls back on failure), `src/migrate.ts` (verified, idempotent copy), `src/backup.ts` (format, validation, CSV), `src/files.ts` (Documents/CNTR + share sheet; safety copy; file picker), `tests/storage.test.ts` (11 unit tests).
-- Changed: `src/storage.ts` (in-memory cache, ordered write-through, retry + warning, `initStorage`, `replaceAllData`, last-backup date), `src/state.ts` (`initState()` instead of loading at import), `src/main.ts` (async `start()`, startup-error screen, Backup actions), `src/ui/dom.ts` (`showMessage`, confirm sheet title/tone), `src/ui/icons.ts` (3 icons), `index.html` (Settings → Backup group + data-loss note, file input, warning banner), `src/style.css` (`[hidden]`, banner, note, startup error), `tsconfig.json` (`allowImportingTsExtensions`, for Node-runnable modules), `package.json` (`npm test`, 3 deps), `.github/workflows/build-apk.yml` (runs `npm test`), `capacitor.config.json` (SQLite: no encryption, iOS `Library/CapacitorDatabase`), `AndroidManifest.xml` (READ/WRITE_EXTERNAL_STORAGE maxSdk 29, `requestLegacyExternalStorage` for Android 10), `ios/App/App/Info.plist` (`UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`: backups visible in Files), `npx cap sync` changes (`capacitor.build.gradle`, `capacitor.settings.gradle`, `ios/App/Podfile`), docs (README, ARCHITECTURE, PRODUCT, CHANGELOG).
-
-Migration behaviour: first launch on the phone copies the 7 legacy keys to SQLite, reads back and compares, then sets `cntrMeta.migratedFromLocalStorage` (in the DB) and `cntrMeta.usingDatabase` (in localStorage). Legacy localStorage is never modified or deleted (stays as a stale copy). If the DB cannot open and migration never succeeded, the app runs on localStorage with a warning and retries next launch. If the DB fails after it has been used, a "Try again" screen is shown (never the stale copy).
-
-Owner decision on offline caveats: commit as is (Android Auto Backup `allowBackup="true"` and the default `INTERNET` permission kept; the app makes no network requests).
-
-Verified (fresh run on the final code, rerun before commit with the same results):
-- `npx tsc --noEmit` 0; `npm run build` 0; `npm test` 11/11; `npx cap sync` found 5 plugins on Android and iOS (CocoaPods/xcodebuild not installed here: pod install skipped).
-- E2E (`e2e.mjs`, headless Edge, scratchpad) **31/31**: browser build (persistence across reload, JSON + CSV export, 4 kinds of malformed backup rejected with data untouched, restore, storage-full warning + retry, offline with zero non-local requests) and a **simulated Android bridge** (migration + verify, legacy untouched, restart reads SQLite not the stale copy, no rerun/duplicates, DB write failure + retry, export to Documents/CNTR, "not saved" when Documents and share both fail, interrupted restore changes nothing, safety copy before restore, DB failure after use → Try again → recovers, first-migration failure → works on localStorage → migrates next launch, no network, no page errors).
-- Mutation checks: removing the migration verify, dropping failed writes, or allowing the stale fallback each makes the matching test fail.
-- Regression: functional 19/19 (3 of the old checks read localStorage synchronously right after a tap; with a 30 ms wait they pass: writes are now asynchronous, not lost), motion 5/5, picker 4/4, back 10/10, audit (tap targets/labels) clean, overflow clean.
-- Bundle scan: no runtime network use (only Vite's same-origin chunk preload and unused Capacitor HTTP / Filesystem download helpers).
-
-Not verified / remaining risks:
-- **No real device or emulator**: the native SQLite, Filesystem (Documents on Android 10 / 11+ / iOS) and Share calls were tested only against a fake bridge. The APK has not been built with the new plugins (CI builds it on push). iOS never built (no Xcode/CocoaPods).
-- Writes land a few ms after a tap (async native call); killing the app in that instant can lose that one tap.
-- Uninstall / Clear data / lost phone delete everything; only an exported backup kept off the phone survives (stated in Settings).
-- Android Auto Backup (`allowBackup="true"`, pre-existing) may copy the database to the user's Google account; that is an OS feature, not app sync. Left as it was.
-- The SQLite plugin bundles SQLCipher on Android, making the APK a few MB larger.
-- Browser build: restore into localStorage is rolled back on failure but is not a true transaction (development only).
-
-## Known issues / blockers (unresolved)
-
-- **GitHub repository description and topics are not updated:** there is no `gh` CLI or API token on this machine. The owner must apply them; text is below.
-- White text on light product colours has low contrast (e.g. about 2:1 on yellow). Accepted by the owner for now.
-- Debug APKs are signed with a random key per CI run, so updating needs an uninstall, which wipes data. Needs a release keystore (owner).
-- Data-loss risks that remain after the safe-storage work (see that section): native SQLite path tested only against a simulated bridge, never on a device; uninstall / clear data / lost phone still delete everything unless the user exported a backup.
-- Not tested on a real device (haptics, safe areas / edge-to-edge, performance). iOS never built.
-- No automated tests in the repo. The browser checks used so far live in a temporary session folder and are not portable.
-- Local machine has no JDK/Android SDK and no `gh`. APK builds are verified only via GitHub Actions and the public API (60 requests/hour).
-
-## GitHub metadata to apply (owner)
-
-- **Description:** `Offline sales counter for convention and pop-up booths: tap-to-sell tiles, Cash/QRIS totals, sales and event profit reports. Preact + Capacitor Android app.`
-- **Topics:** `point-of-sale`, `sales-tracker`, `offline-first`, `capacitor`, `preact`, `typescript`, `vite`, `android`, `mobile-app`
-
-## Next steps (priority order)
-
-1. Owner: install the newest `main` APK on a phone and check Android back (button and gesture), the compact tiles and tap accuracy.
-2. Owner: apply the GitHub description and topics above (repo → About → ⚙).
-3. Owner: decide on deleting the merged `ui/revamp` and `fix/bugs-ui-docs` branches and the old local `agents/app-overview-explanation` worktree.
-4. Play Store prerequisites: release keystore as GitHub secrets, signed `.aab` in CI, privacy policy, store screenshots; owner starts the 12-tester / 14-day closed test.
-5. Safe storage (pushed on `feature/safe-storage`): owner tests the CI APK on a real phone (export, restore, airplane mode, restart). Note: CI debug APKs are signed with a different key each run, so installing needs an uninstall first, which wipes data; the migration from an older install therefore cannot be tested by updating a CI build. Merge into `main` only after the phone test.
-6. Add an automated test suite (e.g. Playwright, already installed locally by the owner) so the browser checks live in the repo.
-
-## Verification log
-
-This session, on the cleaned `ui/revamp` working tree:
-- `npx tsc --noEmit`: pass.
-- `npm run build`: pass (built in 6.5s).
-- `npx cap sync android`: pass; no tracked native files changed.
-- Browser suites (headless Edge against `vite preview`; scripts in the session scratchpad, not in the repo):
-  - functional **19/19 pass**,
-  - motion/reduced-motion **5/5 pass**,
-  - colour-picker fit at 320–412px **4/4 pass**.
-- Secrets scan of the tree and history: nothing found.
-
-Earlier: `main` `3b5bf59` CI success; `ui/revamp` `9c08b1e` CI success (run 40301551082 → `CNTR_1.0.16.apk`).
-
-Not verified:
-- Real device.
-- iOS.
-- Local Gradle build.
-- Lint/format (not configured).
-
-## Commits and push
-
-Pushed to `origin/ui/revamp` (verified: branch in sync; `LICENSE`, `README.md`, `HANDOFF.md` and screenshots served from GitHub):
-- `dbe0249` Remove unused code and the unused `@types/node` dependency.
-- `33ac2d6` Add MIT license, rewrite README, add session handoff. CI **success**: run 40323977225 → `CNTR_1.0.17.apk`.
-- A follow-up commit recording this section (`[skip ci]`, no code changes).
-
-All of the above is now on `main` too (see "Merge session").
-
-## Merge session (2026-10-26): cleanup, verify, merge into `main`
-
-Owner's task: clean up locally and on GitHub, verify, push, and merge into `main` (push and merge explicitly authorized).
-
-Cleanup findings:
-- No dead code: `tsc --noUnusedLocals --noUnusedParameters` is clean; exports that nothing imports (e.g. `formatMoney`, storage keys, `profitClass`) are all used inside their own file, so they were left as they are (removing `export` would be churn).
-- Dependencies: all used. `@capacitor/app` added for Android back; `@playwright/cli` (committed earlier) is the owner's tooling, kept.
-- No build artifacts, keystores or secrets tracked; `.gitignore` unchanged (still correct). Diff scan: no secrets.
-- Docs were stale: README screenshots showed the old, taller tiles (re-rendered `sell`, `reports`, `event`; `product-editor` was identical); README and `docs/ARCHITECTURE.md` now describe Android back and `@capacitor/app`; CHANGELOG entries added.
-- Left uncommitted on purpose (owner's machine-specific or untracked work): `.claude/settings.json` (local graphify paths), `.claude/skills/playwright-cli/`, `.playwright/`.
-
-Commits (on `ui/revamp`, pushed, then merged):
-- `a13e3af` Handle Android back and fix a stuck colour-picker drag.
-- `96bd03b` Compact Sell and Event layout, 44px tap targets, small polish.
-- `049b3a6` Update docs and screenshots for Android back and the compact layout (also adds `PRODUCT.md`, refreshes `graphify-out/`).
-- `ac94981` Merge branch `ui/revamp` into `main` (`--no-ff`, same as the earlier `fix/bugs-ui-docs` merge). `origin/main` had not moved (`3b5bf59`) and `main` is not branch-protected (public API: `"protected": false`), so no PR was needed and no conflicts arose.
-- This HANDOFF update: a `[skip ci]` commit on `main`.
-
-Verification (all fresh, final code):
-- `npx tsc --noEmit` and `npm run build`: pass on `ui/revamp` and again on merged `main` (`main` tree is identical to `ui/revamp`).
-- Browser suites, headless Edge against `vite preview` (port 4318): functional **19/19** (rerun on merged `main`: 19/19), motion/reduced-motion **5/5**, colour-picker fit **4/4**, Android back **10/10** cases (rerun on `main`), tap-target/contrast/label audit at 412×892, 375×812 and 892×412 (only the accepted white-on-tile contrast), overflow scan at 320/360/412: none.
-- `npx cap sync android`: pass.
-- CI: `ui/revamp` `049b3a6` run 40341818197 **success** (`CNTR_1.0.18.apk`); `main` `ac94981` run 40342530089 **success** (`CNTR_1.0.19.apk`).
-- Remote verified: `origin/main` = `ac94981`; raw GitHub serves `LICENSE`, `README.md`, `HANDOFF.md`, `PRODUCT.md` and the screenshots from `main`, and `package.json` there includes `@capacitor/app`. GitHub now detects the license as **MIT**.
-
-Still not done / blockers:
-- GitHub description is still `counting app` and topics are empty: no `gh` or API token here; owner applies the text below.
-- No branches deleted (`ui/revamp`, `fix/bugs-ui-docs` are both merged): owner decision.
-- Not verified on a real phone; no lint or test suite in the repo (tests live in session scratchpads).
-
-Useful commands:
-- `npm run dev`
-- `npm run build`
-- `npx cap sync android`
-- `graphify update .` after code changes
+Stock counts / sold-out; discounts and bundles; end-of-day cash count; hide the tab bar while the keyboard is open.

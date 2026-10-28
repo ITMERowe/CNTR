@@ -1,22 +1,35 @@
+import { eventSummary, formatDay } from '../events';
 import { fmt } from '../formatters';
-import type { Product, ReportType, SaleRecord, SavedReport } from '../types';
+import { paymentClass, productPayments } from '../payments';
+import type { PastEvent, Product, SaleRecord } from '../types';
 import { Icon } from './Icon';
-import { EmptyState } from './ReportParts';
+import { EmptyState, profitClass } from './ReportParts';
+import { locale, t, tn } from '../i18n';
+
+/** A compact day/month block in place of a generic icon, so rows are told apart at a glance. */
+function DateBlock({ value }: { value: Date | string }) {
+  const date = new Date(value);
+  return (
+    <span class="row-date" aria-hidden="true">
+      <strong>{date.toLocaleDateString(locale(), { day: 'numeric' })}</strong>
+      <small>{date.toLocaleDateString(locale(), { month: 'short' })}</small>
+    </span>
+  );
+}
 
 const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-const formatDate = (iso: string) => new Date(iso).toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 export function RecentSales({ sales, colorFor }: { sales: SaleRecord[]; colorFor: (name: string) => string }) {
-  if (!sales.length) return <EmptyState icon="inbox" title="No sales yet" text="Sales you record on the Sell tab show up here." />;
+  if (!sales.length) return <EmptyState icon="inbox" title={t('sales.none')} text={t('recent.emptyText')} />;
   return (
     <>
       {sales.map((sale, index) => (
         <div class="list-row" key={`${new Date(sale.timestamp).getTime()}-${index}`} style={{ '--i': index }}>
-          <span class="swatch swatch-lg" style={{ background: colorFor(sale.product) || 'var(--surface-3)' }} aria-hidden="true" />
+          <span class="sale-bar" style={{ background: colorFor(sale.product) || 'var(--surface-3)' }} aria-hidden="true" />
           <div class="list-main">
             <strong class="list-title">{sale.product}</strong>
             <span class="list-sub">
-              <span class={`pay-chip pay-${sale.payment.toLowerCase()}`}>{sale.payment}</span>
+              <span class={`pay-chip ${paymentClass(sale.payment)}`}>{sale.payment}</span>
               {formatTime(new Date(sale.timestamp))}
             </span>
           </div>
@@ -31,46 +44,120 @@ interface ProductListProps {
   products: Product[];
   activeNames: Set<string>;
   onEdit: (name: string) => void;
-  onDelete: (name: string) => void;
   onToggle: (name: string) => void;
+  onAdd: () => void;
 }
 
-export function ProductList({ products, activeNames, onEdit, onDelete, onToggle }: ProductListProps) {
-  if (!products.length) return <EmptyState icon="package" title="No products yet" text="Tap + at the top to add your first product." />;
+/** One product: tap the row to edit; the switch puts it on or takes it off the Sell tab. */
+function ProductRow({ product, active, index, onEdit, onToggle }: { product: Product; active: boolean; index: number; onEdit: (name: string) => void; onToggle: (name: string) => void }) {
+  return (
+    <div class="product-item" style={{ '--i': index }}>
+      <button class="product-edit-btn" type="button" data-name={product.name} aria-label={t('edit.named', { name: product.name })} onClick={() => onEdit(product.name)}>
+        <span class="sale-bar" style={{ background: product.color }} aria-hidden="true" />
+        <span class="product-item-main">
+          <strong class="list-title">{product.name}</strong>
+          <span class="product-item-sub">
+            {fmt(product.price)} · {t('product.profitEach', { amount: fmt(product.price - product.cost) })}
+          </span>
+          <span class="product-item-methods">
+            {productPayments(product).map((method) => (
+              <span class={`pay-chip ${paymentClass(method)}`} key={method}>
+                {method}
+              </span>
+            ))}
+          </span>
+        </span>
+      </button>
+      <button
+        class="product-toggle-btn"
+        type="button"
+        data-name={product.name}
+        role="switch"
+        aria-checked={active}
+        aria-label={t('product.onSell', { name: product.name })}
+        onClick={() => onToggle(product.name)}
+      >
+        <span class="switch-track" aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+export function ProductList({ products, activeNames, onEdit, onToggle, onAdd }: ProductListProps) {
+  const addButton = (
+    <button class="btn btn-secondary btn-block" id="addProductBtn" type="button" onClick={onAdd}>
+      <Icon name="plus" />
+      {t('add_product')}
+    </button>
+  );
+  if (!products.length) {
+    return (
+      <>
+        <section class="card">
+          <EmptyState icon="package" title={t('products.noneYet')} text={t('products.emptyText')} />
+        </section>
+        {addButton}
+      </>
+    );
+  }
+  const sections = [
+    { key: 'counter', title: t('products.counter'), note: t('products.counterNote'), items: products.filter((product) => activeNames.has(product.name)) },
+    { key: 'hidden', title: t('products.hidden'), note: t('products.hiddenNote'), items: products.filter((product) => !activeNames.has(product.name)) },
+  ].filter((section) => section.items.length);
   return (
     <>
-      {products.map((product, index) => {
-        const isActive = activeNames.has(product.name);
+      {sections.map((section) => (
+        <section class="product-section" data-section={section.key} key={section.key}>
+          <h2 class="product-section-title">
+            {section.title} · {section.items.length}
+          </h2>
+          <p class="product-section-note">{section.note}</p>
+          <div class="list list-card">
+            {section.items.map((product, index) => (
+              <ProductRow key={product.name} product={product} active={section.key === 'counter'} index={index} onEdit={onEdit} onToggle={onToggle} />
+            ))}
+          </div>
+        </section>
+      ))}
+      {addButton}
+    </>
+  );
+}
+
+/** Past events, newest first: name, dates and days, net profit. */
+export function EventList({ events, onOpen }: { events: PastEvent[]; onOpen: (id: string) => void }) {
+  if (!events.length) return <EmptyState icon="event" title={t('history.none')} text={t('history.noneText')} />;
+  return (
+    <>
+      {[...events].reverse().map((event, index) => {
+        const { net } = eventSummary(event.sales, event.expenses);
+        const first = formatDay(event.startedAt);
+        const last = formatDay(event.endedAt);
+        const days = event.dayBreaks.length + 1;
         return (
-          <div class={isActive ? 'list-row' : 'list-row is-inactive'} key={product.name} style={{ '--i': index }}>
-            <span class="swatch swatch-lg" style={{ background: product.color }} aria-hidden="true" />
+          <div
+            class="list-row list-row-link event-row"
+            key={event.id}
+            data-id={event.id}
+            tabIndex={0}
+            role="button"
+            style={{ '--i': index }}
+            onClick={() => onOpen(event.id)}
+            onKeyDown={(keyEvent) => {
+              if (keyEvent.key === 'Enter' || keyEvent.key === ' ') {
+                keyEvent.preventDefault();
+                onOpen(event.id);
+              }
+            }}
+          >
+            <DateBlock value={event.startedAt} />
             <div class="list-main">
-              <strong class="list-title">{product.name}</strong>
-              <span class="list-sub list-sub-text">
-                <span>{fmt(product.price)}</span>
-                <span>cost {fmt(product.cost)}</span>
+              <strong class="list-title">{event.name}</strong>
+              <span class="list-sub">
+                {first === last ? first : `${first} – ${last}`} · {tn('count.day', days)}
               </span>
             </div>
-            <div class="list-actions">
-              <button class="icon-btn icon-btn-sm product-edit-btn" type="button" data-name={product.name} title={`Edit ${product.name}`} aria-label={`Edit ${product.name}`} onClick={() => onEdit(product.name)}>
-                <Icon name="pencil" />
-              </button>
-              <button class="icon-btn icon-btn-sm icon-btn-danger product-delete-btn" type="button" data-name={product.name} title={`Delete ${product.name}`} aria-label={`Delete ${product.name}`} onClick={() => onDelete(product.name)}>
-                <Icon name="trash" />
-              </button>
-              <button
-                class="product-toggle-btn"
-                type="button"
-                data-name={product.name}
-                role="switch"
-                aria-checked={isActive}
-                aria-label={`${product.name} on counter`}
-                title={isActive ? 'On the counter' : 'Hidden from the counter'}
-                onClick={() => onToggle(product.name)}
-              >
-                <span class="switch-track" aria-hidden="true" />
-              </button>
-            </div>
+            <span class={`list-value ${profitClass(net)}`}>{fmt(net)}</span>
           </div>
         );
       })}
@@ -78,119 +165,21 @@ export function ProductList({ products, activeNames, onEdit, onDelete, onToggle 
   );
 }
 
-interface SavedReportListProps {
-  reports: SavedReport[];
-  type: ReportType;
-  onOpen: (id: string) => void;
-  onRename: (id: string) => void;
-  onDelete: (id: string) => void;
-}
-
-export function SavedReportList({ reports, type, onOpen, onRename, onDelete }: SavedReportListProps) {
-  if (!reports.length) {
-    return (
-      <EmptyState
-        icon={type === 'sales' ? 'file-chart' : 'event'}
-        title={`No saved ${type} reports`}
-        text={type === 'sales' ? 'Save one from the Reports tab menu.' : 'Save one from the Event tab menu.'}
-      />
-    );
-  }
+/** Checkbox list of past events; the compare dialog reads the checked inputs when confirmed. */
+export function EventChecklist({ events, checked }: { events: PastEvent[]; checked: string[] }) {
+  if (!events.length) return <p class="card-note">{t('history.noneShort')}</p>;
   return (
     <>
-      {reports.map((report, index) => (
-        <div
-          class="list-row list-row-link sales-report-history-item"
-          key={report.id}
-          data-id={report.id}
-          tabIndex={0}
-          role="button"
-          style={{ '--i': index }}
-          onClick={() => onOpen(report.id)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              onOpen(report.id);
-            }
-          }}
-        >
-          <span class="row-icon" aria-hidden="true">
-            <Icon name={type === 'sales' ? 'file-chart' : 'event'} />
-          </span>
-          <div class="list-main">
-            <strong class="list-title">{report.name}</strong>
-            <span class="list-sub">
-              {formatDate(report.createdAt)} · {report.sales.length} sales
-            </span>
-          </div>
-          <div class="list-actions">
-            <button
-              class="icon-btn icon-btn-sm sales-report-edit-btn"
-              type="button"
-              title="Rename report"
-              aria-label={`Rename ${report.name}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                onRename(report.id);
-              }}
-            >
-              <Icon name="pencil" />
-            </button>
-            <button
-              class="icon-btn icon-btn-sm icon-btn-danger history-item-delete"
-              type="button"
-              title="Delete report"
-              aria-label={`Delete ${report.name}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                onDelete(report.id);
-              }}
-            >
-              <Icon name="trash" />
-            </button>
-          </div>
-        </div>
-      ))}
-    </>
-  );
-}
-
-interface ReportChecklistProps {
-  reports: SavedReport[];
-  checked: string[];
-  emptyText: string;
-  /** Optional extra first row (the live counter) with value "current-live". */
-  live?: { title: string; subtitle: string };
-}
-
-/** Checkbox list of saved reports; the dialogs read the checked inputs when confirmed. */
-export function ReportChecklist({ reports, checked, emptyText, live }: ReportChecklistProps) {
-  return (
-    <>
-      {live && (
-        <label class="check-row">
-          <input type="checkbox" id="importCurrentLiveReport" value="current-live" checked={false} />
+      {[...events].reverse().map((event) => (
+        <label class="check-row" key={event.id}>
+          <input type="checkbox" value={event.id} checked={checked.includes(event.id)} />
           <span class="check-box" aria-hidden="true" />
           <span class="check-text">
-            <strong>{live.title}</strong>
-            <small>{live.subtitle}</small>
+            <strong>{event.name}</strong>
+            <small>{formatDay(event.startedAt)}</small>
           </span>
         </label>
-      )}
-      {reports.length ? (
-        reports.map((report) => (
-          <label class="check-row" key={report.id}>
-            <input type="checkbox" value={report.id} checked={checked.includes(report.id)} />
-            <span class="check-box" aria-hidden="true" />
-            <span class="check-text">
-              <strong>{report.name}</strong>
-              <small>{formatDate(report.createdAt)}</small>
-            </span>
-          </label>
-        ))
-      ) : (
-        <p class="card-note">{emptyText}</p>
-      )}
+      ))}
     </>
   );
 }

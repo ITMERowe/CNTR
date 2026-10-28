@@ -5,20 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1e1e1e" />
     <meta name="color-scheme" content="dark" />
+    <!-- Only the app's own files run or load; nothing goes to the network (inline style attributes are used). -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
     <title>CNTR</title>
   </head>
   <body>
     <div class="app">
       <header class="topbar">
         <div class="topbar-row">
-          <div class="brand" aria-label="CNTR">CNTR</div>
+          <div class="brand" id="brand" aria-label="CNTR">CNTR</div>
           <div class="topbar-actions">
-            <button class="icon-btn" id="resetBtn" type="button" title="Clear sales" aria-label="Clear sales"><i data-icon="reset"></i></button>
-            <button class="icon-btn" id="optionsBtn" type="button" title="Options" aria-label="Options" aria-haspopup="menu"><i data-icon="more"></i></button>
-            <button class="icon-btn icon-btn-solid" id="openProductEdit" type="button" title="Add product" aria-label="Add product"><i data-icon="plus"></i></button>
-            <div class="menu" id="optionsMenu" role="menu" aria-label="Options">
-              <button type="button" role="menuitem" id="saveReportOption">Save report</button>
-              <button type="button" role="menuitem" id="saveEventReportOption">Save event report</button>
+            <button class="icon-btn icon-btn-soft" id="openProductEdit" type="button" title="Add product" data-i18n-title="add_product" aria-label="Add product" data-i18n-aria="add_product"><i data-icon="plus"></i></button>
+            <button class="icon-btn icon-btn-soft" id="sellMenuBtn" type="button" aria-expanded="false" aria-controls="sellMenu" title="Sell options" data-i18n-title="sell_options" aria-label="Sell options" data-i18n-aria="sell_options"><i data-icon="more"></i></button>
+            <div class="menu" id="sellMenu" hidden>
+              <label class="group-row" for="autoSortToggle">
+                <span class="group-row-label"><span data-i18n="auto_sort">Sort by best sellers</span><small data-i18n="auto_sort_hint">Most sold today first. Turn off to drag tiles into your own order.</small></span>
+                <span class="switch">
+                  <input type="checkbox" id="autoSortToggle" role="switch" />
+                  <span class="switch-track" aria-hidden="true"></span>
+                </span>
+              </label>
+              <label class="group-row" for="compactTilesToggle">
+                <span class="group-row-label"><span data-i18n="compact_tiles">Compact tiles</span><small data-i18n="compact_tiles_hint">Shorter tiles without the price, so more fit on screen</small></span>
+                <span class="switch">
+                  <input type="checkbox" id="compactTilesToggle" role="switch" />
+                  <span class="switch-track" aria-hidden="true"></span>
+                </span>
+              </label>
             </div>
           </div>
         </div>
@@ -31,24 +44,8 @@
           <div class="sales-grid" id="grid"></div>
         </section>
 
-        <section class="screen" id="reportsScreen">
-          <div class="page">
-            <div class="page-header">
-              <button class="icon-btn back-btn" id="reportBackBtn" type="button" title="Back" aria-label="Back" style="display:none"><i data-icon="arrow-left"></i></button>
-              <h1 class="page-title" id="reportPageTitle">Reports</h1>
-              <button class="icon-btn icon-btn-danger" id="reportDeleteBtn" type="button" title="Delete report" aria-label="Delete report" style="display:none"><i data-icon="trash"></i></button>
-            </div>
-            <div class="stack" id="reportCard"></div>
-          </div>
-        </section>
-
         <section class="screen" id="eventScreen">
           <div class="page">
-            <div class="page-header">
-              <button class="icon-btn back-btn" id="eventBackBtn" type="button" title="Back" aria-label="Back" style="display:none"><i data-icon="arrow-left"></i></button>
-              <h1 class="page-title" id="eventPageTitle">Event</h1>
-              <button class="icon-btn icon-btn-danger" id="eventDeleteBtn" type="button" title="Delete report" aria-label="Delete report" style="display:none"><i data-icon="trash"></i></button>
-            </div>
             <div class="stack" id="eventCard"></div>
           </div>
         </section>
@@ -56,36 +53,43 @@
         <section class="screen" id="historyScreen">
           <div class="page">
             <div class="page-header">
-              <h1 class="page-title">History</h1>
+              <h1 class="page-title" data-i18n="history">History</h1>
             </div>
             <div class="stack">
-              <div class="segmented">
-                <button class="segment" id="compareSalesBtn" type="button"><i data-icon="chart"></i>Compare sales</button>
-                <button class="segment" id="compareEventsBtn" type="button"><i data-icon="event"></i>Compare events</button>
-              </div>
+              <button class="btn btn-secondary btn-block" id="compareEventsBtn" type="button"><i data-icon="chart"></i><span data-i18n="compare_events">Compare events</span></button>
               <section class="card">
-                <div class="card-head"><h2 class="card-title">Recent sales</h2></div>
+                <div class="card-head"><h2 class="card-title" data-i18n="past_events">Past events</h2></div>
+                <div class="list" id="pastEventList"></div>
+              </section>
+              <section class="card">
+                <div class="card-head"><h2 class="card-title" data-i18n="recent_sales">Recent sales</h2></div>
                 <div class="list" id="historyRecentPurchase"></div>
               </section>
             </div>
           </div>
         </section>
 
-        <section class="screen" id="compareSalesScreen">
+        <section class="screen" id="pastEventScreen">
           <div class="page">
             <div class="page-header">
-              <button class="icon-btn back-btn" id="compareSalesBackBtn" type="button" title="Back" aria-label="Back"><i data-icon="arrow-left"></i></button>
-              <h1 class="page-title">Compare sales</h1>
+              <button class="icon-btn back-btn" id="pastEventBackBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
+              <h1 class="page-title" id="pastEventTitle">Event</h1>
+              <button class="icon-btn" id="pastEventEditBtn" type="button" title="Edit event" data-i18n-title="edit_event" aria-label="Edit event" data-i18n-aria="edit_event"><i data-icon="pencil"></i></button>
+              <button class="icon-btn icon-btn-danger" id="pastEventDeleteBtn" type="button" title="Delete event" data-i18n-title="delete_event" aria-label="Delete event" data-i18n-aria="delete_event"><i data-icon="trash"></i></button>
             </div>
-            <div id="compareSalesCard"></div>
+            <div class="stack" id="pastEventCard"></div>
+            <div class="edit-bar" id="pastEventEditBar" hidden>
+              <button type="button" class="btn btn-secondary" id="pastEventCancelBtn" data-i18n="cancel">Cancel</button>
+              <button type="button" class="btn btn-primary" id="pastEventSaveBtn" data-i18n="save_changes">Save changes</button>
+            </div>
           </div>
         </section>
 
         <section class="screen" id="compareEventScreen">
           <div class="page">
             <div class="page-header">
-              <button class="icon-btn back-btn" id="compareEventBackBtn" type="button" title="Back" aria-label="Back"><i data-icon="arrow-left"></i></button>
-              <h1 class="page-title">Compare events</h1>
+              <button class="icon-btn back-btn" id="compareEventBackBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
+              <h1 class="page-title" data-i18n="compare_events">Compare events</h1>
             </div>
             <div id="compareEventCard"></div>
           </div>
@@ -94,14 +98,33 @@
         <section class="screen" id="settingsScreen">
           <div class="page">
             <div class="page-header">
-              <h1 class="page-title">Settings</h1>
+              <h1 class="page-title" data-i18n="settings">Settings</h1>
             </div>
             <div class="stack">
-              <section class="group">
-                <h2 class="group-title">Money</h2>
+              <section class="group" data-group="event">
+                <h2 class="group-title" data-i18n="event">Event</h2>
+                <div class="group-body">
+                  <label class="group-row" for="productsPerDayToggle">
+                    <span class="group-row-label"><span data-i18n="products_per_day">Products per day</span><small data-i18n="one_collapsible_products_card_for_each_d">One collapsible Products card for each day</small></span>
+                    <span class="switch">
+                      <input type="checkbox" id="productsPerDayToggle" role="switch" />
+                      <span class="switch-track" aria-hidden="true"></span>
+                    </span>
+                  </label>
+                  <label class="group-row" for="newDayToggle">
+                    <span class="group-row-label"><span data-i18n="settings.newDay">New day when the date changes</span><small data-i18n="settings.newDayText">The first sale on a new date starts the next day by itself</small></span>
+                    <span class="switch">
+                      <input type="checkbox" id="newDayToggle" role="switch" />
+                      <span class="switch-track" aria-hidden="true"></span>
+                    </span>
+                  </label>
+                </div>
+              </section>
+              <section class="group" data-group="money">
+                <h2 class="group-title" data-i18n="money">Money</h2>
                 <div class="group-body">
                   <label class="group-row" for="currencySelect">
-                    <span class="group-row-label">Currency</span>
+                    <span class="group-row-label" data-i18n="currency">Currency</span>
                     <span class="select">
                       <select id="currencySelect">
                         <option value="IDR">IDR (Rp)</option>
@@ -116,7 +139,7 @@
                     </span>
                   </label>
                   <label class="group-row" for="compactMoneyToggle">
-                    <span class="group-row-label">Compact amounts<small>Show Rp 1,5M instead of Rp 1.500.000</small></span>
+                    <span class="group-row-label"><span data-i18n="compact_amounts">Compact amounts</span><small data-i18n="show_rp_1_5m_instead_of_rp_1_500_000">Show Rp 1,5M instead of Rp 1.500.000</small></span>
                     <span class="switch">
                       <input type="checkbox" id="compactMoneyToggle" role="switch" />
                       <span class="switch-track" aria-hidden="true"></span>
@@ -124,147 +147,195 @@
                   </label>
                 </div>
               </section>
-              <section class="group">
-                <h2 class="group-title">Data</h2>
+              <section class="group" data-group="looks">
+                <h2 class="group-title" data-i18n="settings.looks">Looks</h2>
                 <div class="group-body">
-                  <button class="group-row group-link" id="openProductsMenuBtn" type="button"><span class="group-icon"><i data-icon="package"></i></span><span class="group-row-label">Products</span><i data-icon="chevron-right"></i></button>
-                  <button class="group-row group-link" id="openSalesReportMenuBtn" type="button"><span class="group-icon"><i data-icon="file-chart"></i></span><span class="group-row-label">Saved sales reports</span><i data-icon="chevron-right"></i></button>
-                  <button class="group-row group-link" id="openEventReportMenuBtn" type="button"><span class="group-icon"><i data-icon="event"></i></span><span class="group-row-label">Saved event reports</span><i data-icon="chevron-right"></i></button>
+                  <label class="group-row" for="themeToggle">
+                    <span class="group-row-label"><span id="themeLabel" data-i18n="settings.theme">Theme</span><small id="themeState"></small></span>
+                    <span class="switch">
+                      <input type="checkbox" id="themeToggle" role="switch" />
+                      <span class="switch-track" aria-hidden="true"></span>
+                    </span>
+                  </label>
+                  <label class="group-row" for="languageSelect">
+                    <span class="group-row-label" data-i18n="settings.language">Language</span>
+                    <span class="select">
+                      <select id="languageSelect">
+                        <option value="en">English</option>
+                        <option value="id">Bahasa Indonesia</option>
+                      </select>
+                    </span>
+                  </label>
                 </div>
               </section>
-              <section class="group">
-                <h2 class="group-title">Backup</h2>
+              <section class="group" data-group="sound">
+                <h2 class="group-title" data-i18n="sound">Sound</h2>
                 <div class="group-body">
-                  <button class="group-row group-link" id="exportBackupBtn" type="button"><span class="group-icon"><i data-icon="backup"></i></span><span class="group-row-label">Export backup<small id="lastBackupText">No backup yet</small></span><i data-icon="chevron-right"></i></button>
-                  <button class="group-row group-link" id="exportCsvBtn" type="button"><span class="group-icon"><i data-icon="csv"></i></span><span class="group-row-label">Export sales as CSV<small>For a spreadsheet; cannot be restored</small></span><i data-icon="chevron-right"></i></button>
-                  <button class="group-row group-link" id="restoreBackupBtn" type="button"><span class="group-icon"><i data-icon="restore"></i></span><span class="group-row-label">Restore from backup<small>Replaces all data on this phone</small></span><i data-icon="chevron-right"></i></button>
+                  <label class="group-row" for="soundToggle">
+                    <span class="group-row-label"><span data-i18n="sound_effects">Sound effects</span><small data-i18n="soft_clicks_when_you_sell_undo_or_finish">Soft clicks when you sell, undo or finish something</small></span>
+                    <span class="switch">
+                      <input type="checkbox" id="soundToggle" role="switch" />
+                      <span class="switch-track" aria-hidden="true"></span>
+                    </span>
+                  </label>
                 </div>
-                <p class="group-note">Your data is stored only on this phone and never needs internet. Uninstalling CNTR, clearing its data, or losing the phone deletes it. Export a backup after every event and keep a copy somewhere else.</p>
+              </section>
+              <section class="group" data-group="sales">
+                <h2 class="group-title" data-i18n="sales_data">Sales data</h2>
+                <div class="group-body">
+                  <button class="group-row group-link" id="exportCsvBtn" type="button"><span class="group-icon"><i data-icon="csv"></i></span><span class="group-row-label"><span data-i18n="export_sales_as_csv">Export sales as CSV</span><small data-i18n="every_sale_for_a_spreadsheet_not_a_backu">Every sale, for a spreadsheet. Not a backup.</small></span><i data-icon="chevron-right"></i></button>
+                </div>
+              </section>
+              <section class="group" data-group="backup">
+                <h2 class="group-title" data-i18n="backup">Backup</h2>
+                <div class="group-body">
+                  <div class="group-row"><span class="group-row-label" data-i18n="last_backup">Last backup</span><span class="about-value" id="lastBackupText">Never</span></div>
+                  <button class="group-row group-link" id="exportBackupBtn" type="button"><span class="group-icon"><i data-icon="backup"></i></span><span class="group-row-label"><span data-i18n="export_backup">Export backup</span><small data-i18n="saves_all_data_as_one_file_you_can_resto">Saves all data as one file you can restore</small></span><i data-icon="chevron-right"></i></button>
+                  <button class="group-row group-link" id="restoreBackupBtn" type="button"><span class="group-icon"><i data-icon="restore"></i></span><span class="group-row-label"><span data-i18n="restore_from_backup">Restore from backup</span><small data-i18n="replaces_all_data_on_this_phone">Replaces all data on this phone</small></span><i data-icon="chevron-right"></i></button>
+                </div>
                 <input type="file" id="restoreFileInput" hidden />
               </section>
-              <section class="group">
+              <section class="group" data-group="about">
                 <div class="group-body">
-                  <button class="group-row group-link" id="openAboutMenuBtn" type="button"><span class="group-icon"><i data-icon="info"></i></span><span class="group-row-label">About</span><i data-icon="chevron-right"></i></button>
+                  <button class="group-row group-link" id="openAboutMenuBtn" type="button"><span class="group-icon"><i data-icon="info"></i></span><span class="group-row-label" data-i18n="about">About</span><i data-icon="chevron-right"></i></button>
+                  <button class="group-row group-link" id="startTutorialBtn" type="button"><span class="group-icon"><i data-icon="tutorial"></i></span><span class="group-row-label"><span data-i18n="show_tutorial">Show tutorial</span><small data-i18n="a_hands_on_tour_with_practice_data">A hands-on tour with practice data</small></span><i data-icon="chevron-right"></i></button>
                 </div>
               </section>
             </div>
-          </div>
-        </section>
-
-        <section class="screen" id="salesReportHistoryScreen">
-          <div class="page">
-            <div class="page-header">
-              <button class="icon-btn back-btn" id="salesReportHistoryBackBtn" type="button" title="Back" aria-label="Back"><i data-icon="arrow-left"></i></button>
-              <h1 class="page-title">Saved sales reports</h1>
-            </div>
-            <div class="list list-card" id="salesReportHistoryList"></div>
-          </div>
-        </section>
-
-        <section class="screen" id="eventReportHistoryScreen">
-          <div class="page">
-            <div class="page-header">
-              <button class="icon-btn back-btn" id="eventReportHistoryBackBtn" type="button" title="Back" aria-label="Back"><i data-icon="arrow-left"></i></button>
-              <h1 class="page-title">Saved event reports</h1>
-            </div>
-            <div class="list list-card" id="eventReportHistoryList"></div>
           </div>
         </section>
 
         <section class="screen" id="productHistoryScreen">
           <div class="page">
             <div class="page-header">
-              <button class="icon-btn back-btn" id="productHistoryBackBtn" type="button" title="Back" aria-label="Back"><i data-icon="arrow-left"></i></button>
-              <h1 class="page-title">Products</h1>
+              <h1 class="page-title" data-i18n="products">Products</h1>
             </div>
-            <div class="list list-card" id="productHistoryList"></div>
+            <p class="card-note page-sub" id="productsSummary"></p>
+            <div class="stack" id="productHistoryList"></div>
+          </div>
+        </section>
+
+        <section class="screen" id="aboutScreen">
+          <div class="page">
+            <div class="page-header">
+              <button class="icon-btn back-btn" id="aboutBackBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
+              <h1 class="page-title" data-i18n="about">About</h1>
+            </div>
+            <div class="stack">
+              <section class="group">
+                <div class="group-body">
+                  <div class="group-row"><span class="group-row-label">CNTR<small data-i18n="offline_sales_counter_for_booths">Offline sales counter for booths</small></span></div>
+                  <div class="group-row"><span class="group-row-label" data-i18n="version">Version</span><span class="about-value" id="aboutVersion"></span></div>
+                  <div class="group-row"><span class="group-row-label" data-i18n="license">License</span><span class="about-value">MIT © 2026 ITMERowe</span></div>
+                </div>
+              </section>
+              <section class="group">
+                <h2 class="group-title" data-i18n="privacy">Privacy</h2>
+                <div class="card about-text">
+                  <p data-i18n="cntr_has_no_account_server_ads_or_analyt">CNTR has no account, server, ads or analytics, and never uses the internet. What you record is stored on this phone and CNTR never sends it anywhere.</p>
+                  <p data-i18n="if_backup_is_turned_on_in_the_phone_s_se">If backup is turned on in the phone's settings, Android may include CNTR's data in the phone's own backup to your Google account.</p>
+                  <p data-i18n="a_file_leaves_the_phone_only_when_you_ex">A file leaves the phone only when you export a backup or CSV and choose where to send it.</p>
+                  <p data-i18n="uninstalling_cntr_or_clearing_its_data_d">Uninstalling CNTR or clearing its data deletes everything on the phone, so export a backup regularly.</p>
+                </div>
+              </section>
+              <section class="group">
+                <h2 class="group-title" data-i18n="open_source_software">Open-source software</h2>
+                <div class="card about-text">
+                  <p data-i18n="preact_mit_capacitor_and_its_plugins_mit">Preact (MIT), Capacitor and its plugins (MIT), Capacitor SQLite (MIT), Lucide icons (ISC), Plus Jakarta Sans font (SIL Open Font License 1.1).</p>
+                </div>
+              </section>
+            </div>
           </div>
         </section>
 
         <section class="screen" id="productEditScreen">
           <div class="page">
             <div class="page-header">
-              <button class="icon-btn back-btn" id="closeEditBtn" type="button" title="Back" aria-label="Back"><i data-icon="arrow-left"></i></button>
+              <button class="icon-btn back-btn" id="closeEditBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
               <h1 class="page-title" id="productEditTitle">Add product</h1>
-              <button class="icon-btn icon-btn-danger" id="removeProductBtn" type="button" title="Delete product" aria-label="Delete product"><i data-icon="trash"></i></button>
+              <button class="icon-btn icon-btn-danger" id="removeProductBtn" type="button" title="Delete product" data-i18n-title="delete_product" aria-label="Delete product" data-i18n-aria="delete_product"><i data-icon="trash"></i></button>
             </div>
             <div class="form">
               <div class="field color-field">
-                <span class="field-label" id="colorFieldLabel">Color</span>
+                <span class="field-label" id="colorFieldLabel" data-i18n="color">Color</span>
                 <div class="color-swatch" id="colorField" role="button" tabindex="0" aria-labelledby="colorFieldLabel editColorHex" aria-haspopup="dialog">
                   <span class="swatch-preview" aria-hidden="true">
-                    <span class="swatch-name" id="editPreviewName">Product name</span>
+                    <span class="swatch-name" id="editPreviewName" data-i18n="product_name">Product name</span>
                     <span class="swatch-price" id="editPreviewPrice"></span>
                   </span>
                   <span class="color-text" id="editColorHex">#F76495</span>
                 </div>
-                <div class="color-picker" id="colorPickerMenu" role="dialog" aria-label="Color picker">
+                <div class="color-picker" id="colorPickerMenu" role="dialog" aria-label="Color picker" data-i18n-aria="color_picker">
                   <div class="picker-hex" id="pickerHexCard">
-                    <label class="field-label" for="editColorHexInput">Hex code</label>
+                    <label class="field-label" for="editColorHexInput" data-i18n="hex_code">Hex code</label>
                     <input id="editColorHexInput" type="text" pattern="#?[A-Fa-f0-9]{6}" placeholder="#FF00AA" autocomplete="off" spellcheck="false" />
                   </div>
                   <div class="picker-surface" id="pickerSurface">
                     <div class="picker-surface-thumb" id="pickerSurfaceThumb"></div>
                   </div>
                   <div class="hue-row">
-                    <span class="field-label">Hue</span>
+                    <span class="field-label" data-i18n="hue">Hue</span>
                     <div class="hue-slider" id="hueSlider">
                       <div class="hue-thumb" id="hueThumb"></div>
                     </div>
                     <span class="hue-value" id="hueValue">0°</span>
                   </div>
                   <div class="picker-presets">
-                    <button class="color-preset" type="button" style="--preset:#f76495" aria-label="Preset pink"></button>
-                    <button class="color-preset" type="button" style="--preset:#ff4d4d" aria-label="Preset red"></button>
-                    <button class="color-preset" type="button" style="--preset:#f9b234" aria-label="Preset orange"></button>
-                    <button class="color-preset" type="button" style="--preset:#51c43f" aria-label="Preset green"></button>
-                    <button class="color-preset" type="button" style="--preset:#30c7ff" aria-label="Preset cyan"></button>
-                    <button class="color-preset" type="button" style="--preset:#4f6eff" aria-label="Preset blue"></button>
-                    <button class="color-preset" type="button" style="--preset:#b85dff" aria-label="Preset purple"></button>
+                    <button class="color-preset" type="button" style="--preset:#f76495" aria-label="Preset pink" data-i18n-aria="preset_pink"></button>
+                    <button class="color-preset" type="button" style="--preset:#ff4d4d" aria-label="Preset red" data-i18n-aria="preset_red"></button>
+                    <button class="color-preset" type="button" style="--preset:#f9b234" aria-label="Preset orange" data-i18n-aria="preset_orange"></button>
+                    <button class="color-preset" type="button" style="--preset:#51c43f" aria-label="Preset green" data-i18n-aria="preset_green"></button>
+                    <button class="color-preset" type="button" style="--preset:#30c7ff" aria-label="Preset cyan" data-i18n-aria="preset_cyan"></button>
+                    <button class="color-preset" type="button" style="--preset:#4f6eff" aria-label="Preset blue" data-i18n-aria="preset_blue"></button>
+                    <button class="color-preset" type="button" style="--preset:#b85dff" aria-label="Preset purple" data-i18n-aria="preset_purple"></button>
                   </div>
                 </div>
               </div>
               <label class="field">
-                <span class="field-label">Name</span>
-                <input class="input input-lg" id="editName" type="text" placeholder="Product name" autocomplete="off" />
+                <span class="field-label" data-i18n="name">Name</span>
+                <input class="input input-lg" id="editName" type="text" placeholder="Product name" data-i18n-placeholder="product_name" autocomplete="off" />
               </label>
               <div class="field-row">
                 <label class="field">
-                  <span class="field-label">Price</span>
-                  <input class="input" id="editPrice" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off" />
+                  <span class="field-label" id="editPriceLabel">Price</span>
+                  <input class="input" id="editPrice" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
                 </label>
                 <label class="field">
-                  <span class="field-label">Cost</span>
-                  <input class="input" id="editCost" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off" />
+                  <span class="field-label" id="editCostLabel">Cost</span>
+                  <input class="input" id="editCost" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
                 </label>
               </div>
-              <button class="btn btn-primary btn-block" id="saveProductBtn" type="button">Save</button>
+              <div class="field">
+                <span class="field-label" id="editPaymentsLabel" data-i18n="payment_methods_pick_1_or_2">Payment methods · pick 1 or 2</span>
+                <div class="payment-options" id="editPayments" role="group" aria-labelledby="editPaymentsLabel"></div>
+              </div>
+              <button class="btn btn-primary btn-block" id="saveProductBtn" type="button" data-i18n="save">Save</button>
             </div>
           </div>
         </section>
       </main>
 
-      <nav class="tabbar" aria-label="Main">
-        <button class="tab" data-tab="eventScreen" type="button"><i data-icon="event"></i><span class="tab-label">Event</span></button>
-        <button class="tab" data-tab="reportsScreen" type="button"><i data-icon="chart"></i><span class="tab-label">Reports</span></button>
-        <button class="tab active" data-tab="salesScreen" type="button"><i data-icon="sell"></i><span class="tab-label">Sell</span></button>
-        <button class="tab" data-tab="historyScreen" type="button"><i data-icon="history"></i><span class="tab-label">History</span></button>
-        <button class="tab" data-tab="settingsScreen" type="button"><i data-icon="settings"></i><span class="tab-label">Settings</span></button>
+      <nav class="tabbar" aria-label="Main" data-i18n-aria="main">
+        <button class="tab" data-tab="eventScreen" type="button"><i data-icon="event"></i><span class="tab-label" data-i18n="event">Event</span></button>
+        <button class="tab" data-tab="productHistoryScreen" type="button"><i data-icon="package"></i><span class="tab-label" data-i18n="products">Products</span></button>
+        <button class="tab tab-primary active" data-tab="salesScreen" type="button"><i data-icon="sell"></i><span class="tab-label" data-i18n="sell">Sell</span></button>
+        <button class="tab" data-tab="historyScreen" type="button"><i data-icon="history"></i><span class="tab-label" data-i18n="history">History</span></button>
+        <button class="tab" data-tab="settingsScreen" type="button"><i data-icon="settings"></i><span class="tab-label" data-i18n="settings">Settings</span></button>
       </nav>
 
       <div class="sheet-overlay" id="saveModalOverlay">
         <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="saveModalTitle">
           <div class="sheet-header">
-            <h2 class="sheet-title" id="saveModalTitle">Save report</h2>
-            <button type="button" class="icon-btn" id="saveModalCloseBtn" aria-label="Close"><i data-icon="close"></i></button>
+            <h2 class="sheet-title" id="saveModalTitle">Rename event</h2>
+            <button type="button" class="icon-btn" id="saveModalCloseBtn" aria-label="Close" data-i18n-aria="close"><i data-icon="close"></i></button>
           </div>
-          <p class="sheet-text">Name this report so you can find it later.</p>
+          <p class="sheet-text" id="saveModalText">Name this event so you can find it later.</p>
           <label class="field">
-            <span class="field-label">Report name</span>
-            <input class="input" id="saveModalInput" type="text" placeholder="Report July 14" autocomplete="off" />
+            <span class="field-label" data-i18n="event_name">Event name</span>
+            <input class="input" id="saveModalInput" type="text" placeholder="Event name" data-i18n-placeholder="event_name" autocomplete="off" />
           </label>
           <div class="sheet-actions">
-            <button type="button" class="btn btn-secondary" id="saveModalCancelBtn">Cancel</button>
+            <button type="button" class="btn btn-secondary" id="saveModalCancelBtn" data-i18n="cancel">Cancel</button>
             <button type="button" class="btn btn-primary" id="saveModalSaveBtn">Save</button>
           </div>
         </div>
@@ -273,14 +344,14 @@
       <div class="sheet-overlay" id="compareModalOverlay">
         <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="compareModalTitle">
           <div class="sheet-header">
-            <h2 class="sheet-title" id="compareModalTitle">Compare sales</h2>
-            <button type="button" class="icon-btn" id="compareModalCloseBtn" aria-label="Close"><i data-icon="close"></i></button>
+            <h2 class="sheet-title" id="compareModalTitle" data-i18n="compare_events">Compare events</h2>
+            <button type="button" class="icon-btn" id="compareModalCloseBtn" aria-label="Close" data-i18n-aria="close"><i data-icon="close"></i></button>
           </div>
-          <p class="sheet-text">Select exactly 2 saved reports to compare.</p>
+          <p class="sheet-text" data-i18n="select_exactly_2_events_to_compare">Select exactly 2 events to compare.</p>
           <div class="checklist" id="compareModalList"></div>
           <div class="sheet-actions">
-            <button type="button" class="btn btn-secondary" id="compareModalCancelBtn">Cancel</button>
-            <button type="button" class="btn btn-primary" id="compareModalConfirmBtn">Compare</button>
+            <button type="button" class="btn btn-secondary" id="compareModalCancelBtn" data-i18n="cancel">Cancel</button>
+            <button type="button" class="btn btn-primary" id="compareModalConfirmBtn" data-i18n="compare">Compare</button>
           </div>
         </div>
       </div>
@@ -289,7 +360,7 @@
         <div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="confirmModalTitle" aria-describedby="confirmModalMessage">
           <div class="sheet-header">
             <h2 class="sheet-title" id="confirmModalTitle">Are you sure?</h2>
-            <button type="button" class="icon-btn" id="confirmModalCloseBtn" aria-label="Close"><i data-icon="close"></i></button>
+            <button type="button" class="icon-btn" id="confirmModalCloseBtn" aria-label="Close" data-i18n-aria="close"><i data-icon="close"></i></button>
           </div>
           <p class="sheet-text" id="confirmModalMessage"></p>
           <div class="sheet-actions">
@@ -299,37 +370,22 @@
         </div>
       </div>
 
-      <div class="sheet-overlay" id="importModalOverlay">
-        <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
-          <div class="sheet-header">
-            <h2 class="sheet-title" id="importModalTitle">Import sales</h2>
-            <button type="button" class="icon-btn" id="importModalCloseBtn" aria-label="Close"><i data-icon="close"></i></button>
-          </div>
-          <p class="sheet-text">Choose which sales to include in this event. Selected sales are merged.</p>
-          <div class="checklist" id="importSavedReportsList"></div>
-          <div class="sheet-actions">
-            <button type="button" class="btn btn-secondary" id="importModalCancelBtn">Cancel</button>
-            <button type="button" class="btn btn-primary" id="importModalConfirmBtn">Import</button>
-          </div>
-        </div>
-      </div>
-
       <div class="sheet-overlay" id="expenseModalOverlay">
         <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="expenseModalTitle">
           <div class="sheet-header">
             <h2 class="sheet-title" id="expenseModalTitle">Add expense</h2>
-            <button type="button" class="icon-btn" id="expenseModalCloseBtn" aria-label="Close"><i data-icon="close"></i></button>
+            <button type="button" class="icon-btn" id="expenseModalCloseBtn" aria-label="Close" data-i18n-aria="close"><i data-icon="close"></i></button>
           </div>
           <label class="field">
-            <span class="field-label">Name</span>
-            <input class="input" id="eventCostName" type="text" placeholder="e.g. Booth rental" autocomplete="off" />
+            <span class="field-label" data-i18n="name">Name</span>
+            <input class="input" id="eventCostName" type="text" placeholder="Expense name" data-i18n-placeholder="expense.namePlaceholder" autocomplete="off" />
           </label>
           <label class="field">
-            <span class="field-label">Amount</span>
+            <span class="field-label" data-i18n="amount">Amount</span>
             <input class="input" id="eventCostAmount" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off" />
           </label>
           <div class="sheet-actions">
-            <button type="button" class="btn btn-secondary" id="expenseModalCancelBtn">Cancel</button>
+            <button type="button" class="btn btn-secondary" id="expenseModalCancelBtn" data-i18n="cancel">Cancel</button>
             <button type="button" class="btn btn-primary" id="addCostBtn">Add expense</button>
           </div>
         </div>

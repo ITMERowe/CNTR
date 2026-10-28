@@ -1,26 +1,30 @@
 // Static elements from index.html and the shared UI chrome: toast, confirm dialog, scroll lock, navigation.
 import { state } from '../state';
+import { t } from '../i18n';
 
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 export const el = {
   grid: byId<HTMLDivElement>('grid'),
+  brand: byId<HTMLDivElement>('brand'),
   stats: byId<HTMLDivElement>('stats'),
   toast: byId<HTMLDivElement>('toast'),
-  reset: byId<HTMLButtonElement>('resetBtn'),
-  optionsBtn: byId<HTMLButtonElement>('optionsBtn'),
-  optionsMenu: byId<HTMLDivElement>('optionsMenu'),
-  saveReportOption: byId<HTMLButtonElement>('saveReportOption'),
-  saveEventReportOption: byId<HTMLButtonElement>('saveEventReportOption'),
   openProductEdit: byId<HTMLButtonElement>('openProductEdit'),
+  sellMenuBtn: byId<HTMLButtonElement>('sellMenuBtn'),
+  sellMenu: byId<HTMLDivElement>('sellMenu'),
+  autoSortToggle: byId<HTMLInputElement>('autoSortToggle'),
+  compactTilesToggle: byId<HTMLInputElement>('compactTilesToggle'),
   // Product editor
   productEditTitle: byId<HTMLHeadingElement>('productEditTitle'),
   closeEditBtn: byId<HTMLButtonElement>('closeEditBtn'),
   removeProductBtn: byId<HTMLButtonElement>('removeProductBtn'),
   editName: byId<HTMLInputElement>('editName'),
+  editPriceLabel: byId<HTMLElement>('editPriceLabel'),
   editPrice: byId<HTMLInputElement>('editPrice'),
+  editCostLabel: byId<HTMLElement>('editCostLabel'),
   editCost: byId<HTMLInputElement>('editCost'),
   saveProductBtn: byId<HTMLButtonElement>('saveProductBtn'),
+  editPayments: byId<HTMLDivElement>('editPayments'),
   // Colour picker
   colorField: byId<HTMLDivElement>('colorField'),
   editColorHex: byId<HTMLSpanElement>('editColorHex'),
@@ -34,34 +38,35 @@ export const el = {
   hueThumb: byId<HTMLDivElement>('hueThumb'),
   hueValue: byId<HTMLSpanElement>('hueValue'),
   // Report screens
-  report: byId<HTMLDivElement>('reportCard'),
   eventReport: byId<HTMLDivElement>('eventCard'),
-  reportPageTitle: byId<HTMLHeadingElement>('reportPageTitle'),
-  eventPageTitle: byId<HTMLHeadingElement>('eventPageTitle'),
-  reportBackBtn: byId<HTMLButtonElement>('reportBackBtn'),
-  eventBackBtn: byId<HTMLButtonElement>('eventBackBtn'),
-  reportDeleteBtn: byId<HTMLButtonElement>('reportDeleteBtn'),
-  eventDeleteBtn: byId<HTMLButtonElement>('eventDeleteBtn'),
   historyRecentSales: byId<HTMLDivElement>('historyRecentPurchase'),
-  compareSalesBtn: byId<HTMLButtonElement>('compareSalesBtn'),
+  pastEventList: byId<HTMLDivElement>('pastEventList'),
+  pastEventCard: byId<HTMLDivElement>('pastEventCard'),
+  pastEventTitle: byId<HTMLHeadingElement>('pastEventTitle'),
+  pastEventBackBtn: byId<HTMLButtonElement>('pastEventBackBtn'),
+  pastEventEditBtn: byId<HTMLButtonElement>('pastEventEditBtn'),
+  pastEventDeleteBtn: byId<HTMLButtonElement>('pastEventDeleteBtn'),
+  pastEventEditBar: byId<HTMLDivElement>('pastEventEditBar'),
+  pastEventSaveBtn: byId<HTMLButtonElement>('pastEventSaveBtn'),
+  pastEventCancelBtn: byId<HTMLButtonElement>('pastEventCancelBtn'),
   compareEventsBtn: byId<HTMLButtonElement>('compareEventsBtn'),
-  compareSalesCard: byId<HTMLDivElement>('compareSalesCard'),
   compareEventCard: byId<HTMLDivElement>('compareEventCard'),
-  compareSalesBackBtn: byId<HTMLButtonElement>('compareSalesBackBtn'),
   compareEventBackBtn: byId<HTMLButtonElement>('compareEventBackBtn'),
   // Settings and its sub-screens
   currencySelect: byId<HTMLSelectElement>('currencySelect'),
   compactMoneyToggle: byId<HTMLInputElement>('compactMoneyToggle'),
-  openProductsMenuBtn: byId<HTMLButtonElement>('openProductsMenuBtn'),
-  openSalesReportMenuBtn: byId<HTMLButtonElement>('openSalesReportMenuBtn'),
-  openEventReportMenuBtn: byId<HTMLButtonElement>('openEventReportMenuBtn'),
+  productsPerDayToggle: byId<HTMLInputElement>('productsPerDayToggle'),
+  newDayToggle: byId<HTMLInputElement>('newDayToggle'),
+  soundToggle: byId<HTMLInputElement>('soundToggle'),
+  themeToggle: byId<HTMLInputElement>('themeToggle'),
+  themeState: byId<HTMLElement>('themeState'),
+  languageSelect: byId<HTMLSelectElement>('languageSelect'),
+  productsSummary: byId<HTMLElement>('productsSummary'),
   openAboutMenuBtn: byId<HTMLButtonElement>('openAboutMenuBtn'),
-  salesReportHistoryBackBtn: byId<HTMLButtonElement>('salesReportHistoryBackBtn'),
-  eventReportHistoryBackBtn: byId<HTMLButtonElement>('eventReportHistoryBackBtn'),
-  productHistoryBackBtn: byId<HTMLButtonElement>('productHistoryBackBtn'),
+  startTutorialBtn: byId<HTMLButtonElement>('startTutorialBtn'),
+  aboutBackBtn: byId<HTMLButtonElement>('aboutBackBtn'),
+  aboutVersion: byId<HTMLSpanElement>('aboutVersion'),
   productHistoryList: byId<HTMLDivElement>('productHistoryList'),
-  salesReportHistoryList: byId<HTMLDivElement>('salesReportHistoryList'),
-  eventReportHistoryList: byId<HTMLDivElement>('eventReportHistoryList'),
   // Backup
   exportBackupBtn: byId<HTMLButtonElement>('exportBackupBtn'),
   exportCsvBtn: byId<HTMLButtonElement>('exportCsvBtn'),
@@ -72,6 +77,7 @@ export const el = {
   // Save / rename dialog
   saveModalOverlay: byId<HTMLDivElement>('saveModalOverlay'),
   saveModalTitle: byId<HTMLHeadingElement>('saveModalTitle'),
+  saveModalText: byId<HTMLParagraphElement>('saveModalText'),
   saveModalInput: byId<HTMLInputElement>('saveModalInput'),
   saveModalSaveBtn: byId<HTMLButtonElement>('saveModalSaveBtn'),
   saveModalCancelBtn: byId<HTMLButtonElement>('saveModalCancelBtn'),
@@ -83,12 +89,6 @@ export const el = {
   compareModalConfirmBtn: byId<HTMLButtonElement>('compareModalConfirmBtn'),
   compareModalCancelBtn: byId<HTMLButtonElement>('compareModalCancelBtn'),
   compareModalCloseBtn: byId<HTMLButtonElement>('compareModalCloseBtn'),
-  // Import dialog
-  importModalOverlay: byId<HTMLDivElement>('importModalOverlay'),
-  importSavedReportsList: byId<HTMLDivElement>('importSavedReportsList'),
-  importModalCancelBtn: byId<HTMLButtonElement>('importModalCancelBtn'),
-  importModalConfirmBtn: byId<HTMLButtonElement>('importModalConfirmBtn'),
-  importModalCloseBtn: byId<HTMLButtonElement>('importModalCloseBtn'),
   // Expense dialog
   expenseModalOverlay: byId<HTMLDivElement>('expenseModalOverlay'),
   expenseModalTitle: byId<HTMLHeadingElement>('expenseModalTitle'),
@@ -115,18 +115,39 @@ export function showToast(message: string) {
   toastTimer = window.setTimeout(() => el.toast.classList.remove('show'), 900);
 }
 
+let sheetReturnFocus: HTMLElement | null = null;
+
+/** Opens a `.sheet-overlay`: blocks the page behind it (tabs, header, content) and moves focus into the sheet. */
+export function openSheet(overlay: HTMLElement) {
+  sheetReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  overlay.classList.add('open');
+  for (const blocked of document.querySelectorAll<HTMLElement>('.app > header, .app > main, .app > nav')) blocked.inert = true;
+  // Cancel (the safe action), not the first input or the primary/destructive button.
+  const sheet = overlay.querySelector<HTMLElement>('.sheet');
+  (sheet?.querySelector<HTMLElement>('.sheet-actions .btn-secondary') ?? sheet)?.focus();
+}
+
+/** Closes a sheet opened with openSheet: unblocks the page and returns focus to what opened it. */
+export function closeSheet(overlay: HTMLElement) {
+  overlay.classList.remove('open');
+  for (const blocked of document.querySelectorAll<HTMLElement>('.app > header, .app > main, .app > nav')) blocked.inert = false;
+  sheetReturnFocus?.focus();
+  sheetReturnFocus = null;
+}
+
 /** Asks before a destructive action; `onConfirm` runs only if the user confirms. */
-export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void, { title = 'Are you sure?', danger = true } = {}) {
+export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void, { title = t('are_you_sure'), danger = true, cancelLabel = t('cancel') } = {}) {
   const { confirmModalOverlay: overlay, confirmModalConfirmBtn: confirmBtn } = el;
   el.confirmModalTitle.textContent = title;
   el.confirmModalMessage.textContent = message;
   confirmBtn.textContent = confirmLabel;
   confirmBtn.className = danger ? 'btn btn-danger' : 'btn btn-primary';
+  el.confirmModalCancelBtn.textContent = cancelLabel;
   el.confirmModalCancelBtn.hidden = false;
-  overlay.classList.add('open');
+  openSheet(overlay);
 
   const close = () => {
-    overlay.classList.remove('open');
+    closeSheet(overlay);
     overlay.onclick = confirmBtn.onclick = el.confirmModalCancelBtn.onclick = el.confirmModalCloseBtn.onclick = null;
   };
   confirmBtn.onclick = () => {
@@ -164,38 +185,35 @@ export function unlockBodyScroll() {
   savedBodyScroll = 0;
 }
 
-export function closeOptionsMenu() {
-  el.optionsMenu.classList.remove('open');
-}
-
 export function activeScreenId() {
   return document.querySelector('.screen.active')?.id ?? 'salesScreen';
 }
 
 /** Shows the header buttons that make sense for `screenId`. */
 export function updateHeaderActions(screenId = activeScreenId()) {
-  const preview = state.previewReport;
-  const isPreview = Boolean(preview && ((screenId === 'reportsScreen' && preview.type === 'sales') || (screenId === 'eventScreen' && preview.type === 'event')));
-  const showOptions = screenId === 'reportsScreen' || screenId === 'eventScreen';
-  const showAddProduct = screenId === 'salesScreen' || screenId === 'productHistoryScreen';
-  const showReset = !isPreview && (screenId === 'salesScreen' || screenId === 'reportsScreen' || screenId === 'eventScreen');
+  el.openProductEdit.style.display = screenId === 'salesScreen' || screenId === 'productHistoryScreen' ? 'inline-grid' : 'none';
+  el.sellMenuBtn.style.display = screenId === 'salesScreen' ? 'inline-grid' : 'none';
+  // Screens with no header button (or wordmark) drop the empty 44px row instead of leaving a gap above their title.
+  el.brand.parentElement!.hidden = screenId !== 'salesScreen' && screenId !== 'productHistoryScreen';
+  if (screenId !== 'salesScreen') closeSellMenu();
+}
 
-  el.optionsBtn.style.display = showOptions ? 'inline-grid' : 'none';
-  el.openProductEdit.style.display = showAddProduct ? 'inline-grid' : 'none';
-  el.reset.style.display = showReset ? 'inline-grid' : 'none';
-  el.reset.title = screenId === 'eventScreen' ? 'Clear event' : 'Clear sales';
-  el.reset.setAttribute('aria-label', el.reset.title);
-  if (!showOptions) closeOptionsMenu();
+export function closeSellMenu() {
+  // Focus inside the menu would be lost when it hides (Escape, Android back): hand it back to the ⋮ button.
+  if (el.sellMenu.contains(document.activeElement)) el.sellMenuBtn.focus();
+  el.sellMenu.hidden = true;
+  el.sellMenuBtn.setAttribute('aria-expanded', 'false');
 }
 
 // Sub-screens highlight the bottom-nav tab they belong to.
 const PARENT_TAB: Record<string, string> = {
-  compareSalesScreen: 'historyScreen',
+  pastEventScreen: 'historyScreen',
   compareEventScreen: 'historyScreen',
-  productHistoryScreen: 'settingsScreen',
-  salesReportHistoryScreen: 'settingsScreen',
-  eventReportHistoryScreen: 'settingsScreen',
+  aboutScreen: 'settingsScreen',
 };
+
+// The entrance animation plays once per screen, not on every tab switch back to it.
+const enteredScreens = new Set<string>([document.querySelector('.screen.active')?.id ?? 'salesScreen']);
 
 let productListOrder: string[] | null = null;
 
@@ -206,11 +224,21 @@ export function getProductListOrder() {
 
 /** The only way to change screens: also sets the tab highlight, stats bar and header buttons. */
 export function openScreen(screenId: string) {
-  document.querySelectorAll('.screen').forEach((screen) => screen.classList.toggle('active', screen.id === screenId));
+  // Every page opens at its top, not at the previous page's scroll position. The pages scroll inside .content.
+  if (screenId !== activeScreenId()) {
+    document.querySelector('.content')?.scrollTo(0, 0);
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll<HTMLElement>('.screen').forEach((screen) => screen.classList.toggle('active', screen.id === screenId));
+  const enteringScreen = document.getElementById(screenId);
+  if (enteringScreen) enteringScreen.style.animation = enteredScreens.has(screenId) ? 'none' : '';
+  enteredScreens.add(screenId);
   productListOrder = screenId === 'productHistoryScreen' ? state.productHistory.map((product) => product.name) : null;
 
   const tab = document.querySelector(`.tabbar .tab[data-tab="${screenId}"]`) ? screenId : PARENT_TAB[screenId];
   if (tab) document.querySelectorAll('.tabbar .tab').forEach((button) => button.classList.toggle('active', button.getAttribute('data-tab') === tab));
   el.stats.style.display = screenId === 'salesScreen' ? '' : 'none';
+  // The "CNTR" wordmark only earns its place on Sell; every other screen has its own title.
+  el.brand.style.display = screenId === 'salesScreen' ? '' : 'none';
   updateHeaderActions(screenId);
 }

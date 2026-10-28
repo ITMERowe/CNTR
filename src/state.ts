@@ -1,8 +1,9 @@
 // App state and the rules for changing it. No DOM access here: screens read from `state`
 // and call these functions, then re-render.
-import { defaultProducts, generateUUID } from './data';
+import { generateUUID } from './data';
+import { breakTime, defaultEventName, saleTime, snapshotProducts, splitDays, todaySales } from './events';
 import * as storage from './storage';
-import type { EventCost, EventView, ImportedEventReport, Product, ReportType, SaleRecord, SavedReport } from './types';
+import type { EventCost, LiveEventMeta, PastEvent, Product, SaleRecord } from './types';
 
 // Filled by initState() once storage has loaded.
 export const state = {
@@ -10,23 +11,42 @@ export const state = {
   products: [] as Product[],
   /** Every product ever created, including deactivated ones. */
   productHistory: [] as Product[],
-  /** Live sales for the current session. */
+  /** The live event's sales, all days. */
   sales: [] as SaleRecord[],
-  /** Live event expenses. */
+  /** The live event's expenses. */
   eventCosts: [] as EventCost[],
-  importedEventReport: null as ImportedEventReport | null,
-  /** A saved report currently being viewed on the Reports or Event screen. */
-  previewReport: null as SavedReport | null,
+  /** The live event's name and day breaks. */
+  liveEvent: null as unknown as LiveEventMeta,
+  /** Finished events, oldest first. */
+  pastEvents: [] as PastEvent[],
 };
 
-/** Loads the state from storage; call once, after initStorage(). */
+function newLiveEvent(startedAt: string): LiveEventMeta {
+  return { id: generateUUID(), name: null, startedAt, dayBreaks: [] };
+}
+
+/** Loads the state from storage; call once, after initStorage(). Returns true if the live event was just created. */
 export function initState() {
   state.products = storage.loadProducts();
   state.productHistory = storage.loadProductHistory();
   state.sales = storage.loadSales();
   state.eventCosts = storage.loadEventCosts();
-  state.importedEventReport = storage.loadImportedEventReport();
+  state.pastEvents = storage.loadPastEvents();
+  const live = storage.loadLiveEvent();
+  if (live) {
+    state.liveEvent = live;
+  } else {
+    // First launch with events: the current sales and expenses become the live event.
+    const first = state.sales.reduce<Date | null>((min, sale) => (!min || sale.timestamp < min ? sale.timestamp : min), null);
+    state.liveEvent = newLiveEvent((first ?? new Date()).toISOString());
+    storage.saveLiveEvent(state.liveEvent);
+  }
   syncProductState();
+  if (assignProductIds()) {
+    storage.saveProducts(state.products);
+    storage.saveProductHistory(state.productHistory);
+  }
+  return !live;
 }
 
 /** Keeps the last entry for each product name. */
@@ -39,12 +59,6 @@ function dedupeByName(list: Product[]) {
 /** Dedupes products and history, and makes sure every active product is also in history. */
 function syncProductState() {
   const { products, productHistory } = state;
-  // Fresh install: seed the defaults before building history so they show up under Products too.
-  // Do NOT repopulate active products from history when the user intentionally removed all products.
-  if (products.length === 0 && productHistory.length === 0) {
-    products.push(...defaultProducts.map((product) => ({ ...product })));
-  }
-
   const uniqueProducts = dedupeByName(products);
   const uniqueHistory = dedupeByName(productHistory);
   const activeNames = new Set(uniqueProducts.map((product) => product.name));
@@ -57,6 +71,23 @@ function syncProductState() {
 
   products.splice(0, products.length, ...uniqueProducts);
   productHistory.splice(0, productHistory.length, ...mergedHistory);
+}
+
+/** Gives products from before ids one; an active product shares its history entry's id. Returns true if any changed. */
+function assignProductIds() {
+  let changed = false;
+  for (const product of state.productHistory) {
+    if (product.id) continue;
+    product.id = generateUUID();
+    changed = true;
+  }
+  for (const product of state.products) {
+    const id = state.productHistory.find((item) => item.name === product.name)?.id;
+    if (product.id === id) continue;
+    product.id = id;
+    changed = true;
+  }
+  return changed;
 }
 
 export function saveProducts() {
@@ -77,23 +108,16 @@ export function saveEventCosts() {
   storage.saveEventCosts(state.eventCosts);
 }
 
-export function setImportedEventReport(report: ImportedEventReport | null) {
-  state.importedEventReport = report;
-  storage.saveImportedEventReport(report);
-}
-
 export function productColor(name: string) {
   return state.productHistory.find((product) => product.name === name)?.color ?? '';
 }
 
-/** Renames a product's recorded sales and applies its current price and cost. */
+/** Renames a product's live sales. A new price or cost applies only to sales made after it: a sale keeps what it was sold for. */
 export function renameSales(oldName: string, product: Product) {
   for (const sale of state.sales) {
-    if (sale.product === oldName) {
-      sale.product = product.name;
-      sale.price = product.price;
-      sale.cost = product.cost;
-    }
+    // By id, so a deleted product's sales never follow a new product with its name; older sales have no id.
+    if (sale.productId ? sale.productId !== product.id : sale.product !== oldName) continue;
+    sale.product = product.name;
   }
 }
 
@@ -102,21 +126,32 @@ export function deleteProduct(name: string) {
   const keep = <T>(list: T[], predicate: (item: T) => boolean) => list.splice(0, list.length, ...list.filter(predicate));
   keep(state.productHistory, (product) => product.name !== name);
   keep(state.products, (product) => product.name !== name);
-  keep(state.sales, (sale) => sale.product !== name);
+  // Its sales stay: reports must not change when a product is renamed, split or retired.
   saveProductHistory();
   saveProducts();
-  saveSales();
 }
 
+/** Records a sale. Returns true if it started a new day (the "new day when the date changes" setting). */
 export function recordSale(product: Product, payment: string) {
-  state.sales.push({ product: product.name, price: product.price, cost: product.cost, payment, timestamp: new Date() });
+  const now = new Date();
+  const today = todayLiveSales();
+  const last = today[today.length - 1];
+  const newDay = storage.loadSettings().newDayOnDateChange && last !== undefined && new Date(last.timestamp).toDateString() !== now.toDateString();
+  if (newDay) {
+    state.liveEvent = { ...state.liveEvent, dayBreaks: [...state.liveEvent.dayBreaks, breakTime(now, state.sales, state.liveEvent.dayBreaks)] };
+    storage.saveLiveEvent(state.liveEvent);
+  }
+  state.sales.push({ product: product.name, productId: product.id, price: product.price, cost: product.cost, payment, timestamp: saleTime(now, state.liveEvent.dayBreaks) });
   saveSales();
+  return newDay;
 }
 
-/** Removes the most recent matching sale; returns false if there was none. */
+/** Removes today's most recent matching sale (never one from an ended day); returns false if there was none. */
 export function removeLastSale(productName: string, payment: string) {
+  const today = new Set(todayLiveSales());
   for (let i = state.sales.length - 1; i >= 0; i--) {
-    if (state.sales[i].product === productName && state.sales[i].payment === payment) {
+    const sale = state.sales[i];
+    if (today.has(sale) && sale.product === productName && sale.payment === payment) {
       state.sales.splice(i, 1);
       saveSales();
       return true;
@@ -125,117 +160,105 @@ export function removeLastSale(productName: string, payment: string) {
   return false;
 }
 
-// ---- Saved reports ----
+// ---- Live event ----
 
-export const loadSavedReports = storage.loadSavedReports;
-
-export function findSavedReport(id: string) {
-  return loadSavedReports().find((report) => report.id === id);
+export function liveEventName() {
+  return state.liveEvent.name ?? defaultEventName(state.sales, new Date());
 }
 
-export function deleteSavedReport(id: string) {
-  const reports = loadSavedReports();
-  const remaining = reports.filter((report) => report.id !== id);
-  if (remaining.length === reports.length) return false;
-  storage.saveSavedReports(remaining);
-  if (state.previewReport?.id === id) state.previewReport = null;
-  return true;
+/** The live sales after the last End day: what the Sell tab shows. */
+export function todayLiveSales() {
+  return todaySales(state.sales, state.liveEvent.dayBreaks);
 }
 
-export function renameSavedReport(id: string, nextName: string) {
+/** Number of days so far (1 until End day is pressed). */
+export function liveDayCount() {
+  return state.liveEvent.dayBreaks.length + 1;
+}
+
+export function renameLiveEvent(nextName: string) {
   const name = nextName.trim();
-  const reports = loadSavedReports();
-  const target = reports.find((report) => report.id === id);
-  if (!name || !target) return false;
-  target.name = name;
-  storage.saveSavedReports(reports);
-  if (state.previewReport?.id === id) state.previewReport = { ...target };
+  if (!name) return false;
+  state.liveEvent = { ...state.liveEvent, name };
+  storage.saveLiveEvent(state.liveEvent);
   return true;
 }
 
-/** Saves a snapshot of the live sales screen or of what the event screen shows; returns the name used. */
-export function saveCurrentReport(name: string, type: ReportType) {
-  const reportName = name.trim() || `${type === 'event' ? 'Event report' : 'Report'} ${new Date().toLocaleString()}`;
-  const source = type === 'event' ? getEventView() : { products: state.products, sales: state.sales, eventCosts: state.eventCosts };
-  const reports = loadSavedReports();
-  reports.push({
-    id: generateUUID(),
-    name: reportName,
-    createdAt: new Date().toISOString(),
-    type,
-    products: source.products.map((product) => ({ ...product })),
-    sales: source.sales.map((sale) => ({ ...sale })),
-    eventCosts: source.eventCosts.map((cost) => ({ ...cost })),
-  });
-  storage.saveSavedReports(reports);
-  return reportName;
+/** Freezes today as a finished day. Returns false (nothing changed) if today has no sales. */
+export function endDay() {
+  if (!todayLiveSales().length) return false;
+  state.liveEvent = { ...state.liveEvent, dayBreaks: [...state.liveEvent.dayBreaks, breakTime(new Date(), state.sales, state.liveEvent.dayBreaks)] };
+  storage.saveLiveEvent(state.liveEvent);
+  return true;
 }
 
-// ---- Event screen ----
-
-export function getEventView(): EventView {
-  const saved = state.previewReport?.type === 'event' ? state.previewReport : null;
-  if (saved) return { hasReport: true, sales: saved.sales, products: saved.products, eventCosts: saved.eventCosts };
-  const imported = state.importedEventReport;
-  return { hasReport: Boolean(imported), sales: imported?.sales ?? [], products: imported?.products ?? [], eventCosts: state.eventCosts };
-}
-
-/** Persists expense edits to whichever cost list the event screen is showing. */
-function saveActiveEventCosts() {
-  const preview = state.previewReport;
-  if (preview?.type === 'event') {
-    const reports = loadSavedReports();
-    const target = reports.find((report) => report.id === preview.id);
-    if (target) {
-      target.eventCosts = preview.eventCosts.map((cost) => ({ ...cost }));
-      storage.saveSavedReports(reports);
-    }
-    return;
-  }
-  saveEventCosts();
+/** Moves the live event to History and starts a fresh one. All four keys are saved in the same tick. */
+export function endEvent(nextName: string): PastEvent {
+  const now = new Date().toISOString();
+  // A trailing break with no sales after it would show an empty last day; drop it.
+  const days = splitDays(state.sales, state.liveEvent.dayBreaks);
+  const dayBreaks = days[days.length - 1].length ? state.liveEvent.dayBreaks : state.liveEvent.dayBreaks.slice(0, -1);
+  // Starts at its first sale: the live event was created when the previous one ended, maybe weeks earlier.
+  const firstSale = state.sales.reduce<Date | null>((min, sale) => (!min || sale.timestamp < min ? sale.timestamp : min), null);
+  const event: PastEvent = {
+    id: state.liveEvent.id,
+    name: nextName.trim() || liveEventName(),
+    startedAt: firstSale ? firstSale.toISOString() : state.liveEvent.startedAt,
+    endedAt: now,
+    dayBreaks,
+    products: snapshotProducts(state.sales, state.productHistory),
+    sales: state.sales.map((sale) => ({ ...sale })),
+    expenses: state.eventCosts.map((cost) => ({ ...cost })),
+  };
+  state.pastEvents = [...state.pastEvents, event];
+  state.sales.length = 0;
+  state.eventCosts.length = 0;
+  state.liveEvent = newLiveEvent(now);
+  storage.savePastEvents(state.pastEvents);
+  storage.saveSales(state.sales);
+  storage.saveEventCosts(state.eventCosts);
+  storage.saveLiveEvent(state.liveEvent);
+  return event;
 }
 
 export function addExpense(name: string, amount: number) {
-  getEventView().eventCosts.push({ id: generateUUID(), name, amount });
-  saveActiveEventCosts();
-}
-
-export function updateExpense(id: string, name: string, amount: number) {
-  const cost = getEventView().eventCosts.find((item) => item.id === id);
-  if (!cost) return;
-  cost.name = name;
-  cost.amount = amount;
-  saveActiveEventCosts();
-}
-
-export function removeExpense(id: string) {
-  const costs = getEventView().eventCosts;
-  const index = costs.findIndex((cost) => cost.id === id);
-  if (index < 0) return;
-  costs.splice(index, 1);
-  saveActiveEventCosts();
-}
-
-/** Replaces the live event's sales with the live counter and/or saved sales reports. */
-export function importEventSales(includeLive: boolean, reportIds: string[]) {
-  const reports = loadSavedReports().filter((report) => report.type === 'sales' && reportIds.includes(report.id));
-  const sales: SaleRecord[] = [
-    ...(includeLive ? state.sales.map((sale) => ({ ...sale })) : []),
-    ...reports.flatMap((report) => report.sales.map((sale) => ({ ...sale }))),
-  ];
-  // Products from the imported reports first, current ones override, so every sale has a colour.
-  const products = dedupeByName([...reports.flatMap((report) => report.products), ...state.products]);
-  setImportedEventReport({ sales, products });
-  state.previewReport = null;
-}
-
-export function clearLiveEvent() {
-  setImportedEventReport(null);
-  state.eventCosts.length = 0;
+  state.eventCosts.push({ id: generateUUID(), name, amount });
   saveEventCosts();
 }
 
-export function clearSales() {
-  state.sales.length = 0;
-  saveSales();
+export function updateExpense(id: string, name: string, amount: number) {
+  const cost = state.eventCosts.find((item) => item.id === id);
+  if (!cost) return;
+  cost.name = name;
+  cost.amount = amount;
+  saveEventCosts();
+}
+
+export function removeExpense(id: string) {
+  const index = state.eventCosts.findIndex((cost) => cost.id === id);
+  if (index < 0) return;
+  state.eventCosts.splice(index, 1);
+  saveEventCosts();
+}
+
+// ---- Past events ----
+
+export function findPastEvent(id: string) {
+  return state.pastEvents.find((event) => event.id === id);
+}
+
+/** Saves an edited copy of a past event in place of the stored one. */
+export function replacePastEvent(edited: PastEvent) {
+  if (!findPastEvent(edited.id)) return false;
+  state.pastEvents = state.pastEvents.map((event) => (event.id === edited.id ? edited : event));
+  storage.savePastEvents(state.pastEvents);
+  return true;
+}
+
+export function deletePastEvent(id: string) {
+  const remaining = state.pastEvents.filter((event) => event.id !== id);
+  if (remaining.length === state.pastEvents.length) return false;
+  state.pastEvents = remaining;
+  storage.savePastEvents(state.pastEvents);
+  return true;
 }

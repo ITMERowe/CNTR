@@ -1,13 +1,14 @@
+import { initialLanguage, t } from './i18n';
 import { localStorageStore, openSqliteStore, type KvStore } from './kv';
 import { DATA_KEYS, migrateFromLegacy } from './migrate';
-import type { AppSettings, Currency, EventCost, ImportedEventReport, Product, SaleRecord, SavedReport } from './types';
+import type { AppSettings, Currency, EventCost, LiveEventMeta, PastEvent, Product, SaleRecord } from './types';
 
 export const PRODUCT_STORAGE_KEY = 'cntrProducts';
 export const PRODUCT_HISTORY_STORAGE_KEY = 'cntrProductHistory';
 export const TX_STORAGE_KEY = 'cntrSales';
 export const EVENT_COST_STORAGE_KEY = 'cntrEventCosts';
-export const SAVED_REPORTS_KEY = 'cntrSavedReports';
-export const IMPORTED_EVENT_REPORT_KEY = 'cntrImportedEventReport';
+export const LIVE_EVENT_KEY = 'cntrLiveEvent';
+export const PAST_EVENTS_KEY = 'cntrEvents';
 export const SETTINGS_KEY = 'cntrSettings';
 
 export const CURRENCIES: Currency[] = ['IDR', 'USD', 'EUR', 'SGD', 'AUD', 'GBP', 'JPY', 'MYR'];
@@ -15,7 +16,17 @@ export const CURRENCIES: Currency[] = ['IDR', 'USD', 'EUR', 'SGD', 'AUD', 'GBP',
 export const DEFAULT_SETTINGS: AppSettings = {
   currency: 'IDR',
   compactMoney: false,
+  productsPerDay: true,
+  newDayOnDateChange: false,
+  autoSort: false,
+  compactTiles: false,
+  sound: true,
+  theme: 'dark',
+  language: 'en',
 };
+
+/** The phone's own light/dark setting, read only to resolve the very first choice (never followed afterwards). */
+const resolveTheme = (): AppSettings['theme'] => (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
 
 /** Sales are stored with ISO string timestamps. */
 type StoredSale = Omit<SaleRecord, 'timestamp'> & { timestamp: string };
@@ -33,18 +44,19 @@ let retryTimer = 0;
 const USING_DATABASE_FLAG = 'cntrMeta.usingDatabase';
 
 let saveProblem: string | null = null;
-let startupProblem: string | null = null;
+// Made when shown, not at startup, so it is in the saved language (read after the data loads).
+let startupProblem: (() => string) | null = null;
 let onProblem: (message: string | null) => void = () => {};
 
 /** Called with a message whenever saving is failing, and with null once it works again. */
 export function onStorageProblem(listener: (message: string | null) => void) {
   onProblem = listener;
-  listener(saveProblem ?? startupProblem);
+  listener(saveProblem ?? startupProblem?.() ?? null);
 }
 
 function setSaveProblem(message: string | null) {
   saveProblem = message;
-  onProblem(saveProblem ?? startupProblem);
+  onProblem(saveProblem ?? startupProblem?.() ?? null);
 }
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -52,6 +64,8 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
 function flush(): Promise<void> {
   flushing ??= (async () => {
     try {
+      // Let the rest of this tick's writes join the batch, so a multi-key change (e.g. End event) is all-or-nothing.
+      await Promise.resolve();
       while (pending.size) {
         const batch = new Map(pending);
         pending.clear();
@@ -61,7 +75,7 @@ function flush(): Promise<void> {
           // Keep the batch for the retry, unless a newer value for the same key arrived meanwhile.
           for (const [key, value] of batch) if (!pending.has(key)) pending.set(key, value);
           console.error('Saving failed', error);
-          setSaveProblem(`Your latest changes could not be saved (${errorText(error)}). The phone may be out of storage. CNTR keeps trying; free up space and export a backup.`);
+          setSaveProblem(t('storage.saveFailing', { error: errorText(error) }));
           window.clearTimeout(retryTimer);
           retryTimer = window.setTimeout(() => void flush(), 5000);
           return;
@@ -100,11 +114,11 @@ export async function initStorage(isNative: boolean): Promise<StorageStartup> {
       console.error('Opening the database failed', error);
       if (localStorage.getItem(USING_DATABASE_FLAG)) {
         // The newest data is in the database; the old localStorage copy is stale, so do not run on it.
-        return { ok: false, error: `CNTR could not open its data (${errorText(error)}). Nothing was changed or deleted. Close CNTR completely and open it again.` };
+        return { ok: false, error: t('storage.cannotOpen', { error: errorText(error) }) };
       }
       // Never migrated: localStorage still holds the only, current copy. Keep using it and retry next launch.
       store = localStorageStore;
-      startupProblem = `Your data could not be moved to safer storage yet (${errorText(error)}). It is still on this phone and CNTR will try again next time. Export a backup now.`;
+      startupProblem = () => t('storage.notMoved', { error: errorText(error) });
     }
     if (usingDatabase) {
       try {
@@ -116,15 +130,16 @@ export async function initStorage(isNative: boolean): Promise<StorageStartup> {
   }
   try {
     for (const [key, value] of await store.readAll()) cache.set(key, value);
+    freshInstall = ![...cache.keys()].some((key) => DATA_KEYS.includes(key) || key.startsWith('cntrMeta.tutorial'));
   } catch (error) {
-    return { ok: false, error: `CNTR could not read its data (${errorText(error)}). Nothing was changed or deleted. Close CNTR completely and open it again.` };
+    return { ok: false, error: t('storage.cannotRead', { error: errorText(error) }) };
   }
   return { ok: true, usingDatabase };
 }
 
-/** The stored JSON strings for every data key, including changes still being written. */
-export function storedValues() {
-  return new Map([...cache].filter(([key]) => DATA_KEYS.includes(key)));
+/** The stored JSON strings for every data key (or `keys`), including changes still being written. */
+export function storedValues(keys = DATA_KEYS) {
+  return new Map([...cache].filter(([key]) => keys.includes(key)));
 }
 
 /** Replaces all data in one step (keys missing from `values` are deleted). The caller reloads the app afterwards. */
@@ -132,6 +147,42 @@ export async function replaceAllData(values: Map<string, string>) {
   await flush();
   if (pending.size) throw new Error('Earlier changes have not been saved yet');
   await store.write(new Map(DATA_KEYS.map((key) => [key, values.get(key) ?? null])));
+}
+
+// ---- Tutorial: practice data in place of the real data ----
+// The real data waits under TUTORIAL_KEY (not a data key, so never in a backup). Both swaps are one
+// all-or-nothing write, so a crash leaves either the real data or the practice data plus the saved copy.
+const TUTORIAL_KEY = 'cntrMeta.tutorialSavedData';
+const TUTORIAL_OFFERED_KEY = 'cntrMeta.tutorialOffered';
+
+/** True while practice data is in place (the real data is waiting to come back). */
+export const tutorialActive = () => cache.has(TUTORIAL_KEY);
+
+export const tutorialOffered = () => cache.has(TUTORIAL_OFFERED_KEY);
+
+export function markTutorialOffered() {
+  persist(TUTORIAL_OFFERED_KEY, new Date().toISOString());
+}
+
+/** Puts the real data aside and the practice data in its place. The caller reloads the app afterwards. */
+export async function startTutorialData(practice: Map<string, string>) {
+  await flush();
+  if (pending.size) throw new Error('Earlier changes have not been saved yet');
+  const changes = new Map<string, string | null>(DATA_KEYS.map((key) => [key, practice.get(key) ?? null]));
+  changes.set(TUTORIAL_KEY, JSON.stringify([...storedValues()]));
+  await store.write(changes);
+}
+
+/** Brings the real data back exactly as it was and drops the practice data. The caller reloads the app afterwards. */
+export async function endTutorialData() {
+  const raw = cache.get(TUTORIAL_KEY);
+  if (raw === undefined) return;
+  const saved = new Map<string, string>(JSON.parse(raw) as [string, string][]);
+  await flush(); // let practice writes finish first, so none land after the real data is back
+  const changes = new Map<string, string | null>(DATA_KEYS.map((key) => [key, saved.get(key) ?? null]));
+  changes.set(TUTORIAL_KEY, null);
+  pending.clear(); // a practice write still failing must not be retried over the real data
+  await store.write(changes);
 }
 
 function readJson<T>(key: string, fallback: T): T {
@@ -167,22 +218,6 @@ function serializeSales(sales: SaleRecord[]) {
   }));
 }
 
-export function loadImportedEventReport(): ImportedEventReport | null {
-  const parsed = readJson<{ sales?: unknown; products?: unknown } | null>(IMPORTED_EVENT_REPORT_KEY, null);
-  if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.sales) || !Array.isArray(parsed.products)) {
-    return null;
-  }
-  return { sales: reviveSales(parsed.sales as StoredSale[]), products: parsed.products as Product[] };
-}
-
-export function saveImportedEventReport(report: ImportedEventReport | null) {
-  if (report === null) {
-    persist(IMPORTED_EVENT_REPORT_KEY, null);
-    return;
-  }
-  writeJson(IMPORTED_EVENT_REPORT_KEY, { ...report, sales: serializeSales(report.sales) });
-}
-
 export function loadProducts(): Product[] {
   return readArray<Product>(PRODUCT_STORAGE_KEY);
 }
@@ -216,12 +251,21 @@ export function saveEventCosts(eventCosts: EventCost[]) {
   writeJson(EVENT_COST_STORAGE_KEY, eventCosts);
 }
 
-export function loadSavedReports(): SavedReport[] {
-  return readArray<SavedReport>(SAVED_REPORTS_KEY);
+export function loadLiveEvent(): LiveEventMeta | null {
+  const parsed = readJson<LiveEventMeta | null>(LIVE_EVENT_KEY, null);
+  return parsed && typeof parsed === 'object' && Array.isArray(parsed.dayBreaks) ? parsed : null;
 }
 
-export function saveSavedReports(reports: SavedReport[]) {
-  writeJson(SAVED_REPORTS_KEY, reports);
+export function saveLiveEvent(meta: LiveEventMeta) {
+  writeJson(LIVE_EVENT_KEY, meta);
+}
+
+export function loadPastEvents(): PastEvent[] {
+  return readArray<PastEvent & { sales: StoredSale[] }>(PAST_EVENTS_KEY).map((event) => ({ ...event, sales: Array.isArray(event.sales) ? reviveSales(event.sales) : [] })) // a damaged entry must not stop the app from starting;
+}
+
+export function savePastEvents(events: PastEvent[]) {
+  writeJson(PAST_EVENTS_KEY, events.map((event) => ({ ...event, sales: serializeSales(event.sales) })));
 }
 
 // When the last backup was exported. Not part of the backup itself, so a restore does not change it.
@@ -235,6 +279,9 @@ export function saveLastBackup(iso: string) {
   persist(LAST_BACKUP_KEY, iso);
 }
 
+/** Nothing stored yet when the app started: a first launch, not an update. */
+let freshInstall = false;
+
 // Settings are read on every money format call, so keep the parsed value in memory.
 let cachedSettings: AppSettings | null = null;
 
@@ -244,8 +291,20 @@ export function loadSettings(): AppSettings {
 
   cachedSettings = {
     currency: CURRENCIES.includes(stored.currency as Currency) ? (stored.currency as Currency) : DEFAULT_SETTINGS.currency,
-    compactMoney: Boolean(stored.compactMoney),
+    compactMoney: stored.compactMoney === true,
+    // Settings saved before this option (or a damaged value) get the default.
+    productsPerDay: typeof stored.productsPerDay === 'boolean' ? stored.productsPerDay : DEFAULT_SETTINGS.productsPerDay,
+    newDayOnDateChange: typeof stored.newDayOnDateChange === 'boolean' ? stored.newDayOnDateChange : DEFAULT_SETTINGS.newDayOnDateChange,
+    autoSort: stored.autoSort === true,
+    compactTiles: stored.compactTiles === true,
+    sound: typeof stored.sound === 'boolean' ? stored.sound : DEFAULT_SETTINGS.sound,
+    theme: stored.theme === 'light' || stored.theme === 'dark' ? stored.theme : resolveTheme(),
+    language: stored.language === 'en' || stored.language === 'id' ? stored.language : initialLanguage(navigator.language, freshInstall),
   };
+  // The first choice is saved at once, so it never changes on its own later (e.g. after the phone's language or theme changes).
+  if (stored.language !== cachedSettings.language || stored.theme !== cachedSettings.theme) {
+    persist(SETTINGS_KEY, JSON.stringify({ ...stored, language: cachedSettings.language, theme: cachedSettings.theme }));
+  }
   return { ...cachedSettings };
 }
 
