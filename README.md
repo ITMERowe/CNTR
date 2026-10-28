@@ -147,7 +147,7 @@ Before merging:
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, conventions and the checks to run, and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report security problems privately as described in [SECURITY.md](SECURITY.md). Our accessibility commitments and known limits are in [ACCESSIBILITY.md](ACCESSIBILITY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, conventions and the checks to run. Report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 

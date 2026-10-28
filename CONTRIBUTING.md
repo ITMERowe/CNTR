@@ -2,7 +2,7 @@
 
 Thanks for helping. CNTR is an offline sales counter for booth sellers, so changes are judged on one thing above all: **it must stay fast, reliable and fully offline at a busy booth, and it must never lose a seller's data.**
 
-By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Security problems go through the [security policy](SECURITY.md), not public issues.
+Security problems go through the [security policy](SECURITY.md), not public issues.
 
 ## Before you start
 
