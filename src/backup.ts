@@ -43,20 +43,24 @@ export function buildBackup(stored: Map<string, string>, now = new Date(), keys 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNumber = (value: unknown) => typeof value === 'number' && Number.isFinite(value);
 const isString = (value: unknown) => typeof value === 'string';
+/** The name fields cap at this length too (index.html maxlength), so a backup of real data always fits. */
+export const MAX_NAME = 1000;
+// A huge name in a hand-made backup would only slow the phone down; real names are far shorter.
+const isName = (value: unknown) => isString(value) && (value as string).length <= MAX_NAME;
 
 function checkProduct(item: unknown) {
   // `payments` is optional (older backups have none): 1 or 2 method names.
   const payments = isObject(item) ? item.payments : undefined;
   const paymentsOk = payments === undefined || (Array.isArray(payments) && payments.length >= 1 && payments.length <= 2 && payments.every(isString));
-  return isObject(item) && (item.id === undefined || isString(item.id)) && isString(item.name) && isNumber(item.price) && isNumber(item.cost) && isString(item.color) && paymentsOk;
+  return isObject(item) && (item.id === undefined || isString(item.id)) && isName(item.name) && isNumber(item.price) && isNumber(item.cost) && isString(item.color) && paymentsOk;
 }
 
 function checkSale(item: unknown) {
-  return isObject(item) && isString(item.product) && (item.productId === undefined || isString(item.productId)) && isNumber(item.price) && isNumber(item.cost) && isString(item.payment) && isString(item.timestamp) && !Number.isNaN(Date.parse(item.timestamp as string));
+  return isObject(item) && isName(item.product) && (item.productId === undefined || isString(item.productId)) && isNumber(item.price) && isNumber(item.cost) && isString(item.payment) && isString(item.timestamp) && !Number.isNaN(Date.parse(item.timestamp as string));
 }
 
 function checkCost(item: unknown) {
-  return isObject(item) && isString(item.id) && isString(item.name) && isNumber(item.amount);
+  return isObject(item) && isString(item.id) && isName(item.name) && isNumber(item.amount);
 }
 
 /** Returns the first problem in `list`, or null. */
@@ -69,13 +73,13 @@ function checkList(list: unknown, check: (item: unknown) => boolean, label: stri
 const isDateString = (value: unknown) => isString(value) && !Number.isNaN(Date.parse(value as string));
 
 function checkLiveEvent(value: unknown): string | null {
-  const ok = isObject(value) && isString(value.id) && isDateString(value.startedAt) && (value.name === null || isString(value.name)) && Array.isArray(value.dayBreaks) && value.dayBreaks.every(isDateString);
+  const ok = isObject(value) && isString(value.id) && isDateString(value.startedAt) && (value.name === null || isName(value.name)) && Array.isArray(value.dayBreaks) && value.dayBreaks.every(isDateString);
   return ok ? null : t('backup.badLive');
 }
 
 function checkEvent(event: unknown, index: number): string | null {
   const label = t('backup.event', { n: index + 1 });
-  if (!isObject(event) || !isString(event.id) || !isString(event.name) || !isDateString(event.startedAt) || !isDateString(event.endedAt) || !Array.isArray(event.dayBreaks) || !event.dayBreaks.every(isDateString)) {
+  if (!isObject(event) || !isString(event.id) || !isName(event.name) || !isDateString(event.startedAt) || !isDateString(event.endedAt) || !Array.isArray(event.dayBreaks) || !event.dayBreaks.every(isDateString)) {
     return t('backup.damaged', { label });
   }
   return checkList(event.products, checkProduct, t('backup.eventProducts', { label })) ?? checkList(event.sales, checkSale, t('backup.eventSales', { label })) ?? checkList(event.expenses, checkCost, t('backup.eventExpenses', { label }));

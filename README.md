@@ -29,7 +29,7 @@
 ## Status and platforms
 
 - **Android** 7.0 (API 24) or newer; targets API 36. Version `0.1.<CI run number>`; not yet published on Google Play.
-- **iOS**: a Capacitor iOS project is included (iOS 15+) but has not been built or tested.
+- **iOS**: not built or tested. The repository has no iOS project; Capacitor can create one on a Mac with `npx cap add ios`.
 - The web build runs in a browser for development and testing (data in `localStorage`).
 
 ## Tech stack
@@ -61,7 +61,7 @@ src/views/          Preact components for every screen
 src/ui/             Navigation, dialogs, product editor, color picker, tile drag, icons
 src/style.css       Styles; design tokens at the top
 tests/              Unit tests; browser tests in tests/e2e
-android/, ios/      Capacitor native projects
+android/            Capacitor Android project
 ```
 
 ## Getting started
@@ -72,6 +72,8 @@ Prerequisites: **Node.js 22** and npm.
 npm install
 npm run dev        # http://localhost:5173
 ```
+
+The dev server only listens on this computer. To open it from a phone on the same Wi-Fi, run `npm run dev -- --host`, and only on a network you trust.
 
 | Command | What it does |
 |---|---|
