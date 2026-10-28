@@ -1,12 +1,25 @@
 # Changelog
 
+Each version starts with **Highlights**: a short list for users, shown first on the GitHub Release and as Google Play's "What's new" (keep it under 500 characters). The sections after it are the full list.
+
 ## 0.1.0 (2026-10-28)
 
+### Highlights
+- First release: tap-to-sell tiles, net profit after expenses, multi-day events, history and compare
+- Hold a tile to drag it into your own order, or sort by today's best sellers
+- Compact tiles fit more products on screen
+- Bahasa Indonesia and a light theme
+- Free items get their own counter
+- A hands-on tutorial with practice data
+
 ### Added
+- **Arrange the Sell counter**: hold a tile, then drag it up or down to move it (the order is saved; a hold never records a sale). The new ⋮ menu on Sell has *Sort by best sellers* (most sold today first; the order only changes when you come back to Sell, so tiles never move mid-rush) and *Compact tiles* (no price, one row per payment, so more tiles fit).
 - Settings → Event → **New day when the date changes** (off by default): the first sale on a new date starts the next day by itself.
-- **Bahasa Indonesia**: the whole app (screens, messages, the tutorial, backup errors) in English and Indonesian. A fresh install on an Indonesian phone starts in Indonesian; people updating stay in English until they choose it in Settings → Appearance → Language. Month names follow the app language. Payment method names and CSV headers stay English.
+- **Bahasa Indonesia**: the whole app (screens, messages, the tutorial, backup errors) in English and Indonesian. A fresh install on an Indonesian phone starts in Indonesian; people updating stay in English until they choose it in Settings → Looks → Language. Month names follow the app language. Payment method names and CSV headers stay English.
 - **Light mode**: Settings → Looks → Theme, a Light/Dark toggle. The phone's own setting only resolves the very first choice (then saved); it is not followed afterwards. Light uses VS Code Light+ colours; all text keeps ≥ 4.5:1 contrast.
-- **Products tab**: a price of 0 shows as "Free" and gets a plain counter instead of Cash/QRIS buttons, for tracking giveaways.
+- **Free items**: a price of 0 shows as "Free" and gets a plain counter instead of Cash/QRIS buttons, for tracking giveaways.
+- **Hands-on tutorial**: a 30-step tour on rails (like a game tutorial: only the highlighted button responds, the rest is dimmed) with practice products and events (sell, undo, add a product, expenses, End day, End event, edit a past event, Compare). Offered once on an empty first launch; replay from Settings → About → Show tutorial. The real data is put aside and comes back exactly as it was on Finish, Quit, or the next launch after a crash. No backup files are written during the tour, and Export/Restore wait until it ends.
+- **Haptics and sound effects**: a tap on every sale, undo, stepper, switch and payment pick; a success buzz and soft chime on End day, End event, saved edits and exports; a warning buzz on refusals and failures. Settings → Sound → *Sound effects* turns the tones off (vibration stays).
 - If the live event's last sale is over 3 days old, CNTR asks whether to end it before the next con's sales land in it.
 - Ending a day also makes a safety backup (replacing the previous one, unlike End event's), like ending an event already did.
 - A past event's detail screen shows its date range and day count.
@@ -28,12 +41,18 @@
 - Compare's button is hidden until there are 2 events to compare; comparing happens as soon as a 2nd is picked.
 - The product editor's Price/Cost fields show the current currency's own symbol, not always "Rp".
 - "Products · Day 1" only shows once there's more than one day.
+- With *Compact money* on, amounts from 999,500 to 999,999 showed as "1.000K"; they now show "1M".
+- Renaming a product while *Sort by best sellers* is on no longer moves its tile to the end.
+- A damaged saved event can no longer stop the app from starting.
+- Compact tiles: payment names no longer overlap their counts on small phones.
+- Screens without header buttons no longer have an empty strip above their title; landscape keeps clear of side camera cutouts.
+- Tutorial: the highlight follows rounded corners and stays on screen around full-width sheets; the name, price and cost steps wait for Next instead of moving on after one character; the background is dimmed less and only slightly blurred, so it stays readable.
 
-### Security (review: `docs/security-review-2026-10-27.md`)
-- No INTERNET permission any more; a Content-Security-Policy; CSV cells that start like a formula are neutralised; file sharing limited to CNTR's own folders; CI with a read-only token, a pinned third-party action and guaranteed keystore cleanup; the privacy text now mentions Android's own Google account backup. Commits use the GitHub no-reply address.
-
-- **Hands-on tutorial**: a 28-step tour on rails (like a game tutorial: only the highlighted button responds, the rest is dimmed) with practice products and events (sell, undo, add a product, expenses, End day, End event, edit a past event, Compare). Offered once on an empty first launch; replay from Settings → Show tutorial. The real data is put aside and comes back exactly as it was on Finish, Quit, or the next launch after a crash. No backup files are written during the tour, and Export/Restore wait until it ends.
-- **Haptics and sound effects**: a tap on every sale, undo, stepper, switch and payment pick; a success buzz and soft chime on End day, End event, saved edits and exports; a warning buzz on refusals and failures. Settings → Sound → *Sound effects* turns the tones off (vibration stays).
+### Security
+- No INTERNET permission any more; a Content-Security-Policy; CSV cells that start like a formula are neutralised; file sharing limited to CNTR's own folders; the privacy text mentions Android's own Google account backup.
+- Backup files with absurdly long names are rejected; name fields stop at 1,000 characters.
+- Build tools: Vite 6 and a patched dependency, so no known vulnerabilities; the development server only listens on the computer it runs on.
+- CI: read-only token, pinned third-party actions, guaranteed keystore cleanup.
 
 ### Changed
 - **Compare events** rebuilt: the older event on the left, rows lined up across both events, the change from A under each B value, expense items with the same name added up, "—" for a missing expense, no green "better" colouring.
