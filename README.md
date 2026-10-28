@@ -28,7 +28,7 @@
 
 ## Status and platforms
 
-- **Android** 7.0 (API 24) or newer; targets API 36. Version `0.1.<CI run number>`; not yet published on Google Play.
+- **Android** 7.0 (API 24) or newer; targets API 36. Version `0.1.0` (from `package.json`); the first Google Play release is being prepared.
 - **iOS**: not built or tested. The repository has no iOS project; Capacitor can create one on a Mac with `npx cap add ios`.
 - The web build runs in a browser for development and testing (data in `localStorage`).
 
@@ -87,9 +87,9 @@ The dev server only listens on this computer. To open it from a phone on the sam
 
 ## Building for Android
 
-**From CI (no local Android tooling needed):** every push runs the **Build APK** workflow. Open the run under **Actions** and download `CNTR_0.1.<build>.apk` (signed in to GitHub). The last number is the CI run number and the app's `versionCode`.
+**From CI (no local Android tooling needed):** every push runs the **Build APK** workflow. Open the run under **Actions** and download the APK (signed in to GitHub). Its name comes from the version in `package.json`: builds from `dev`, `main` and other branches are named like `CNTR_0.1.0-dev.36.apk` (branch and CI run number); releases from `playstore` are exactly `CNTR_0.1.0.apk`. The CI run number is also the app's internal `versionCode`, which always rises so every build installs as an update.
 
-> **Signing.** With the release key in the repository secrets (`CNTR_KEYSTORE_BASE64`, `CNTR_KEYSTORE_PASSWORD`, `CNTR_KEY_ALIAS`), CI builds a **release** APK signed with that permanent key, plus `CNTR_0.1.<build>.aab` for Google Play; each release installs as an update and keeps the app's data. Without those secrets CI builds a **debug** APK with a temporary key: Android will not install it over a different build, so you must uninstall first, and **uninstalling deletes the app's data**.
+> **Signing.** With the release key in the repository secrets (`CNTR_KEYSTORE_BASE64`, `CNTR_KEYSTORE_PASSWORD`, `CNTR_KEY_ALIAS`), CI builds a **release** APK signed with that permanent key, plus a matching `.aab` bundle for Google Play; each release installs as an update and keeps the app's data. Without those secrets CI builds a **debug** APK with a temporary key: Android will not install it over a different build, so you must uninstall first, and **uninstalling deletes the app's data**.
 
 **Locally** (needs JDK 21 and the Android SDK 36, e.g. via Android Studio):
 
@@ -122,7 +122,7 @@ git push origin playstore
 On a push to `playstore` the **Build APK** workflow builds and tests as usual, and also:
 
 1. checks that native libraries are 16 KB page aligned (required by Google Play for Android 15+) and stops the release if not;
-2. creates a **GitHub Release** tagged `v0.1.<build>` with the signed APK and the `.aab` attached (needs the release key secrets);
+2. creates a **GitHub Release** tagged `v<version>` (e.g. `v0.1.0`, from `package.json`) with the signed APK and the `.aab` attached (needs the release key secrets). Bump `version` in `package.json` before each new release; a version can only be released once;
 3. uploads the `.aab` to **Google Play** when the `PLAY_SERVICE_ACCOUNT_JSON` secret is set (otherwise this step is skipped).
 
 A push that only changes docs (`*.md`, `docs/`, `assets/`) doesn't build, on any branch; start a build by hand from the Actions tab if needed.

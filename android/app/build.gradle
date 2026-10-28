@@ -3,6 +3,9 @@ apply plugin: 'com.android.application'
 // CI sets BUILD_NUMBER (the GitHub Actions run number) so every build gets a higher versionCode,
 // which Android and Google Play require for updates. Local builds use 1.
 def buildNumber = (System.getenv('BUILD_NUMBER') ?: '1').toInteger()
+// The version name people see comes from package.json ("0.1.0"). CI adds a suffix to builds that aren't
+// releases (e.g. "-dev.36"), so only the playstore branch produces a plain "0.1.0".
+def appVersion = new groovy.json.JsonSlurper().parse(file('../../package.json')).version + (System.getenv('VERSION_SUFFIX') ?: '')
 
 android {
     namespace = "com.cntr.app"
@@ -12,7 +15,7 @@ android {
         minSdk = rootProject.ext.minSdkVersion
         targetSdk = rootProject.ext.targetSdkVersion
         versionCode = buildNumber
-        versionName = "0.1.${buildNumber}"
+        versionName = appVersion
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -41,7 +44,7 @@ android {
             if (keystoreFile) signingConfig = signingConfigs.release
         }
     }
-    // Name APKs <app>_<version>.apk, e.g. CNTR_0.1.42.apk, instead of app-debug.apk.
+    // Name APKs <app>_<version>.apk, e.g. CNTR_0.1.0.apk or CNTR_0.1.0-dev.36.apk, instead of app-debug.apk.
     applicationVariants.all { variant ->
         variant.outputs.all {
             outputFileName = "CNTR_${variant.versionName}.apk"

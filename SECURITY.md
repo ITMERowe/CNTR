@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-CNTR is in early development (version `0.1.<build>`). Only the **latest build from `main`** gets security fixes.
+CNTR is in early development (version 0.1.x). Only the **latest release** (the `playstore` branch and its GitHub Release) gets security fixes.
 
 ## Reporting a vulnerability
 

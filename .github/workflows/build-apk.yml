@@ -74,6 +74,14 @@ jobs:
           CNTR_KEY_ALIAS: ${{ secrets.CNTR_KEY_ALIAS }}
           CNTR_KEY_PASSWORD: ${{ secrets.CNTR_KEYSTORE_PASSWORD }}
         run: |
+          # Releases (playstore) are named exactly as package.json, e.g. 0.1.0; other builds get e.g. 0.1.0-dev.36.
+          if [ "$GITHUB_REF" = refs/heads/playstore ]; then
+            export VERSION_SUFFIX=""
+          else
+            export VERSION_SUFFIX="-${GITHUB_REF_NAME//\//-}.${BUILD_NUMBER}"
+          fi
+          VERSION_NAME="$(node -p "require('./package.json').version")${VERSION_SUFFIX}"
+          echo "Version: ${VERSION_NAME} (versionCode ${BUILD_NUMBER})"
           cd android
           chmod +x gradlew
           mkdir -p ../dist-apk
@@ -83,7 +91,7 @@ jobs:
             echo "$KEYSTORE_BASE64" | base64 -d > "$CNTR_KEYSTORE_FILE"
             ./gradlew assembleRelease bundleRelease
             cp app/build/outputs/apk/release/CNTR_*.apk ../dist-apk/
-            cp app/build/outputs/bundle/release/app-release.aab "../dist-apk/CNTR_0.1.${BUILD_NUMBER}.aab"
+            cp app/build/outputs/bundle/release/app-release.aab "../dist-apk/CNTR_${VERSION_NAME}.aab"
           else
             echo "::warning::No release key in secrets; building a debug APK (installing it needs an uninstall first)."
             ./gradlew assembleDebug
@@ -148,7 +156,9 @@ jobs:
             echo "::error::No signed .aab: add the release key secrets (CNTR_KEYSTORE_*) before tagging a release."
             exit 1
           fi
-          name="$(basename "$aab" .aab)"   # CNTR_0.1.<run number>
+          name="$(basename "$aab" .aab)"   # CNTR_<package.json version>, e.g. CNTR_0.1.0
+          # One release per version: bump "version" in package.json before the next release, or this stops
+          # here because the release already exists (a pushed tag of the same name is reused).
           gh release create "v${name#CNTR_}" release/* --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" --title "${name/_/ }" --generate-notes
 

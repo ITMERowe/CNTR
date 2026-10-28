@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1 (branch `feature/signing-tests-about`)
+## 0.1.0 (2026-10-28)
 
 ### Added
 - Settings → Event → **New day when the date changes** (off by default): the first sale on a new date starts the next day by itself.
@@ -39,7 +39,7 @@
 - **Compare events** rebuilt: the older event on the left, rows lined up across both events, the change from A under each B value, expense items with the same name added up, "—" for a missing expense, no green "better" colouring.
 - Sales by hour removed from the event report.
 - Recent sales and Products: the colour bar runs the full height of the row.
-- Version names are now `0.1.<build>` (e.g. `CNTR_0.1.24.apk`): pre-release until it is ready to ship, which will be 1.0. Builds were named `1.0.<build>` before; the build number (`versionCode`) keeps rising, so 0.1.24 still installs as an update over 1.0.23.
+- Version names come from `package.json`: releases are `0.1.0` (`CNTR_0.1.0.apk`, tag `v0.1.0`); other builds add their branch and CI run (`0.1.0-dev.36`). The internal `versionCode` (the CI run number) keeps rising, so every build still installs as an update over earlier ones (including the older `0.1.<build>` and `1.0.<build>` builds).
 - The two explanation notes under Settings → Backup were removed (the About → Privacy text stays).
 - **Products is now its own tab** (between Event and Sell), not a Settings submenu.
 - "Profit" renamed to "Product profit" everywhere, so it is not confused with "Net profit" beside it.
