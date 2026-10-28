@@ -4,13 +4,6 @@
 
 ![CNTR: tap-to-sell tiles, live net profit, and event comparison](assets/cntr-banner.png)
 
-<p>
-  <img src="assets/store/plain/01-sell.jpg" alt="Sell: one tile per product with a button for each payment method" width="180" />
-  <img src="assets/store/plain/02-profit.jpg" alt="Event: net profit, revenue, product profit, expenses and day cards" width="180" />
-  <img src="assets/store/plain/05-history.jpg" alt="History: past events with their net profit, and recent sales" width="180" />
-  <img src="assets/store/plain/06-compare.jpg" alt="Compare two past events side by side" width="180" />
-</p>
-
 ## Features
 
 - **Sell**: one colored tile per product, with a large tap target for each of its 1 or 2 payment methods (Cash, QRIS, Transfer, Card, E-wallet). A small − undoes the last sale of that kind. A free product (price 0) gets one plain counter. Today's revenue and profit sit at the top.
