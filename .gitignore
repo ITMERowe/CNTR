@@ -28,12 +28,23 @@ Thumbs.db
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
 
-# graphify: keep the graph (graph.json, GRAPH_REPORT.md, graph.html), not per-machine caches
-graphify-out/cache/
-graphify-out/cost.json
-graphify-out/.graphify_python
-graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
+# graphify backups
 *.graphify-bak
 
-# Impeccable: keep the shared config, not the per-machine hook cache
-.impeccable/hook.cache.json
+# AI tooling and session notes: local to this machine, not part of the app
+.claude/
+.codex/
+.impeccable/
+.playwright/
+graphify-out/
+CLAUDE.md
+AGENTS.md
+HANDOFF.md
+PRODUCT.md
+docs/superpowers/
+docs/screenshots/
+docs/security-review-*.md
+
+# Not needed to build the app: iOS project (never built) and Play Store screenshots
+ios/
+assets/store/

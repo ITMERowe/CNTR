@@ -162,6 +162,17 @@ test('malformed, truncated or foreign files are rejected', () => {
   }
 });
 
+test('a name longer than the inputs allow is rejected; one at the limit restores', () => {
+  const backup = buildBackup(fullData);
+  const products = backup.data.cntrProducts as { name: string }[];
+  products[0].name = 'x'.repeat(1000);
+  assert.ok(parseBackup(JSON.stringify(backup)).ok);
+  products[0].name = 'x'.repeat(1001);
+  const parsed = parseBackup(JSON.stringify(backup));
+  assert.ok(!parsed.ok);
+  assert.match(parsed.error, /Products: item 1/);
+});
+
 test('a backup with one damaged record is rejected whole, naming the problem', () => {
   const backup = buildBackup(fullData);
   (backup.data.cntrSales as { price: unknown }[])[0].price = 'lots';

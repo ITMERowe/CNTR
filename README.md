@@ -4,13 +4,6 @@
 
 ![CNTR: tap-to-sell tiles, live net profit, and event comparison](assets/cntr-banner.png)
 
-<p>
-  <img src="assets/store/plain/01-sell.jpg" alt="Sell: one tile per product with a button for each payment method" width="180" />
-  <img src="assets/store/plain/02-profit.jpg" alt="Event: net profit, revenue, product profit, expenses and day cards" width="180" />
-  <img src="assets/store/plain/05-history.jpg" alt="History: past events with their net profit, and recent sales" width="180" />
-  <img src="assets/store/plain/06-compare.jpg" alt="Compare two past events side by side" width="180" />
-</p>
-
 ## Features
 
 - **Sell**: one colored tile per product, with a large tap target for each of its 1 or 2 payment methods (Cash, QRIS, Transfer, Card, E-wallet). A small − undoes the last sale of that kind. A free product (price 0) gets one plain counter. Today's revenue and profit sit at the top.
@@ -36,7 +29,7 @@
 ## Status and platforms
 
 - **Android** 7.0 (API 24) or newer; targets API 36. Version `0.1.<CI run number>`; not yet published on Google Play.
-- **iOS**: a Capacitor iOS project is included (iOS 15+) but has not been built or tested.
+- **iOS**: not built or tested. The repository has no iOS project; Capacitor can create one on a Mac with `npx cap add ios`.
 - The web build runs in a browser for development and testing (data in `localStorage`).
 
 ## Tech stack
@@ -68,7 +61,7 @@ src/views/          Preact components for every screen
 src/ui/             Navigation, dialogs, product editor, color picker, tile drag, icons
 src/style.css       Styles; design tokens at the top
 tests/              Unit tests; browser tests in tests/e2e
-android/, ios/      Capacitor native projects
+android/            Capacitor Android project
 ```
 
 ## Getting started
@@ -79,6 +72,8 @@ Prerequisites: **Node.js 22** and npm.
 npm install
 npm run dev        # http://localhost:5173
 ```
+
+The dev server only listens on this computer. To open it from a phone on the same Wi-Fi, run `npm run dev -- --host`, and only on a network you trust.
 
 | Command | What it does |
 |---|---|
