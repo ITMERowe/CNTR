@@ -2,7 +2,19 @@ name: Build APK
 
 on:
   push:
+    # Branches: dev (daily work) -> main (kinda stable) -> playstore (releases).
+    # Every branch builds an APK; a push to playstore also publishes a GitHub Release and uploads to Google Play.
+    # Releases come from this same workflow so versionCode (the run number) keeps rising for Play.
     branches: [ '**' ]
+    # Docs-only pushes don't need a build; a push that also touches code still builds.
+    # Run it by hand from the Actions tab (workflow_dispatch) when needed.
+    paths-ignore:
+      - '**.md'
+      - 'assets/**'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/pull_request_template.md'
   workflow_dispatch:
 
 permissions:
@@ -78,6 +90,24 @@ jobs:
             cp app/build/outputs/apk/debug/CNTR_*.apk ../dist-apk/
           fi
 
+      # Google Play requires native libraries (.so) aligned to 16 KB pages for apps targeting Android 15+.
+      # A warning on everyday builds; a playstore build stops here instead of shipping a bundle Play would reject.
+      - name: Check 16 KB page alignment
+        run: |
+          ZIPALIGN="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)zipalign"
+          for apk in dist-apk/CNTR_*.apk; do
+            if "$ZIPALIGN" -c -P 16 -v 4 "$apk" > zipalign.log 2>&1; then
+              echo "$apk: native libraries are 16 KB aligned"
+            else
+              grep -E '\.so' zipalign.log | grep -v 'OK' | head -20 || true
+              if [[ "$GITHUB_REF" == refs/heads/playstore ]]; then
+                echo "::error::$apk is not 16 KB page aligned; Google Play would reject it."
+                exit 1
+              fi
+              echo "::warning::$apk is not 16 KB page aligned; fix before a Play release."
+            fi
+          done
+
       # archive: false uploads each file itself (no zip), so the .apk opens straight on a phone.
       - name: Upload APK
         uses: actions/upload-artifact@v7
@@ -92,3 +122,70 @@ jobs:
         with:
           path: dist-apk/CNTR_*.aab
           archive: false
+
+  # On a push to playstore: a permanent GitHub Release (tag v<version>) with the signed APK (for testers) and the .aab.
+  release:
+    needs: build
+    if: github.ref == 'refs/heads/playstore'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download the build
+        uses: actions/download-artifact@v8
+        with:
+          pattern: 'CNTR_*'
+          path: release
+          merge-multiple: true
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -l release
+          aab="$(ls release/CNTR_*.aab 2>/dev/null | head -1)"
+          if [ -z "$aab" ]; then
+            echo "::error::No signed .aab: add the release key secrets (CNTR_KEYSTORE_*) before tagging a release."
+            exit 1
+          fi
+          name="$(basename "$aab" .aab)"   # CNTR_0.1.<run number>
+          gh release create "v${name#CNTR_}" release/* --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" --title "${name/_/ }" --generate-notes
+
+  # On a push to playstore: the .aab goes to a Google Play track. Skipped until the PLAY_SERVICE_ACCOUNT_JSON secret exists.
+  # Play only accepts API uploads once the app exists in Play Console with one bundle uploaded by hand.
+  # Track and status come from repository variables (Settings > Variables): PLAY_TRACK (default internal)
+  # and PLAY_RELEASE_STATUS (default draft, which Play requires until the app has been published once).
+  play:
+    needs: build
+    if: github.ref == 'refs/heads/playstore'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check for Play credentials
+        id: creds
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -n "$PLAY_JSON" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No PLAY_SERVICE_ACCOUNT_JSON secret; skipping the Google Play upload."
+          fi
+
+      - name: Download the bundle
+        if: steps.creds.outputs.ok == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: 'CNTR_*.aab'
+          path: release
+          merge-multiple: true
+
+      - name: Upload to Google Play
+        if: steps.creds.outputs.ok == 'true'
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.cntr.app
+          releaseFiles: release/CNTR_*.aab
+          track: ${{ vars.PLAY_TRACK || 'internal' }}
+          status: ${{ vars.PLAY_RELEASE_STATUS || 'draft' }}

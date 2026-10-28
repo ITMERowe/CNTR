@@ -101,6 +101,41 @@ cd android && ./gradlew assembleDebug     # Windows: gradlew.bat assembleDebug
 
 Or run `npx cap open android` and press Run in Android Studio.
 
+### Releases and Google Play
+
+Branches:
+
+| Branch | Purpose | What CI does on push |
+|---|---|---|
+| `dev` | Daily development; pull requests go here | Builds and tests, uploads an APK |
+| `main` | Tested and working (merged from `dev`) | Builds and tests, uploads an APK |
+| `playstore` | Released versions only (merged from `main`) | Builds and tests, then publishes a release |
+
+To release, merge `main` into `playstore` and push:
+
+```bash
+git checkout playstore
+git merge --no-ff main
+git push origin playstore
+```
+
+On a push to `playstore` the **Build APK** workflow builds and tests as usual, and also:
+
+1. checks that native libraries are 16 KB page aligned (required by Google Play for Android 15+) and stops the release if not;
+2. creates a **GitHub Release** tagged `v0.1.<build>` with the signed APK and the `.aab` attached (needs the release key secrets);
+3. uploads the `.aab` to **Google Play** when the `PLAY_SERVICE_ACCOUNT_JSON` secret is set (otherwise this step is skipped).
+
+A push that only changes docs (`*.md`, `docs/`, `assets/`) doesn't build, on any branch; start a build by hand from the Actions tab if needed.
+
+Google Play setup, once:
+
+- Create the app in Play Console (`com.cntr.app`) and upload the first `.aab` by hand; Play only accepts API uploads after that. Use Play App Signing; the release key above becomes the upload key.
+- In Google Cloud, enable the *Google Play Android Developer API*, create a service account with a JSON key, and invite it in Play Console → Users and permissions with permission to release to testing tracks.
+- Add the JSON key as the repository secret `PLAY_SERVICE_ACCOUNT_JSON`.
+- Optional repository variables: `PLAY_TRACK` (default `internal`; also `alpha`, `beta`, `production`) and `PLAY_RELEASE_STATUS` (default `draft`, which Play requires until the app has been published once; later `completed`).
+
+The privacy policy for the store listing is [PRIVACY.md](PRIVACY.md).
+
 ## Testing
 
 Before merging:

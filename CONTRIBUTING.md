@@ -23,7 +23,7 @@ To try it on a phone on the same Wi-Fi, run `npm run dev -- --host`, only on a n
 
 ## Making a change
 
-1. Fork the repo and create a branch from `main` (e.g. `fix/undo-on-free-items`).
+1. Fork the repo and create a branch from **`dev`** (e.g. `fix/undo-on-free-items`); open your pull request against `dev`. (`main` holds tested work and `playstore` only released versions; the maintainer merges those.)
 2. Keep the change focused: one fix or feature per pull request.
 3. Follow the conventions in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#conventions):
    - new UI as Preact components;
