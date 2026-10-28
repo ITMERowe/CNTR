@@ -10,6 +10,10 @@ export const el = {
   stats: byId<HTMLDivElement>('stats'),
   toast: byId<HTMLDivElement>('toast'),
   openProductEdit: byId<HTMLButtonElement>('openProductEdit'),
+  sellMenuBtn: byId<HTMLButtonElement>('sellMenuBtn'),
+  sellMenu: byId<HTMLDivElement>('sellMenu'),
+  autoSortToggle: byId<HTMLInputElement>('autoSortToggle'),
+  compactTilesToggle: byId<HTMLInputElement>('compactTilesToggle'),
   // Product editor
   productEditTitle: byId<HTMLHeadingElement>('productEditTitle'),
   closeEditBtn: byId<HTMLButtonElement>('closeEditBtn'),
@@ -188,6 +192,17 @@ export function activeScreenId() {
 /** Shows the header buttons that make sense for `screenId`. */
 export function updateHeaderActions(screenId = activeScreenId()) {
   el.openProductEdit.style.display = screenId === 'salesScreen' || screenId === 'productHistoryScreen' ? 'inline-grid' : 'none';
+  el.sellMenuBtn.style.display = screenId === 'salesScreen' ? 'inline-grid' : 'none';
+  // Screens with no header button (or wordmark) drop the empty 44px row instead of leaving a gap above their title.
+  el.brand.parentElement!.hidden = screenId !== 'salesScreen' && screenId !== 'productHistoryScreen';
+  if (screenId !== 'salesScreen') closeSellMenu();
+}
+
+export function closeSellMenu() {
+  // Focus inside the menu would be lost when it hides (Escape, Android back): hand it back to the ⋮ button.
+  if (el.sellMenu.contains(document.activeElement)) el.sellMenuBtn.focus();
+  el.sellMenu.hidden = true;
+  el.sellMenuBtn.setAttribute('aria-expanded', 'false');
 }
 
 // Sub-screens highlight the bottom-nav tab they belong to.

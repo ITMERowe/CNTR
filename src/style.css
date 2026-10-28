@@ -180,7 +180,8 @@ p {
 }
 
 .topbar {
-  padding: calc(env(safe-area-inset-top) + var(--s3)) var(--s4) var(--s3);
+  /* Sides: a landscape phone puts its camera cutout or 3-button nav bar on the left/right edge. */
+  padding: calc(env(safe-area-inset-top) + var(--s3)) calc(var(--s4) + env(safe-area-inset-right)) var(--s3) calc(var(--s4) + env(safe-area-inset-left));
   background: var(--bg);
   z-index: 4;
 }
@@ -206,11 +207,28 @@ p {
   margin-left: auto;
 }
 
+/* Sell's ⋮ menu: a dropdown of switch rows, the same rows Settings uses. */
+.menu {
+  position: absolute;
+  top: calc(100% + var(--s2));
+  right: 0;
+  z-index: 5;
+  width: min(320px, calc(100vw - 2 * var(--s4)));
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  animation: tour-in var(--dur-2) var(--ease-out);
+}
+
 .content {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--s4));
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
   scrollbar-width: none;
 }
 
@@ -592,8 +610,10 @@ p {
   width: 100%;
   min-height: 80px;
   display: grid;
-  grid-template-columns: 1fr auto;
+  /* minmax(0, ...): a long method name (TRANSFER, E-WALLET) shortens instead of running under the count or the + */
+  grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: auto 1fr;
+  column-gap: var(--s2);
   align-items: start;
   padding: var(--s2) var(--s2) var(--s2) var(--s3);
   border-radius: var(--r-md);
@@ -611,6 +631,7 @@ p {
   grid-column: 1;
   grid-row: 1;
   align-self: center;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -621,7 +642,15 @@ p {
   opacity: 0.85;
 }
 
+.pay-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .pay-label .icon {
+  flex-shrink: 0;
   width: 16px;
   height: 16px;
 }
@@ -703,6 +732,65 @@ p {
   width: 16px;
   height: 16px;
   stroke-width: 2.6;
+}
+
+/* Compact tiles (Sell ⋮ menu): no price, and each half is one row (label, count, then −), so more tiles fit. */
+.is-compact .tile {
+  padding: var(--s2);
+}
+
+.is-compact .tile-head {
+  margin-bottom: var(--s1);
+}
+
+.is-compact .product-price,
+.is-compact .pay-plus {
+  display: none;
+}
+
+.is-compact .pay-add {
+  min-height: 52px;
+  grid-template-rows: 1fr;
+  align-items: center;
+  column-gap: var(--s1);
+  padding-right: 40px; /* room for the − on the right (26px + its 8px inset + 6px clear) */
+}
+
+/* Tighter tracking so TRANSFER / E-WALLET still fit beside the count on a 360px phone. */
+.is-compact .pay-label {
+  letter-spacing: 0.04em;
+}
+
+.is-compact .pay-count {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+}
+
+.is-compact .payment-value {
+  font-size: 18px;
+}
+
+.is-compact .pay-undo {
+  bottom: calc(50% - 13px);
+}
+
+/* Hold-and-drag reordering: the held tile lifts and follows the finger; the others slide out of its way. */
+.tile {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.is-reordering .tile {
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.is-reordering .tile.is-dragging {
+  position: relative;
+  z-index: 2;
+  transition: none;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  scale: 1.02;
 }
 
 .grid-empty {
@@ -1044,7 +1132,7 @@ p {
 
 /* Products screen: sections (On the counter / Hidden) of rows you tap to edit */
 .product-section-title {
-  margin: 0 0 var(--s1) var(--s1);
+  margin: 0 0 var(--s1) 0;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1053,7 +1141,7 @@ p {
 }
 
 .product-section-note {
-  margin: 0 0 var(--s2) var(--s1);
+  margin: 0 0 var(--s2) 0;
   font-size: 12px;
   color: var(--text-3);
 }
@@ -2294,7 +2382,7 @@ body.is-editing-event .content {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
-  padding: var(--s1) var(--s2) env(safe-area-inset-bottom);
+  padding: var(--s1) calc(var(--s2) + env(safe-area-inset-right)) env(safe-area-inset-bottom) calc(var(--s2) + env(safe-area-inset-left));
   background: var(--bg);
   border-top: 1px solid var(--line);
 }
@@ -2488,9 +2576,9 @@ body.is-editing-event .content {
   position: fixed;
   inset: 0;
   z-index: 39;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
   pointer-events: none;
 }
 
@@ -2499,8 +2587,8 @@ body.is-editing-event .content {
   top: 0;
   left: 0;
   z-index: 40;
+  box-sizing: border-box;
   border: 2px solid var(--text);
-  border-radius: var(--r-md);
   box-shadow: 0 0 0 4px rgba(231, 231, 231, 0.18);
   pointer-events: none;
 }

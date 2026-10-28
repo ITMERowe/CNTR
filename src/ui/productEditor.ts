@@ -90,6 +90,11 @@ export function editProductByName(name: string) {
   else showToast(t('toast.notFound', { name }));
 }
 
+/** The product being edited, or null when adding. */
+function editedProduct() {
+  return editingIndex >= 0 ? state.products[editingIndex] : editingHistoryIndex !== null ? state.productHistory[editingHistoryIndex] : null;
+}
+
 function closeProductEditor() {
   closeColorPicker();
   editingIndex = -1;
@@ -100,7 +105,7 @@ function closeProductEditor() {
 
 /** The one place a product is deleted for good (the Products list only hides it from the counter). */
 function removeEditedProduct() {
-  const removed = editingIndex >= 0 ? state.products[editingIndex] : editingHistoryIndex !== null ? state.productHistory[editingHistoryIndex] : null;
+  const removed = editedProduct();
   if (!removed) return;
   openConfirmModal(
     t('product.deleteMessage', { name: removed.name }),
@@ -122,7 +127,7 @@ function saveEditedProduct() {
   const pickedColor = getPickerColor();
   const color = pickedColor.startsWith('#') ? pickedColor : `#${pickedColor}`;
 
-  const editing = editingIndex >= 0 ? state.products[editingIndex] : editingHistoryIndex !== null ? state.productHistory[editingHistoryIndex] : null;
+  const editing = editedProduct();
   const originalName = editing?.name ?? null;
   // Product names are the identity key for sales and history, so a clash would silently merge two products.
   const clashesWithActive = state.products.some((product) => product.name === name && product.name !== originalName);

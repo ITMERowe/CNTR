@@ -79,7 +79,8 @@ export function formatMoney(n: number, currency: Currency, compact: boolean) {
   const abs = Math.abs(n);
 
   if (compact && abs >= 1000) {
-    const isMillions = abs >= 1000000;
+    // By the rounded thousands, so 999,500 reads "1M" rather than "1.000K".
+    const isMillions = Math.round(abs / 1000) >= 1000;
     const value = abs / (isMillions ? 1000000 : 1000);
     const precision = value >= 100 ? 0 : value >= 10 ? 1 : 2;
     return `${sign}${symbol} ${formatNumeric(Number(value.toFixed(precision)), currency)}${isMillions ? 'M' : 'K'}`;

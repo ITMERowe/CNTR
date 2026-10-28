@@ -172,6 +172,23 @@ for (let i = 0; i < 3; i++) {
 check('Enter goes name → price → cost, then closes the keyboard', order.join() === 'editPrice,editCost,BODY' && hints.join() === 'next,done', JSON.stringify({ order, hints }));
 await run(page, `document.getElementById('closeEditBtn').click();`);
 
+// 11b. Compact money (Settings → Money): 999,500 rounds up to "1M", never "1.000K"; 999,499 stays "999K"
+await run(page, `localStorage.cntrSales = '[]'; localStorage.cntrProducts = ${JSON.stringify(JSON.stringify([{ name: 'Big', price: 999500, cost: 0, color: '#5f6d77' }, { name: 'Almost', price: 999499, cost: 0, color: '#9b48ad' }]))};`);
+await load();
+await page.click('.tabbar .tab[data-tab="settingsScreen"]');
+await page.click('label[for="compactMoneyToggle"]');
+await page.click('.tabbar .tab[data-tab="salesScreen"]');
+await page.click('.tile[data-product="Big"] .pay-add');
+await sleep(200);
+const compact = await page.evaluate(() => ({
+  big: document.querySelector('.tile[data-product="Big"] .product-price').textContent,
+  almost: document.querySelector('.tile[data-product="Almost"] .product-price').textContent,
+  revenue: document.querySelector('#stats .hero-figure')?.getAttribute('aria-label'),
+}));
+check('compact money: 999.500 shows "Rp 1M" (tile and Sell revenue), 999.499 shows "Rp 999K"', compact.big === 'Rp 1M' && compact.almost === 'Rp 999K' && compact.revenue === 'Rp 1M', compact);
+await page.click('.tabbar .tab[data-tab="settingsScreen"]');
+await page.click('label[for="compactMoneyToggle"]');
+
 // 12. Corrupt storage doesn't crash startup
 await run(page, `localStorage.cntrSales = '{"oops":1}'; localStorage.cntrEvents = 'null'; localStorage.cntrLiveEvent = '[]';`);
 errors.length = 0;

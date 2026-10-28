@@ -75,7 +75,7 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit, onAd
                     >
                       <span class="pay-label">
                         <Icon name={PAYMENT_ICONS[payment] ?? 'banknote'} />
-                        {payment}
+                        <span class="pay-name">{payment}</span>
                       </span>
                       <span class="pay-count" aria-hidden="true">
                         {/* Re-keying on each change restarts the roll animation. */}

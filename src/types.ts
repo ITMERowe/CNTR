@@ -62,6 +62,10 @@ export interface AppSettings {
   productsPerDay: boolean;
   /** The first sale on a new calendar date starts a new day by itself (as if End day had been pressed). */
   newDayOnDateChange: boolean;
+  /** Sell: best sellers today first (re-sorted only when Sell is opened, so a tile never moves mid-tap). */
+  autoSort: boolean;
+  /** Sell: shorter tiles (no price, smaller counters), so more fit on screen. */
+  compactTiles: boolean;
   /** Soft tones on sales, undo and finished actions (vibration is separate and always on). */
   sound: boolean;
   /** Colour theme. Resolved from the phone's own setting once, the first time there is no stored choice yet; after that it is just Light/Dark, chosen in Settings. */

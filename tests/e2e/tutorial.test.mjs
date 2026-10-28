@@ -52,13 +52,26 @@ const afterReload = async (page) => {
   check('Start tour loads practice products and two practice events', practice.products.join() === 'Sticker,Keychain' && practice.events === 2, practice);
 
   const offScreen = [];
+  const ringOff = [];
+  const nextWhileEmpty = {};
   const stuck = await playTour(page, undefined, async (id) => {
     await sleep(300); // the bubble is placed on the next poll
     const box = await page.evaluate(() => { const r = document.querySelector('.tour-bubble').getBoundingClientRect(); return { top: r.top, bottom: r.bottom, height: innerHeight }; });
     if (box.top < 0 || box.bottom > box.height) offScreen.push(`${id} ${Math.round(box.top)}..${Math.round(box.bottom)}`);
+    // The ring (and the dim's hole, which uses the same box) stays inside the screen, even around an edge-to-edge sheet.
+    const ring = await page.evaluate(() => {
+      const node = document.querySelector('.tour-ring');
+      const r = node.getBoundingClientRect();
+      return { full: node.classList.contains('tour-ring-full'), l: r.left, t: r.top, r: r.right, b: r.bottom, w: innerWidth, h: innerHeight, hole: document.querySelector('.tour-dim').style.clipPath.startsWith('path(') };
+    });
+    if (!ring.full && (ring.l < 0 || ring.t < 0 || ring.r > ring.w || ring.b > ring.h || !ring.hole)) ringOff.push(`${id} ${JSON.stringify(ring)}`);
+    if (['add-name', 'add-price', 'add-cost'].includes(id)) nextWhileEmpty[id] = await page.evaluate(() => ({ shown: !document.querySelector('#tourNextBtn').hidden, disabled: document.querySelector('#tourNextBtn').disabled }));
   });
   check(`all ${Object.keys(TOUR_ACTIONS).length} steps can be done with real taps and move the tour on`, !stuck, stuck ?? '');
   check('the tour bubble is fully on screen at every step (never under the status bar)', !offScreen.length, offScreen.join(' | '));
+  check('the spotlight ring and its hole stay inside the screen at every step (sheets run edge to edge)', !ringOff.length, ringOff.join(' | '));
+  // Their Next is enabled once typed: the tour above taps it after filling each field.
+  check('name, price and cost steps show Next, disabled until the field has text', ['add-name', 'add-price', 'add-cost'].every((id) => nextWhileEmpty[id]?.shown && nextWhileEmpty[id]?.disabled), nextWhileEmpty);
   await afterReload(page);
   await sleep(300);
   const after = await snapshot(page);

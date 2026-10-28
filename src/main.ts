@@ -53,6 +53,7 @@ import { applyTheme } from './theme';
 import type { AppSettings, Currency, PastEvent, Product } from './types';
 import {
   activeScreenId,
+  closeSellMenu,
   closeSheet,
   el,
   getProductListOrder,
@@ -68,6 +69,7 @@ import {
 import { closeColorPicker } from './ui/colorPicker';
 import { hydrateIcons } from './ui/icons';
 import { editProductByName, initProductEditor, openProductEditor } from './ui/productEditor';
+import { initTileDrag } from './ui/tileDrag';
 import { CompareView } from './views/Compare';
 import { EventScreen } from './views/EventScreen';
 import { EventChecklist, EventList, ProductList, RecentSales } from './views/Lists';
@@ -111,6 +113,36 @@ function salesCounts() {
   return counts;
 }
 
+/** Best-sellers order, frozen while Sell is on screen so a tile never moves from under a thumb mid-rush. */
+let sellOrder: string[] | null = null;
+// By id, so renaming a product while the order is frozen keeps its tile in place.
+const sortKey = (product: Product) => product.id ?? product.name;
+
+/** The tiles in Sell's order: the hand-made order, or best sellers today first (ties keep the hand-made order). */
+function sellProducts() {
+  if (!loadSettings().autoSort) return state.products;
+  if (!sellOrder || activeScreenId() !== 'salesScreen') {
+    const sold = new Map<string, number>();
+    for (const sale of todayLiveSales()) sold.set(sale.product, (sold.get(sale.product) ?? 0) + 1);
+    sellOrder = [...state.products].sort((a, b) => (sold.get(b.name) ?? 0) - (sold.get(a.name) ?? 0)).map(sortKey);
+  }
+  const order = sellOrder;
+  const rank = (product: Product) => {
+    const i = order.indexOf(sortKey(product));
+    return i < 0 ? order.length : i;
+  };
+  return [...state.products].sort((a, b) => rank(a) - rank(b));
+}
+
+/** Drag-and-drop on Sell: moves the product to `to` in the hand-made order. */
+function moveProduct(name: string, to: number) {
+  const from = state.products.findIndex((product) => product.name === name);
+  if (from < 0) return;
+  state.products.splice(to, 0, ...state.products.splice(from, 1));
+  saveProducts();
+  render();
+}
+
 // ---- Rendering ----
 
 /** The past event open in History, and its unsaved edit copy while editing. */
@@ -123,7 +155,7 @@ function render() {
   renderView(h(SalesHero, { revenue, profit, count: today.length, day: liveDayCount() }), el.stats);
   renderView(
     h(SalesGrid, {
-      products: state.products,
+      products: sellProducts(),
       counts: salesCounts(),
       pulse,
       onAdd: addSale,
@@ -133,6 +165,7 @@ function render() {
     }),
     el.grid,
   );
+  el.grid.classList.toggle('is-compact', loadSettings().compactTiles);
 
   renderView(
     h(EventScreen, {
@@ -577,6 +610,39 @@ function wireNavigation() {
 
 function wireHeader() {
   onClick(el.openProductEdit, () => openProductEditor(-1));
+
+  // Sell's ⋮ menu: Sort by best sellers, Compact tiles. Closes on a tap outside it, Escape or Android back.
+  onClick(el.sellMenuBtn, () => {
+    const open = el.sellMenu.hidden;
+    el.sellMenu.hidden = !open;
+    el.sellMenuBtn.setAttribute('aria-expanded', String(open));
+  });
+  // The tap that closes the menu does only that: it doesn't also sell on the tile under it.
+  document.addEventListener(
+    'click',
+    (event) => {
+      const target = event.target as Node;
+      if (el.sellMenu.hidden || el.sellMenu.contains(target) || el.sellMenuBtn.contains(target)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeSellMenu();
+    },
+    true,
+  );
+  document.addEventListener('keydown', (event) => event.key === 'Escape' && closeSellMenu());
+  el.autoSortToggle.checked = loadSettings().autoSort;
+  el.autoSortToggle.addEventListener('change', () => {
+    saveSettings({ ...loadSettings(), autoSort: el.autoSortToggle.checked });
+    sellOrder = null; // sort now, while the menu is open, not on the next visit
+    render();
+  });
+  el.compactTilesToggle.checked = loadSettings().compactTiles;
+  el.compactTilesToggle.addEventListener('change', () => {
+    saveSettings({ ...loadSettings(), compactTiles: el.compactTilesToggle.checked });
+    render();
+  });
+
+  initTileDrag(el.grid, () => !loadSettings().autoSort, moveProduct);
 }
 
 function wireSettings() {
@@ -695,7 +761,8 @@ function goBack() {
   if (tourRunning() || saving) return; // the tour is on rails (Quit tour is the way out); a save is finishing
   const sheet = document.querySelector('.sheet-overlay.open');
   const backBtn = document.querySelector<HTMLElement>('.screen.active .back-btn');
-  if (el.colorPickerMenu.classList.contains('open')) closeColorPicker();
+  if (!el.sellMenu.hidden) closeSellMenu();
+  else if (el.colorPickerMenu.classList.contains('open')) closeColorPicker();
   else if (sheet) sheet.querySelector<HTMLElement>('[id$="CloseBtn"]')?.click();
   else if (draft && activeScreenId() === 'pastEventScreen') leaveEditing(render);
   else if (backBtn?.offsetParent) backBtn.click();

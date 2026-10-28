@@ -18,6 +18,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   compactMoney: false,
   productsPerDay: true,
   newDayOnDateChange: false,
+  autoSort: false,
+  compactTiles: false,
   sound: true,
   theme: 'dark',
   language: 'en',
@@ -259,7 +261,7 @@ export function saveLiveEvent(meta: LiveEventMeta) {
 }
 
 export function loadPastEvents(): PastEvent[] {
-  return readArray<PastEvent & { sales: StoredSale[] }>(PAST_EVENTS_KEY).map((event) => ({ ...event, sales: reviveSales(event.sales) }));
+  return readArray<PastEvent & { sales: StoredSale[] }>(PAST_EVENTS_KEY).map((event) => ({ ...event, sales: Array.isArray(event.sales) ? reviveSales(event.sales) : [] })) // a damaged entry must not stop the app from starting;
 }
 
 export function savePastEvents(events: PastEvent[]) {
@@ -289,10 +291,12 @@ export function loadSettings(): AppSettings {
 
   cachedSettings = {
     currency: CURRENCIES.includes(stored.currency as Currency) ? (stored.currency as Currency) : DEFAULT_SETTINGS.currency,
-    compactMoney: Boolean(stored.compactMoney),
+    compactMoney: stored.compactMoney === true,
     // Settings saved before this option (or a damaged value) get the default.
     productsPerDay: typeof stored.productsPerDay === 'boolean' ? stored.productsPerDay : DEFAULT_SETTINGS.productsPerDay,
     newDayOnDateChange: typeof stored.newDayOnDateChange === 'boolean' ? stored.newDayOnDateChange : DEFAULT_SETTINGS.newDayOnDateChange,
+    autoSort: stored.autoSort === true,
+    compactTiles: stored.compactTiles === true,
     sound: typeof stored.sound === 'boolean' ? stored.sound : DEFAULT_SETTINGS.sound,
     theme: stored.theme === 'light' || stored.theme === 'dark' ? stored.theme : resolveTheme(),
     language: stored.language === 'en' || stored.language === 'id' ? stored.language : initialLanguage(navigator.language, freshInstall),

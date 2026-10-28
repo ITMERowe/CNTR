@@ -55,6 +55,8 @@ export interface TourStep {
   target?: string;
   /** "Do" step: moves on once this is true. Without it (and without `tap`) the step has a Next button. */
   done?: () => boolean;
+  /** Next-button step: Next stays disabled until this is true (a text field the user types into at their own pace). */
+  ready?: () => boolean;
   /** "Do" step: moves on once the target is tapped. */
   tap?: boolean;
   /** Also tappable besides the target (the tour is on rails: everything else ignores taps). */
@@ -67,6 +69,7 @@ const tab = (screen: string) => `.tabbar .tab[data-tab="${screen}"]`;
 const sold = (product: string, payment: string) => todayLiveSales().filter((sale) => sale.product === product && sale.payment === payment).length;
 const on = (screen: string) => () => activeScreenId() === screen;
 const isOpen = (overlay: HTMLElement) => () => overlay.classList.contains('open');
+const filled = (input: HTMLInputElement) => () => input.value.trim().length > 0;
 let base = 0;
 
 export const TOUR_STEPS: TourStep[] = [
@@ -75,9 +78,9 @@ export const TOUR_STEPS: TourStep[] = [
   { id: 'undo', target: tile('Sticker', 'Cash', 'minus'), enter: () => (base = sold('Sticker', 'Cash')), done: () => sold('Sticker', 'Cash') < base },
   { id: 'totals', target: '#stats' },
   { id: 'add-open', target: '#openProductEdit', done: on('productEditScreen') },
-  { id: 'add-name', target: '#editName', done: () => el.editName.value.trim().length > 0 },
-  { id: 'add-price', target: '#editPrice', done: () => el.editPrice.value.trim().length > 0 },
-  { id: 'add-cost', target: '#editCost', done: () => el.editCost.value.trim().length > 0 },
+  { id: 'add-name', target: '#editName', ready: filled(el.editName) },
+  { id: 'add-price', target: '#editPrice', ready: filled(el.editPrice) },
+  { id: 'add-cost', target: '#editCost', ready: filled(el.editCost) },
   { id: 'add-payments', target: '#editPayments' },
   { id: 'add-color', target: '#colorField', allow: ['#colorPickerMenu'] },
   { id: 'add-save', target: '#saveProductBtn', enter: () => (base = state.productHistory.length), done: () => state.productHistory.length > base },
@@ -170,7 +173,7 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
     const found = target();
     const sheet = document.querySelector('.sheet-overlay.open');
     const rect = found && (!sheet || sheet.contains(found)) ? found.getBoundingClientRect() : null;
-    const where = rect ? `${rect.top},${rect.left},${rect.width},${rect.height},${bubble.offsetHeight},${innerHeight}` : 'full';
+    const where = rect ? `${rect.top},${rect.left},${rect.width},${rect.height},${bubble.offsetHeight},${innerHeight},${innerWidth}` : 'full';
     if (where === placed) return;
     placed = where;
     ring.classList.toggle('tour-ring-full', !rect);
@@ -180,9 +183,24 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
       Object.assign(bubble.style, { top: '50%', transform: 'translateY(-50%)' });
       return;
     }
-    const [l, t, r, b] = [rect.left - 4, rect.top - 4, rect.right + 4, rect.bottom + 4];
-    dim.style.clipPath = `polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${l}px ${t}px, ${l}px ${b}px, ${r}px ${b}px, ${r}px ${t}px, ${l}px ${t}px)`;
-    Object.assign(ring.style, { transform: `translate(${l}px, ${t}px)`, width: `${r - l}px`, height: `${b - t}px` });
+    // 4px around the target, but kept on screen: a sheet runs edge to edge, so its ring would be cut off.
+    const [l, t] = [Math.max(2, rect.left - 4), Math.max(2, rect.top - 4)];
+    const [r, b] = [Math.min(innerWidth - 2, rect.right + 4), Math.min(innerHeight - 2, rect.bottom + 4)];
+    // The ring and the hole follow the target's own rounded corners (plus the 4px gap).
+    const css = getComputedStyle(found!);
+    const max = Math.min(r - l, b - t) / 2;
+    const [tl, tr, br, bl] = [css.borderTopLeftRadius, css.borderTopRightRadius, css.borderBottomRightRadius, css.borderBottomLeftRadius].map(
+      (v) => Math.min(max, parseFloat(v) ? parseFloat(v) + 4 : 0),
+    );
+    dim.style.clipPath =
+      `path(evenodd, 'M0 0H${innerWidth}V${innerHeight}H0Z M${l + tl} ${t}H${r - tr}A${tr} ${tr} 0 0 1 ${r} ${t + tr}V${b - br}` +
+      `A${br} ${br} 0 0 1 ${r - br} ${b}H${l + bl}A${bl} ${bl} 0 0 1 ${l} ${b - bl}V${t + tl}A${tl} ${tl} 0 0 1 ${l + tl} ${t}Z')`;
+    Object.assign(ring.style, {
+      transform: `translate(${l}px, ${t}px)`,
+      width: `${r - l}px`,
+      height: `${b - t}px`,
+      borderRadius: `${tl}px ${tr}px ${br}px ${bl}px`,
+    });
     bubble.style.transform = '';
     // The bubble goes on whichever side of the target has more room, but never under the status bar, a camera
     // cutout or the gesture bar (the safe-area insets): a target taller than the room left makes it overlap instead.
@@ -195,6 +213,7 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
     // "Do" steps have no Skip: only if their target cannot be found for 2 s (something unexpected is in the way).
     const stuck = isDo() && missingSince > 0 && Date.now() - missingSince > 2000;
     next.hidden = isDo() && !stuck;
+    next.disabled = !(step().ready?.() ?? true);
     next.textContent = index === steps.length - 1 ? t('tutorial.finish') : stuck ? t('skip') : t('next');
   }
 

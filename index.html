@@ -16,6 +16,23 @@
           <div class="brand" id="brand" aria-label="CNTR">CNTR</div>
           <div class="topbar-actions">
             <button class="icon-btn icon-btn-soft" id="openProductEdit" type="button" title="Add product" data-i18n-title="add_product" aria-label="Add product" data-i18n-aria="add_product"><i data-icon="plus"></i></button>
+            <button class="icon-btn icon-btn-soft" id="sellMenuBtn" type="button" aria-expanded="false" aria-controls="sellMenu" title="Sell options" data-i18n-title="sell_options" aria-label="Sell options" data-i18n-aria="sell_options"><i data-icon="more"></i></button>
+            <div class="menu" id="sellMenu" hidden>
+              <label class="group-row" for="autoSortToggle">
+                <span class="group-row-label"><span data-i18n="auto_sort">Sort by best sellers</span><small data-i18n="auto_sort_hint">Most sold today first. Turn off to drag tiles into your own order.</small></span>
+                <span class="switch">
+                  <input type="checkbox" id="autoSortToggle" role="switch" />
+                  <span class="switch-track" aria-hidden="true"></span>
+                </span>
+              </label>
+              <label class="group-row" for="compactTilesToggle">
+                <span class="group-row-label"><span data-i18n="compact_tiles">Compact tiles</span><small data-i18n="compact_tiles_hint">Shorter tiles without the price, so more fit on screen</small></span>
+                <span class="switch">
+                  <input type="checkbox" id="compactTilesToggle" role="switch" />
+                  <span class="switch-track" aria-hidden="true"></span>
+                </span>
+              </label>
+            </div>
           </div>
         </div>
         <div class="hero" id="stats" aria-live="polite"></div>

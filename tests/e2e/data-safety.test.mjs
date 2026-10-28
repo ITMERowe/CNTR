@@ -103,6 +103,23 @@ async function restoreWith(page, buffer, confirm = true) {
   await ctx.close();
 }
 
+// A hand-damaged past event (no `sales` array) must not stop the app from starting; the event still lists in History.
+{
+  const { ctx, page, errors } = await newPage(false);
+  await page.goto(URL);
+  await page.evaluate((p) => {
+    localStorage.clear();
+    localStorage.cntrProducts = p;
+    localStorage.cntrEvents = JSON.stringify([{ id: 'e1', name: 'Damaged fair', startedAt: '2026-10-20T03:00:00.000Z', endedAt: '2026-10-20T11:00:00.000Z', dayBreaks: [], products: [], expenses: [] }]);
+  }, SAMPLE_PRODUCTS);
+  await page.reload(); await page.waitForTimeout(700);
+  await sell(page, 1);
+  await page.click('.tabbar .tab[data-tab="historyScreen"]');
+  const listed = await page.evaluate(() => document.querySelector('#pastEventList')?.textContent ?? '');
+  check('A13 a past event saved without its sales list does not stop the app: Sell works and History lists it', (await heroSales(page)) === '1' && listed.includes('Damaged fair') && errors.length === 0, errors.join(' | ') || listed.slice(0, 60));
+  await ctx.close();
+}
+
 // ---------------- Part B: fake native (SQLite) ----------------
 function fakeNative() {
   const ss = sessionStorage;
