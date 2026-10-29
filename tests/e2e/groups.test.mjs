@@ -73,6 +73,16 @@ for (const width of [412, 1280]) {
   const synced = [(await product('Poster A3')).payments.join(), (await product('Poster A4')).payments.join()];
   check(`${at} editing a variant opens Group + Variant; its payment methods reach every variant`, opened.group === 'Poster' && opened.name === 'A3' && synced[0] === synced[1] && synced[0].includes('Transfer'), { opened, synced });
 
+  // Clearing the group keeps the full name, so ungrouping isn't a rename; putting it back leaves the product as it was.
+  await page.click('.variant[data-variant="Poster A3"] .tile-edit');
+  await page.fill('#editGroup', '');
+  const ungrouped = await page.inputValue('#editName');
+  await page.fill('#editGroup', 'Poster');
+  await page.click('#saveProductBtn');
+  await sleep(250);
+  const kept = await product('Poster A3');
+  check(`${at} clearing a variant's group keeps its full name`, ungrouped === 'Poster A3' && kept?.group === 'Poster', { ungrouped, kept });
+
   // Names stay unique, ignoring case: an ungrouped "Poster Bundle" blocks the variant "Bundle".
   await add('', 'Poster Bundle', 50000);
   await add('Poster', 'Bundle', 50000);

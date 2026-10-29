@@ -59,6 +59,9 @@ function groupMember() {
 
 /** Typing an existing group's name joins it: the editor takes the group's colour and payment methods. */
 function onGroupInput() {
+  // Clearing the group keeps the full name ("Poster A4"), not just the variant, so reports don't see a rename.
+  const edited = editedProduct();
+  if (!el.editGroup.value.trim() && edited?.group && el.editName.value.trim() === variantLabel(edited)) el.editName.value = edited.name;
   const member = groupMember();
   if (member) {
     setPickerColor(member.color);
