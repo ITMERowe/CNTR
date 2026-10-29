@@ -52,6 +52,23 @@ for (const width of [412, 1280]) {
   });
   check(`${at} the group is one tile with one row per variant (labels as typed, own payment buttons)`, tile.name === 'Poster' && tile.tiles === 2 && tile.rows.map((r) => `${r.label}:${r.buttons}`).join() === 'A3:Cash,QRIS,A4:Cash,QRIS', tile);
 
+  if (width === 412) {
+    // The group exists to save space: 2 variants (Cash + QRIS) were 318px tall (246px compact) before the tight rows.
+    const compact = async () => { await page.click('#sellMenuBtn'); await page.click('label[for="compactTilesToggle"]'); await page.keyboard.press('Escape'); await sleep(150); };
+    const size = () => page.evaluate(() => ({
+      height: document.querySelector('.tile-group').getBoundingClientRect().height,
+      // Every sell button at least 44x44, and apart from its neighbours.
+      small: [...document.querySelectorAll('.tile-group .pay-add')].filter((b) => { const r = b.getBoundingClientRect(); return r.height < 44 || r.width < 44; }).length,
+      labels: [...document.querySelectorAll('.tile-group .pay-label')].filter((n) => n.offsetParent).length,
+    }));
+    const normal = await size();
+    await compact();
+    const tight = await size();
+    await compact();
+    check(`${at} a 2-variant group is short (under 200px, compact under 160px), every sell button at least 44px`, normal.height < 200 && tight.height < 160 && !normal.small && !tight.small, { normal, tight });
+    check(`${at} compact tiles show the payment labels once, as column headers`, normal.labels === 4 && tight.labels === 2, { normal: normal.labels, tight: tight.labels });
+  }
+
   // Selling and undoing a variant.
   await page.click('.variant[data-variant="Poster A4"] [data-payment="Cash"][data-action="plus"]');
   await page.click('.variant[data-variant="Poster A4"] [data-payment="Cash"][data-action="plus"]');
@@ -65,16 +82,16 @@ for (const width of [412, 1280]) {
   check(`${at} undo on a variant's row takes back that variant's sale`, sales.length === 1 && (await counts()) === '0,1', { sales: sales.length, counts: await counts() });
 
   // Changing the group's payment methods on one variant changes them for every variant.
-  await page.click('.variant[data-variant="Poster A3"] .tile-edit');
+  await page.click('.tile-group[data-group="Poster"] .tile-edit');
   const opened = { group: await page.inputValue('#editGroup'), name: await page.inputValue('#editName') };
   await page.click('#editPayments .payment-option[data-method="Transfer"]');
   await page.click('#saveProductBtn');
   await sleep(250);
   const synced = [(await product('Poster A3')).payments.join(), (await product('Poster A4')).payments.join()];
-  check(`${at} editing a variant opens Group + Variant; its payment methods reach every variant`, opened.group === 'Poster' && opened.name === 'A3' && synced[0] === synced[1] && synced[0].includes('Transfer'), { opened, synced });
+  check(`${at} the group's one pencil opens the editor (Group + Variant); its payment methods reach every variant`, opened.group === 'Poster' && opened.name === 'A3' && synced[0] === synced[1] && synced[0].includes('Transfer'), { opened, synced });
 
   // Clearing the group keeps the full name, so ungrouping isn't a rename; putting it back leaves the product as it was.
-  await page.click('.variant[data-variant="Poster A3"] .tile-edit');
+  await page.click('.tile-group[data-group="Poster"] .tile-edit');
   await page.fill('#editGroup', '');
   const ungrouped = await page.inputValue('#editName');
   await page.fill('#editGroup', 'Poster');
@@ -151,17 +168,19 @@ for (const width of [412, 1280]) {
   if (width === 412) {
     // A long, free variant: the editor's colour preview ellipsizes instead of widening the page; Products says Free.
     await add('Poster', 'A4 Glossy Laminated', 0);
-    await page.click('.variant[data-variant="Poster A4 Glossy Laminated"] .tile-edit');
+    await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
+    await page.click('.product-edit-btn[data-name="Poster A4 Glossy Laminated"]');
     await sleep(300);
     const wide = await page.evaluate(() => [document.documentElement, document.querySelector('.content')].some((e) => e.scrollWidth > innerWidth));
     check(`${at} the editor with a long variant name has no sideways scroll`, !wide);
     await page.click('#closeEditBtn');
+    await page.click('.tabbar .tab[data-tab="salesScreen"]');
     await sleep(300);
     // Undo (26px) and edit (32px) reach 44px with their ::after, but where they meet a sell button, the sell button wins.
     const hits = await page.evaluate(() => {
       const row = document.querySelector('.variant[data-variant="Poster A4"]');
       const undo = row.querySelector('.pay-undo:not(:disabled)');
-      const [edit, sell] = [row.querySelector('.tile-edit'), undo.closest('.pay').querySelector('.pay-add')];
+      const [edit, sell] = [row.closest('.tile-group').querySelector('.tile-edit'), undo.closest('.pay').querySelector('.pay-add')];
       const [u, e, a] = [undo, edit, sell].map((n) => n.getBoundingClientRect());
       const at = (x, y, n) => !!document.elementFromPoint(x, y)?.closest('button') && document.elementFromPoint(x, y).closest('button') === n;
       return { undo: at(u.left - 8, u.top + u.height / 2, undo) && at(u.left + u.width / 2, u.top - 8, undo), edit: at(e.left - 5, e.top + e.height / 2, edit) && at(e.left + e.width / 2, e.bottom + 5, edit), sellWins: at(a.left + a.width / 2, a.top + 1, sell) };
@@ -175,6 +194,54 @@ for (const width of [412, 1280]) {
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   check(`${at} no sideways scroll`, !overflow);
+  await page.close();
+}
+
+// Seeded: a long variant name at 360px, and folding a group.
+{
+  const at = '360px:';
+  const page = await browser.newPage({ viewport: { width: 360, height: 640 } });
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto(URL);
+  const p = (id, name, price, group) => ({ id, name, price, cost: 0, color: '#f76495', payments: ['Cash', 'QRIS'], group });
+  await page.evaluate((products) => {
+    localStorage.setItem('cntrProducts', JSON.stringify(products));
+    localStorage.setItem('cntrSettings', JSON.stringify({ language: 'en', theme: 'dark' }));
+  }, [p('a', 'Fanservice Pangku', 75000, 'Fanservice'), p('b', 'Fanservice Hug with a signed polaroid set', 75000, 'Fanservice'), p('c', 'Fanservice Freebie', 0, 'Fanservice')]);
+  await page.reload();
+  await sleep(900);
+  const outside = () => page.evaluate(() => {
+    const t = document.querySelector('.tile-group').getBoundingClientRect();
+    return [...document.querySelectorAll('.tile-group button, .tile-group .product-name')].filter((n) => { const r = n.getBoundingClientRect(); return r.left < t.left - 1 || r.right > t.right + 1; }).length + (document.documentElement.scrollWidth > innerWidth ? 100 : 0);
+  });
+  const compact = async () => { await page.click('#sellMenuBtn'); await page.click('label[for="compactTilesToggle"]'); await page.keyboard.press('Escape'); await sleep(150); };
+  const normalOut = await outside();
+  await compact();
+  const compactOut = await outside();
+  check(`${at} a long variant name keeps every button inside the tile, both layouts`, !normalOut && !compactOut, { normalOut, compactOut });
+
+  // Folding: a tap on the group's name row hides its rows and is remembered; the pencil never folds.
+  const state = () => page.evaluate(() => ({ rows: document.querySelectorAll('.tile-group .variant').length, expanded: document.querySelector('.tile-group-toggle').getAttribute('aria-expanded'), height: document.querySelector('.tile-group').getBoundingClientRect().height }));
+  await page.click('.tile-group .tile-edit');
+  await sleep(300);
+  await page.click('#closeEditBtn');
+  await sleep(300);
+  const afterPencil = await state();
+  await page.click('.tile-group[data-product="Fanservice Pangku"] [data-payment="Cash"][data-action="plus"]');
+  await page.click('.tile-group-toggle');
+  await sleep(150);
+  const folded = await state();
+  const sold = await page.textContent('.tile-group-sold');
+  check(`${at} the pencil doesn't fold the group; the name row folds it to one short row with its units sold`, afterPencil.rows === 3 && afterPencil.expanded === 'true' && folded.rows === 0 && folded.expanded === 'false' && folded.height < 72 && sold === '1 sold', { afterPencil, folded, sold });
+  await compact();
+  const foldedNormal = await state();
+  await page.reload();
+  await sleep(900);
+  const reloaded = await state();
+  await page.click('.tile-group-toggle');
+  await sleep(150);
+  const opened = await state();
+  check(`${at} a folded group stays folded after a reload (under 72px in both layouts) and unfolds again`, foldedNormal.height < 72 && reloaded.rows === 0 && opened.rows === 3 && opened.expanded === 'true', { foldedNormal, reloaded, opened });
   await page.close();
 }
 

@@ -111,7 +111,7 @@ body {
 /* No square corners, even on a transparent wrapper: the tutorial's spotlight and focus rings follow an element's
    radius. Zero specificity, so a component's own radius wins. Rows with a divider line and clipped (ellipsis)
    text are left out: a radius there would bend the divider's ends or shave letters. */
-:where(.hero, .payment-options, .tab, .event-name, #compareEventCard, .field, .field-row, .field-hint, .checklist, .check-group, .variant, .tile-head, .tile-pay, .pay, .page-header, .card-head, .sheet-header, .sheet-actions, .report-hero, .group, .product-section, .product-group, .stack, .list, .form, .split, .kpi-row, .event-actions, .event-name-row, .topbar-row, .brand, .empty, .rank, .product-row, .product-toggle-btn, .page, .list-main, .rank-main, .rank-meta, .split-item, .split-legend, .tile-meta, .topbar-actions, .products-day-head, .cmp) {
+:where(.hero, .payment-options, .tab, .event-name, #compareEventCard, .field, .field-row, .field-hint, .checklist, .check-group, .variant, .variant-meta, .tile-head, .tile-group-head, .tile-group-title, .tile-group-pays, .tile-pay, .pay, .page-header, .card-head, .sheet-header, .sheet-actions, .report-hero, .group, .product-section, .product-group, .stack, .list, .form, .split, .kpi-row, .event-actions, .event-name-row, .topbar-row, .brand, .empty, .rank, .product-row, .product-toggle-btn, .page, .list-main, .rank-main, .rank-meta, .split-item, .split-legend, .tile-meta, .topbar-actions, .products-day-head, .cmp) {
   border-radius: var(--r-sm);
 }
 
@@ -791,34 +791,149 @@ p {
   stroke-width: 2.6;
 }
 
-/* A product group: its name once at the top, then one row per variant (name, price, edit; then its payment buttons). */
-.tile-group .group-name {
-  max-width: none;
+/* A product group: its name and one pencil once, then one row per variant: name (and price) beside its payment buttons,
+   each about a third of a single product's height. */
+.tile-group-head {
   margin-bottom: var(--s2);
 }
 
-.variant {
+.tile-group-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+
+.tile-group .group-name {
+  max-width: none;
+}
+
+.tile-group-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The whole name row folds and unfolds the group (44px tall with its ::after); the pencil beside it doesn't. */
+.tile-group-toggle {
   position: relative;
+  width: 100%;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  border-radius: var(--r-sm);
+  color: inherit;
+  text-align: left;
+  transition: background-color var(--dur-tap);
 }
 
-/* The divider is its own line, so the row's rounded corners don't bend its ends. */
-.variant + .variant {
-  margin-top: var(--s3);
-  padding-top: var(--s3);
-}
-
-.variant + .variant::before {
+.tile-group-toggle::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  border-top: 1px solid var(--ink-line);
+  inset: -6px 0;
+}
+
+.tile-group-toggle:active {
+  background: var(--ink-faint);
+}
+
+.tile-group-sold {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.tile-group-toggle .icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+  opacity: 0.85;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+/* Folded: just the header row, chevron pointing at the name. */
+.tile-group.is-folded .tile-group-head {
+  display: block;
+  margin-bottom: 0;
+}
+
+.is-folded .tile-group-toggle .icon {
+  transform: rotate(-90deg);
+}
+
+/* The payment labels as column headers: compact tiles only (otherwise each button carries its own). */
+.tile-group-pays {
+  display: none;
+}
+
+.variant {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  align-items: center;
+  gap: var(--s2);
+}
+
+.variant + .variant {
+  margin-top: var(--s2);
+}
+
+.variant-meta {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+/* The name column is narrow, so a variant's name may take 2 lines at any length; it never widens the row. */
+.variant .product-name {
+  max-width: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 /* The variant's name is a step below the group's, so the group reads first. */
 .variant .product-name:not(.is-long) {
   font-size: 15px;
+}
+
+.variant .product-price {
+  font-size: 12px;
+}
+
+/* Each half: its label over its count, − in the corner; no + hint (no room, and the half is plainly a button). */
+.variant .pay-add {
+  min-height: 52px;
+  grid-template-rows: auto auto;
+  align-content: center;
+  row-gap: 2px;
+  padding: var(--s2) var(--s2) var(--s2) var(--s3);
+}
+
+.variant .pay-label {
+  letter-spacing: 0.04em;
+}
+
+.variant .pay-plus {
+  display: none;
+}
+
+.variant .pay-count {
+  align-self: center;
+}
+
+.variant .payment-value {
+  font-size: 18px;
+}
+
+/* 4px in: its 44px hit area stops inside the 8px gap, so it never covers a neighbouring sell button. */
+.variant .pay-undo {
+  right: var(--s1);
+  bottom: var(--s1);
 }
 
 /* Compact tiles (Sell ⋮ menu): no price, and each half is one row (label, count, then −), so more tiles fit. */
@@ -859,6 +974,74 @@ p {
 }
 
 .is-compact .pay-undo {
+  bottom: calc(50% - 13px);
+}
+
+/* Compact group: a table. Payment labels once in the header row, then each variant is name | count | count, no price. */
+.is-compact .tile-group-head,
+.is-compact .variant {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 2fr);
+}
+
+.is-compact .tile-group-head {
+  display: grid;
+  align-items: center;
+  gap: var(--s2);
+  margin-bottom: var(--s1);
+}
+
+.is-compact .tile-group .group-name {
+  font-size: 14px;
+}
+
+/* Room for the group's name beside the chevron and pencil in the narrow name column (360px phones). */
+.is-compact .tile-group-title,
+.is-compact .tile-group-toggle {
+  gap: var(--s1);
+}
+
+.is-compact .tile-group .tile-edit {
+  width: 28px;
+  height: 28px;
+}
+
+.is-compact .tile-group .tile-edit::after {
+  inset: -8px;
+}
+
+.is-compact .tile-group-pays {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s2);
+}
+
+.is-compact .tile-group-pays.tile-pay-single {
+  grid-template-columns: 1fr;
+}
+
+/* Lined up with the counts below (same left padding as .pay-add). */
+.tile-group-pays .pay-label {
+  grid-column: auto;
+  grid-row: auto;
+  padding-left: var(--s3);
+}
+
+.is-compact .variant .pay-add {
+  min-height: 44px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* The header names the column; a Free counter keeps its own label (it has no column). */
+.is-compact .variant .pay:not([data-payment='Free']) .pay-label {
+  display: none;
+}
+
+.is-compact .variant .pay:not([data-payment='Free']) .pay-count {
+  grid-column: 1;
+}
+
+.is-compact .variant .pay-undo {
   bottom: calc(50% - 13px);
 }
 

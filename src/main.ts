@@ -155,6 +155,16 @@ function moveProduct(name: string, to: number) {
 let viewingId: string | null = null;
 let draft: PastEvent | null = null;
 
+/** Folds or unfolds a Sell group; names of groups that no longer exist drop out of the list. */
+function toggleGroup(group: string) {
+  const key = group.toLowerCase();
+  const live = new Set(state.products.map((product) => product.group?.toLowerCase()));
+  const list = loadSettings().collapsedGroups.filter((name) => live.has(name));
+  saveSettings({ ...loadSettings(), collapsedGroups: list.includes(key) ? list.filter((name) => name !== key) : [...list, key] });
+  feedback('step');
+  render();
+}
+
 function render() {
   const today = todayLiveSales();
   const { revenue, profit } = totals(withLinkedCosts(today, state.eventCosts, [...state.products, ...state.productHistory]));
@@ -167,6 +177,8 @@ function render() {
       onAdd: addSale,
       onUndo: undoSale,
       onEdit: (product: Product) => openProductEditor(state.products.indexOf(product)),
+      collapsed: loadSettings().collapsedGroups,
+      onToggleGroup: toggleGroup,
       onAddProduct: () => openProductEditor(-1),
     }),
     el.grid,
