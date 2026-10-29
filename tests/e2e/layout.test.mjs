@@ -117,5 +117,20 @@ for (const [theme, language] of [['dark', 'en'], ['light', 'en'], ['dark', 'id']
   await page.close();
 }
 
+// Wide screens: Sell gets 2 columns on a phone in landscape or a tablet in portrait, 3 on a big tablet; other pages stay a centred column.
+for (const [width, height, columns] of [[412, 892, 1], [915, 412, 2], [800, 1280, 2], [1280, 800, 3]]) {
+  const page = await browser.newPage({ viewport: { width, height } });
+  await page.goto(URL);
+  await page.evaluate((p) => { localStorage.clear(); localStorage.cntrProducts = p; }, SAMPLE_PRODUCTS);
+  await page.reload();
+  await sleep(600);
+  const cols = await page.evaluate(() => getComputedStyle(document.getElementById('grid')).gridTemplateColumns.split(' ').length);
+  check(`${width}x${height}: Sell shows ${columns} tile column(s)`, cols === columns, `${cols}`);
+  await page.click('.tabbar .tab[data-tab="settingsScreen"]');
+  const box = await page.evaluate(() => document.querySelector('#settingsScreen .page').getBoundingClientRect().toJSON());
+  check(`${width}x${height}: Settings is at most 640px wide and centred`, box.width <= 640 && Math.abs(box.left - (width - box.right)) < 1, box);
+  await page.close();
+}
+
 await browser.close();
 done();
