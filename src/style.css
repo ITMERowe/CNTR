@@ -109,8 +109,6 @@ body {
 }
 
 body {
-  max-width: 520px;
-  margin: 0 auto;
   position: relative;
   overflow: hidden;
   -webkit-text-size-adjust: 100%;
@@ -199,6 +197,12 @@ p {
   letter-spacing: 0.32em;
 }
 
+/* Off Sell, the header's + lines up with the centred page column below it (608px = .page's 640px less its padding). */
+.app:has(#salesScreen:not(.active)) .topbar-row {
+  max-width: 608px;
+  margin: 0 auto;
+}
+
 .topbar-actions {
   display: flex;
   gap: var(--s2);
@@ -246,6 +250,9 @@ p {
 }
 
 .page {
+  /* Tablets and wide screens: a readable centred column instead of full width (phones are narrower). */
+  max-width: 640px;
+  margin: 0 auto;
   padding: var(--s2) var(--s4) var(--s4);
   /* The page's current side padding, so .edit-bar can cancel exactly it, including at the small-phone breakpoint below. */
   --page-x: var(--s4);
@@ -452,8 +459,24 @@ p {
   display: grid;
   /* A single column that cannot grow past the screen: without minmax(0, ...) an unbroken long name could still force it wider. */
   grid-template-columns: minmax(0, 1fr);
+  /* Each tile keeps its own height, so a taller tile doesn't stretch the ones beside it. */
+  align-items: start;
   gap: var(--s2);
   padding: var(--s2) var(--s4) var(--s4);
+}
+
+/* Phone landscape and tablets: more columns, each never narrower than a 360px phone's tile
+   (~340px, where compact TRANSFER + count and a 14-char name still fit). */
+@media (min-width: 720px) {
+  .sales-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1080px) {
+  .sales-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .tile {
