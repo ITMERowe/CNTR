@@ -292,7 +292,13 @@
                 </div>
               </div>
               <label class="field">
-                <span class="field-label" data-i18n="name">Name</span>
+                <span class="field-label" data-i18n="product.group">Group (optional)</span>
+                <input class="input" id="editGroup" maxlength="1000" type="text" list="editGroupList" placeholder="e.g. Poster" data-i18n-placeholder="product.groupPlaceholder" aria-describedby="editGroupHint" autocomplete="off" />
+                <datalist id="editGroupList"></datalist>
+                <span class="field-hint" id="editGroupHint" data-i18n="product.groupHint">Products in one group share a tile on Sell, with the same color and payment methods.</span>
+              </label>
+              <label class="field">
+                <span class="field-label" id="editNameLabel" data-i18n="name">Name</span>
                 <input class="input input-lg" id="editName" maxlength="1000" type="text" placeholder="Product name" data-i18n-placeholder="product_name" autocomplete="off" />
               </label>
               <div class="field-row">

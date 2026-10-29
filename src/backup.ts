@@ -52,7 +52,7 @@ function checkProduct(item: unknown) {
   // `payments` is optional (older backups have none): 1 or 2 method names.
   const payments = isObject(item) ? item.payments : undefined;
   const paymentsOk = payments === undefined || (Array.isArray(payments) && payments.length >= 1 && payments.length <= 2 && payments.every(isString));
-  return isObject(item) && (item.id === undefined || isString(item.id)) && isName(item.name) && isNumber(item.price) && isNumber(item.cost) && isString(item.color) && paymentsOk;
+  return isObject(item) && (item.id === undefined || isString(item.id)) && isName(item.name) && isNumber(item.price) && isNumber(item.cost) && isString(item.color) && paymentsOk && (item.group === undefined || isName(item.group));
 }
 
 function checkSale(item: unknown) {

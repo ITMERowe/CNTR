@@ -757,6 +757,23 @@ p {
   stroke-width: 2.6;
 }
 
+/* A product group: its name once at the top, then one row per variant (name, price, edit; then its payment buttons). */
+.tile-group .group-name {
+  max-width: none;
+  margin-bottom: var(--s2);
+}
+
+.variant + .variant {
+  margin-top: var(--s3);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--ink-soft);
+}
+
+/* The variant's name is a step below the group's, so the group reads first. */
+.variant .product-name:not(.is-long) {
+  font-size: 15px;
+}
+
 /* Compact tiles (Sell ⋮ menu): no price, and each half is one row (label, count, then −), so more tiles fit. */
 .is-compact .tile {
   padding: var(--s2);
@@ -1221,6 +1238,22 @@ p {
   flex-wrap: wrap;
   gap: var(--s1);
   margin-top: 2px;
+}
+
+/* Products screen: a group's variants indented under its name (like the expense sheet), so where the group ends is plain */
+.product-group-title {
+  margin: var(--s3) 0 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.product-group .product-item {
+  margin-left: var(--s4);
+}
+
+.product-group + * {
+  border-top: 1px solid var(--line);
 }
 
 #productHistoryList .product-section + .product-section {
@@ -2326,6 +2359,16 @@ body.is-editing-event .content {
   border-radius: var(--r-md);
   cursor: pointer;
   transition: border-color var(--dur-1), background-color var(--dur-1);
+}
+
+/* Expense sheet: a group's box, then its variants indented under it */
+.check-group {
+  display: grid;
+  gap: var(--s2);
+}
+
+.check-group .check-row + .check-row {
+  margin-left: var(--s6);
 }
 
 .check-row input {

@@ -70,6 +70,7 @@ import {
 import { closeColorPicker } from './ui/colorPicker';
 import { hydrateIcons } from './ui/icons';
 import { editProductByName, initProductEditor, openProductEditor } from './ui/productEditor';
+import { groupTiles } from './groups';
 import { initTileDrag } from './ui/tileDrag';
 import { CompareView } from './views/Compare';
 import { EventScreen } from './views/EventScreen';
@@ -125,7 +126,9 @@ function sellProducts() {
   if (!sellOrder || activeScreenId() !== 'salesScreen') {
     const sold = new Map<string, number>();
     for (const sale of todayLiveSales()) sold.set(sale.product, (sold.get(sale.product) ?? 0) + 1);
-    sellOrder = [...state.products].sort((a, b) => (sold.get(b.name) ?? 0) - (sold.get(a.name) ?? 0)).map(sortKey);
+    // A group sorts by its variants' units together, and stays one tile.
+    const units = (tile: Product[]) => tile.reduce((sum, product) => sum + (sold.get(product.name) ?? 0), 0);
+    sellOrder = groupTiles(state.products).sort((a, b) => units(b) - units(a)).flat().map(sortKey);
   }
   const order = sellOrder;
   const rank = (product: Product) => {
@@ -135,11 +138,13 @@ function sellProducts() {
   return [...state.products].sort((a, b) => rank(a) - rank(b));
 }
 
-/** Drag-and-drop on Sell: moves the product to `to` in the hand-made order. */
+/** Drag-and-drop on Sell: moves the tile holding the product (a group moves whole) to tile `to` in the hand-made order. */
 function moveProduct(name: string, to: number) {
-  const from = state.products.findIndex((product) => product.name === name);
+  const tiles = groupTiles(state.products);
+  const from = tiles.findIndex((tile) => tile.some((product) => product.name === name));
   if (from < 0) return;
-  state.products.splice(to, 0, ...state.products.splice(from, 1));
+  tiles.splice(to, 0, ...tiles.splice(from, 1));
+  state.products.splice(0, state.products.length, ...tiles.flat());
   saveProducts();
   render();
 }
@@ -526,7 +531,8 @@ function submitExpense() {
   if (!name || !(amount > 0)) return;
   // Ticked rows are indexes into the listed products; links to products no longer listed are kept.
   let products = linkableProducts();
-  const ticked = new Set(checkedValues(el.expenseProducts).map(Number));
+  // A group's own box (value "on") is not a product: its variants' boxes carry the picks.
+  const ticked = new Set(checkedValues(el.expenseProducts).map(Number).filter(Number.isInteger));
   if (editingPastEvent() && ticked.size) {
     // A snapshot from before ids gets them only when linked (saved with the edit): its sales' id, else a new one.
     products = products.map((product, index) => (product.id || !ticked.has(index) ? product : { ...product, id: draft!.sales.find((sale) => sale.product === product.name && sale.productId)?.productId ?? generateUUID() }));

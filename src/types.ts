@@ -9,6 +9,8 @@ export interface Product {
   color: string;
   /** 1 or 2 of PAYMENT_METHODS (payments.ts); missing on older data, which means Cash + QRIS. */
   payments?: string[];
+  /** Group name (e.g. "Poster"): products sharing it are one tile on Sell, with the group's colour and payments. Reports ignore it. */
+  group?: string;
 }
 
 export interface SaleRecord {

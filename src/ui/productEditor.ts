@@ -8,6 +8,8 @@ import { loadSettings } from '../storage';
 import { closeColorPicker, getPickerColor, initColorPicker, setPickerColor } from './colorPicker';
 import { activeScreenId, el, openConfirmModal, openScreen, showToast } from './dom';
 import { t } from '../i18n';
+import { MAX_NAME } from '../backup';
+import { groupedName, groupMembers, nameTaken, syncGroup, variantLabel } from '../groups';
 
 // Exactly one of these is set while editing; neither means "add a new product".
 let editingIndex = -1;
@@ -33,7 +35,10 @@ export function openProductEditor(index: number, historyIndex: number | null = n
   const symbol = CURRENCY_SYMBOLS[currency];
   el.editPriceLabel.textContent = t('product.priceLabel', { symbol });
   el.editCostLabel.textContent = t('product.costLabel', { symbol });
-  el.editName.value = source?.name ?? '';
+  el.editGroup.value = source?.group ?? '';
+  el.editName.value = source ? variantLabel(source) : '';
+  // Suggests the existing groups, so a variant joins one with a tap instead of a retyped (maybe misspelt) name.
+  el.editGroupList.replaceChildren(...[...new Set(allProducts().map((product) => product.group).filter(Boolean))].map((group) => Object.assign(document.createElement('option'), { value: group })));
   el.editPrice.value = source ? formatInputNumber(String(source.price), currency) : '';
   el.editCost.value = source ? formatInputNumber(String(source.cost), currency) : '';
   el.removeProductBtn.style.display = source ? 'grid' : 'none';
@@ -43,6 +48,25 @@ export function openProductEditor(index: number, historyIndex: number | null = n
   renderPaymentOptions();
   updatePreview();
   openScreen('productEditScreen');
+}
+
+const allProducts = () => [...state.products, ...state.productHistory];
+
+/** Another product already in the typed group (not the one being edited), whose colour and payments the group has. */
+function groupMember() {
+  return groupMembers(allProducts(), el.editGroup.value.trim(), editedProduct()?.name ?? null)[0];
+}
+
+/** Typing an existing group's name joins it: the editor takes the group's colour and payment methods. */
+function onGroupInput() {
+  const member = groupMember();
+  if (member) {
+    setPickerColor(member.color);
+    selectedPayments = productPayments(member);
+    paymentPickOrder = [...selectedPayments];
+    renderPaymentOptions();
+  }
+  updatePreview();
 }
 
 /** One toggle per method; a third tap swaps out the oldest pick, so every chip stays readable and tappable. */
@@ -73,7 +97,10 @@ function onPaymentOptionClick(event: MouseEvent) {
 
 /** Mirrors the name and price into the tile preview on the colour field. */
 function updatePreview() {
-  el.editPreviewName.textContent = el.editName.value.trim() || t('product_name');
+  const group = el.editGroup.value.trim();
+  el.editNameLabel.textContent = group ? t('product.variant') : t('name');
+  el.editName.placeholder = group ? t('product.variantPlaceholder') : t('product_name');
+  el.editPreviewName.textContent = groupedName(group, el.editName.value.trim()) || t('product_name');
   const price = parseCurrencyInput(el.editPrice.value, loadSettings().currency);
   el.editPreviewPrice.textContent = price > 0 ? el.editPrice.value : FREE_PAYMENT;
 }
@@ -121,7 +148,10 @@ function removeEditedProduct() {
 
 function saveEditedProduct() {
   const currency = loadSettings().currency;
-  const name = el.editName.value.trim() || t('product.defaultName', { n: state.products.length + 1 });
+  // Joining an existing group keeps that group's spelling; the real name is "Group Variant" (capped like any name, so backups restore).
+  const member = groupMember();
+  const group = member?.group ?? el.editGroup.value.trim();
+  const name = groupedName(group, el.editName.value.trim()).slice(0, MAX_NAME) || t('product.defaultName', { n: state.products.length + 1 });
   const price = parseCurrencyInput(el.editPrice.value, currency) || 0;
   const cost = parseCurrencyInput(el.editCost.value, currency) || 0;
   const pickedColor = getPickerColor();
@@ -129,9 +159,10 @@ function saveEditedProduct() {
 
   const editing = editedProduct();
   const originalName = editing?.name ?? null;
-  // Product names are the identity key for sales and history, so a clash would silently merge two products.
-  const clashesWithActive = state.products.some((product) => product.name === name && product.name !== originalName);
-  const clashesWithHistory = editing !== null && name !== originalName && state.productHistory.some((product) => product.name === name);
+  // Product names are the identity key for sales and history, so a clash would silently merge two products (ignoring case, so they never look alike).
+  // A new product may still take a hidden product's exact name: that replaces it, as before.
+  const clashesWithActive = nameTaken(name, state.products, originalName);
+  const clashesWithHistory = nameTaken(name, editing ? state.productHistory : state.productHistory.filter((product) => product.name !== name), originalName);
   if (clashesWithActive || clashesWithHistory) {
     feedback('warn');
     showToast(t('toast.nameTaken', { name }));
@@ -139,7 +170,8 @@ function saveEditedProduct() {
   }
 
   if (editing && originalName !== null) {
-    Object.assign(editing, { name, price, cost, color, payments: [...selectedPayments] });
+    // `group: undefined` (not left out) so ungrouping also clears the history copy; JSON drops it.
+    Object.assign(editing, { name, price, cost, color, payments: [...selectedPayments], group: group || undefined });
     if (editingIndex >= 0) {
       ensureProductHistory(editing, state.productHistory, originalName);
     } else {
@@ -148,21 +180,28 @@ function saveEditedProduct() {
       if (active) Object.assign(active, editing);
     }
     renameSales(originalName, editing);
-    saveProducts();
+    syncAndSave(group, color);
     saveSales();
     saveProductHistory();
     showToast(t('toast.saved', { name }));
   } else {
-    const newProduct = { id: generateUUID(), name, price, cost, color: chooseUniqueColor(state.products, color), payments: [...selectedPayments] };
+    // A variant keeps its group's colour; a new product otherwise gets one no tile uses yet.
+    const newProduct = { id: generateUUID(), name, price, cost, color: member ? color : chooseUniqueColor(state.products, color), payments: [...selectedPayments], ...(group && { group }) };
     state.products.push(newProduct);
     ensureProductHistory(newProduct, state.productHistory);
-    saveProducts();
+    syncAndSave(group, newProduct.color);
     saveProductHistory();
     showToast(t('toast.added', { name }));
   }
 
   feedback('step');
   closeProductEditor();
+}
+
+/** A group's colour and payments are the group's: the saved ones reach every variant, active or hidden. */
+function syncAndSave(group: string, color: string) {
+  if (group) for (const list of [state.products, state.productHistory]) syncGroup(list, group, color, selectedPayments);
+  saveProducts();
 }
 
 /** Wires the editor's static controls once. `changed` runs after any save, removal or close. */
@@ -176,6 +215,7 @@ export function initProductEditor(changed: () => void) {
     });
   }
   el.editName.addEventListener('input', updatePreview);
+  el.editGroup.addEventListener('input', onGroupInput);
   el.removeProductBtn.addEventListener('click', removeEditedProduct);
   el.saveProductBtn.addEventListener('click', saveEditedProduct);
   el.editPayments.addEventListener('click', onPaymentOptionClick);

@@ -17,6 +17,7 @@ src/
   feedback.ts          Haptics (phone) and soft Web Audio tones (Settings → Sound)
   theme.ts             Light/dark: sets <html data-theme>; "Phone setting" follows prefers-color-scheme live
   i18n.ts              English + Bahasa Indonesia dictionaries, t() / tn(), locale(), first-launch language, data-i18n markup
+  groups.ts            Product groups: report names ("Poster A3"), Sell tiles per group, shared colour/payments
   reports.ts           Pure report maths: totals, product breakdowns, compare rows
   formatters.ts        Money formatting/parsing, colour helpers
   data.ts              Default products, product-history helper, UUIDs
@@ -42,7 +43,7 @@ Dependencies point one way: `views/` and `ui/` read `state.ts`; `state.ts` never
 
 | Type | Meaning |
 |---|---|
-| `Product` | `name`, `price`, `cost`, `color`, `payments` (1–2 of `PAYMENT_METHODS` in `src/payments.ts`; missing on older data = Cash + QRIS). **The name is the identity key**: sales, history and reports all refer to products by name. |
+| `Product` | `name`, `price`, `cost`, `color`, `payments` (1–2 of `PAYMENT_METHODS` in `src/payments.ts`; missing on older data = Cash + QRIS). Optional `group`: products sharing it are one Sell tile (one row per variant) and share the group's colour and payments; the name is the full "Group Variant" and reports ignore the group. **The name is the identity key**: sales, history and reports all refer to products by name. |
 | `SaleRecord` | One tap of **+**: product name, price and cost *at the time*, payment (`Cash`/`QRIS`), timestamp. |
 | `EventCost` | An event expense: `id`, `name`, `amount`. |
 | `LiveEventMeta` | The live event's `id`, `name` (null = default "Event <date>"), `startedAt` and `dayBreaks` (times End day was pressed). Its sales and expenses are the live `cntrSales` / `cntrEventCosts`. |

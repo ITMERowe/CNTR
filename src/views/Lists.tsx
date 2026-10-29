@@ -1,5 +1,6 @@
 import { eventSummary, formatDay } from '../events';
 import { fmt } from '../formatters';
+import { groupTiles, variantLabel } from '../groups';
 import { paymentClass, productPayments } from '../payments';
 import type { PastEvent, Product, SaleRecord } from '../types';
 import { Icon } from './Icon';
@@ -55,7 +56,7 @@ function ProductRow({ product, active, index, onEdit, onToggle }: { product: Pro
       <button class="product-edit-btn" type="button" data-name={product.name} aria-label={t('edit.named', { name: product.name })} onClick={() => onEdit(product.name)}>
         <span class="sale-bar" style={{ background: product.color }} aria-hidden="true" />
         <span class="product-item-main">
-          <strong class="list-title">{product.name}</strong>
+          <strong class="list-title">{variantLabel(product)}</strong>
           <span class="product-item-sub">
             {fmt(product.price)} · {t('product.profitEach', { amount: fmt(product.price - product.cost) })}
           </span>
@@ -113,9 +114,19 @@ export function ProductList({ products, activeNames, onEdit, onToggle, onAdd }: 
           </h2>
           <p class="product-section-note">{section.note}</p>
           <div class="list list-card">
-            {section.items.map((product, index) => (
-              <ProductRow key={product.name} product={product} active={section.key === 'counter'} index={index} onEdit={onEdit} onToggle={onToggle} />
-            ))}
+            {/* A group's variants sit together under its name. */}
+            {groupTiles(section.items).map((tile) => {
+              const rows = tile.map((product) => (
+                <ProductRow key={product.name} product={product} active={section.key === 'counter'} index={section.items.indexOf(product)} onEdit={onEdit} onToggle={onToggle} />
+              ));
+              if (!tile[0].group) return rows;
+              return (
+                <div class="product-group" key={`group:${tile[0].group.toLowerCase()}`} role="group" aria-label={tile[0].group}>
+                  <h3 class="product-group-title">{tile[0].group}</h3>
+                  {rows}
+                </div>
+              );
+            })}
           </div>
         </section>
       ))}
@@ -184,19 +195,46 @@ export function EventChecklist({ events, checked }: { events: PastEvent[]; check
   );
 }
 
-/** Expense sheet: products the expense pays for (values are list indexes; `checked` holds product ids). */
+/** Expense sheet: products the expense pays for (values are list indexes; `checked` holds product ids). A group's own box ticks all its variants. */
 export function ProductChecklist({ products, checked }: { products: Product[]; checked: string[] }) {
+  const isChecked = (product: Product) => !!product.id && checked.includes(product.id);
+  // The group box follows its variants: ticked when all of them are.
+  const syncGroupBox = (event: Event) => {
+    const group = (event.currentTarget as HTMLElement).closest('.check-group');
+    const box = group?.querySelector<HTMLInputElement>('input.check-all');
+    if (box) box.checked = [...group!.querySelectorAll<HTMLInputElement>('input:not(.check-all)')].every((input) => input.checked);
+  };
+  const tickAll = (event: Event) => {
+    const box = event.currentTarget as HTMLInputElement;
+    for (const input of box.closest('.check-group')!.querySelectorAll<HTMLInputElement>('input:not(.check-all)')) input.checked = box.checked;
+  };
+  const row = (product: Product, label: string) => (
+    <label class="check-row" key={product.id ?? product.name}>
+      <input type="checkbox" value={products.indexOf(product)} checked={isChecked(product)} onChange={syncGroupBox} />
+      <span class="check-box" aria-hidden="true" />
+      <span class="check-text">
+        <strong>{label}</strong>
+      </span>
+    </label>
+  );
   return (
     <>
-      {products.map((product, index) => (
-        <label class="check-row" key={product.id ?? product.name}>
-          <input type="checkbox" value={index} checked={!!product.id && checked.includes(product.id)} />
-          <span class="check-box" aria-hidden="true" />
-          <span class="check-text">
-            <strong>{product.name}</strong>
-          </span>
-        </label>
-      ))}
+      {groupTiles(products).map((tile) => {
+        const group = tile[0].group;
+        if (!group) return row(tile[0], tile[0].name);
+        return (
+          <div class="check-group" key={`group:${group.toLowerCase()}`}>
+            <label class="check-row">
+              <input class="check-all" type="checkbox" checked={tile.every(isChecked)} onChange={tickAll} />
+              <span class="check-box" aria-hidden="true" />
+              <span class="check-text">
+                <strong>{group}</strong>
+              </span>
+            </label>
+            {tile.map((product) => row(product, variantLabel(product)))}
+          </div>
+        );
+      })}
     </>
   );
 }
