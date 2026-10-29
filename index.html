@@ -257,8 +257,8 @@
             </div>
             <div class="form">
               <div class="field color-field">
-                <span class="field-label" id="colorFieldLabel" data-i18n="color">Color</span>
                 <div class="color-swatch" id="colorField" role="button" tabindex="0" aria-labelledby="colorFieldLabel editColorHex" aria-haspopup="dialog">
+                  <span class="sr-only" id="colorFieldLabel" data-i18n="color">Color</span>
                   <span class="swatch-preview" aria-hidden="true">
                     <span class="swatch-name" id="editPreviewName" data-i18n="product_name">Product name</span>
                     <span class="swatch-price" id="editPreviewPrice"></span>
@@ -291,29 +291,47 @@
                   </div>
                 </div>
               </div>
-              <label class="field">
-                <span class="field-label" data-i18n="product.group">Group (optional)</span>
-                <input class="input" id="editGroup" maxlength="1000" type="text" list="editGroupList" placeholder="e.g. Poster" data-i18n-placeholder="product.groupPlaceholder" aria-describedby="editGroupHint" autocomplete="off" />
-                <datalist id="editGroupList"></datalist>
-                <span class="field-hint" id="editGroupHint" data-i18n="product.groupHint">Products in one group share a tile on Sell, with the same color and payment methods.</span>
-              </label>
-              <label class="field">
-                <span class="field-label" id="editNameLabel" data-i18n="name">Name</span>
-                <input class="input input-lg" id="editName" maxlength="1000" type="text" placeholder="Product name" data-i18n-placeholder="product_name" autocomplete="off" />
-              </label>
-              <div class="field-row">
-                <label class="field">
-                  <span class="field-label" id="editPriceLabel">Price</span>
-                  <input class="input" id="editPrice" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
-                </label>
-                <label class="field">
-                  <span class="field-label" id="editCostLabel">Cost</span>
-                  <input class="input" id="editCost" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+              <div class="group-body">
+                <label class="group-row" for="editGroupToggle">
+                  <span class="group-row-label" data-i18n="product.group">Group with variants</span>
+                  <span class="switch">
+                    <input type="checkbox" id="editGroupToggle" role="switch" />
+                    <span class="switch-track" aria-hidden="true"></span>
+                  </span>
                 </label>
               </div>
+              <div class="form-part" id="productFields">
+                <label class="field">
+                  <span class="field-label" data-i18n="name">Name</span>
+                  <input class="input input-lg" id="editName" maxlength="1000" type="text" placeholder="Product name" data-i18n-placeholder="product_name" autocomplete="off" />
+                </label>
+                <div class="field-row">
+                  <label class="field">
+                    <span class="field-label" id="editPriceLabel">Price</span>
+                    <input class="input" id="editPrice" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span class="field-label" id="editCostLabel">Cost</span>
+                    <input class="input" id="editCost" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                  </label>
+                </div>
+              </div>
+              <label class="field" id="groupNameField" hidden>
+                <span class="field-label" data-i18n="product.groupName">Group name</span>
+                <input class="input input-lg" id="editGroup" maxlength="1000" type="text" placeholder="e.g. Poster" data-i18n-placeholder="product.groupPlaceholder" autocomplete="off" />
+              </label>
               <div class="field">
                 <span class="field-label" id="editPaymentsLabel" data-i18n="payment_methods_pick_1_or_2">Payment methods · pick 1 or 2</span>
                 <div class="payment-options" id="editPayments" role="group" aria-labelledby="editPaymentsLabel"></div>
+              </div>
+              <div class="field variants" id="variantsField" hidden>
+                <div class="variant-row variant-head" aria-hidden="true">
+                  <span class="field-label" data-i18n="product.variant">Variant</span>
+                  <span class="field-label" id="variantPriceLabel">Price</span>
+                  <span class="field-label" id="variantCostLabel">Cost</span>
+                </div>
+                <div class="variant-list" id="editVariants"></div>
+                <button class="btn btn-secondary add-variant" id="addVariantBtn" type="button"><i data-icon="plus"></i><span data-i18n="product.addVariant">Add variant</span></button>
               </div>
               <button class="btn btn-primary btn-block" id="saveProductBtn" type="button" data-i18n="save">Save</button>
             </div>

@@ -17,14 +17,14 @@ src/
   feedback.ts          Haptics (phone) and soft Web Audio tones (Settings → Sound)
   theme.ts             Light/dark: sets <html data-theme>; "Phone setting" follows prefers-color-scheme live
   i18n.ts              English + Bahasa Indonesia dictionaries, t() / tn(), locale(), first-launch language, data-i18n markup
-  groups.ts            Product groups: report names ("Poster A3"), Sell tiles per group, shared colour/payments
+  groups.ts            Product groups: report names ("Poster A3"), Sell tiles per group, shared colour/payments, the group form's save plan
   reports.ts           Pure report maths: totals, product breakdowns, compare rows
   formatters.ts        Money formatting/parsing, colour helpers
   data.ts              Default products, product-history helper, UUIDs
   types.ts             Shared types
   ui/
     dom.ts             Element refs, toast, confirm dialog, scroll lock, openScreen()
-    productEditor.ts   Add / edit / remove product screen (colour field = live tile preview)
+    productEditor.ts   Add / edit / remove product screen (colour field = live tile preview); Group switch = a whole group with its variant rows
     colorPicker.ts     HSV colour picker
     icons.ts           Bundled Lucide SVG icons; hydrateIcons() fills <i data-icon> in index.html
   views/               Preact components
@@ -52,6 +52,8 @@ Dependencies point one way: `views/` and `ui/` read `state.ts`; `state.ts` never
 Event maths live in `src/events.ts` (pure, Node-tested): `splitDays()` (a sale belongs to the first day whose break is after it), `todaySales()`, `eventSummary()` (net = product profit − expenses), `adjustCount()` (History edits), `snapshotProducts()`. Every screen, Compare and the CSV use them, so totals always agree.
 
 Because names are identity, the product editor refuses a rename that would collide with an existing product (it would merge them). Renaming a product also renames its recorded sales.
+
+Groups are made in the editor: with the Group switch on it edits the whole group (group name, shared colour and payments, one row per variant). `planGroup` (`groups.ts`) turns the form into the products to save and hide, all or nothing: existing variants keep their ids (sales and expense links follow), a removed row is hidden like Delete, and a clashing group or name refuses the save. Opening any grouped product opens its whole group; the switch turns off only with one variant left (`ungroup`).
 
 ## State
 

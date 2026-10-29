@@ -1,4 +1,4 @@
-// Add / edit / remove a product.
+// Add / edit / remove a product, or a whole group of variants (Group switch on).
 import { ensureProductHistory, generateUUID } from '../data';
 import { feedback } from '../feedback';
 import { CURRENCY_SYMBOLS, chooseUniqueColor, formatInputNumber, parseCurrencyInput } from '../formatters';
@@ -7,41 +7,52 @@ import { deleteProduct, renameSales, saveProductHistory, saveProducts, saveSales
 import { loadSettings } from '../storage';
 import { closeColorPicker, getPickerColor, initColorPicker, setPickerColor } from './colorPicker';
 import { activeScreenId, el, openConfirmModal, openScreen, showToast } from './dom';
+import { createIconElement } from './icons';
 import { t } from '../i18n';
 import { MAX_NAME } from '../backup';
-import { groupedName, groupMembers, nameTaken, syncGroup, variantLabel } from '../groups';
+import { groupMembers, planGroup, ungroup, variantLabel, type VariantRow } from '../groups';
+import type { Product } from '../types';
 
 // Exactly one of these is set while editing; neither means "add a new product".
 let editingIndex = -1;
 let editingHistoryIndex: number | null = null;
+/** The group's products when the editor opened (or the product the switch turned into a group): what Save updates or hides. */
+let members: Product[] = [];
 let returnScreen = 'salesScreen';
 let onChange: () => void = () => {};
 let selectedPayments: string[] = DEFAULT_PAYMENTS;
 /** Selection order, oldest first: which pick a third tap swaps out. */
 let paymentPickOrder: string[] = DEFAULT_PAYMENTS;
 
-/** index >= 0 edits an active product; historyIndex edits an inactive one; neither means "add". */
+const currency = () => loadSettings().currency;
+const money = (value: number) => (value ? formatInputNumber(String(value), currency()) : '');
+/** A variant cell's number without the currency symbol, which its column header already shows. */
+const bare = (raw: string) => formatInputNumber(raw, currency()).replace(/^\S+ /, '');
+/** Every product once, active ones first (in Sell order), then hidden ones. */
+const allProducts = () => [...new Map([...state.products, ...state.productHistory].map((product) => [product.id ?? product.name, product])).values()];
+
+/** index >= 0 edits an active product; historyIndex edits an inactive one; neither means "add". A grouped product opens its whole group. */
 export function openProductEditor(index: number, historyIndex: number | null = null) {
   const currentScreen = activeScreenId();
   if (currentScreen !== 'productEditScreen') returnScreen = currentScreen;
 
   editingIndex = index;
   editingHistoryIndex = index < 0 ? historyIndex : null;
-  const source = index >= 0 ? state.products[index] : historyIndex !== null ? state.productHistory[historyIndex] : null;
-  const currency = loadSettings().currency;
+  const source = editedProduct();
   closeColorPicker();
 
   el.productEditTitle.textContent = source ? t('product.edit') : t('add_product');
-  const symbol = CURRENCY_SYMBOLS[currency];
-  el.editPriceLabel.textContent = t('product.priceLabel', { symbol });
+  const symbol = CURRENCY_SYMBOLS[currency()];
+  el.editPriceLabel.textContent = el.variantPriceLabel.textContent = t('product.priceLabel', { symbol });
   el.editCostLabel.textContent = t('product.costLabel', { symbol });
-  el.editGroup.value = source?.group ?? '';
-  el.editName.value = source ? variantLabel(source) : '';
-  // Suggests the existing groups, so a variant joins one with a tap instead of a retyped (maybe misspelt) name.
-  el.editGroupList.replaceChildren(...[...new Set(allProducts().map((product) => product.group).filter(Boolean))].map((group) => Object.assign(document.createElement('option'), { value: group })));
-  el.editPrice.value = source ? formatInputNumber(String(source.price), currency) : '';
-  el.editCost.value = source ? formatInputNumber(String(source.cost), currency) : '';
-  el.removeProductBtn.style.display = source ? 'grid' : 'none';
+  el.variantCostLabel.textContent = t('product.costShort', { symbol });
+  el.editName.value = source?.name ?? '';
+  el.editPrice.value = money(source?.price ?? 0);
+  el.editCost.value = money(source?.cost ?? 0);
+  members = source?.group ? groupMembers(allProducts(), source.group) : [];
+  el.editGroup.value = members[0]?.group ?? '';
+  el.editVariants.replaceChildren(...members.map((member) => variantRow({ id: member.id, variant: variantLabel(member), price: member.price, cost: member.cost })));
+  setGroupMode(members.length > 0);
   setPickerColor(source?.color ?? chooseUniqueColor(state.products, '#F76495'));
   selectedPayments = source ? productPayments(source) : DEFAULT_PAYMENTS;
   paymentPickOrder = [...selectedPayments];
@@ -50,25 +61,66 @@ export function openProductEditor(index: number, historyIndex: number | null = n
   openScreen('productEditScreen');
 }
 
-const allProducts = () => [...state.products, ...state.productHistory];
-
-/** Another product already in the typed group (not the one being edited), whose colour and payments the group has. */
-function groupMember() {
-  return groupMembers(allProducts(), el.editGroup.value.trim(), editedProduct()?.name ?? null)[0];
+function setGroupMode(on: boolean) {
+  el.editGroupToggle.checked = on;
+  el.productFields.hidden = on;
+  el.groupNameField.hidden = el.variantsField.hidden = !on;
+  el.removeProductBtn.style.display = editedProduct() || members.length ? 'grid' : 'none';
 }
 
-/** Typing an existing group's name joins it: the editor takes the group's colour and payment methods. */
-function onGroupInput() {
-  // Clearing the group keeps the full name ("Poster A4"), not just the variant, so reports don't see a rename.
-  const edited = editedProduct();
-  if (!el.editGroup.value.trim() && edited?.group && el.editName.value.trim() === variantLabel(edited)) el.editName.value = edited.name;
-  const member = groupMember();
-  if (member) {
-    setPickerColor(member.color);
-    selectedPayments = productPayments(member);
-    paymentPickOrder = [...selectedPayments];
-    renderPaymentOptions();
+/** One variant row: name | price | cost | remove. Its id (if any) ties it to the product it saves into. */
+function variantRow(row: VariantRow = { variant: '', price: 0, cost: 0 }) {
+  const div = Object.assign(document.createElement('div'), { className: 'variant-row' });
+  if (row.id) div.dataset.id = row.id;
+  const input = (value: string, label: string, numeric: boolean) => {
+    const field = Object.assign(document.createElement('input'), { className: 'input', type: 'text', value, autocomplete: 'off', maxLength: 1000 });
+    field.setAttribute('aria-label', label);
+    if (numeric) Object.assign(field, { inputMode: 'numeric', pattern: '[0-9]*' });
+    else field.placeholder = t('product.variantPlaceholder');
+    return field;
+  };
+  const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'icon-btn variant-remove' });
+  remove.setAttribute('aria-label', t('product.removeVariant'));
+  remove.append(createIconElement('close'));
+  div.append(input(row.variant, t('product.variant'), false), input(bare(String(row.price || '')), el.variantPriceLabel.textContent ?? '', true), input(bare(String(row.cost || '')), el.variantCostLabel.textContent ?? '', true), remove);
+  return div;
+}
+
+function readRows(): VariantRow[] {
+  return [...el.editVariants.children].map((div) => {
+    const [variant, price, cost] = [...div.querySelectorAll('input')].map((input) => input.value);
+    return { id: (div as HTMLElement).dataset.id, variant, price: parseCurrencyInput(price, currency()) || 0, cost: parseCurrencyInput(cost, currency()) || 0 };
+  });
+}
+
+/** Switch on: the product becomes the group's first variant (its real name unchanged) plus an empty row. Off: only with one variant left. */
+function onGroupToggle() {
+  if (el.editGroupToggle.checked) {
+    const edited = editedProduct();
+    // Back on after switching off keeps the original members, so the rows removed before still go on Save.
+    if (edited && !members.some((member) => member.id === edited.id)) members = [...members, edited];
+    el.editGroup.value = el.editName.value.trim();
+    const price = parseCurrencyInput(el.editPrice.value, currency()) || 0;
+    const cost = parseCurrencyInput(el.editCost.value, currency()) || 0;
+    el.editVariants.replaceChildren(variantRow({ id: edited?.id, variant: '', price, cost }), variantRow());
+  } else {
+    const single = ungroup(el.editGroup.value, readRows());
+    if (!single) {
+      el.editGroupToggle.checked = true;
+      feedback('warn');
+      showToast(t('product.ungroupFirst'));
+      return;
+    }
+    // The one variant is now the product being edited; the members whose rows were removed are hidden on Save.
+    editingIndex = state.products.findIndex((product) => product.id === single.id);
+    const historyIndex = state.productHistory.findIndex((product) => product.id === single.id);
+    editingHistoryIndex = editingIndex < 0 && historyIndex >= 0 ? historyIndex : null;
+    el.editName.value = single.name;
+    el.editPrice.value = money(single.price);
+    el.editCost.value = money(single.cost);
   }
+  feedback('step');
+  setGroupMode(el.editGroupToggle.checked);
   updatePreview();
 }
 
@@ -98,13 +150,15 @@ function onPaymentOptionClick(event: MouseEvent) {
   renderPaymentOptions();
 }
 
-/** Mirrors the name and price into the tile preview on the colour field. */
+/** Mirrors the form into the tile preview on the colour field: a product's name and price, or a group's name and variants. */
 function updatePreview() {
-  const group = groupMember()?.group ?? el.editGroup.value.trim();
-  el.editNameLabel.textContent = group ? t('product.variant') : t('name');
-  el.editName.placeholder = group ? t('product.variantPlaceholder') : t('product_name');
-  el.editPreviewName.textContent = groupedName(group, el.editName.value.trim()) || t('product_name');
-  const price = parseCurrencyInput(el.editPrice.value, loadSettings().currency);
+  if (el.editGroupToggle.checked) {
+    el.editPreviewName.textContent = el.editGroup.value.trim() || t('product.groupName');
+    el.editPreviewPrice.textContent = readRows().map((row) => row.variant.trim()).filter(Boolean).join(' · ');
+    return;
+  }
+  el.editPreviewName.textContent = el.editName.value.trim() || t('product_name');
+  const price = parseCurrencyInput(el.editPrice.value, currency());
   el.editPreviewPrice.textContent = price > 0 ? el.editPrice.value : FREE_PAYMENT;
 }
 
@@ -129,54 +183,65 @@ function closeProductEditor() {
   closeColorPicker();
   editingIndex = -1;
   editingHistoryIndex = null;
+  members = [];
   openScreen(returnScreen);
   onChange();
 }
 
-/** The one place a product is deleted for good (the Products list only hides it from the counter). */
+/** The one place a product (or a whole group) is deleted for good (the Products list only hides it from the counter). */
 function removeEditedProduct() {
-  const removed = editedProduct();
-  if (!removed) return;
-  openConfirmModal(
-    t('product.deleteMessage', { name: removed.name }),
-    t('delete'),
-    () => {
-      deleteProduct(removed.name);
-      feedback('remove');
-      showToast(t('toast.deleted', { name: removed.name }));
-      closeProductEditor();
-    },
-  );
+  const removed = el.editGroupToggle.checked ? members : [editedProduct()].filter((product) => product !== null);
+  if (!removed.length) return;
+  const name = el.editGroupToggle.checked ? el.editGroup.value.trim() || removed[0].group || removed[0].name : removed[0].name;
+  openConfirmModal(t(el.editGroupToggle.checked ? 'product.deleteGroupMessage' : 'product.deleteMessage', { name }), t('delete'), () => {
+    for (const product of removed) deleteProduct(product.name);
+    feedback('remove');
+    showToast(t('toast.deleted', { name }));
+    closeProductEditor();
+  });
 }
 
-function saveEditedProduct() {
-  const currency = loadSettings().currency;
-  // Joining an existing group keeps that group's spelling; the real name is "Group Variant" (capped like any name, so backups restore).
-  const member = groupMember();
-  const group = member?.group ?? el.editGroup.value.trim();
-  const name = groupedName(group, el.editName.value.trim()).slice(0, MAX_NAME) || t('product.defaultName', { n: state.products.length + 1 });
-  const price = parseCurrencyInput(el.editPrice.value, currency) || 0;
-  const cost = parseCurrencyInput(el.editCost.value, currency) || 0;
-  const pickedColor = getPickerColor();
-  const color = pickedColor.startsWith('#') ? pickedColor : `#${pickedColor}`;
+const pickedColor = () => {
+  const color = getPickerColor();
+  return color.startsWith('#') ? color : `#${color}`;
+};
 
-  const editing = editedProduct();
+function saveEditedProduct() {
+  if (el.editGroupToggle.checked) {
+    saveGroup();
+    return;
+  }
+  const name = el.editName.value.trim().slice(0, MAX_NAME) || t('product.defaultName', { n: state.products.length + 1 });
+  const price = parseCurrencyInput(el.editPrice.value, currency()) || 0;
+  const cost = parseCurrencyInput(el.editCost.value, currency()) || 0;
+  const color = pickedColor();
+
+  let editing = editedProduct();
   const originalName = editing?.name ?? null;
   // Product names are the identity key for sales and history, so a clash would silently merge two products (ignoring case, so they never look alike).
   // A new product may still take a hidden product's exact name: that replaces it, as before.
-  const clashesWithActive = nameTaken(name, state.products, originalName);
-  const clashesWithHistory = nameTaken(name, editing ? state.productHistory : state.productHistory.filter((product) => product.name !== name), originalName);
+  const others = (list: Product[]) => list.filter((product) => product.id === editing?.id || !members.some((member) => member.id === product.id));
+  const clashes = [state.products, editing ? state.productHistory : state.productHistory.filter((product) => product.name !== name)].some((list) =>
+    others(list).some((product) => product.name.toLowerCase() === name.toLowerCase() && product.name !== originalName),
+  );
   // Only a changed name is checked: older data may hold names differing only in case, and those must stay editable.
-  if (name !== originalName && (clashesWithActive || clashesWithHistory)) {
+  if (name !== originalName && clashes) {
     feedback('warn');
     showToast(t('toast.nameTaken', { name }));
     return;
   }
+  // Group switched off: the variants whose rows were removed go, exactly as a removed row does on a group save.
+  const removed = members.filter((member) => member.id !== editing?.id);
+  for (const member of removed) deleteProduct(member.name);
+  // Deleting re-copies the product lists, so the edited product is found again (by id) in them.
+  const editedId = editing?.id;
+  const active = removed.length ? state.products.find((product) => product.id === editedId) : editingIndex >= 0 ? editing : undefined;
+  if (removed.length) editing = active ?? state.productHistory.find((product) => product.id === editedId) ?? null;
 
   if (editing && originalName !== null) {
     // `group: undefined` (not left out) so ungrouping also clears the history copy; JSON drops it.
-    Object.assign(editing, { name, price, cost, color, payments: [...selectedPayments], group: group || undefined });
-    if (editingIndex >= 0) {
+    Object.assign(editing, { name, price, cost, color, payments: [...selectedPayments], group: undefined });
+    if (active) {
       ensureProductHistory(editing, state.productHistory, originalName);
     } else {
       // An inactive product may still share its name with an active one from older data.
@@ -184,16 +249,16 @@ function saveEditedProduct() {
       if (active) Object.assign(active, editing);
     }
     renameSales(originalName, editing);
-    syncAndSave(group, color);
+    saveProducts();
     saveSales();
     saveProductHistory();
     showToast(t('toast.saved', { name }));
   } else {
-    // A variant keeps its group's colour; a new product otherwise gets one no tile uses yet.
-    const newProduct = { id: generateUUID(), name, price, cost, color: member ? color : chooseUniqueColor(state.products, color), payments: [...selectedPayments], ...(group && { group }) };
+    // A new product gets a colour no tile uses yet.
+    const newProduct = { id: generateUUID(), name, price, cost, color: chooseUniqueColor(state.products, color), payments: [...selectedPayments] };
     state.products.push(newProduct);
     ensureProductHistory(newProduct, state.productHistory);
-    syncAndSave(group, newProduct.color);
+    saveProducts();
     saveProductHistory();
     showToast(t('toast.added', { name }));
   }
@@ -202,10 +267,38 @@ function saveEditedProduct() {
   closeProductEditor();
 }
 
-/** A group's colour and payments are the group's: the saved ones reach every variant, active or hidden. */
-function syncAndSave(group: string, color: string) {
-  if (group) for (const list of [state.products, state.productHistory]) syncGroup(list, group, color, selectedPayments);
+const GROUP_ERRORS = { groupName: 'product.groupNameNeeded', noVariant: 'product.noVariant', twice: 'product.variantTwice', nameTaken: 'toast.nameTaken', groupTaken: 'product.groupTaken' } as const;
+
+/** Saves every row as a variant of the group, all or nothing; a removed row's product is hidden exactly like Delete. */
+function saveGroup() {
+  const color = members.length ? pickedColor() : chooseUniqueColor(state.products, pickedColor());
+  const ids = new Set(members.map((member) => member.id));
+  const plan = planGroup(el.editGroup.value, readRows(), { color, payments: selectedPayments }, members, allProducts().filter((product) => !ids.has(product.id)));
+  if (!plan.ok) {
+    feedback('warn');
+    showToast(t(GROUP_ERRORS[plan.error], { name: plan.name ?? '' }));
+    return;
+  }
+  // Removed first, so a new row may take a removed variant's name.
+  for (const product of plan.remove) deleteProduct(product.name);
+  for (const product of plan.save) {
+    const before = members.find((member) => member.id === product.id);
+    if (!before) {
+      state.products.push(product);
+      state.productHistory.push({ ...product });
+      continue;
+    }
+    const oldName = before.name;
+    for (const list of [state.products, state.productHistory]) for (const item of list) if (item.id === product.id) Object.assign(item, product);
+    renameSales(oldName, product);
+  }
   saveProducts();
+  saveProductHistory();
+  saveSales();
+  const group = plan.save[0].group ?? '';
+  showToast(t(members.length ? 'toast.saved' : 'toast.added', { name: group }));
+  feedback('step');
+  closeProductEditor();
 }
 
 /** Wires the editor's static controls once. `changed` runs after any save, removal or close. */
@@ -214,12 +307,31 @@ export function initProductEditor(changed: () => void) {
   initColorPicker();
   for (const input of [el.editPrice, el.editCost]) {
     input.addEventListener('input', () => {
-      input.value = formatInputNumber(input.value, loadSettings().currency);
+      input.value = formatInputNumber(input.value, currency());
       updatePreview();
     });
   }
   el.editName.addEventListener('input', updatePreview);
-  el.editGroup.addEventListener('input', onGroupInput);
+  el.editGroup.addEventListener('input', updatePreview);
+  el.editGroupToggle.addEventListener('change', onGroupToggle);
+  el.editVariants.addEventListener('input', (event) => {
+    const input = event.target as HTMLInputElement;
+    if (input.inputMode === 'numeric') input.value = bare(input.value);
+    updatePreview();
+  });
+  el.editVariants.addEventListener('click', (event) => {
+    const row = (event.target as HTMLElement).closest('.variant-remove')?.closest('.variant-row');
+    if (!row) return;
+    row.remove();
+    feedback('step');
+    updatePreview();
+  });
+  el.addVariantBtn.addEventListener('click', () => {
+    const row = variantRow();
+    el.editVariants.append(row);
+    row.querySelector('input')?.focus();
+    feedback('step');
+  });
   el.removeProductBtn.addEventListener('click', removeEditedProduct);
   el.saveProductBtn.addEventListener('click', saveEditedProduct);
   el.editPayments.addEventListener('click', onPaymentOptionClick);

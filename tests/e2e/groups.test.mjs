@@ -1,4 +1,4 @@
-// Product groups: one Sell tile per group, one row per variant (each a normal product), made in the product editor.
+// Product groups: made in one editor page (Group switch on: group name + variant rows); one Sell tile per group, one row per variant.
 import { URL, checks, launch, sleep } from './lib.mjs';
 
 const { check, done } = checks();
@@ -16,96 +16,132 @@ for (const width of [412, 1280]) {
 
   const stored = (key) => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? '[]'), key);
   const product = async (name) => (await stored('cntrProducts')).find((p) => p.name === name);
+  const names = async () => (await stored('cntrProducts')).map((p) => p.name).join();
   const tiles = () => page.evaluate(() => [...document.querySelectorAll('.tile')].map((tile) => tile.dataset.group ?? tile.dataset.product));
-  const add = async (group, name, price) => {
-    await page.click('.tabbar .tab[data-tab="salesScreen"]');
-    await page.click('#openProductEdit');
-    await page.fill('#editGroup', group);
-    await page.fill('#editName', name);
-    await page.fill('#editPrice', String(price));
-    await page.click('#saveProductBtn');
-    await sleep(250);
+  const screen = () => page.evaluate(() => document.querySelector('.screen.active').id);
+  const toast = () => page.textContent('#toast');
+  const rows = () => page.evaluate(() => [...document.querySelectorAll('#editVariants .variant-row')].map((row) => [...row.querySelectorAll('input')].map((i) => i.value).join('|')));
+  const fillRow = async (i, variant, price, cost = '') => {
+    while ((await page.locator('#editVariants .variant-row').count()) <= i) await page.click('#addVariantBtn');
+    const row = page.locator('#editVariants .variant-row').nth(i);
+    await row.locator('input').nth(0).fill(variant);
+    await row.locator('input').nth(1).fill(String(price));
+    await row.locator('input').nth(2).fill(String(cost));
   };
+  const removeRow = (variant) => page.evaluate((v) => [...document.querySelectorAll('#editVariants .variant-row')].find((row) => row.querySelector('input').value === v).querySelector('.variant-remove').click(), variant);
+  const save = async () => { await page.click('#saveProductBtn'); await sleep(250); };
+  const openNew = async () => { await page.click('.tabbar .tab[data-tab="salesScreen"]'); await page.click('#openProductEdit'); await sleep(150); };
+  // Opens the editor from the Products tab (what the Sell pencil does too: openProductEditor on that product).
+  const openFromProducts = async (name) => { await page.click('.tabbar .tab[data-tab="productHistoryScreen"]'); await page.click(`.product-edit-btn[data-name="${name}"]`); await sleep(200); };
+  const add = async (name, price) => { await openNew(); await page.fill('#editName', name); await page.fill('#editPrice', String(price)); await save(); };
 
-  await add('', 'Mug', 40000);
-  await add('Poster', 'A3', 30000);
-  // Joining an existing group (typed in another case) takes its spelling, colour and payment methods.
-  await page.click('#openProductEdit');
-  await page.fill('#editGroup', 'poster');
-  const label = await page.textContent('#editNameLabel');
-  await page.fill('#editName', 'A4');
-  await page.fill('#editPrice', '25000');
-  await page.click('#saveProductBtn');
-  await sleep(250);
-  const [a3, a4] = [await product('Poster A3'), await product('Poster A4')];
-  check(`${at} the editor makes variants "Poster A3" and "Poster A4" in group Poster, asking for a Variant`, label === 'Variant' && a3?.group === 'Poster' && a4?.group === 'Poster', { label, a3, a4 });
-  check(`${at} a new variant takes its group's colour`, a3.color === a4.color, [a3.color, a4.color]);
+  await add('Mug', 40000);
+
+  // A new group in one page: switch on, name it, three variants.
+  await openNew();
+  const hiddenOff = await page.evaluate(() => [document.getElementById('groupNameField').hidden, document.getElementById('variantsField').hidden, document.getElementById('productFields').hidden].join());
+  await page.click('label[for="editGroupToggle"]');
+  const startRows = (await rows()).length;
+  await page.fill('#editGroup', 'Poster');
+  await fillRow(0, 'A3', 30000, 10000);
+  await fillRow(1, 'A4', 25000);
+  await fillRow(2, 'A5', 20000);
+  const preview = await page.textContent('#editPreviewName');
+  await save();
+  const [a3, a4, a5] = [await product('Poster A3'), await product('Poster A4'), await product('Poster A5')];
+  check(`${at} the switch starts off (normal product), on shows group name + 2 empty variant rows; the preview shows the group`, hiddenOff === 'true,true,false' && startRows === 2 && preview === 'Poster', { hiddenOff, startRows, preview });
+  check(`${at} one save makes three variants in group Poster with its colour, price and cost`, [a3, a4, a5].every((p) => p?.group === 'Poster' && p.color === a3.color) && a3.price === 30000 && a3.cost === 10000 && a5.price === 20000, { a3, a4, a5 });
 
   // Sell: one tile for the group, its name once, one row per variant.
+  await page.click('.tabbar .tab[data-tab="salesScreen"]');
   const tile = await page.evaluate(() => {
     const group = document.querySelector('.tile-group');
-    return {
-      name: group?.querySelector('.group-name')?.textContent,
-      rows: [...(group?.querySelectorAll('.variant') ?? [])].map((row) => ({ label: row.querySelector('.product-name').textContent, buttons: [...row.querySelectorAll('.pay-add')].map((b) => b.dataset.payment).join() })),
-      tiles: document.querySelectorAll('.tile').length,
-    };
+    return { name: group?.querySelector('.group-name')?.textContent, rows: [...(group?.querySelectorAll('.variant') ?? [])].map((row) => row.querySelector('.product-name').textContent).join(), tiles: document.querySelectorAll('.tile').length };
   });
-  check(`${at} the group is one tile with one row per variant (labels as typed, own payment buttons)`, tile.name === 'Poster' && tile.tiles === 2 && tile.rows.map((r) => `${r.label}:${r.buttons}`).join() === 'A3:Cash,QRIS,A4:Cash,QRIS', tile);
+  check(`${at} Sell shows the group as one tile with three rows`, tile.name === 'Poster' && tile.rows === 'A3,A4,A5' && tile.tiles === 2, tile);
 
   // Selling and undoing a variant.
-  await page.click('.variant[data-variant="Poster A4"] [data-payment="Cash"][data-action="plus"]');
-  await page.click('.variant[data-variant="Poster A4"] [data-payment="Cash"][data-action="plus"]');
+  const plus = (v) => page.click(`.variant[data-variant="${v}"] [data-payment="Cash"][data-action="plus"]`);
+  await plus('Poster A4');
+  await plus('Poster A4');
   await sleep(150);
   let sales = await stored('cntrSales');
   const counts = () => page.evaluate(() => [...document.querySelectorAll('.tile-group .variant')].map((row) => row.querySelector('[data-counter-for="Cash"]').textContent).join());
-  check(`${at} tapping a variant's row sells that variant (by name and id)`, sales.length === 2 && sales.every((s) => s.product === 'Poster A4' && s.productId === a4.id && s.price === 25000) && (await counts()) === '0,2', { sales, counts: await counts() });
+  check(`${at} tapping a variant's row sells that variant (by name and id)`, sales.length === 2 && sales.every((s) => s.product === 'Poster A4' && s.productId === a4.id && s.price === 25000) && (await counts()) === '0,2,0', { sales, counts: await counts() });
   await page.click('.variant[data-variant="Poster A4"] [data-payment="Cash"][data-action="minus"]');
   await sleep(150);
   sales = await stored('cntrSales');
-  check(`${at} undo on a variant's row takes back that variant's sale`, sales.length === 1 && (await counts()) === '0,1', { sales: sales.length, counts: await counts() });
+  check(`${at} undo on a variant's row takes back that variant's sale`, sales.length === 1 && (await counts()) === '0,1,0', { sales: sales.length, counts: await counts() });
 
-  // Changing the group's payment methods on one variant changes them for every variant.
-  await page.click('.variant[data-variant="Poster A3"] .tile-edit');
-  const opened = { group: await page.inputValue('#editGroup'), name: await page.inputValue('#editName') };
+  // Editing any variant opens the whole group; remove a row, add one, rename the group, change payments: ids and sales follow.
+  await openFromProducts('Poster A4');
+  const opened = { on: await page.isChecked('#editGroupToggle'), group: await page.inputValue('#editGroup'), rows: (await rows()).join() };
+  check(`${at} editing a variant opens the whole group, switch on, every variant listed`, opened.on && opened.group === 'Poster' && opened.rows === 'A3|30.000|10.000,A4|25.000|,A5|20.000|', opened);
+  await removeRow('A5');
+  await fillRow(2, 'A2', 35000);
+  await page.fill('#editGroup', 'Print');
   await page.click('#editPayments .payment-option[data-method="Transfer"]');
-  await page.click('#saveProductBtn');
-  await sleep(250);
-  const synced = [(await product('Poster A3')).payments.join(), (await product('Poster A4')).payments.join()];
-  check(`${at} editing a variant opens Group + Variant; its payment methods reach every variant`, opened.group === 'Poster' && opened.name === 'A3' && synced[0] === synced[1] && synced[0].includes('Transfer'), { opened, synced });
+  await save();
+  const list = await stored('cntrProducts');
+  const history = await stored('cntrProductHistory');
+  const [p3, p4, p2] = ['Print A3', 'Print A4', 'Print A2'].map((n) => list.find((p) => p.name === n));
+  sales = await stored('cntrSales');
+  check(`${at} renaming the group renames every variant, keeping ids; payments reach all`, p3?.id === a3.id && p4?.id === a4.id && p2 && ![a3.id, a4.id, a5.id].includes(p2.id) && [p3, p4, p2].every((p) => p.group === 'Print' && p.payments.includes('Transfer')), { p3, p4, p2 });
+  check(`${at} a removed row is gone like Delete; the variant's sales follow its rename`, !list.some((p) => p.id === a5.id) && !history.some((p) => p.id === a5.id) && sales.length === 1 && sales[0].product === 'Print A4', { names: list.map((p) => p.name), sales });
 
-  // Clearing the group keeps the full name, so ungrouping isn't a rename; putting it back leaves the product as it was.
-  await page.click('.variant[data-variant="Poster A3"] .tile-edit');
-  await page.fill('#editGroup', '');
-  const ungrouped = await page.inputValue('#editName');
-  await page.fill('#editGroup', 'Poster');
-  await page.click('#saveProductBtn');
-  await sleep(250);
-  const kept = await product('Poster A3');
-  check(`${at} clearing a variant's group keeps its full name`, ungrouped === 'Poster A3' && kept?.group === 'Poster', { ungrouped, kept });
+  // Refused, with nothing saved: a group name another group has (any case), two rows with one name, a name a product has, no group name.
+  const before = await names();
+  const refusals = [];
+  for (const [group, variants] of [['print', ['B1']], ['Cups', ['X', 'x']], ['Mug', ['']], ['', ['A']]]) {
+    await openNew();
+    await page.click('label[for="editGroupToggle"]');
+    await page.fill('#editGroup', group);
+    for (const [i, v] of variants.entries()) await fillRow(i, v, 1000);
+    await save();
+    refusals.push(`${await screen()}:${await toast()}`);
+    await page.click('#closeEditBtn');
+    await sleep(200);
+  }
+  check(`${at} a clashing group, a duplicate variant, a taken name or no group name is refused with a toast`, (await names()) === before && refusals.join('|') === "productEditScreen:A group named 'print' already exists|productEditScreen:Two variants are named 'Cups x'|productEditScreen:A product named 'Mug' already exists|productEditScreen:Give the group a name", refusals);
 
-  // Names stay unique, ignoring case: an ungrouped "Poster Bundle" blocks the variant "Bundle".
-  await add('', 'Poster Bundle', 50000);
-  await add('Poster', 'Bundle', 50000);
-  await add('', 'mug', 1000);
-  const names = (await stored('cntrProducts')).map((p) => p.name);
-  check(`${at} a variant whose real name is taken, or a name differing only in case, is refused`, names.join() === 'Mug,Poster A3,Poster A4,Poster Bundle', names);
+  // Switching on for a normal product: it becomes the first variant, its real name unchanged.
+  await add('Pin', 5000);
+  const pin = await product('Pin');
+  await openFromProducts('Pin');
+  await page.click('label[for="editGroupToggle"]');
+  const switched = { group: await page.inputValue('#editGroup'), rows: (await rows()).join() };
+  await fillRow(1, 'Big', 8000);
+  await save();
+  check(`${at} switching a product to a group keeps it as the first variant (same name and id)`, switched.group === 'Pin' && switched.rows === '|5.000|,||' && (await product('Pin'))?.id === pin.id && (await product('Pin'))?.group === 'Pin' && (await product('Pin Big'))?.group === 'Pin', switched);
+
+  // Switching off: refused with two variants; with one left it is a normal product again, keeping its full name and id.
+  await openFromProducts('Pin Big');
+  await page.click('label[for="editGroupToggle"]');
+  const refused = { on: await page.isChecked('#editGroupToggle'), toast: await toast() };
+  await removeRow('Pin');
+  await page.click('label[for="editGroupToggle"]');
+  const off = { on: await page.isChecked('#editGroupToggle'), name: await page.inputValue('#editName'), price: await page.inputValue('#editPrice') };
+  const bigId = (await product('Pin Big')).id;
+  await save();
+  const big = await product('Pin Big');
+  check(`${at} Group can't be switched off with two variants`, refused.on && refused.toast === 'Remove variants until one is left, then turn Group off', refused);
+  check(`${at} with one variant left, switching off makes it a normal product with its full name; the removed one goes`, !off.on && off.name === 'Pin Big' && off.price === 'Rp 8.000' && big?.id === bigId && !big.group && !(await product('Pin')), { off, big, names: await names() });
 
   if (width === 412) {
-    // Sort by best sellers counts a group's variants together: Mug 2, Poster 1 + 2 = 3.
+    // Sort by best sellers counts a group's variants together: Mug 2, Print 1 + 2 = 3.
     await page.click('.tabbar .tab[data-tab="salesScreen"]');
     for (let i = 0; i < 2; i++) await page.click('.tile[data-product="Mug"] [data-payment="Cash"][data-action="plus"]');
-    // (The group now takes QRIS + Transfer.)
-    await page.click('.variant[data-variant="Poster A3"] [data-payment="QRIS"][data-action="plus"]');
-    await page.click('.variant[data-variant="Poster A4"] [data-payment="QRIS"][data-action="plus"]');
+    await page.click('.variant[data-variant="Print A3"] [data-payment="QRIS"][data-action="plus"]');
+    await page.click('.variant[data-variant="Print A2"] [data-payment="QRIS"][data-action="plus"]');
     await page.click('#sellMenuBtn');
     await page.click('label[for="autoSortToggle"]');
     await page.keyboard.press('Escape');
-    check(`${at} Sort by best sellers sorts a group by its total units`, (await tiles())[0] === 'Poster', await tiles());
+    check(`${at} Sort by best sellers sorts a group by its total units`, (await tiles())[0] === 'Print', await tiles());
     await page.click('#sellMenuBtn');
     await page.click('label[for="autoSortToggle"]');
     await page.keyboard.press('Escape');
     // Drag: hold the group's tile and move it above Mug; it moves whole.
-    const before = (await stored('cntrSales')).length;
+    const salesBefore = (await stored('cntrSales')).length;
     const box = (s) => page.evaluate((sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, s);
     const [grab, groupMid, mugMid] = [await box('.tile-group .group-name'), await box('.tile-group'), await box('.tile[data-product="Mug"]')];
     await page.mouse.move(grab.x, grab.y);
@@ -115,8 +151,8 @@ for (const width of [412, 1280]) {
     for (let i = 1; i <= 10; i++) await page.mouse.move(grab.x, grab.y + ((toY - grab.y) * i) / 10);
     await page.mouse.up();
     await sleep(300);
-    const order = (await stored('cntrProducts')).map((p) => p.name);
-    check(`${at} dragging the group tile moves all its variants together, without selling`, (await tiles())[0] === 'Poster' && order.join() === 'Poster A3,Poster A4,Mug,Poster Bundle' && (await stored('cntrSales')).length === before, { tiles: await tiles(), order });
+    const order = await names();
+    check(`${at} dragging the group tile moves all its variants together, without selling`, (await tiles())[0] === 'Print' && order === 'Print A3,Print A4,Print A2,Mug,Pin Big' && (await stored('cntrSales')).length === salesBefore, { tiles: await tiles(), order });
     // Compact tiles keep one row per variant, every button inside the tile.
     await page.click('#sellMenuBtn');
     await page.click('label[for="compactTilesToggle"]');
@@ -126,7 +162,7 @@ for (const width of [412, 1280]) {
       const out = [...document.querySelectorAll('.tile-group button, .tile-group .product-name')].filter((n) => { const r = n.getBoundingClientRect(); return r.left < t.left - 1 || r.right > t.right + 1; });
       return { rows: document.querySelectorAll('.tile-group .variant').length, out: out.length };
     });
-    check(`${at} compact tiles: the group keeps one row per variant, all inside the tile`, fit.rows === 2 && !fit.out, fit);
+    check(`${at} compact tiles: the group keeps one row per variant, all inside the tile`, fit.rows === 3 && !fit.out, fit);
     await page.click('#sellMenuBtn');
     await page.click('label[for="compactTilesToggle"]');
     await page.keyboard.press('Escape');
@@ -135,7 +171,7 @@ for (const width of [412, 1280]) {
   // Products tab: the variants sit together under the group's name.
   await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
   const listed = await page.evaluate(() => [...document.querySelectorAll('#productHistoryList .product-group')].map((g) => `${g.querySelector('.product-group-title').textContent}:${[...g.querySelectorAll('.list-title')].map((n) => n.textContent).join('+')}`));
-  check(`${at} Products lists a group's variants under its name`, listed.join() === 'Poster:A3+A4', listed);
+  check(`${at} Products lists a group's variants under its name`, listed.join() === 'Print:A3+A4+A2', listed);
 
   // Expense sheet: ticking the group ticks all its variants; the expense links to each.
   await page.click('.tabbar .tab[data-tab="eventScreen"]');
@@ -146,20 +182,22 @@ for (const width of [412, 1280]) {
   await page.click('#addCostBtn');
   await sleep(200);
   const linked = (await stored('cntrEventCosts'))[0]?.productIds ?? [];
-  check(`${at} the expense picker's group row picks all its variants`, linked.length === 2 && linked.includes(a3.id) && linked.includes(a4.id), linked);
+  check(`${at} the expense picker's group row picks all its variants`, linked.length === 3 && [a3.id, a4.id, p2.id].every((id) => linked.includes(id)), linked);
 
   if (width === 412) {
-    // A long, free variant: the editor's colour preview ellipsizes instead of widening the page; Products says Free.
-    await add('Poster', 'A4 Glossy Laminated', 0);
-    await page.click('.variant[data-variant="Poster A4 Glossy Laminated"] .tile-edit');
-    await sleep(300);
+    // A long, free variant: the editor's rows and preview stay inside the page; Products says Free.
+    await openFromProducts('Print A3');
+    await fillRow(3, 'Glossy Laminated Extra Large', 0);
+    await sleep(200);
     const wide = await page.evaluate(() => [document.documentElement, document.querySelector('.content')].some((e) => e.scrollWidth > innerWidth));
-    check(`${at} the editor with a long variant name has no sideways scroll`, !wide);
-    await page.click('#closeEditBtn');
-    await sleep(300);
+    const targets = await page.evaluate(() => [...document.querySelectorAll('.variant-remove, #addVariantBtn')].every((b) => { const r = b.getBoundingClientRect(); return r.width >= 44 && r.height >= 44 && parseFloat(getComputedStyle(b).borderTopLeftRadius) > 0; }));
+    check(`${at} the group editor has no sideways scroll; remove and add buttons are 44px and rounded`, !wide && targets, { wide, targets });
+    await save();
     // Undo (26px) and edit (32px) reach 44px with their ::after, but where they meet a sell button, the sell button wins.
+    await page.click('.tabbar .tab[data-tab="salesScreen"]');
+    await sleep(200);
     const hits = await page.evaluate(() => {
-      const row = document.querySelector('.variant[data-variant="Poster A4"]');
+      const row = document.querySelector('.variant[data-variant="Print A3"]');
       const undo = row.querySelector('.pay-undo:not(:disabled)');
       const [edit, sell] = [row.querySelector('.tile-edit'), undo.closest('.pay').querySelector('.pay-add')];
       const [u, e, a] = [undo, edit, sell].map((n) => n.getBoundingClientRect());
@@ -169,9 +207,18 @@ for (const width of [412, 1280]) {
     check(`${at} undo and edit have 44px hit areas, and the sell button wins where they meet`, hits.undo && hits.edit && hits.sellWins, hits);
     await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
     await sleep(300);
-    const free = await page.evaluate(() => [...document.querySelectorAll('.product-item')].find((r) => r.querySelector('.list-title').textContent === 'A4 Glossy Laminated')?.querySelector('.product-item-sub').textContent);
+    const free = await page.evaluate(() => [...document.querySelectorAll('.product-item')].find((r) => r.querySelector('.list-title').textContent === 'Glossy Laminated Extra Large')?.querySelector('.product-item-sub').textContent);
     check(`${at} Products shows a free product as Free, not "Rp 0 · profit Rp 0"`, free === 'Free', free);
   }
+
+  // Delete on a group asks first, then removes every variant; their sales stay.
+  await openFromProducts('Print A3');
+  await page.click('#removeProductBtn');
+  const asked = await page.textContent('#confirmModalMessage');
+  await page.click('#confirmModalConfirmBtn');
+  await sleep(250);
+  const left = await names();
+  check(`${at} deleting a group asks, then removes all its variants and keeps their sales`, asked.startsWith("Delete the group 'Print'") && left === 'Mug,Pin Big' && (await stored('cntrSales')).some((s) => s.product === 'Print A4'), { asked, left });
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   check(`${at} no sideways scroll`, !overflow);

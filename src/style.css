@@ -111,7 +111,7 @@ body {
 /* No square corners, even on a transparent wrapper: the tutorial's spotlight and focus rings follow an element's
    radius. Zero specificity, so a component's own radius wins. Rows with a divider line and clipped (ellipsis)
    text are left out: a radius there would bend the divider's ends or shave letters. */
-:where(.hero, .payment-options, .tab, .event-name, #compareEventCard, .field, .field-row, .field-hint, .checklist, .check-group, .variant, .tile-head, .tile-pay, .pay, .page-header, .card-head, .sheet-header, .sheet-actions, .report-hero, .group, .product-section, .product-group, .stack, .list, .form, .split, .kpi-row, .event-actions, .event-name-row, .topbar-row, .brand, .empty, .rank, .product-row, .product-toggle-btn, .page, .list-main, .rank-main, .rank-meta, .split-item, .split-legend, .tile-meta, .topbar-actions, .products-day-head, .cmp) {
+:where(.hero, .payment-options, .tab, .event-name, #compareEventCard, .field, .field-row, .field-hint, .checklist, .check-group, .variant, .tile-head, .tile-pay, .pay, .page-header, .card-head, .sheet-header, .sheet-actions, .report-hero, .group, .product-section, .product-group, .stack, .list, .form, .split, .kpi-row, .form-part, .variants, .variant-list, .variant-row, .event-actions, .event-name-row, .topbar-row, .brand, .empty, .rank, .product-row, .product-toggle-btn, .page, .list-main, .rank-main, .rank-meta, .split-item, .split-legend, .tile-meta, .topbar-actions, .products-day-head, .cmp) {
   border-radius: var(--r-sm);
 }
 
@@ -1808,6 +1808,73 @@ p {
   font-weight: 600;
 }
 
+/* Product editor: one screen of fields, so a normal product fits a small phone without scrolling. */
+#productEditScreen .form,
+.form-part {
+  display: grid;
+  gap: var(--s2);
+}
+
+#saveProductBtn {
+  min-height: 48px;
+  margin-top: var(--s2);
+}
+
+#productEditScreen .field {
+  gap: var(--s1);
+}
+
+#productEditScreen .group-row {
+  min-height: 48px;
+}
+
+#productEditScreen .input {
+  min-height: 48px;
+}
+
+/* Group mode: the variants sit in an inset panel, one row each: name | price | cost | remove. */
+.variants {
+  padding: var(--s3) var(--s2);
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+
+.variant-list {
+  display: grid;
+  gap: var(--s2);
+}
+
+.variant-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.variant-head .field-label {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#productEditScreen .variant-row .input {
+  min-height: 44px;
+  padding: 0 var(--s2);
+  border-radius: var(--r-sm);
+}
+
+.variant-remove {
+  color: var(--text-3);
+}
+
+.add-variant {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 var(--s4);
+}
+
 /* Colour field: a live preview of the product tile */
 .color-field {
   position: relative;
@@ -1831,8 +1898,8 @@ p {
   justify-content: space-between;
   gap: var(--s3);
   min-width: 0; /* a long name ellipsizes in .swatch-preview instead of widening the editor */
-  min-height: 112px;
-  padding: var(--s4);
+  min-height: 72px;
+  padding: var(--s3) var(--s4);
   border-radius: var(--r-lg);
   background: var(--tile, #f76495);
   color: #ffffff;
@@ -1852,6 +1919,7 @@ p {
 
 .swatch-name {
   font-size: 26px;
+  line-height: 1.15;
   font-weight: 800;
   letter-spacing: -0.02em;
   overflow: hidden;
@@ -1861,6 +1929,7 @@ p {
 
 .swatch-price {
   font-size: 14px;
+  line-height: 1.3;
   font-weight: 600;
   opacity: 0.78;
 }
