@@ -157,7 +157,7 @@ let draft: PastEvent | null = null;
 
 function render() {
   const today = todayLiveSales();
-  const { revenue, profit } = totals(withLinkedCosts(today, state.eventCosts, state.products));
+  const { revenue, profit } = totals(withLinkedCosts(today, state.eventCosts, [...state.products, ...state.productHistory]));
   renderView(h(SalesHero, { revenue, profit, count: today.length, day: liveDayCount() }), el.stats);
   renderView(
     h(SalesGrid, {
@@ -180,6 +180,8 @@ function render() {
       dayBreaks: state.liveEvent.dayBreaks,
       expenses: state.eventCosts,
       products: state.products,
+      // Hidden products too, so a linked expense still covers their sales.
+      costProducts: [...state.products, ...state.productHistory],
       colorFor: productColor,
       productsPerDay: loadSettings().productsPerDay,
       live: true,

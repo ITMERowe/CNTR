@@ -72,7 +72,7 @@ export function initTileDrag(grid: HTMLElement, enabled: () => boolean, onDrop: 
     });
   }
 
-  function release() {
+  function release(commit = true) {
     window.clearTimeout(timer);
     down = null;
     if (!drag) return;
@@ -82,7 +82,7 @@ export function initTileDrag(grid: HTMLElement, enabled: () => boolean, onDrop: 
     grid.classList.remove('is-reordering');
     tile.classList.remove('is-dragging');
     feedback('step');
-    if (to !== from) onDrop(tile.dataset.product!, to);
+    if (commit && to !== from) onDrop(tile.dataset.product!, to);
     // The click (if any) comes right after pointerup; after that, taps sell again.
     window.setTimeout(() => (swallowClick = false));
   }
@@ -98,8 +98,9 @@ export function initTileDrag(grid: HTMLElement, enabled: () => boolean, onDrop: 
     if (drag) move(event.clientX, event.clientY);
     else if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) > SLOP_PX) release();
   });
-  window.addEventListener('pointerup', release);
-  window.addEventListener('pointercancel', release);
+  window.addEventListener('pointerup', () => release());
+  // A back swipe or the notification shade mid-drag puts the tile back.
+  window.addEventListener('pointercancel', () => release(false));
   // While a tile is held the page must not scroll under it.
   grid.addEventListener('touchmove', (event) => drag && event.preventDefault(), { passive: false });
   grid.addEventListener('contextmenu', (event) => event.preventDefault());

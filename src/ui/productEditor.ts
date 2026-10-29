@@ -100,7 +100,7 @@ function onPaymentOptionClick(event: MouseEvent) {
 
 /** Mirrors the name and price into the tile preview on the colour field. */
 function updatePreview() {
-  const group = el.editGroup.value.trim();
+  const group = groupMember()?.group ?? el.editGroup.value.trim();
   el.editNameLabel.textContent = group ? t('product.variant') : t('name');
   el.editName.placeholder = group ? t('product.variantPlaceholder') : t('product_name');
   el.editPreviewName.textContent = groupedName(group, el.editName.value.trim()) || t('product_name');
@@ -166,7 +166,8 @@ function saveEditedProduct() {
   // A new product may still take a hidden product's exact name: that replaces it, as before.
   const clashesWithActive = nameTaken(name, state.products, originalName);
   const clashesWithHistory = nameTaken(name, editing ? state.productHistory : state.productHistory.filter((product) => product.name !== name), originalName);
-  if (clashesWithActive || clashesWithHistory) {
+  // Only a changed name is checked: older data may hold names differing only in case, and those must stay editable.
+  if (name !== originalName && (clashesWithActive || clashesWithHistory)) {
     feedback('warn');
     showToast(t('toast.nameTaken', { name }));
     return;

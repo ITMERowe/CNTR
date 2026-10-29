@@ -44,7 +44,7 @@ export function withLinkedCosts(sales: SaleRecord[], expenses: EventCost[], prod
   const linked = new Set(expenses.flatMap((cost) => cost.productIds ?? []));
   if (!linked.size) return sales;
   const names = new Set(products.filter((product) => product.id && linked.has(product.id)).map((product) => product.name));
-  return sales.map((sale) => ((sale.productId ? linked.has(sale.productId) : names.has(sale.product)) ? { ...sale, cost: 0 } : sale));
+  return sales.map((sale) => ((linked.has(sale.productId ?? '') || names.has(sale.product)) ? { ...sale, cost: 0 } : sale));
 }
 
 /** Net profit = product profit (revenue − product cost, see withLinkedCosts) − expenses. */

@@ -62,7 +62,7 @@ function checkSale(item: unknown) {
 function checkCost(item: unknown) {
   // `productIds` is optional (older backups have none): the ids of the products the expense pays for.
   const ids = isObject(item) ? item.productIds : undefined;
-  const idsOk = ids === undefined || (Array.isArray(ids) && ids.length <= 1000 && ids.every(isString));
+  const idsOk = ids === undefined || (Array.isArray(ids) && ids.length <= 1000 && ids.every(isName));
   return isObject(item) && isString(item.id) && isName(item.name) && isNumber(item.amount) && idsOk;
 }
 
@@ -148,7 +148,7 @@ export function salesCsv(backup: BackupFile): string {
     });
   };
   const live = isObject(backup.data.cntrLiveEvent) ? (backup.data.cntrLiveEvent as StoredEvent) : null;
-  if (Array.isArray(backup.data.cntrSales)) add(live?.name || 'Current event', live?.dayBreaks ?? [], backup.data.cntrSales as StoredSale[], backup.data.cntrEventCosts, backup.data.cntrProducts);
+  if (Array.isArray(backup.data.cntrSales)) add(live?.name || 'Current event', live?.dayBreaks ?? [], backup.data.cntrSales as StoredSale[], backup.data.cntrEventCosts, [...list<Product>(backup.data.cntrProducts), ...list<Product>(backup.data.cntrProductHistory)]);
   const events = Array.isArray(backup.data.cntrEvents) ? (backup.data.cntrEvents as StoredEvent[]) : [];
   for (const event of events) add(event.name ?? '', event.dayBreaks, event.sales, event.expenses, event.products);
   return '﻿' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';

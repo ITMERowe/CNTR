@@ -19,6 +19,8 @@ interface Props {
   expenses: EventCost[];
   /** Products to list (the counter's products live, the event's snapshot in History). */
   products: Product[];
+  /** Products a linked expense can match (defaults to `products`; live adds the hidden ones). */
+  costProducts?: Product[];
   colorFor: (name: string) => string;
   live: boolean;
   /** A past event's first and last sale dates, shown under its name (the live event shows the Live chip instead). */
@@ -140,9 +142,10 @@ function ProductBreakdown({ sales, products, colorFor }: { sales: SaleRecord[]; 
 
 export function EventScreen(props: Props) {
   const { name, sales, dayBreaks, expenses, products, colorFor, live, edit } = props;
-  const summary = eventSummary(sales, expenses, products);
+  const linkable = props.costProducts ?? products;
+  const summary = eventSummary(sales, expenses, linkable);
   // Day cards and product rows take linked expenses into account too (no item cost for the products they cover).
-  const days = splitDays(withLinkedCosts(sales, expenses, products), dayBreaks);
+  const days = splitDays(withLinkedCosts(sales, expenses, linkable), dayBreaks);
   const isEmpty = !sales.length && !expenses.length;
   // Nothing at all yet (no products either): one empty state instead of it stacked with another for the Products card below.
   const allEmpty = isEmpty && !products.length;

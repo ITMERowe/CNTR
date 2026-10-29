@@ -137,3 +137,11 @@ test('linked costs: only linked products; old sales without an id match by name;
   assert.equal(old.cost, 500, 'input not changed');
   assert.deepEqual(withLinkedCosts([old], [], products).map((s) => s.cost), [500]);
 });
+
+test('linked costs: a product hidden then re-added under the same name is covered for all its sales', () => {
+  const products = [{ id: 'p-new', name: 'Sticker', price: 2000, cost: 500, color: '' }];
+  const before = { ...sale('Sticker', T1, 'Cash', 2000, 500), productId: 'p-old' };
+  const after = { ...sale('Sticker', T1, 'Cash', 2000, 500), productId: 'p-new' };
+  const covered = withLinkedCosts([before, after], [{ id: 'x', name: 'Print', amount: 1, productIds: ['p-new'] }], products);
+  assert.deepEqual(covered.map((s) => s.cost), [0, 0]);
+});
