@@ -7,7 +7,8 @@ import { URL, checks, launch, playTour, SAMPLE_PRODUCTS } from './lib.mjs';
 const { check, done } = checks();
 const b = await launch();
 
-const SALE = (i) => ({ product: 'Gacha', price: 25000, cost: 12000, payment: i % 2 ? 'QRIS' : 'Cash', timestamp: new Date(Date.UTC(2026, 9, 26, 10, i)).toISOString() });
+// Today, just after midnight: a fixed date goes stale and opens "Still at {name}?" over the page after 3 days.
+const SALE = (i) => ({ product: 'Gacha', price: 25000, cost: 12000, payment: i % 2 ? 'QRIS' : 'Cash', timestamp: new Date(new Date().setHours(0, i, 0, 0)).toISOString() });
 const legacySales = JSON.stringify([SALE(1), SALE(2), SALE(3)]);
 
 async function newPage(native) {
