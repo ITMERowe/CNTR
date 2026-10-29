@@ -187,10 +187,12 @@ export function runTour(steps: TourStep[], onEnd: (finished: boolean) => void) {
     const [l, t] = [Math.max(2, rect.left - 4), Math.max(2, rect.top - 4)];
     const [r, b] = [Math.min(innerWidth - 2, rect.right + 4), Math.min(innerHeight - 2, rect.bottom + 4)];
     // The ring and the hole follow the target's own rounded corners (plus the 4px gap).
+    // A square corner (a sheet's bottom edge) still gets the smallest radius: the ring never shows a sharp box.
     const css = getComputedStyle(found!);
     const max = Math.min(r - l, b - t) / 2;
+    const min = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--r-sm'));
     const [tl, tr, br, bl] = [css.borderTopLeftRadius, css.borderTopRightRadius, css.borderBottomRightRadius, css.borderBottomLeftRadius].map(
-      (v) => Math.min(max, parseFloat(v) ? parseFloat(v) + 4 : 0),
+      (v) => Math.min(max, (parseFloat(v) || min) + 4),
     );
     dim.style.clipPath =
       `path(evenodd, 'M0 0H${innerWidth}V${innerHeight}H0Z M${l + tl} ${t}H${r - tr}A${tr} ${tr} 0 0 1 ${r} ${t + tr}V${b - br}` +

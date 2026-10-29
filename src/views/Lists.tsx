@@ -1,7 +1,7 @@
 import { eventSummary, formatDay } from '../events';
 import { fmt } from '../formatters';
 import { groupTiles, variantLabel } from '../groups';
-import { paymentClass, productPayments } from '../payments';
+import { FREE_PAYMENT, paymentClass, productPayments } from '../payments';
 import type { PastEvent, Product, SaleRecord } from '../types';
 import { Icon } from './Icon';
 import { EmptyState, profitClass } from './ReportParts';
@@ -58,7 +58,9 @@ function ProductRow({ product, active, index, onEdit, onToggle }: { product: Pro
         <span class="product-item-main">
           <strong class="list-title">{variantLabel(product)}</strong>
           <span class="product-item-sub">
-            {fmt(product.price)} · {t('product.profitEach', { amount: fmt(product.price - product.cost) })}
+            {/* Free (price 0), as on its Sell tile; its profit only matters when it has a cost. */}
+            {product.price === 0 ? FREE_PAYMENT : fmt(product.price)}
+            {product.price === 0 && !product.cost ? '' : ` · ${t('product.profitEach', { amount: fmt(product.price - product.cost) })}`}
           </span>
           <span class="product-item-methods">
             {productPayments(product).map((method) => (

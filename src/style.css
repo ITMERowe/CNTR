@@ -108,6 +108,13 @@ body {
   overscroll-behavior: none;
 }
 
+/* No square corners, even on a transparent wrapper: the tutorial's spotlight and focus rings follow an element's
+   radius. Zero specificity, so a component's own radius wins. Rows with a divider line and clipped (ellipsis)
+   text are left out: a radius there would bend the divider's ends or shave letters. */
+:where(.hero, .payment-options, .tab, .event-name, #compareEventCard, .field, .field-row, .field-hint, .checklist, .check-group, .variant, .tile-head, .tile-pay, .pay, .page-header, .card-head, .sheet-header, .sheet-actions, .report-hero, .group, .product-section, .product-group, .stack, .list, .form, .split, .kpi-row, .event-actions, .event-name-row, .topbar-row, .brand, .empty, .rank, .product-row, .product-toggle-btn, .page, .list-main, .rank-main, .rank-meta, .split-item, .split-legend, .tile-meta, .topbar-actions, .products-day-head, .cmp) {
+  border-radius: var(--r-sm);
+}
+
 body {
   position: relative;
   overflow: hidden;
@@ -324,6 +331,32 @@ p {
   font-size: calc(0.75 * min(clamp(40px, 12vw, 52px), calc((min(100vw, 520px) - 40px) / (var(--chars, 1) * 0.6))));
 }
 
+/* Phone landscape: the header and revenue share one row, so more than one row of tiles fits. */
+@media (max-height: 500px) {
+  .topbar {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: var(--s4);
+  }
+
+  .topbar-row {
+    flex: 1;
+  }
+
+  .hero {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--s3);
+    padding: 0;
+  }
+
+  .hero .hero-figure,
+  .hero-meta {
+    margin-top: 0;
+  }
+}
+
 .hero-figure.is-negative {
   color: var(--negative);
 }
@@ -484,6 +517,7 @@ p {
   --ink: #ffffff;
   --ink-soft: rgba(255, 255, 255, 0.16);
   --ink-faint: rgba(255, 255, 255, 0.09);
+  --ink-line: rgba(255, 255, 255, 0.4);
   position: relative;
   background: var(--tile);
   color: var(--ink);
@@ -763,10 +797,23 @@ p {
   margin-bottom: var(--s2);
 }
 
+.variant {
+  position: relative;
+}
+
+/* The divider is its own line, so the row's rounded corners don't bend its ends. */
 .variant + .variant {
   margin-top: var(--s3);
   padding-top: var(--s3);
-  border-top: 1px solid var(--ink-soft);
+}
+
+.variant + .variant::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--ink-line);
 }
 
 /* The variant's name is a step below the group's, so the group reads first. */
@@ -1104,7 +1151,7 @@ p {
   flex: none;
   align-self: stretch;
   width: 4px;
-  border-radius: 2px;
+  border-radius: 999px;
 }
 
 /* The bar runs the row's full height, divider to divider (cancels the row's vertical padding). */
@@ -1119,8 +1166,8 @@ p {
 .pay-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 1px 8px 1px 6px;
+  gap: 6px;
+  padding: 1px var(--s2) 1px 6px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
@@ -1394,7 +1441,7 @@ p {
 }
 
 .chip {
-  padding: 1px 8px;
+  padding: 1px var(--s2);
   border-radius: 999px;
   background: var(--surface-3);
   color: var(--text-2);
@@ -1489,14 +1536,14 @@ p {
 .cmp-event {
   display: grid;
   justify-items: start;
-  gap: 4px;
+  gap: var(--s1);
   min-width: 0;
 }
 
 .cmp-tag {
   min-width: 24px;
   height: 24px;
-  padding: 0 8px;
+  padding: 0 var(--s2);
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -1718,6 +1765,8 @@ p {
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  /* A label that wraps (longer in Indonesian) must not push its input below its neighbour's. */
+  align-items: end;
   gap: var(--s3);
 }
 
@@ -1769,6 +1818,7 @@ p {
   --ink: #1e1e1e;
   --ink-soft: rgba(0, 0, 0, 0.14);
   --ink-faint: rgba(0, 0, 0, 0.08);
+  --ink-line: rgba(0, 0, 0, 0.3);
 }
 
 .color-swatch.on-light {
@@ -1780,6 +1830,7 @@ p {
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--s3);
+  min-width: 0; /* a long name ellipsizes in .swatch-preview instead of widening the editor */
   min-height: 112px;
   padding: var(--s4);
   border-radius: var(--r-lg);
@@ -1816,7 +1867,7 @@ p {
 
 .color-text {
   flex-shrink: 0;
-  padding: 4px 10px;
+  padding: var(--s1) 10px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.16);
   font-size: 12px;
@@ -2464,7 +2515,7 @@ body.is-editing-event .content {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--s1);
   color: var(--text-3);
   transition: color var(--dur-1);
 }
@@ -2489,7 +2540,7 @@ body.is-editing-event .content {
   position: relative;
   width: 22px;
   height: 22px;
-  margin-top: 4px;
+  margin-top: var(--s1);
   transition: transform var(--dur-tap) var(--ease-out);
 }
 
@@ -2540,7 +2591,7 @@ body.is-editing-event .content {
   bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--s3));
   z-index: 20;
   max-width: calc(100% - 32px);
-  padding: 10px 16px;
+  padding: 10px var(--s4);
   border-radius: 999px;
   background: var(--text);
   color: var(--on-ink);

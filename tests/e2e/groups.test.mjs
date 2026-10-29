@@ -148,6 +148,31 @@ for (const width of [412, 1280]) {
   const linked = (await stored('cntrEventCosts'))[0]?.productIds ?? [];
   check(`${at} the expense picker's group row picks all its variants`, linked.length === 2 && linked.includes(a3.id) && linked.includes(a4.id), linked);
 
+  if (width === 412) {
+    // A long, free variant: the editor's colour preview ellipsizes instead of widening the page; Products says Free.
+    await add('Poster', 'A4 Glossy Laminated', 0);
+    await page.click('.variant[data-variant="Poster A4 Glossy Laminated"] .tile-edit');
+    await sleep(300);
+    const wide = await page.evaluate(() => [document.documentElement, document.querySelector('.content')].some((e) => e.scrollWidth > innerWidth));
+    check(`${at} the editor with a long variant name has no sideways scroll`, !wide);
+    await page.click('#closeEditBtn');
+    await sleep(300);
+    // Undo (26px) and edit (32px) reach 44px with their ::after, but where they meet a sell button, the sell button wins.
+    const hits = await page.evaluate(() => {
+      const row = document.querySelector('.variant[data-variant="Poster A4"]');
+      const undo = row.querySelector('.pay-undo:not(:disabled)');
+      const [edit, sell] = [row.querySelector('.tile-edit'), undo.closest('.pay').querySelector('.pay-add')];
+      const [u, e, a] = [undo, edit, sell].map((n) => n.getBoundingClientRect());
+      const at = (x, y, n) => !!document.elementFromPoint(x, y)?.closest('button') && document.elementFromPoint(x, y).closest('button') === n;
+      return { undo: at(u.left - 8, u.top + u.height / 2, undo) && at(u.left + u.width / 2, u.top - 8, undo), edit: at(e.left - 5, e.top + e.height / 2, edit) && at(e.left + e.width / 2, e.bottom + 5, edit), sellWins: at(a.left + a.width / 2, a.top + 1, sell) };
+    });
+    check(`${at} undo and edit have 44px hit areas, and the sell button wins where they meet`, hits.undo && hits.edit && hits.sellWins, hits);
+    await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
+    await sleep(300);
+    const free = await page.evaluate(() => [...document.querySelectorAll('.product-item')].find((r) => r.querySelector('.list-title').textContent === 'A4 Glossy Laminated')?.querySelector('.product-item-sub').textContent);
+    check(`${at} Products shows a free product as Free, not "Rp 0 · profit Rp 0"`, free === 'Free', free);
+  }
+
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   check(`${at} no sideways scroll`, !overflow);
   await page.close();

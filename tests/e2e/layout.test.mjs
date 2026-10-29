@@ -9,7 +9,7 @@ const TABS = ['salesScreen', 'eventScreen', 'historyScreen', 'settingsScreen'];
 function scan() {
   const visible = (e) => e.offsetParent && getComputedStyle(e).visibility !== 'hidden';
   const name = (e) => `${e.id ? '#' + e.id : ''}.${String(e.className).split(' ')[0]}${e.getAttribute('aria-label') ? `[${e.getAttribute('aria-label')}]` : ''}`;
-  const out = { overflow: [], small: [], unlabeled: [], contrast: [] };
+  const out = { overflow: [], small: [], unlabeled: [], contrast: [], type: [] };
   for (const e of document.querySelectorAll('.screen.active *')) {
     if (visible(e) && !e.children.length && e.textContent.trim() && (e.getBoundingClientRect().right > innerWidth - 8 || e.scrollWidth > e.clientWidth + 1)) out.overflow.push(`${name(e)} "${e.textContent.trim().slice(0, 30)}"`);
     if (visible(e) && e.getBoundingClientRect().right > innerWidth + 0.5) out.overflow.push(`${name(e)} sticks out of the screen (right ${Math.round(e.getBoundingClientRect().right)}px)`);
@@ -38,6 +38,12 @@ function scan() {
     // Text on product tiles: the owner keeps white down to 2.6:1 (see needsDarkText); everywhere else WCAG AA.
     if (ratio < (e.closest('.tile') ? 2.6 : large ? 3 : 4.5)) out.contrast.push(`${name(e)} "${e.textContent.trim().slice(0, 18)}" ${ratio.toFixed(2)}`);
   }
+  // Owner's type scale; the revenue figures are fluid (they shrink long amounts to fit) and the counter is 24px on small phones.
+  for (const e of document.querySelectorAll('body *')) {
+    if (!visible(e) || ![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) || e.closest('.hero-figure')) continue;
+    const size = parseFloat(getComputedStyle(e).fontSize);
+    if (![11, 12, 14, 15, 18, 26].includes(size) && !(size === 24 && e.matches('.payment-value') && innerWidth <= 360)) out.type.push(`${name(e)} ${size}px off the type scale`);
+  }
   return out;
 }
 
@@ -62,8 +68,8 @@ for (const [theme, language] of [['dark', 'en'], ['light', 'en'], ['dark', 'id']
     await sleep(450);
     const r = await page.evaluate(scan);
     const wider = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
-    const problems = [...r.overflow, ...r.small, ...r.unlabeled, ...r.contrast];
-    check(`${width}x${height} ${theme}${language === 'id' ? ' id' : ''} ${label}: no overflow, tap targets >= 44px, labels, contrast`, !wider && !problems.length, problems.join(' | ') || '');
+    const problems = [...r.overflow, ...r.small, ...r.unlabeled, ...r.contrast, ...r.type];
+    check(`${width}x${height} ${theme}${language === 'id' ? ' id' : ''} ${label}: no overflow, tap targets >= 44px, labels, contrast, type scale`, !wider && !problems.length, problems.join(' | ') || '');
   };
   // Two days of sales with a long expense, so the day cards show.
   await sellSome();

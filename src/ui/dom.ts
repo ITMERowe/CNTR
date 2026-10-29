@@ -129,7 +129,9 @@ export function openSheet(overlay: HTMLElement) {
   for (const blocked of document.querySelectorAll<HTMLElement>('.app > header, .app > main, .app > nav')) blocked.inert = true;
   // Cancel (the safe action), not the first input or the primary/destructive button.
   const sheet = overlay.querySelector<HTMLElement>('.sheet');
-  (sheet?.querySelector<HTMLElement>('.sheet-actions .btn-secondary') ?? sheet)?.focus();
+  // preventScroll: Cancel sits at the bottom; a long sheet must still open at its top (title and first fields).
+  (sheet?.querySelector<HTMLElement>('.sheet-actions .btn-secondary') ?? sheet)?.focus({ preventScroll: true });
+  if (sheet) sheet.scrollTop = 0;
 }
 
 /** Closes a sheet opened with openSheet: unblocks the page and returns focus to what opened it. */

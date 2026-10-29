@@ -53,6 +53,7 @@ const afterReload = async (page) => {
 
   const offScreen = [];
   const ringOff = [];
+  const squares = [];
   const nextWhileEmpty = {};
   const stuck = await playTour(page, undefined, async (id) => {
     await sleep(300); // the bubble is placed on the next poll
@@ -64,12 +65,27 @@ const afterReload = async (page) => {
       const r = node.getBoundingClientRect();
       return { full: node.classList.contains('tour-ring-full'), l: r.left, t: r.top, r: r.right, b: r.bottom, w: innerWidth, h: innerHeight, hole: document.querySelector('.tour-dim').style.clipPath.startsWith('path(') };
     });
+    // Every target has rounded corners (a token radius), so its ring and hole do too; a sheet's square bottom edge gets the smallest one.
+    const corners = await page.evaluate(() => {
+      const ring = document.querySelector('.tour-ring');
+      if (ring.classList.contains('tour-ring-full')) return null;
+      const box = ring.getBoundingClientRect();
+      const same = (a, b) => Math.abs(a - b) < 1.5;
+      const targets = [...document.querySelectorAll('body *')].filter((e) => {
+        if (e.closest('.tour-ring, .tour-dim, .tour-bubble')) return false;
+        const r = e.getBoundingClientRect();
+        return r.width && same(Math.max(2, r.left - 4), box.left) && same(Math.max(2, r.top - 4), box.top) && same(Math.min(innerWidth - 2, r.right + 4), box.right) && same(Math.min(innerHeight - 2, r.bottom + 4), box.bottom);
+      });
+      return { ring: getComputedStyle(ring).borderRadius, targets: targets.map((e) => `${e.id || e.className}:${getComputedStyle(e).borderTopLeftRadius}`) };
+    });
+    if (corners && (/(^|\s)0px/.test(corners.ring) || !corners.targets.length || corners.targets.some((t) => t.endsWith(':0px')))) squares.push(`${id} ${JSON.stringify(corners)}`);
     if (!ring.full && (ring.l < 0 || ring.t < 0 || ring.r > ring.w || ring.b > ring.h || !ring.hole)) ringOff.push(`${id} ${JSON.stringify(ring)}`);
     if (['add-name', 'add-price', 'add-cost'].includes(id)) nextWhileEmpty[id] = await page.evaluate(() => ({ shown: !document.querySelector('#tourNextBtn').hidden, disabled: document.querySelector('#tourNextBtn').disabled }));
   });
   check(`all ${Object.keys(TOUR_ACTIONS).length} steps can be done with real taps and move the tour on`, !stuck, stuck ?? '');
   check('the tour bubble is fully on screen at every step (never under the status bar)', !offScreen.length, offScreen.join(' | '));
   check('the spotlight ring and its hole stay inside the screen at every step (sheets run edge to edge)', !ringOff.length, ringOff.join(' | '));
+  check('every tour target and its spotlight ring have rounded corners (no sharp box)', !squares.length, squares.join(' | '));
   // Their Next is enabled once typed: the tour above taps it after filling each field.
   check('name, price and cost steps show Next, disabled until the field has text', ['add-name', 'add-price', 'add-cost'].every((id) => nextWhileEmpty[id]?.shown && nextWhileEmpty[id]?.disabled), nextWhileEmpty);
   await afterReload(page);

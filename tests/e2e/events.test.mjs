@@ -341,6 +341,8 @@ const link = await run(page, `${H}
   const listed = rows().length;
   const hint = document.getElementById('expenseProductsHint').textContent;
   const rowHeight = rows()[0].getBoundingClientRect().height;
+  // Focus goes to Cancel at the bottom; the sheet must still open at its top, the hint right under its label.
+  const opened = { scrollTop: document.querySelector('#expenseModalOverlay .sheet').scrollTop, hintAfter: document.getElementById('expenseProductsHint').previousElementSibling.id };
   fill('Photocard print', '50000'); tick('Photocard');
   document.getElementById('addCostBtn').click(); await wait();
   const net = amount('#eventCard .hero-figure');
@@ -360,9 +362,10 @@ const link = await run(page, `${H}
   document.getElementById('addCostBtn').click();
   document.getElementById('pastEventSaveBtn').click(); await wait(150);
   const past = stored('cntrEvents')[0];
-  return { before, listed, hint, rowHeight, net, linkedId: cost.productIds?.join() === photocard.id && !!photocard.id, sellProfit, reopened: reopened.join(), pastBefore, pastListed, pastAfter: amount('#pastEventCard .hero-figure'), pastIds: past.expenses[0].productIds?.join(), pastProductId: past.products[0].id };
+  return { before, listed, hint, rowHeight, opened, net, linkedId: cost.productIds?.join() === photocard.id && !!photocard.id, sellProfit, reopened: reopened.join(), pastBefore, pastListed, pastAfter: amount('#pastEventCard .hero-figure'), pastIds: past.expenses[0].productIds?.join(), pastProductId: past.products[0].id };
 `);
-check('expense sheet lists the live products with the hint, rows ≥ 48px', link.listed === 8 && link.hint === "Their item cost won't also be subtracted." && link.rowHeight >= 48, link);
+check('expense sheet lists the live products with the hint, rows ≥ 48px', link.listed === 8 && link.hint === "Ticked products' item cost won't be subtracted twice." && link.rowHeight >= 48, link);
+check('the expense sheet opens at its top (Name visible), with the hint directly under its label', link.opened.scrollTop === 0 && link.opened.hintAfter === 'expenseProductsLabel', link.opened);
 check('a linked print expense replaces the item cost: net = before + 3 × 7.000 − 50.000', link.net === link.before + 3 * 7000 - 50000, link);
 check('the link is stored by product id', link.linkedId, link);
 check('Sell profit drops the linked item cost too', link.sellProfit === 3 * 15000 + 25000 - 12000, link);

@@ -98,7 +98,7 @@ export const en = {
   'add_expense': 'Add expense',
   'expense.namePlaceholder': 'Expense name',
   'expense.products': 'For products (optional)',
-  'expense.productsHint': "Their item cost won't also be subtracted.",
+  'expense.productsHint': "Ticked products' item cost won't be subtracted twice.",
   'amount': 'Amount',
   'toast.nothingToUndo': 'Nothing to undo',
   'toast.removedOne': 'Removed one {name}',
