@@ -244,7 +244,7 @@ export function saveSales(sales: SaleRecord[]) {
 
 export function loadEventCosts(): EventCost[] {
   // Older versions stored a `category` field; keep only the current shape.
-  return readArray<EventCost & { category?: string }>(EVENT_COST_STORAGE_KEY).map((item) => ({ id: item.id, name: item.name, amount: item.amount }));
+  return readArray<EventCost & { category?: string }>(EVENT_COST_STORAGE_KEY).map((item) => ({ id: item.id, name: item.name, amount: item.amount, ...(item.productIds && { productIds: item.productIds }) }));
 }
 
 export function saveEventCosts(eventCosts: EventCost[]) {

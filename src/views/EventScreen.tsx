@@ -1,5 +1,5 @@
 // The Event screen: the live event, or a past event from History (read-only or being edited).
-import { eventSummary, formatDay, splitDays } from '../events';
+import { eventSummary, formatDay, splitDays, withLinkedCosts } from '../events';
 import { fmt } from '../formatters';
 import { paymentClass, productPayments, sortPayments } from '../payments';
 import { buildProductBreakdown, marginPercent } from '../reports';
@@ -140,8 +140,9 @@ function ProductBreakdown({ sales, products, colorFor }: { sales: SaleRecord[]; 
 
 export function EventScreen(props: Props) {
   const { name, sales, dayBreaks, expenses, products, colorFor, live, edit } = props;
-  const summary = eventSummary(sales, expenses);
-  const days = splitDays(sales, dayBreaks);
+  const summary = eventSummary(sales, expenses, products);
+  // Day cards and product rows take linked expenses into account too (no item cost for the products they cover).
+  const days = splitDays(withLinkedCosts(sales, expenses, products), dayBreaks);
   const isEmpty = !sales.length && !expenses.length;
   // Nothing at all yet (no products either): one empty state instead of it stacked with another for the Products card below.
   const allEmpty = isEmpty && !products.length;
@@ -264,7 +265,7 @@ export function EventScreen(props: Props) {
           ))
         ) : (
           <Card title={t('products')}>
-            <ProductBreakdown sales={sales} products={products} colorFor={colorFor} />
+            <ProductBreakdown sales={withLinkedCosts(sales, expenses, products)} products={products} colorFor={colorFor} />
           </Card>
         ))}
 

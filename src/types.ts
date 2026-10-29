@@ -31,6 +31,8 @@ export interface EventCost {
   id: string;
   name: string;
   amount: number;
+  /** Products this expense pays for (e.g. a print run): in its event they subtract no item cost (see withLinkedCosts). Optional; older data has none. */
+  productIds?: string[];
 }
 
 /** The live event's name and day breaks; its sales and expenses are the live `cntrSales` and `cntrEventCosts`. */

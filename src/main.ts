@@ -9,11 +9,12 @@ import { version as packageVersion } from '../package.json';
 import { buildBackup, parseBackup, salesCsv } from './backup';
 import { DATA_KEYS, DROPPED_KEYS } from './migrate';
 import { pickTextFile, saveAutoBackup, saveDayBackup, saveFile, saveSafetyCopy } from './files';
-import { adjustCount } from './events';
+import { adjustCount, withLinkedCosts } from './events';
 import { feedback } from './feedback';
 import { totals } from './reports';
 import {
   addExpense,
+  expenseRecord,
   deletePastEvent,
   endDay,
   endEvent,
@@ -72,7 +73,7 @@ import { editProductByName, initProductEditor, openProductEditor } from './ui/pr
 import { initTileDrag } from './ui/tileDrag';
 import { CompareView } from './views/Compare';
 import { EventScreen } from './views/EventScreen';
-import { EventChecklist, EventList, ProductList, RecentSales } from './views/Lists';
+import { EventChecklist, EventList, ProductChecklist, ProductList, RecentSales } from './views/Lists';
 import { SalesGrid, type TapPulse } from './views/SalesGrid';
 import { SalesHero } from './views/SalesHero';
 
@@ -151,7 +152,7 @@ let draft: PastEvent | null = null;
 
 function render() {
   const today = todayLiveSales();
-  const { revenue, profit } = totals(today);
+  const { revenue, profit } = totals(withLinkedCosts(today, state.eventCosts, state.products));
   renderView(h(SalesHero, { revenue, profit, count: today.length, day: liveDayCount() }), el.stats);
   renderView(
     h(SalesGrid, {
@@ -488,6 +489,8 @@ let editingExpenseId: string | null = null;
 
 const editingPastEvent = () => draft !== null && activeScreenId() === 'pastEventScreen';
 const activeExpenses = () => (editingPastEvent() ? draft!.expenses : state.eventCosts);
+/** The products an expense can be linked to: the counter's live, the event's snapshot when editing History. */
+const linkableProducts = () => (editingPastEvent() ? draft!.products : state.products);
 
 function updateExpenseButtonState() {
   const amount = parseCurrencyInput(el.eventCostAmount.value, loadSettings().currency);
@@ -503,6 +506,9 @@ function openExpenseModal(id: string | null) {
   el.addCostBtn.textContent = cost ? t('save_changes') : t('add_expense');
   el.eventCostName.value = cost?.name ?? '';
   el.eventCostAmount.value = cost ? formatInputNumber(String(cost.amount), loadSettings().currency) : '';
+  const products = linkableProducts();
+  el.expenseProductsField.hidden = !products.length;
+  renderView(h(ProductChecklist, { products, checked: cost?.productIds ?? [] }), el.expenseProducts);
   updateExpenseButtonState();
   openSheet(el.expenseModalOverlay);
   lockBodyScroll();
@@ -518,15 +524,26 @@ function submitExpense() {
   const name = el.eventCostName.value.trim();
   const amount = parseCurrencyInput(el.eventCostAmount.value, loadSettings().currency);
   if (!name || !(amount > 0)) return;
+  // Ticked rows are indexes into the listed products; links to products no longer listed are kept.
+  let products = linkableProducts();
+  const ticked = new Set(checkedValues(el.expenseProducts).map(Number));
+  if (editingPastEvent() && ticked.size) {
+    // A snapshot from before ids gets them only when linked (saved with the edit): its sales' id, else a new one.
+    products = products.map((product, index) => (product.id || !ticked.has(index) ? product : { ...product, id: draft!.sales.find((sale) => sale.product === product.name && sale.productId)?.productId ?? generateUUID() }));
+    draft = { ...draft!, products };
+  }
+  const listed = new Set(products.map((product) => product.id));
+  const previous = activeExpenses().find((cost) => cost.id === editingExpenseId)?.productIds ?? [];
+  const productIds = [...previous.filter((id) => !listed.has(id)), ...products.filter((_, index) => ticked.has(index)).map((product) => product.id!)];
   if (editingPastEvent()) {
     const expenses = editingExpenseId
-      ? draft!.expenses.map((cost) => (cost.id === editingExpenseId ? { ...cost, name, amount } : cost))
-      : [...draft!.expenses, { id: generateUUID(), name, amount }];
+      ? draft!.expenses.map((cost) => (cost.id === editingExpenseId ? expenseRecord(cost.id, name, amount, productIds) : cost))
+      : [...draft!.expenses, expenseRecord(generateUUID(), name, amount, productIds)];
     draft = { ...draft!, expenses };
   } else if (editingExpenseId) {
-    updateExpense(editingExpenseId, name, amount);
+    updateExpense(editingExpenseId, name, amount, productIds);
   } else {
-    addExpense(name, amount);
+    addExpense(name, amount, productIds);
   }
   closeExpenseModal();
   render();
@@ -712,6 +729,7 @@ function wireDialogs() {
     el.eventCostAmount.value = formatInputNumber(el.eventCostAmount.value, loadSettings().currency);
     updateExpenseButtonState();
   });
+  el.expenseProducts.addEventListener('change', () => feedback('step'));
   onClick(el.addCostBtn, submitExpense);
   onClick(el.expenseModalCloseBtn, closeExpenseModal);
   onClick(el.expenseModalCancelBtn, closeExpenseModal);

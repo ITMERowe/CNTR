@@ -97,6 +97,8 @@ export const el = {
   eventCostName: byId<HTMLInputElement>('eventCostName'),
   eventCostAmount: byId<HTMLInputElement>('eventCostAmount'),
   addCostBtn: byId<HTMLButtonElement>('addCostBtn'),
+  expenseProductsField: byId<HTMLDivElement>('expenseProductsField'),
+  expenseProducts: byId<HTMLDivElement>('expenseProducts'),
   // Confirm dialog
   confirmModalOverlay: byId<HTMLDivElement>('confirmModalOverlay'),
   confirmModalTitle: byId<HTMLHeadingElement>('confirmModalTitle'),

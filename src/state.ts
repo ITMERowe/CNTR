@@ -221,16 +221,18 @@ export function endEvent(nextName: string): PastEvent {
   return event;
 }
 
-export function addExpense(name: string, amount: number) {
-  state.eventCosts.push({ id: generateUUID(), name, amount });
+/** An expense record; `productIds` only when it is linked to products, so unlinked data stays as before. */
+export const expenseRecord = (id: string, name: string, amount: number, productIds: string[]): EventCost => ({ id, name, amount, ...(productIds.length ? { productIds } : {}) });
+
+export function addExpense(name: string, amount: number, productIds: string[]) {
+  state.eventCosts.push(expenseRecord(generateUUID(), name, amount, productIds));
   saveEventCosts();
 }
 
-export function updateExpense(id: string, name: string, amount: number) {
-  const cost = state.eventCosts.find((item) => item.id === id);
-  if (!cost) return;
-  cost.name = name;
-  cost.amount = amount;
+export function updateExpense(id: string, name: string, amount: number, productIds: string[]) {
+  const index = state.eventCosts.findIndex((item) => item.id === id);
+  if (index < 0) return;
+  state.eventCosts[index] = expenseRecord(id, name, amount, productIds);
   saveEventCosts();
 }
 

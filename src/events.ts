@@ -35,8 +35,21 @@ export function todaySales(sales: SaleRecord[], dayBreaks: string[]): SaleRecord
   return days[days.length - 1];
 }
 
-/** Net profit = product profit (revenue − product cost) − expenses. */
-export function eventSummary(sales: SaleRecord[], expenses: EventCost[]) {
+/**
+ * The event's sales with item cost 0 for products an expense of the same event is linked to, so the money is not
+ * counted twice (owner rule: the expense counts in full, the item cost for none of the units). Matches a sale to a
+ * product by id, or by name for sales from before ids. Returns new sale objects; the input is unchanged.
+ */
+export function withLinkedCosts(sales: SaleRecord[], expenses: EventCost[], products: Product[]): SaleRecord[] {
+  const linked = new Set(expenses.flatMap((cost) => cost.productIds ?? []));
+  if (!linked.size) return sales;
+  const names = new Set(products.filter((product) => product.id && linked.has(product.id)).map((product) => product.name));
+  return sales.map((sale) => ((sale.productId ? linked.has(sale.productId) : names.has(sale.product)) ? { ...sale, cost: 0 } : sale));
+}
+
+/** Net profit = product profit (revenue − product cost, see withLinkedCosts) − expenses. */
+export function eventSummary(rawSales: SaleRecord[], expenses: EventCost[], products: Product[] = []) {
+  const sales = withLinkedCosts(rawSales, expenses, products);
   const revenue = sales.reduce((sum, sale) => sum + sale.price, 0);
   const productProfit = sales.reduce((sum, sale) => sum + sale.price - sale.cost, 0);
   const expenseTotal = expenses.reduce((sum, cost) => sum + cost.amount, 0);
@@ -56,7 +69,8 @@ export function snapshotProducts(sales: SaleRecord[], known: Product[]): Product
   const byName = new Map<string, Product>();
   for (const sale of [...sales].sort((a, b) => time(a.timestamp) - time(b.timestamp))) {
     const match = known.find((product) => product.name === sale.product);
-    byName.set(sale.product, { name: sale.product, price: sale.price, cost: sale.cost, color: match?.color ?? '', ...(match?.payments && { payments: [...match.payments] }) });
+    const id = sale.productId ?? match?.id;
+    byName.set(sale.product, { ...(id && { id }), name: sale.product, price: sale.price, cost: sale.cost, color: match?.color ?? '', ...(match?.payments && { payments: [...match.payments] }) });
   }
   return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
 }

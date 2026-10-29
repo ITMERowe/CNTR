@@ -1,5 +1,5 @@
 // Pure report calculations, shared by the report screens and compare views.
-import { eventSummary } from './events';
+import { eventSummary, withLinkedCosts } from './events';
 import type { PastEvent, Product, SaleRecord } from './types';
 
 export interface ProductTotals {
@@ -54,7 +54,7 @@ export function buildProductBreakdown(sales: SaleRecord[], products: Product[], 
 }
 
 export function getEventSummary(event: PastEvent) {
-  const { revenue, productProfit, expenses, net, count } = eventSummary(event.sales, event.expenses);
+  const { revenue, productProfit, expenses, net, count } = eventSummary(event.sales, event.expenses, event.products);
   return {
     revenue,
     profit: productProfit,
@@ -62,7 +62,7 @@ export function getEventSummary(event: PastEvent) {
     margin: marginPercent(revenue, productProfit),
     salesCount: count,
     expenses,
-    breakdown: buildProductBreakdown(event.sales, event.products).filter((product) => product.count > 0),
+    breakdown: buildProductBreakdown(withLinkedCosts(event.sales, event.expenses, event.products), event.products).filter((product) => product.count > 0),
   };
 }
 

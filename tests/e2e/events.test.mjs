@@ -326,6 +326,49 @@ for (const on of [false, true]) {
   else check('new-day setting is off by default: a new date stays in Day 1', !nd.toggle && nd.breaks === 0 && /^2 sales/.test(nd.sell), nd);
 }
 
+// Expenses linked to products: the linked product subtracts no item cost in that event (no double counting)
+await run(page, `localStorage.clear(); localStorage.setItem('cntrMeta.tutorialOffered', 'test'); localStorage.cntrProducts = ${JSON.stringify(SAMPLE_PRODUCTS)};
+  localStorage.cntrEvents = ${JSON.stringify(JSON.stringify([pastEvent('old', 'Before ids', 3, 2, [])]))};`);
+await load();
+const link = await run(page, `${H}
+  const fill = (name, value) => { document.getElementById('eventCostName').value = name; const a = document.getElementById('eventCostAmount'); a.value = value; a.dispatchEvent(new Event('input')); };
+  const rows = () => [...document.querySelectorAll('#expenseProducts .check-row')];
+  const tick = (name) => { const input = rows().find((r) => r.textContent === name).querySelector('input'); input.click(); };
+  tab('salesScreen'); tap('Photocard', 'Cash'); tap('Photocard', 'Cash'); tap('Photocard', 'QRIS'); tap('Gacha', 'Cash'); await wait();
+  tab('eventScreen');
+  const before = amount('#eventCard .hero-figure');
+  document.getElementById('openAddExpenseBtn').click();
+  const listed = rows().length;
+  const hint = document.getElementById('expenseProductsHint').textContent;
+  const rowHeight = rows()[0].getBoundingClientRect().height;
+  fill('Photocard print', '50000'); tick('Photocard');
+  document.getElementById('addCostBtn').click(); await wait();
+  const net = amount('#eventCard .hero-figure');
+  const photocard = stored('cntrProducts').find((p) => p.name === 'Photocard');
+  const cost = stored('cntrEventCosts')[0];
+  tab('salesScreen'); const sellProfit = amount('#stats .hero-meta span:last-child'); tab('eventScreen');
+  document.querySelector('#eventCard .edit-cost').click();
+  const reopened = rows().filter((r) => r.querySelector('input').checked).map((r) => r.textContent);
+  document.getElementById('expenseModalCancelBtn').click();
+  // A past event from before ids: linking gives its product an id, saved with the edit
+  tab('historyScreen'); document.querySelector('#pastEventList .event-row').click();
+  const pastBefore = amount('#pastEventCard .hero-figure');
+  document.getElementById('pastEventEditBtn').click();
+  document.getElementById('openAddExpenseBtn').click();
+  const pastListed = rows().map((r) => r.textContent).join();
+  fill('Capsules', '20000'); tick('Gacha');
+  document.getElementById('addCostBtn').click();
+  document.getElementById('pastEventSaveBtn').click(); await wait(150);
+  const past = stored('cntrEvents')[0];
+  return { before, listed, hint, rowHeight, net, linkedId: cost.productIds?.join() === photocard.id && !!photocard.id, sellProfit, reopened: reopened.join(), pastBefore, pastListed, pastAfter: amount('#pastEventCard .hero-figure'), pastIds: past.expenses[0].productIds?.join(), pastProductId: past.products[0].id };
+`);
+check('expense sheet lists the live products with the hint, rows ≥ 48px', link.listed === 8 && link.hint === "Their item cost won't also be subtracted." && link.rowHeight >= 48, link);
+check('a linked print expense replaces the item cost: net = before + 3 × 7.000 − 50.000', link.net === link.before + 3 * 7000 - 50000, link);
+check('the link is stored by product id', link.linkedId, link);
+check('Sell profit drops the linked item cost too', link.sellProfit === 3 * 15000 + 25000 - 12000, link);
+check('editing the expense shows its product ticked', link.reopened === 'Photocard', link);
+check('a past event from before ids can link: the product gets an id, net = before + 2 × 12.000 − 20.000', link.pastListed === 'Gacha' && !!link.pastProductId && link.pastIds === link.pastProductId && link.pastAfter === link.pastBefore + 2 * 12000 - 20000, link);
+
 check('no uncaught exceptions', errors.length === 0, errors.join(' | '));
 await browser.close();
 done();

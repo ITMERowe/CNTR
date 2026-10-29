@@ -130,7 +130,7 @@ export function EventList({ events, onOpen }: { events: PastEvent[]; onOpen: (id
   return (
     <>
       {[...events].reverse().map((event, index) => {
-        const { net } = eventSummary(event.sales, event.expenses);
+        const { net } = eventSummary(event.sales, event.expenses, event.products);
         const first = formatDay(event.startedAt);
         const last = formatDay(event.endedAt);
         const days = event.dayBreaks.length + 1;
@@ -177,6 +177,23 @@ export function EventChecklist({ events, checked }: { events: PastEvent[]; check
           <span class="check-text">
             <strong>{event.name}</strong>
             <small>{formatDay(event.startedAt)}</small>
+          </span>
+        </label>
+      ))}
+    </>
+  );
+}
+
+/** Expense sheet: products the expense pays for (values are list indexes; `checked` holds product ids). */
+export function ProductChecklist({ products, checked }: { products: Product[]; checked: string[] }) {
+  return (
+    <>
+      {products.map((product, index) => (
+        <label class="check-row" key={product.id ?? product.name}>
+          <input type="checkbox" value={index} checked={!!product.id && checked.includes(product.id)} />
+          <span class="check-box" aria-hidden="true" />
+          <span class="check-text">
+            <strong>{product.name}</strong>
           </span>
         </label>
       ))}

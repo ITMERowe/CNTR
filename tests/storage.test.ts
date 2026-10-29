@@ -225,3 +225,19 @@ test('products with payment methods restore; a damaged method list is rejected',
     assert.match(parsed.error, /Products: item 1/);
   }
 });
+
+test('expenses linked to products round-trip; old ones without links still load; a damaged link list is rejected', () => {
+  const linked = new Map(fullData);
+  linked.set('cntrProducts', JSON.stringify([{ id: 'p1', name: 'Gacha', price: 25000, cost: 12000, color: '#f76495' }]));
+  linked.set('cntrEventCosts', JSON.stringify([{ id: 'c1', name: 'Print', amount: 100000, productIds: ['p1'] }, { id: 'c3', name: 'Booth', amount: 750000 }]));
+  const parsed = parseBackup(JSON.stringify(buildBackup(linked)));
+  assert.ok(parsed.ok);
+  for (const [key, value] of linked) assert.equal(parsed.values.get(key), value, key);
+  // The CSV's cost is the one the reports count: none for the linked product (old sale matched by name).
+  assert.match(salesCsv(buildBackup(linked)), /^Current event,1,2026-10-26T10:00:00.000Z,Gacha,Cash,25000,0\r$/m);
+  for (const productIds of ['p1', [1], null]) {
+    const bad = buildBackup(fullData);
+    bad.data.cntrEventCosts = [{ id: 'c1', name: 'Print', amount: 1, productIds }];
+    assert.equal(parseBackup(JSON.stringify(bad)).ok, false, JSON.stringify(productIds));
+  }
+});
