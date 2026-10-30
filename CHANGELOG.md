@@ -2,7 +2,36 @@
 
 Each version starts with **Highlights**: a short list for users, shown first on the GitHub Release and as Google Play's "What's new" (keep it under 500 characters). The sections after it are the full list; put the biggest changes first in each, since a release page shows only the first 5 of each section.
 
-## 0.1.0 (2026-10-28)
+## 0.1.1 (unreleased)
+
+### Highlights
+- Product groups: one tile for a poster and its sizes, made on one page, foldable
+- Link an expense to products so their cost isn't counted twice
+- Tablets and landscape get 2 or 3 columns of tiles
+- Hold to delete products and expenses
+- Tidier screens: one header row everywhere, denser product list
+- Taps vibrate on more phones
+
+### Added
+- **Product groups**: turn on *Group with variants* in the product editor to make a group (e.g. Poster) and its variants (A3, A4, A5), each with its own price and cost, on one page. Sell shows one tile per group with a row per variant, compact by default; tap the group's name to fold it. Reports, History, Compare and CSV count the variants like any product.
+- **Expenses for products**: an expense can be linked to products (*For products* switch). In that event those products count no per-item cost, so a print run isn't subtracted twice.
+- **Tablets and wide screens**: 2 tile columns from 720px wide, 3 from 1080px; other pages keep a comfortable width. Drag works across columns.
+- **Hold to delete**: products, groups and expenses delete with a 0.7-second hold instead of a dialog; big actions (End day, End event, Restore, delete an event) still ask.
+
+### Changed
+- One header row on every tab, with the title and its buttons on the same line; the Products list is denser (one line of price, profit and payment methods per product; a group's shared payments shown once).
+- New type scale with clearer sizes and two weights; fewer sublabels; specific dialog titles ("Delete event?") and verb buttons.
+- Sell buttons press in slightly when tapped; long sheets fade at the edges that scroll.
+- Backups are smaller and big backups restore; CSV times are the phone's local time.
+- The Event tab's Products cards show only days with sales.
+
+### Fixed
+- Taps didn't vibrate on some phones (the system accepted the haptic but played nothing).
+- A field could stay hidden behind the keyboard.
+- Very large data could stop the app from starting on Android (it's now read in pieces).
+- The Sell tab could lag on every tap once History grew large.
+
+
 
 ### Highlights
 - First release: tap-to-sell tiles, net profit after expenses, multi-day events, history and compare
