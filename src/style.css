@@ -1006,21 +1006,58 @@ p {
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 2fr);
 }
 
+/* The name gets the whole first line (never cut on a 360px phone); the payment labels sit on a slim line below,
+   centred over the counts they name. */
 .is-compact .tile-group-head {
   display: grid;
   align-items: center;
-  gap: var(--s2);
+  column-gap: var(--s2);
+  row-gap: 2px;
   margin-bottom: var(--s1);
+}
+
+.is-compact .tile-group-title {
+  grid-column: 1 / -1;
 }
 
 .is-compact .tile-group .group-name {
   font-size: 18px;
 }
 
-/* Room for the group's name beside the chevron and pencil in the narrow name column (360px phones). */
 .is-compact .tile-group-title,
 .is-compact .tile-group-toggle {
   gap: var(--s1);
+}
+
+/* 28px like the pencil, still 44px to the finger: the extra line costs about 12px, not a row. */
+.is-compact .tile-group-toggle {
+  min-height: 28px;
+}
+
+.is-compact .tile-group-toggle::after {
+  inset: -8px 0;
+}
+
+/* Variant names a step under the group's, so the group reads first and the counts carry the row. */
+.is-compact .variant .product-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* An unsold cell is quiet; a sold one is set heavier and ringed, so the rows with sales stand out at a glance.
+   A ring, not a lighter fill: lightening the cell would drop white ink under 2.6:1 on pink and yellow tiles. */
+.is-compact .variant .payment-value {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.is-compact .variant .pay.is-sold .payment-value {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.is-compact .variant .pay.is-sold .pay-add {
+  box-shadow: inset 0 0 0 1.5px var(--ink-line);
 }
 
 .is-compact .tile-group .tile-edit {
@@ -1033,6 +1070,7 @@ p {
 }
 
 .is-compact .tile-group-pays {
+  grid-column: 2;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--s2);
@@ -1046,8 +1084,9 @@ p {
 .tile-group-pays .pay-label {
   grid-column: auto;
   grid-row: auto;
-  padding-left: var(--s2);
+  justify-content: center;
   font-size: 11px;
+  line-height: 14px;
   letter-spacing: 0;
 }
 

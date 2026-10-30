@@ -74,7 +74,8 @@ for (const width of [412, 1280]) {
     const tight = await size();
     await compact();
     // 3 variants here: about 62px per row by default (2 rows were 182px), 52px compact (2 rows were 148px).
-    check(`${at} a 3-variant group is short (under 260px, compact under 210px), every sell button at least 44px`, normal.height < 260 && tight.height < 210 && !normal.small && !tight.small, { normal, tight });
+    // Compact was 200px; the group's name now has its own line over the column labels (+12px once per tile, rows unchanged).
+    check(`${at} a 3-variant group is short (under 260px, compact under 220px), every sell button at least 44px`, normal.height < 260 && tight.height < 220 && !normal.small && !tight.small, { normal, tight });
     check(`${at} compact tiles show the payment labels once, as column headers`, normal.labels === 6 && tight.labels === 2, { normal: normal.labels, tight: tight.labels });
   }
 
@@ -361,6 +362,31 @@ for (const width of [412, 1280]) {
   await sleep(300);
   const price = await page.evaluate(() => { const i = document.querySelectorAll('#editVariants input')[1]; return { value: i.value, sw: i.scrollWidth, cw: i.clientWidth }; });
   check(`${at} a 1.500.000 price fits its variant input`, price.value === '1.500.000' && price.sw <= price.cw, price);
+  await page.close();
+}
+
+// Compact on a 360px phone: a 16-character group name shows whole on its own line; sold cells are marked, unsold ones not.
+{
+  const page = await browser.newPage({ viewport: { width: 360, height: 640 } });
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto(URL);
+  const g = (id, name) => ({ id, name: `Fanservice Booth ${name}`, price: 25000, cost: 0, color: '#f76495', payments: ['Cash', 'QRIS'], group: 'Fanservice Booth' });
+  await page.evaluate((products) => {
+    localStorage.clear();
+    localStorage.setItem('cntrProducts', JSON.stringify(products));
+    localStorage.setItem('cntrSettings', JSON.stringify({ compactTiles: true, theme: 'dark', language: 'en' }));
+  }, [g('f1', 'Hug'), g('f2', 'Pat'), g('f3', 'Hug or Slap')]);
+  await page.reload();
+  await sleep(900);
+  await page.click('.tabbar .tab[data-tab="salesScreen"]');
+  await page.click('.variant[data-variant="Fanservice Booth Pat"] [data-payment="QRIS"][data-action="plus"]');
+  await sleep(150);
+  const view = await page.evaluate(() => {
+    const name = document.querySelector('.tile-group .group-name');
+    const buttons = [...document.querySelectorAll('.tile-group .pay-add, .tile-group .pay-undo:not(:disabled)')].map((b) => { const r = b.getBoundingClientRect(); const a = getComputedStyle(b, '::after'); return b.classList.contains('pay-add') ? r.height : r.height - 2 * parseFloat(a.top); });
+    return { text: name.textContent, whole: name.scrollWidth <= name.clientWidth, minTarget: Math.min(...buttons), sold: [...document.querySelectorAll('.tile-group .pay.is-sold')].map((p) => `${p.closest('.variant').dataset.variant}/${p.dataset.payment}`).join() };
+  });
+  check('360px compact: a 16-character group name is not cut, every sell and undo target at least 44px, only the sold cell is marked', view.text === 'Fanservice Booth' && view.whole && view.minTarget >= 44 && view.sold === 'Fanservice Booth Pat/QRIS', view);
   await page.close();
 }
 

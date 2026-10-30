@@ -151,7 +151,7 @@ function TilePay({ product, counts, pulse, onAdd, onUndo }: { product: Product; 
         const count = counts.get(`${payment}\u0000${product.name}`) ?? 0;
         const pulsed = pulse && pulse.product === product.name && pulse.payment === payment ? pulse : null;
         return (
-          <div class="pay" data-payment={payment} key={payment}>
+          <div class={count ? 'pay is-sold' : 'pay'} data-payment={payment} key={payment}>
             <button
               class="pay-add"
               type="button"
