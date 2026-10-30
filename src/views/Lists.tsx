@@ -214,6 +214,12 @@ export function ProductChecklist({ products, checked }: { products: Product[]; c
     const box = event.currentTarget as HTMLInputElement;
     for (const input of box.closest('.check-group')!.querySelectorAll<HTMLInputElement>('input:not(.check-all)')) input.checked = box.checked;
   };
+  const fold = (event: Event) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    const open = button.getAttribute('aria-expanded') !== 'true';
+    button.setAttribute('aria-expanded', String(open));
+    document.getElementById(button.getAttribute('aria-controls')!)!.hidden = !open;
+  };
   const row = (product: Product, label: string) => (
     <label class="check-row" key={product.id ?? product.name}>
       <input type="checkbox" value={products.indexOf(product)} checked={isChecked(product)} onChange={syncGroupBox} />
@@ -228,16 +234,26 @@ export function ProductChecklist({ products, checked }: { products: Product[]; c
       {groupTiles(products).map((tile) => {
         const group = tile[0].group;
         if (!group) return row(tile[0], tile[0].name);
+        // Folded unless only some of its variants are ticked, so the list stays short; the group's box still ticks them all.
+        const ticked = tile.filter(isChecked).length;
+        const id = `check-variants-${products.indexOf(tile[0])}`;
         return (
           <div class="check-group" key={`group:${group.toLowerCase()}`}>
-            <label class="check-row">
-              <input class="check-all" type="checkbox" checked={tile.every(isChecked)} onChange={tickAll} />
-              <span class="check-box" aria-hidden="true" />
-              <span class="check-text">
-                <strong>{group}</strong>
-              </span>
-            </label>
-            {tile.map((product) => row(product, variantLabel(product)))}
+            <div class="check-group-head">
+              <label class="check-row">
+                <input class="check-all" type="checkbox" checked={ticked === tile.length} onChange={tickAll} />
+                <span class="check-box" aria-hidden="true" />
+                <span class="check-text">
+                  <strong>{group}</strong>
+                </span>
+              </label>
+              <button class="check-fold" type="button" aria-expanded={ticked > 0 && ticked < tile.length} aria-controls={id} aria-label={t('expense.variantsOf', { name: group })} onClick={fold}>
+                <Icon name="chevron-down" />
+              </button>
+            </div>
+            <div class="check-variants" id={id} hidden={!(ticked > 0 && ticked < tile.length)}>
+              {tile.map((product) => row(product, variantLabel(product)))}
+            </div>
           </div>
         );
       })}

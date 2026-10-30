@@ -111,7 +111,7 @@ body {
 /* No square corners, even on a transparent wrapper: the tutorial's spotlight and focus rings follow an element's
    radius. Zero specificity, so a component's own radius wins. Rows with a divider line and clipped (ellipsis)
    text are left out: a radius there would bend the divider's ends or shave letters. */
-:where(.hero, .payment-options, .tab, .event-name, #compareEventCard, .field, .field-row, .field-hint, .checklist, .check-group, .variant, .variant-meta, .tile-head, .tile-group-head, .tile-group-title, .tile-group-pays, .tile-pay, .pay, .page-header, .card-head, .sheet-header, .sheet-actions, .report-hero, .group, .product-section, .product-group, .stack, .list, .form, .split, .kpi-row, .variants, .variant-list, .variant-row, .form-part, .event-actions, .event-name-row, .topbar-row, .brand, .empty, .rank, .product-row, .product-toggle-btn, .page, .list-main, .rank-main, .rank-meta, .split-item, .split-legend, .tile-meta, .topbar-actions, .products-day-head, .cmp) {
+:where(.hero, .payment-options, .tab, .event-name, #compareEventCard, .field, .field-row, .field-hint, .checklist, .check-group, .check-group-head, .check-variants, .variant, .variant-meta, .tile-head, .tile-group-head, .tile-group-title, .tile-group-pays, .tile-pay, .pay, .page-header, .card-head, .sheet-header, .sheet-actions, .report-hero, .group, .product-section, .product-group, .stack, .list, .form, .split, .kpi-row, .variants, .variant-list, .variant-row, .form-part, .event-actions, .event-name-row, .topbar-row, .brand, .empty, .rank, .product-row, .product-toggle-btn, .page, .list-main, .rank-main, .rank-meta, .split-item, .split-legend, .tile-meta, .topbar-actions, .products-day-head, .cmp) {
   border-radius: var(--r-sm);
 }
 
@@ -2695,7 +2695,39 @@ body.is-editing-event .content {
   min-height: 48px;
 }
 
-.check-group .check-row + .check-row {
+.check-group-head {
+  display: flex;
+  gap: var(--s2);
+}
+
+.check-group-head .check-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.check-fold {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+}
+
+.check-fold .icon {
+  width: 18px;
+  height: 18px;
+  transform: rotate(-90deg);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.check-fold[aria-expanded='true'] .icon {
+  transform: none;
+}
+
+.check-variants {
+  display: grid;
+  gap: var(--s2);
   margin-left: var(--s6);
 }
 

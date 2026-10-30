@@ -219,12 +219,16 @@ for (const width of [412, 1280]) {
   await page.click('.tabbar .tab[data-tab="eventScreen"]');
   await page.click('#openAddExpenseBtn');
   await page.click('label[for="expenseProductsToggle"]');
+  const foldedFirst = await page.evaluate(() => { const g = document.querySelector('#expenseProducts .check-group'); return g.querySelector('.check-variants').hidden && g.querySelector('.check-fold').getAttribute('aria-expanded') === 'false'; });
+  await page.click('#expenseProducts .check-group .check-fold');
+  const shown = await page.evaluate(() => [...document.querySelectorAll('#expenseProducts .check-variants .check-row')].filter((r) => r.offsetParent).length);
   await page.click('#expenseProducts .check-group .check-row:has(.check-all)');
   await page.fill('#eventCostName', 'Print run');
   await page.fill('#eventCostAmount', '100000');
   await page.click('#addCostBtn');
   await sleep(200);
   const linked = (await stored('cntrEventCosts'))[0]?.productIds ?? [];
+  check(`${at} the expense picker's groups start folded; the arrow shows their variants`, foldedFirst && shown === 3, { foldedFirst, shown });
   check(`${at} the expense picker's group row picks all its variants`, linked.length === 3 && [a3.id, a4.id, p2.id].every((id) => linked.includes(id)), linked);
 
   if (width === 412) {
