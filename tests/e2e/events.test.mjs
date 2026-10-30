@@ -368,7 +368,7 @@ const link = await run(page, `${H}
   const past = stored('cntrEvents')[0];
   return { folded, reopenedOn, before, listed, hint, rowHeight, opened, net, linkedId: cost.productIds?.join() === photocard.id && !!photocard.id, sellProfit, reopened: reopened.join(), pastBefore, pastListed, pastAfter: amount('#pastEventCard .hero-figure'), pastIds: past.expenses[0].productIds?.join(), pastProductId: past.products[0].id };
 `);
-check('expense sheet lists the live products with the hint, rows ≥ 48px', link.listed === 8 && link.hint === "Ticked products' item cost won't be subtracted twice." && link.rowHeight >= 48, link);
+check('expense sheet lists the live products with the hint, rows ≥ 48px', link.listed === 8 && link.hint === "Their item cost won't be counted again." && link.rowHeight >= 48, link);
 check('the expense sheet opens at its top (Name visible), with the hint directly under its label', link.opened.scrollTop === 0 && link.opened.hintFirst === 'expenseProductsHint', link.opened);
 check('the products list is folded behind a switch for a new expense, and open when editing a linked one', link.folded && link.reopenedOn, { folded: link.folded, reopenedOn: link.reopenedOn });
 check('a linked print expense replaces the item cost: net = before + 3 × 7.000 − 50.000', link.net === link.before + 3 * 7000 - 50000, link);

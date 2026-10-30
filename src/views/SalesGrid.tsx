@@ -15,6 +15,10 @@ function nameClass(name: string) {
   return 'product-name';
 }
 
+/** When a group last folded or unfolded: the tiles under the finger just moved, so a tap right after is a stray, not a sale. */
+let toggledAt = 0;
+const justToggled = () => Date.now() - toggledAt < 400;
+
 /** The last counter change, so only that counter animates and in the right direction. */
 export interface TapPulse {
   product: string;
@@ -86,7 +90,16 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit, coll
               <div class="tile-group-title">
                 {/* Folding is a disclosure: the heading holds the toggle; the pencil beside it never folds. */}
                 <h2 class="tile-group-heading">
-                  <button class="tile-group-toggle" type="button" aria-expanded={!folded} onClick={() => onToggleGroup(first.group!)}>
+                  <button
+                    class="tile-group-toggle"
+                    type="button"
+                    aria-expanded={!folded}
+                    aria-label={folded ? `${first.group}, ${t('sell.groupSold', { count: sold })}` : undefined}
+                    onClick={() => {
+                      toggledAt = Date.now();
+                      onToggleGroup(first.group!);
+                    }}
+                  >
                     <span class={`${nameClass(first.group)} group-name`}>{first.group}</span>
                     {folded && <span class="tile-group-sold">{t('sell.groupSold', { count: sold })}</span>}
                     <Icon name="chevron-down" />
@@ -145,7 +158,7 @@ function TilePay({ product, counts, pulse, onAdd, onUndo }: { product: Product; 
               data-payment={payment}
               data-action="plus"
               aria-label={t('sell.addLabel', { payment, name: product.name, count })}
-              onClick={() => onAdd(product, payment)}
+              onClick={() => justToggled() || onAdd(product, payment)}
             >
               <span class="pay-label">
                 <Icon name={PAYMENT_ICONS[payment] ?? 'banknote'} />
@@ -168,7 +181,7 @@ function TilePay({ product, counts, pulse, onAdd, onUndo }: { product: Product; 
               data-action="minus"
               aria-label={t('sell.undoLabel', { payment, name: product.name })}
               disabled={count === 0}
-              onClick={() => onUndo(product, payment)}
+              onClick={() => justToggled() || onUndo(product, payment)}
             >
               <Icon name="minus" />
             </button>

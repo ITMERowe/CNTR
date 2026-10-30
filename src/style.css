@@ -696,7 +696,6 @@ p {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.85;
 }
 
 .pay-name {
@@ -842,7 +841,6 @@ p {
   flex-shrink: 0;
   font-size: 14px;
   font-weight: 700;
-  opacity: 0.85;
 }
 
 .tile-group-toggle .icon {
@@ -903,23 +901,43 @@ p {
 
 .variant .product-price {
   font-size: 12px;
+  opacity: 1; /* full ink: a faded price falls under 2.6:1 on light tiles */
 }
 
-/* Each half: its label over its count, − in the corner; no + hint (no room, and the half is plainly a button). */
+/* Each half: its label over its count, a small + and − in the right corners (like a single tile's). */
 .variant .pay-add {
   min-height: 52px;
+  grid-template-columns: minmax(0, 1fr); /* the + sits in the padding, so no second column (or its gap) */
   grid-template-rows: auto auto;
   align-content: center;
   row-gap: 2px;
-  padding: var(--s2) var(--s2) var(--s2) var(--s3);
+  padding: var(--s2) calc(18px + var(--s2)) var(--s2) var(--s2);
 }
 
 .variant .pay-label {
+  font-size: 11px;
   letter-spacing: 0.04em;
 }
 
 .variant .pay-plus {
-  display: none;
+  position: absolute;
+  top: var(--s1);
+  right: var(--s1);
+  width: 18px;
+  height: 18px;
+}
+
+.variant .pay-plus .icon {
+  width: 12px;
+  height: 12px;
+}
+
+/* Narrow tiles: the method's full name (TRANSFER, E-WALLET) matters more than its icon. */
+@container (max-width: 390px) {
+  .variant .pay-label .icon,
+  .tile-group-pays .pay-label .icon {
+    display: none;
+  }
 }
 
 .variant .pay-count {
@@ -930,7 +948,7 @@ p {
   font-size: 18px;
 }
 
-/* 4px in: its 44px hit area stops inside the 8px gap, so it never covers a neighbouring sell button. */
+/* 4px in: its 44px-wide hit area stops inside the 8px gap, so it never covers a neighbouring sell button. */
 .variant .pay-undo {
   right: var(--s1);
   bottom: var(--s1);
@@ -991,7 +1009,7 @@ p {
 }
 
 .is-compact .tile-group .group-name {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 /* Room for the group's name beside the chevron and pencil in the narrow name column (360px phones). */
@@ -1035,10 +1053,6 @@ p {
 /* The header names the column; a Free counter keeps its own label (it has no column). */
 .is-compact .variant .pay:not([data-payment='Free']) .pay-label {
   display: none;
-}
-
-.is-compact .variant .pay:not([data-payment='Free']) .pay-count {
-  grid-column: 1;
 }
 
 .is-compact .variant .pay-undo {
@@ -1981,6 +1995,10 @@ p {
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
 
+.input[aria-invalid='true'] {
+  border-color: var(--negative);
+}
+
 .input::placeholder {
   color: var(--text-3);
 }
@@ -2028,11 +2046,12 @@ p {
   gap: var(--s2);
 }
 
+/* Equal columns, 4px apart: a 7-digit price (1.500.000) fits whole at 360px; a long variant name may cut off instead. */
 .variant-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) 44px;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 44px;
   align-items: center;
-  gap: var(--s2);
+  gap: var(--s1);
 }
 
 .variant-head .field-label {
@@ -2044,8 +2063,10 @@ p {
 
 #productEditScreen .variant-row .input {
   min-height: 44px;
-  padding: 0 var(--s2);
+  padding: 0 var(--s1);
   border-radius: var(--r-sm);
+  font-size: 14px;
+  text-overflow: ellipsis;
 }
 
 .variant-remove {
@@ -2668,6 +2689,10 @@ body.is-editing-event .content {
 .check-group {
   display: grid;
   gap: var(--s2);
+}
+
+#expenseProducts .check-row {
+  min-height: 48px;
 }
 
 .check-group .check-row + .check-row {

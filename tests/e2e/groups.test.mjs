@@ -99,7 +99,23 @@ for (const width of [412, 1280]) {
   await fillRow(2, 'A2', 35000);
   await page.fill('#editGroup', 'Print');
   await page.click('#editPayments .payment-option[data-method="Transfer"]');
+  // Back with changed rows asks first; Keep editing stays.
+  await page.click('#closeEditBtn');
+  await sleep(250);
+  const backAsk = { title: await page.textContent('#confirmModalTitle'), keep: await page.textContent('#confirmModalCancelBtn') };
+  await page.click('#confirmModalCancelBtn');
+  await sleep(250);
+  // Saving would delete the removed row's product: asks first, naming it; Cancel keeps editing with nothing saved.
   await save();
+  const removeAsk = await page.textContent('#confirmModalMessage');
+  await page.click('#confirmModalCancelBtn');
+  await sleep(250);
+  const kept = { screen: await screen(), a5: !!(await product('Poster A5')), rows: (await rows()).length };
+  check(`${at} Back after changing rows asks Keep editing / Discard; Keep editing stays`, backAsk.title === 'Discard changes?' && backAsk.keep === 'Keep editing' && kept.screen === 'productEditScreen', backAsk);
+  check(`${at} saving with a removed row asks first, naming it; Cancel keeps editing and saves nothing`, removeAsk === "Saving deletes 'Poster A5'. Their sales stay in your reports." && kept.a5 && kept.rows === 3, { removeAsk, kept });
+  await save();
+  await page.click('#confirmModalConfirmBtn');
+  await sleep(250);
   const list = await stored('cntrProducts');
   const history = await stored('cntrProductHistory');
   const [p3, p4, p2] = ['Print A3', 'Print A4', 'Print A2'].map((n) => list.find((p) => p.name === n));
@@ -110,6 +126,7 @@ for (const width of [412, 1280]) {
   // Refused, with nothing saved: a group name another group has (any case), two rows with one name, a name a product has, no group name.
   const before = await names();
   const refusals = [];
+  const marked = [];
   for (const [group, variants] of [['print', ['B1']], ['Cups', ['X', 'x']], ['Mug', ['']], ['', ['A']]]) {
     await openNew();
     await page.click('label[for="editGroupToggle"]');
@@ -117,10 +134,14 @@ for (const width of [412, 1280]) {
     for (const [i, v] of variants.entries()) await fillRow(i, v, 1000);
     await save();
     refusals.push(`${await screen()}:${await toast()}`);
+    marked.push(await page.evaluate(() => { const f = document.activeElement; return `${f.id || f.value}:${f.getAttribute('aria-invalid')}`; }));
     await page.click('#closeEditBtn');
-    await sleep(200);
+    await sleep(250);
+    await page.click('#confirmModalConfirmBtn'); // Discard
+    await sleep(250);
   }
   check(`${at} a clashing group, a duplicate variant, a taken name or no group name is refused with a toast`, (await names()) === before && refusals.join('|') === "productEditScreen:A group named 'print' already exists|productEditScreen:Two variants are named 'Cups x'|productEditScreen:A product named 'Mug' already exists|productEditScreen:Give the group a name", refusals);
+  check(`${at} a refusal focuses the field at fault (group name, or the clashing variant) and marks it invalid`, marked.join('|') === 'editGroup:true|x:true|:true|editGroup:true', marked);
 
   // Switching on for a normal product: it becomes the first variant, its real name unchanged.
   await add('Pin', 5000);
@@ -141,9 +162,12 @@ for (const width of [412, 1280]) {
   const off = { on: await page.isChecked('#editGroupToggle'), name: await page.inputValue('#editName'), price: await page.inputValue('#editPrice') };
   const bigId = (await product('Pin Big')).id;
   await save();
+  const offAsk = await page.textContent('#confirmModalMessage');
+  await page.click('#confirmModalConfirmBtn');
+  await sleep(250);
   const big = await product('Pin Big');
   check(`${at} Group can't be switched off with two variants`, refused.on && refused.toast === 'Remove variants until one is left, then turn Group off', refused);
-  check(`${at} with one variant left, switching off makes it a normal product with its full name; the removed one goes`, !off.on && off.name === 'Pin Big' && off.price === 'Rp 8.000' && big?.id === bigId && !big.group && !(await product('Pin')), { off, big, names: await names() });
+  check(`${at} with one variant left, switching off makes it a normal product with its full name; the removed one goes`, !off.on && off.name === 'Pin Big' && off.price === 'Rp 8.000' && big?.id === bigId && !big.group && !(await product('Pin')) && offAsk.includes("'Pin'"), { off, big, offAsk, names: await names() });
 
   if (width === 412) {
     // Sort by best sellers counts a group's variants together: Mug 2, Print 1 + 2 = 3.
@@ -221,9 +245,9 @@ for (const width of [412, 1280]) {
       const [edit, sell] = [row.closest('.tile-group').querySelector('.tile-edit'), undo.closest('.pay').querySelector('.pay-add')];
       const [u, e, a] = [undo, edit, sell].map((n) => n.getBoundingClientRect());
       const at = (x, y, n) => !!document.elementFromPoint(x, y)?.closest('button') && document.elementFromPoint(x, y).closest('button') === n;
-      return { undo: at(u.left - 8, u.top + u.height / 2, undo) && at(u.left + u.width / 2, u.top - 8, undo), edit: at(e.left - 5, e.top + e.height / 2, edit) && at(e.left + e.width / 2, e.bottom + 5, edit), sellWins: at(a.left + a.width / 2, a.top + 1, sell) };
+      return { undo: at(u.left - 8, u.top + u.height / 2, undo) && at(u.left + u.width / 2, u.top - 8, undo), edit: at(e.left - 5, e.top + e.height / 2, edit) && at(e.left + e.width / 2, e.bottom + 5, edit), sellWins: at(a.left + a.width / 2, a.top + 1, sell), plusSells: ((p) => at(p.left + p.width / 2, p.top + p.height / 2, sell))(sell.querySelector('.pay-plus').getBoundingClientRect()) };
     });
-    check(`${at} undo and edit have 44px hit areas, and the sell button wins where they meet`, hits.undo && hits.edit && hits.sellWins, hits);
+    check(`${at} undo and edit have 44px hit areas; the sell button wins where they meet and at its + hint`, hits.undo && hits.edit && hits.sellWins && hits.plusSells, hits);
     await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
     await sleep(300);
     const free = await page.evaluate(() => [...document.querySelectorAll('.product-item')].find((r) => r.querySelector('.list-title').textContent === 'Glossy Laminated Extra Large')?.querySelector('.product-item-sub').textContent);
@@ -289,6 +313,49 @@ for (const width of [412, 1280]) {
   await sleep(150);
   const opened = await state();
   check(`${at} a folded group stays folded after a reload (under 72px in both layouts) and unfolds again`, foldedNormal.height < 72 && reloaded.rows === 0 && opened.rows === 3 && opened.expanded === 'true', { foldedNormal, reloaded, opened });
+
+  // A tap right after folding/unfolding lands on tiles that just moved: ignored for a moment, then it sells again.
+  const soldNow = () => page.evaluate(() => JSON.parse(localStorage.getItem('cntrSales') ?? '[]').length);
+  const salesBefore = await soldNow();
+  const stray = await page.evaluate(() => {
+    document.querySelector('.tile-group-toggle').click();
+    document.querySelector('.tile-group-toggle').click();
+    document.querySelector('.tile-group [data-action="plus"]').click();
+    document.querySelector('.tile-group [data-action="minus"]:not(:disabled)')?.click();
+    return document.querySelectorAll('.tile-group .variant').length;
+  });
+  const afterStray = await soldNow();
+  await sleep(450);
+  await page.click('.tile-group [data-action="plus"]');
+  const afterWait = await soldNow();
+  check(`${at} sell and undo taps within 400ms of a fold are ignored; later taps sell`, stray === 3 && afterStray === salesBefore && afterWait === salesBefore + 1, { stray, salesBefore, afterStray, afterWait });
+
+  // Folded, the toggle's name reads with a pause: "Fanservice, 2 sold".
+  await page.click('.tile-group-toggle');
+  const foldedName = await page.getAttribute('.tile-group-toggle', 'aria-label');
+  await page.click('.tile-group-toggle');
+  check(`${at} a folded group's toggle is named "group, n sold"`, foldedName === 'Fanservice, 2 sold', foldedName);
+
+  // TRANSFER / E-WALLET show in full in a group's rows and in the compact column headers.
+  const q = (id, name) => ({ id, name, price: 15000, cost: 0, color: '#1b2a4a', payments: ['Transfer', 'E-wallet'], group: 'Print' });
+  await page.evaluate((products) => localStorage.setItem('cntrProducts', JSON.stringify(products)), [q('t1', 'Print A3'), q('t2', 'Print A4')]);
+  await page.reload();
+  await sleep(900);
+  const cut = () => page.evaluate(() => [...document.querySelectorAll('.tile-group .pay-name')].filter((n) => n.offsetParent && n.scrollWidth > n.clientWidth).map((n) => n.textContent));
+  const cutNormal = await cut();
+  await compact();
+  const cutCompact = await cut();
+  await compact();
+  check(`${at} Transfer and E-wallet labels are never cut, rows and compact headers`, !cutNormal.length && !cutCompact.length, { cutNormal, cutCompact });
+
+  // The editor's variant rows hold a 7-digit price whole.
+  await page.evaluate((products) => localStorage.setItem('cntrProducts', JSON.stringify(products)), [{ ...q('t1', 'Print A3'), price: 1500000, cost: 900000 }]);
+  await page.reload();
+  await sleep(900);
+  await page.click('.tile-group .tile-edit');
+  await sleep(300);
+  const price = await page.evaluate(() => { const i = document.querySelectorAll('#editVariants input')[1]; return { value: i.value, sw: i.scrollWidth, cw: i.clientWidth }; });
+  check(`${at} a 1.500.000 price fits its variant input`, price.value === '1.500.000' && price.sw <= price.cw, price);
   await page.close();
 }
 

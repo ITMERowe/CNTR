@@ -411,7 +411,7 @@
           <div class="field" id="expenseProductsField">
             <div class="group-body">
               <label class="group-row" for="expenseProductsToggle">
-                <span class="group-row-label" id="expenseProductsLabel" data-i18n="expense.products">For products</span>
+                <span class="group-row-label"><span id="expenseProductsLabel" data-i18n="expense.products">For products</span><small data-i18n="expense.productsSub">Paid for stock, like a print run</small></span>
                 <span class="switch">
                   <input type="checkbox" id="expenseProductsToggle" role="switch" />
                   <span class="switch-track" aria-hidden="true"></span>
@@ -419,7 +419,7 @@
               </label>
             </div>
             <div class="form-part" id="expenseProductsBody" hidden>
-              <p class="field-hint" id="expenseProductsHint" data-i18n="expense.productsHint">Ticked products' item cost won't be subtracted twice.</p>
+              <p class="field-hint" id="expenseProductsHint" data-i18n="expense.productsHint">Their item cost won't be counted again.</p>
               <div class="checklist" id="expenseProducts" role="group" aria-labelledby="expenseProductsLabel" aria-describedby="expenseProductsHint"></div>
             </div>
           </div>

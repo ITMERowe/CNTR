@@ -10,7 +10,7 @@ import { activeScreenId, el, openConfirmModal, openScreen, showToast } from './d
 import { createIconElement } from './icons';
 import { t } from '../i18n';
 import { MAX_NAME } from '../backup';
-import { groupMembers, planGroup, ungroup, variantLabel, type VariantRow } from '../groups';
+import { groupedName, groupMembers, planGroup, ungroup, variantLabel, type VariantRow } from '../groups';
 import type { Product } from '../types';
 
 // Exactly one of these is set while editing; neither means "add a new product".
@@ -23,6 +23,8 @@ let onChange: () => void = () => {};
 let selectedPayments: string[] = DEFAULT_PAYMENTS;
 /** Selection order, oldest first: which pick a third tap swaps out. */
 let paymentPickOrder: string[] = DEFAULT_PAYMENTS;
+/** The group form as it opened, so Back can tell whether there is anything to lose. */
+let openedForm = '';
 
 const currency = () => loadSettings().currency;
 const money = (value: number) => (value ? formatInputNumber(String(value), currency()) : '');
@@ -58,7 +60,15 @@ export function openProductEditor(index: number, historyIndex: number | null = n
   paymentPickOrder = [...selectedPayments];
   renderPaymentOptions();
   updatePreview();
+  el.editGroup.removeAttribute('aria-invalid');
+  openedForm = groupForm();
   openScreen('productEditScreen');
+}
+
+/** The group's name and filled rows ('' with Group off or nothing typed): what Back compares with how the editor opened. */
+function groupForm() {
+  const rows = readRows().filter((row) => row.id || row.variant.trim() || row.price || row.cost);
+  return el.editGroupToggle.checked && (el.editGroup.value.trim() || rows.length) ? JSON.stringify([el.editGroup.value, rows]) : '';
 }
 
 function setGroupMode(on: boolean) {
@@ -66,23 +76,30 @@ function setGroupMode(on: boolean) {
   el.productFields.hidden = on;
   el.groupNameField.hidden = el.variantsField.hidden = !on;
   el.removeProductBtn.style.display = editedProduct() || members.length ? 'grid' : 'none';
+  el.removeProductBtn.title = t(on ? 'product.deleteGroup' : 'delete_product');
+  el.removeProductBtn.setAttribute('aria-label', el.removeProductBtn.title);
 }
 
 /** One variant row: name | price | cost | remove. Its id (if any) ties it to the product it saves into. */
 function variantRow(row: VariantRow = { variant: '', price: 0, cost: 0 }) {
   const div = Object.assign(document.createElement('div'), { className: 'variant-row' });
   if (row.id) div.dataset.id = row.id;
-  const input = (value: string, label: string, numeric: boolean) => {
+  const input = (value: string, label: string, numeric: boolean, placeholder: string) => {
     const field = Object.assign(document.createElement('input'), { className: 'input', type: 'text', value, autocomplete: 'off', maxLength: 1000 });
     field.setAttribute('aria-label', label);
     if (numeric) Object.assign(field, { inputMode: 'numeric', pattern: '[0-9]*' });
-    else field.placeholder = t('product.variantPlaceholder');
+    field.placeholder = placeholder;
     return field;
   };
   const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'icon-btn variant-remove' });
   remove.setAttribute('aria-label', t('product.removeVariant'));
   remove.append(createIconElement('close'));
-  div.append(input(row.variant, t('product.variant'), false), input(bare(String(row.price || '')), el.variantPriceLabel.textContent ?? '', true), input(bare(String(row.cost || '')), el.variantCostLabel.textContent ?? '', true), remove);
+  div.append(
+    input(row.variant, t('product.variant'), false, t('product.variantPlaceholder')),
+    input(bare(String(row.price || '')), el.variantPriceLabel.textContent ?? '', true, t('product.freePlaceholder')),
+    input(bare(String(row.cost || '')), el.variantCostLabel.textContent ?? '', true, '0'),
+    remove,
+  );
   return div;
 }
 
@@ -179,6 +196,18 @@ function editedProduct() {
   return editingIndex >= 0 ? state.products[editingIndex] : editingHistoryIndex !== null ? state.productHistory[editingHistoryIndex] : null;
 }
 
+/** Back: leaving changed group rows asks first (Keep editing / Discard), like a past-event edit. */
+function leaveProductEditor() {
+  if (groupForm() === openedForm) closeProductEditor();
+  else openConfirmModal(t('discard.groupMessage'), t('discard.button'), closeProductEditor, { title: t('discard.title'), cancelLabel: t('discard.keep') });
+}
+
+/** Saving deletes these products for good (their rows were removed), so it asks first; Cancel keeps editing. */
+function confirmRemoved(removed: Product[], save: () => void) {
+  if (!removed.length) save();
+  else openConfirmModal(t('product.removeVariantsMessage', { names: removed.map((product) => `'${product.name}'`).join(', ') }), t('delete'), save);
+}
+
 function closeProductEditor() {
   closeColorPicker();
   editingIndex = -1;
@@ -206,9 +235,9 @@ const pickedColor = () => {
   return color.startsWith('#') ? color : `#${color}`;
 };
 
-function saveEditedProduct() {
+function saveEditedProduct(confirmed = false) {
   if (el.editGroupToggle.checked) {
-    saveGroup();
+    saveGroup(confirmed);
     return;
   }
   const name = el.editName.value.trim().slice(0, MAX_NAME) || t('product.defaultName', { n: state.products.length + 1 });
@@ -232,6 +261,7 @@ function saveEditedProduct() {
   }
   // Group switched off: the variants whose rows were removed go, exactly as a removed row does on a group save.
   const removed = members.filter((member) => member.id !== editing?.id);
+  if (!confirmed && removed.length) return confirmRemoved(removed, () => saveEditedProduct(true));
   for (const member of removed) deleteProduct(member.name);
   // Deleting re-copies the product lists, so the edited product is found again (by id) in them.
   const editedId = editing?.id;
@@ -269,16 +299,28 @@ function saveEditedProduct() {
 
 const GROUP_ERRORS = { groupName: 'product.groupNameNeeded', noVariant: 'product.noVariant', twice: 'product.variantTwice', nameTaken: 'toast.nameTaken', groupTaken: 'product.groupTaken' } as const;
 
+/** Points at what a refused group save is about: the group name, or the first empty or clashing variant. */
+function markInvalid(error: keyof typeof GROUP_ERRORS, name: string) {
+  const names = [...el.editVariants.querySelectorAll<HTMLInputElement>('.variant-row input:first-child')];
+  const clashing = names.filter((input) => groupedName(el.editGroup.value.trim(), input.value.trim()).slice(0, MAX_NAME).toLowerCase() === name.toLowerCase());
+  const field = error === 'groupName' || error === 'groupTaken' ? el.editGroup : error === 'noVariant' ? names[0] : clashing[error === 'twice' ? 1 : 0];
+  if (!field) return el.addVariantBtn.focus();
+  field.setAttribute('aria-invalid', 'true');
+  field.focus();
+}
+
 /** Saves every row as a variant of the group, all or nothing; a removed row's product is hidden exactly like Delete. */
-function saveGroup() {
+function saveGroup(confirmed: boolean) {
   const color = members.length ? pickedColor() : chooseUniqueColor(state.products, pickedColor());
   const ids = new Set(members.map((member) => member.id));
   const plan = planGroup(el.editGroup.value, readRows(), { color, payments: selectedPayments }, members, allProducts().filter((product) => !ids.has(product.id)));
   if (!plan.ok) {
     feedback('warn');
     showToast(t(GROUP_ERRORS[plan.error], { name: plan.name ?? '' }));
+    markInvalid(plan.error, plan.name ?? '');
     return;
   }
+  if (!confirmed && plan.remove.length) return confirmRemoved(plan.remove, () => saveGroup(true));
   // Removed first, so a new row may take a removed variant's name.
   for (const product of plan.remove) deleteProduct(product.name);
   for (const product of plan.save) {
@@ -312,11 +354,15 @@ export function initProductEditor(changed: () => void) {
     });
   }
   el.editName.addEventListener('input', updatePreview);
-  el.editGroup.addEventListener('input', updatePreview);
+  el.editGroup.addEventListener('input', () => {
+    el.editGroup.removeAttribute('aria-invalid');
+    updatePreview();
+  });
   el.editGroupToggle.addEventListener('change', onGroupToggle);
   el.editVariants.addEventListener('input', (event) => {
     const input = event.target as HTMLInputElement;
     if (input.inputMode === 'numeric') input.value = bare(input.value);
+    input.removeAttribute('aria-invalid');
     updatePreview();
   });
   el.editVariants.addEventListener('click', (event) => {
@@ -333,7 +379,7 @@ export function initProductEditor(changed: () => void) {
     feedback('step');
   });
   el.removeProductBtn.addEventListener('click', removeEditedProduct);
-  el.saveProductBtn.addEventListener('click', saveEditedProduct);
+  el.saveProductBtn.addEventListener('click', () => saveEditedProduct());
   el.editPayments.addEventListener('click', onPaymentOptionClick);
-  el.closeEditBtn.addEventListener('click', closeProductEditor);
+  el.closeEditBtn.addEventListener('click', leaveProductEditor);
 }
