@@ -221,8 +221,8 @@ for (const width of [320, 360, 393, 412]) {
     await page.click('#sellMenuBtn');
     await page.click(`.tabbar .tab[data-tab="${tab}"]`); // the first tap outside only closes the menu
     await page.click(`.tabbar .tab[data-tab="${tab}"]`);
-    const state = await page.evaluate(() => ({ screen: document.querySelector('.screen.active').id, open: !document.getElementById('sellMenu').hidden, button: getComputedStyle(document.getElementById('sellMenuBtn')).display }));
-    if (state.screen !== tab || state.open || state.button !== 'none') shown.push({ tab, ...state });
+    const state = await page.evaluate(() => ({ screen: document.querySelector('.screen.active').id, open: !document.getElementById('sellMenu').hidden, button: Boolean(document.getElementById('sellMenuBtn').offsetParent) }));
+    if (state.screen !== tab || state.open || state.button) shown.push({ tab, ...state });
   }
   check('the ⋮ menu is only on Sell and never stays open on another tab', !shown.length, shown);
 

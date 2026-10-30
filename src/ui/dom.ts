@@ -6,10 +6,11 @@ const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) 
 
 export const el = {
   grid: byId<HTMLDivElement>('grid'),
-  brand: byId<HTMLDivElement>('brand'),
+  sellTitle: byId<HTMLHeadingElement>('sellTitle'),
   stats: byId<HTMLDivElement>('stats'),
   toast: byId<HTMLDivElement>('toast'),
   openProductEdit: byId<HTMLButtonElement>('openProductEdit'),
+  productsAddBtn: byId<HTMLButtonElement>('productsAddBtn'),
   sellMenuBtn: byId<HTMLButtonElement>('sellMenuBtn'),
   sellMenu: byId<HTMLDivElement>('sellMenu'),
   autoSortToggle: byId<HTMLInputElement>('autoSortToggle'),
@@ -273,10 +274,8 @@ export function activeScreenId() {
 
 /** Shows the header buttons that make sense for `screenId`. */
 export function updateHeaderActions(screenId = activeScreenId()) {
-  el.openProductEdit.style.display = screenId === 'salesScreen' || screenId === 'productHistoryScreen' ? 'inline-grid' : 'none';
-  el.sellMenuBtn.style.display = screenId === 'salesScreen' ? 'inline-grid' : 'none';
-  // Screens with no header button (or wordmark) drop the empty 44px row instead of leaving a gap above their title.
-  el.brand.parentElement!.hidden = screenId !== 'salesScreen' && screenId !== 'productHistoryScreen';
+  // The fixed header row is Sell's page header; every other screen has its own in the page, in the same place.
+  el.sellTitle.parentElement!.hidden = screenId !== 'salesScreen';
   if (screenId !== 'salesScreen') closeSellMenu();
 }
 
@@ -320,7 +319,5 @@ export function openScreen(screenId: string) {
   const tab = document.querySelector(`.tabbar .tab[data-tab="${screenId}"]`) ? screenId : PARENT_TAB[screenId];
   if (tab) document.querySelectorAll('.tabbar .tab').forEach((button) => button.classList.toggle('active', button.getAttribute('data-tab') === tab));
   el.stats.style.display = screenId === 'salesScreen' ? '' : 'none';
-  // The "CNTR" wordmark only earns its place on Sell; every other screen has its own title.
-  el.brand.style.display = screenId === 'salesScreen' ? '' : 'none';
   updateHeaderActions(screenId);
 }

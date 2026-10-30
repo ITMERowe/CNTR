@@ -657,6 +657,7 @@ function wireNavigation() {
 
 function wireHeader() {
   onClick(el.openProductEdit, () => openProductEditor(-1));
+  onClick(el.productsAddBtn, () => openProductEditor(-1));
 
   // Sell's ⋮ menu: Sort by best sellers, Compact tiles. Closes on a tap outside it, Escape or Android back.
   onClick(el.sellMenuBtn, () => {

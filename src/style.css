@@ -125,7 +125,7 @@ body {
 /* No square corners, even on a transparent wrapper: the tutorial's spotlight and focus rings follow an element's
    radius. Zero specificity, so a component's own radius wins. Rows with a divider line and clipped (ellipsis)
    text are left out: a radius there would bend the divider's ends or shave letters. */
-:where(.hero, .payment-options, .tab, .event-name, #compareEventCard, .field, .field-row, .field-hint, .checklist, .check-group, .check-group-head, .check-variants, .variant, .variant-meta, .tile-head, .tile-group-head, .tile-group-title, .tile-group-pays, .tile-pay, .pay, .page-header, .card-head, .sheet-header, .sheet-actions, .report-hero, .group, .product-section, .product-group, .stack, .list, .form, .split, .kpi-row, .variants, .variant-list, .variant-row, .form-part, .event-actions, .event-name-row, .topbar-row, .brand, .empty, .rank, .product-row, .product-toggle-btn, .page, .list-main, .rank-main, .rank-meta, .split-item, .split-legend, .tile-meta, .topbar-actions, .products-day-head, .cmp) {
+:where(.hero, .payment-options, .tab, .event-name, #compareEventCard, .field, .field-row, .field-hint, .checklist, .check-group, .check-group-head, .check-variants, .variant, .variant-meta, .tile-head, .tile-group-head, .tile-group-title, .tile-group-pays, .tile-pay, .pay, .page-header, .card-head, .sheet-header, .sheet-actions, .report-hero, .group, .product-section, .product-group, .stack, .list, .form, .split, .kpi-row, .variants, .variant-list, .variant-row, .form-part, .event-actions, .event-name-row, .topbar-row, .empty, .rank, .product-row, .product-toggle-btn, .page, .list-main, .rank-main, .rank-meta, .split-item, .split-legend, .tile-meta, .topbar-actions, .products-day-head, .cmp) {
   border-radius: var(--r-sm);
 }
 
@@ -199,29 +199,19 @@ p {
 }
 
 .topbar {
-  /* Sides: a landscape phone puts its camera cutout or 3-button nav bar on the left/right edge. */
-  padding: calc(env(safe-area-inset-top) + var(--s3)) calc(var(--s4) + env(safe-area-inset-right)) var(--s3) calc(var(--s4) + env(safe-area-inset-left));
+  /* Sides: a landscape phone puts its camera cutout or 3-button nav bar on the left/right edge. Off Sell it holds only the top inset. */
+  padding: env(safe-area-inset-top) calc(var(--s4) + env(safe-area-inset-right)) 0 calc(var(--s4) + env(safe-area-inset-left));
   background: var(--bg);
   z-index: 4;
 }
 
+/* Sell's page header, in the same place and size as every other screen's .page-header (.page's top padding + 52px + gap). */
 .topbar-row {
   display: flex;
   align-items: center;
-  gap: var(--s3);
-  min-height: 44px;
-}
-
-.brand {
-  font-size: var(--fs-md);
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.32em;
-}
-
-/* Off Sell, the header's + lines up with the centred page column below it (608px = .page's 640px less its padding). */
-.app:has(#salesScreen:not(.active)) .topbar-row {
-  max-width: 608px;
-  margin: 0 auto;
+  gap: var(--s2);
+  min-height: 52px;
+  margin: var(--s2) 0 var(--s3);
 }
 
 .topbar-actions {
@@ -318,7 +308,7 @@ p {
 .hero {
   display: flex;
   flex-direction: column;
-  padding: var(--s3) 0 var(--s1);
+  padding: 0 0 var(--s4);
 }
 
 .eyebrow {
@@ -348,15 +338,26 @@ p {
 
 /* Phone landscape: the header and revenue share one row, so more than one row of tiles fits. */
 @media (max-height: 500px) {
-  .topbar {
-    display: flex;
-    flex-direction: row-reverse;
-    align-items: center;
-    gap: var(--s4);
+  /* Title, revenue, then the buttons, in one 52px row at the same place as the other screens' headers. */
+  .topbar-row:not([hidden]) {
+    display: contents;
   }
 
-  .topbar-row {
-    flex: 1;
+  .app:has(#salesScreen.active) .topbar {
+    display: flex;
+    align-items: center;
+    gap: var(--s4);
+    min-height: calc(env(safe-area-inset-top) + var(--s2) + 52px + var(--s3));
+    padding-top: calc(env(safe-area-inset-top) + var(--s2));
+    padding-bottom: var(--s3);
+  }
+
+  .topbar .page-title {
+    flex: none;
+  }
+
+  .topbar-actions {
+    order: 1;
   }
 
   .hero {
@@ -1492,10 +1493,6 @@ p {
   margin-block: calc(-1 * var(--s2));
 }
 
-.product-edit-btn > .sale-bar {
-  margin-block: calc(-1 * var(--s3));
-}
-
 .pay-chip {
   display: inline-flex;
   align-items: center;
@@ -1550,7 +1547,7 @@ p {
   place-items: center;
 }
 
-/* Products screen: sections (On the counter / Hidden) of rows you tap to edit */
+/* Products screen: one card of rows (and a Hidden section) you tap to edit */
 .product-section-title {
   margin: 0 0 var(--s1) 0;
   font-size: var(--fs-sm);
@@ -1564,27 +1561,56 @@ p {
   color: var(--text-3);
 }
 
+/* A product (or a whole group) in one row: its colour as a slim bar on the left, inset so neighbours' bars stay apart. */
+.product-item,
+.product-group {
+  position: relative;
+}
+
 .product-item {
   display: flex;
   align-items: center;
   gap: var(--s2);
-  border-bottom: 1px solid var(--line);
+  min-height: 64px;
   animation: rise var(--dur-2) var(--ease-out) both;
   animation-delay: calc(min(var(--i, 0), 8) * 30ms);
 }
 
-.product-item:last-child {
-  border-bottom: 0;
+:is(.product-item, .product-group)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--s3);
+  bottom: var(--s3);
+  width: 4px;
+  border-radius: var(--r-pill);
+  background: var(--bar);
+}
+
+/* A divider row: square, so the line above it stays straight (DESIGN: divider rows are the exception to "nothing square"). */
+.product-group {
+  border-radius: 0;
+}
+
+.product-group .product-item::before {
+  content: none;
+}
+
+/* One divider between neighbours, never a double line. */
+#productHistoryList .list-card > * + *,
+.product-group > .product-item {
+  border-top: 1px solid var(--line);
 }
 
 .product-edit-btn {
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: center;
-  gap: var(--s3);
-  min-height: 72px;
-  padding: var(--s3) 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  align-self: stretch;
+  padding: var(--s3) 0 var(--s3) var(--s4);
   text-align: left;
   border-radius: var(--r-sm);
   transition: background-color var(--dur-tap);
@@ -1594,40 +1620,49 @@ p {
   background: var(--surface-2);
 }
 
-.product-item-main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.product-item-main .list-title {
+.product-edit-btn .list-title {
   white-space: normal;
   overflow-wrap: anywhere;
 }
 
+/* Price · profit, then the payment methods; the methods drop to a 2nd line rather than being cut off. */
 .product-item-sub {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--s3);
   font-size: var(--fs-xs);
+  line-height: var(--lh-body);
   color: var(--text-3);
 }
 
-.product-item-methods {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s1);
-  margin-top: 2px;
+.product-pays {
+  display: inline-flex;
+  gap: var(--s2);
 }
 
-/* Products screen: a group's variants indented under its name (like the expense sheet), so where the group ends is plain */
+/* A payment method as a small labelled dot (the dot alone never carries the meaning). */
+.pay-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  white-space: nowrap;
+}
+
+.pay-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--chip-color, var(--text-3));
+}
+
+/* Group header: name, variant count and the payments the variants share; tap to fold. Variants sit indented under it. */
 .product-group-title {
   display: flex;
   align-items: center;
   gap: var(--s2);
-  min-height: 48px;
-  padding: var(--s2) 0;
-  font-size: var(--fs-md);
-  font-weight: var(--fw-bold);
-  color: var(--text);
+  min-height: 64px;
+  padding: var(--s3) 0 var(--s3) var(--s4);
   list-style: none;
   cursor: pointer;
 }
@@ -1636,16 +1671,36 @@ p {
   display: none;
 }
 
+.product-group-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.product-group-name {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
+  overflow-wrap: anywhere;
+}
+
 .product-group-count {
   font-size: var(--fs-xs);
   font-weight: var(--fw-regular);
   color: var(--text-3);
 }
 
+/* Centred in the same 48px column as the rows' switches. */
 .product-group-title .icon {
+  flex: none;
   width: 18px;
   height: 18px;
-  margin-left: auto;
+  margin: 0 15px;
   color: var(--text-3);
   transform: rotate(-90deg);
   transition: transform var(--dur-2) var(--ease-out);
@@ -1659,12 +1714,8 @@ p {
   margin-left: var(--s4);
 }
 
-.product-group + * {
-  border-top: 1px solid var(--line);
-}
-
 #productHistoryList .product-section + .product-section {
-  margin-top: var(--s2);
+  margin-top: var(--s3);
 }
 
 .switch-track {

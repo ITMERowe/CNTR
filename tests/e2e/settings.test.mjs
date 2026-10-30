@@ -102,12 +102,12 @@ const list = await run(page, `${H}
     counter: rows('counter'), hidden: rows('hidden'),
     heads: [...document.querySelectorAll('#productHistoryList .product-section-title')].map((h) => h.textContent),
     pinText: pin.textContent, deleteButtons: document.querySelectorAll('#productHistoryList .product-delete-btn, #productHistoryList .icon-btn-danger').length,
-    addButton: !!document.getElementById('addProductBtn'),
+    addButton: !document.getElementById('addProductBtn') && !!document.getElementById('productsAddBtn').offsetParent,
   };
 `);
-check('Products split into On the counter and Hidden, with counts', list.counter.join() === 'Gacha,Pin' && list.hidden.join() === 'Old badge' && list.heads.join() === 'On the counter · 2,Hidden · 1', list);
+check('Products: the counter first (no heading of its own), then Hidden with its count', list.counter.join() === 'Gacha,Pin' && list.hidden.join() === 'Old badge' && list.heads.join() === 'Hidden · 1', list);
 check('a row shows price, profit per item and its payment methods', /Rp 5\.000/.test(list.pinText) && /profit Rp 4\.000/.test(list.pinText) && /E-wallet/.test(list.pinText), list.pinText);
-check('no delete buttons on rows; an Add product button at the end', list.deleteButtons === 0 && list.addButton, list);
+check('no delete buttons on rows; Add product is the + in the page header (no second one at the end)', list.deleteButtons === 0 && list.addButton, list);
 
 // 3. Tapping the switch moves a product between sections; tapping a row opens the editor
 const moves = await run(page, `${H}

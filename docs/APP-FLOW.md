@@ -13,8 +13,8 @@ How a seller moves through CNTR, screen by screen. Code-level navigation (`openS
 | Tab | What it's for |
 |---|---|
 | **Event** | The one live event: totals, day cards, expenses, Products card (days with sales only), End day / End event |
-| **Products** | Every product: on the counter or hidden, groups foldable; tap a row to edit, + to add |
-| **Sell** (home) | Revenue hero + one tile per product or group; tap a payment half to sell, − to undo |
+| **Products** | Every product: on the counter, then hidden; groups foldable; tap a row to edit, + (top right) to add |
+| **Sell** (home) | Title row (+ to add, ⋮ options), revenue hero, then one tile per product or group; tap a payment half to sell, − to undo |
 | **History** | Past events (tap to open, edit or compare) and recent sales |
 | **Settings** | Event, Money, Looks, Sound, Sales data, Backup, About |
 

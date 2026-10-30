@@ -49,26 +49,33 @@ interface ProductListProps {
   onAdd: () => void;
 }
 
-/** One product: tap the row to edit; the switch puts it on or takes it off the Sell tab. */
-function ProductRow({ product, active, index, onEdit, onToggle }: { product: Product; active: boolean; index: number; onEdit: (name: string) => void; onToggle: (name: string) => void }) {
+/** Payment methods as small labelled dots (a group shows them once, on its header). */
+function PayDots({ methods }: { methods: string[] }) {
   return (
-    <div class="product-item" style={{ '--i': index }}>
+    <span class="product-pays">
+      {methods.map((method) => (
+        <span class={`pay-dot ${paymentClass(method)}`} key={method}>
+          {method}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** One product: tap the row to edit; the switch puts it on or takes it off the Sell tab. A variant leaves its colour and payments to the group header. */
+function ProductRow({ product, active, index, variant, onEdit, onToggle }: { product: Product; active: boolean; index: number; variant: boolean; onEdit: (name: string) => void; onToggle: (name: string) => void }) {
+  const free = product.price === 0;
+  return (
+    <div class="product-item" style={{ '--i': index, '--bar': variant ? undefined : product.color }}>
       <button class="product-edit-btn" type="button" data-name={product.name} aria-label={t('edit.named', { name: product.name })} onClick={() => onEdit(product.name)}>
-        <span class="sale-bar" style={{ background: product.color }} aria-hidden="true" />
-        <span class="product-item-main">
-          <strong class="list-title">{variantLabel(product)}</strong>
-          <span class="product-item-sub">
-            {/* Free (price 0), as on its Sell tile; its profit only matters when it has a cost. */}
-            {product.price === 0 ? FREE_PAYMENT : fmt(product.price)}
-            {product.price === 0 && !product.cost ? '' : ` · ${t('product.profitEach', { amount: fmt(product.price - product.cost) })}`}
+        <strong class="list-title">{variantLabel(product)}</strong>
+        <span class="product-item-sub">
+          {/* Free (price 0), as on its Sell tile (one Free counter, no payments); its profit only matters when it has a cost. */}
+          <span>
+            {free ? FREE_PAYMENT : fmt(product.price)}
+            {free && !product.cost ? '' : ` · ${t('product.profitEach', { amount: fmt(product.price - product.cost) })}`}
           </span>
-          <span class="product-item-methods">
-            {productPayments(product).map((method) => (
-              <span class={`pay-chip ${paymentClass(method)}`} key={method}>
-                {method}
-              </span>
-            ))}
-          </span>
+          {!variant && !free && <PayDots methods={productPayments(product)} />}
         </span>
       </button>
       <button
@@ -87,47 +94,59 @@ function ProductRow({ product, active, index, onEdit, onToggle }: { product: Pro
 }
 
 export function ProductList({ products, activeNames, onEdit, onToggle, onAdd }: ProductListProps) {
-  const addButton = (
-    <button class="btn btn-secondary btn-block" id="addProductBtn" type="button" onClick={onAdd}>
-      <Icon name="plus" />
-      {t('add_product')}
-    </button>
-  );
   if (!products.length) {
     return (
       <>
         <section class="card">
           <EmptyState icon="package" title={t('products.noneYet')} text={t('products.emptyText')} />
         </section>
-        {addButton}
+        <button class="btn btn-secondary btn-block" id="addProductBtn" type="button" onClick={onAdd}>
+          <Icon name="plus" />
+          {t('add_product')}
+        </button>
       </>
     );
   }
+  // The counter needs no heading (it is what the page is); Hidden keeps one, with the note that explains it.
   const sections = [
-    { key: 'counter', title: t('products.counter'), note: '', items: products.filter((product) => activeNames.has(product.name)) },
+    { key: 'counter', title: '', note: '', items: products.filter((product) => activeNames.has(product.name)) },
     { key: 'hidden', title: t('products.hidden'), note: t('products.hiddenNote'), items: products.filter((product) => !activeNames.has(product.name)) },
   ].filter((section) => section.items.length);
   return (
     <>
       {sections.map((section) => (
         <section class="product-section" data-section={section.key} key={section.key}>
-          <h2 class="product-section-title">
-            {section.title} · {section.items.length}
-          </h2>
+          {section.title && (
+            <h2 class="product-section-title">
+              {section.title} · {section.items.length}
+            </h2>
+          )}
           {section.note && <p class="product-section-note">{section.note}</p>}
           <div class="list list-card">
             {/* A group's variants sit together under its name. */}
             {groupTiles(section.items).map((tile) => {
+              const grouped = Boolean(tile[0].group);
               const rows = tile.map((product) => (
-                <ProductRow key={product.name} product={product} active={section.key === 'counter'} index={section.items.indexOf(product)} onEdit={onEdit} onToggle={onToggle} />
+                <ProductRow key={product.name} product={product} active={section.key === 'counter'} index={section.items.indexOf(product)} variant={grouped} onEdit={onEdit} onToggle={onToggle} />
               ));
-              if (!tile[0].group) return rows;
+              if (!grouped) return rows;
+              // Variants share colour and payments; a Free variant has none of its own, so the header reads a paid one.
+              const paid = tile.find((product) => product.price > 0);
               return (
                 // Open by default; a tap on the name folds it (re-renders keep what the user chose).
-                <details class="product-group" key={`group:${tile[0].group.toLowerCase()}`} open>
+                <details class="product-group" key={`group:${tile[0].group!.toLowerCase()}`} style={{ '--bar': tile[0].color }} open>
                   <summary class="product-group-title">
-                    <span>{tile[0].group}</span>
-                    <span class="product-group-count">{tile.length}</span>
+                    <span class="product-group-main">
+                      <span class="product-group-name">
+                        <strong>{tile[0].group}</strong>
+                        <span class="product-group-count">{tile.length}</span>
+                      </span>
+                      {paid && (
+                        <span class="product-item-sub">
+                          <PayDots methods={productPayments(paid)} />
+                        </span>
+                      )}
+                    </span>
                     <Icon name="chevron-down" />
                   </summary>
                   {rows}
@@ -137,7 +156,6 @@ export function ProductList({ products, activeNames, onEdit, onToggle, onAdd }: 
           </div>
         </section>
       ))}
-      {addButton}
     </>
   );
 }

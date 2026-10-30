@@ -191,5 +191,38 @@ for (const width of [360, 412]) for (const compact of [false, true]) {
   await page.close();
 }
 
+// One page header everywhere: every tab's title row starts at the same top, is the same height, and its 26px title text sits
+// at the same height (Sell's is the fixed header row, the others are in the page). Products rows stay one compact line pair.
+for (const [width, height] of [[360, 640], [412, 915]]) {
+  const page = await browser.newPage({ viewport: { width, height } });
+  await page.goto(URL);
+  await page.evaluate((p) => {
+    localStorage.clear();
+    localStorage.cntrProducts = JSON.stringify([...JSON.parse(p), { name: 'Print A3', price: 30000, cost: 9000, color: '#f76495', group: 'Print' }, { name: 'Print A4', price: 0, cost: 0, color: '#f76495', group: 'Print' }]);
+  }, SAMPLE_PRODUCTS);
+  await page.reload();
+  await sleep(600);
+  const heads = {};
+  for (const tab of ['eventScreen', 'productHistoryScreen', 'salesScreen', 'historyScreen', 'settingsScreen']) {
+    await page.click(`.tabbar .tab[data-tab="${tab}"]`);
+    await sleep(450);
+    heads[tab] = await page.evaluate(() => {
+      const row = document.querySelector('.screen.active :is(.page-header, .event-name-row)') ?? document.querySelector('.topbar-row');
+      const title = row.querySelector('.event-name-text, .page-title');
+      const range = document.createRange();
+      range.selectNodeContents(title);
+      const [r, t] = [row.getBoundingClientRect(), range.getBoundingClientRect()];
+      return `${Math.round(r.top)}/${Math.round(r.height)}/${Math.round(t.top)}/${getComputedStyle(title).fontSize}`;
+    });
+  }
+  check(`${width}x${height}: all five tabs' title rows have the same top, height, title position and size`, new Set(Object.values(heads)).size === 1 && heads.salesScreen.endsWith('/26px'), heads);
+  await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
+  await sleep(450);
+  const rows = await page.evaluate(() => [...document.querySelectorAll('#productHistoryList :is(.product-item, .product-group-title)')].map((n) => Math.round(n.getBoundingClientRect().height)));
+  // 64px: name + one meta line; a narrow phone may wrap the payment methods to a 2nd meta line.
+  check(`${width}x${height}: Products rows are 64-${width > 360 ? 72 : 88}px (a product, a variant or a group header)`, rows.length > 5 && rows.every((h) => h >= 64 && h <= (width > 360 ? 72 : 88)), rows);
+  await page.close();
+}
+
 await browser.close();
 done();

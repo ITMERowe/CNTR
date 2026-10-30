@@ -63,13 +63,15 @@ One family: Plus Jakarta Sans (bundled variable font, `--font`).
 ## Layout
 
 - Pages max 640px wide, centred; sheets max 520px. Sell grid: 1 column, 2 from 720px, 3 from 1080px.
-- Short landscape (max-height 500px): header and revenue share one row.
+- Short landscape (max-height 500px): Sell's title, revenue and buttons share one header row.
 - Touch targets >= 44x44px (icon buttons 44px, buttons 48px tall, small visual controls grow their hit area with an absolute `::after`).
 - Safe areas: header, content, tab bar (`--tabbar-h` 68px) and sheets pad with `env(safe-area-inset-*)`.
 - Must fit at 320-360px wide (layout test runs 320, 360, 412 and 892 wide, both themes, English and Indonesian).
 
 ## Components
 
+- **Page header (every screen):** one row, 52px tall, starting `--s2` below the top safe-area inset: title (`.page-title`, `--fs-xl` bold, one line with ellipsis) on the left, 44px icon buttons on the right of the same row; a sub-screen's back button sits first in that row. Sell's row is the fixed `.topbar-row` (title "Sell", + and ⋮), with the revenue hero directly under it; Products has + ; Event's title is the event's name (`.event-name-row`, tap to rename). No bar or label above the title. Landscape: see Layout. The layout test checks that all five tabs' rows have the same top, height and title position.
+- **Product list (Products tab):** one card (`--surface-1`, `--line` border, `--r-lg`); rows split by single `--line` dividers. A row is >= 64px: a slim 4px colour bar (inset `--s3` top and bottom, `--r-pill`), name `--fs-md` bold, one meta line `--fs-xs` `--text-3`: price · profit, then the payment methods as labelled 6px dots (they wrap to a 2nd line on narrow phones rather than cut off); a Free product says "Free" with no methods. The on/off switch (`role=switch`) on the right; tap the row to edit. **Groups:** a header row (one bar for the whole group, name + variant count, the shared payments once, chevron in the switch column; tap to fold), its variants indented `--s4` with name and price · profit only. Hidden products follow under "Hidden · N" with the note that explains it. Add is the header's +; the card-less "Add product" button shows only in the empty state.
 - **Tile:** product colour, `--r-lg`, `--s3` padding. Name `--fs-md` bold (over 14 chars `--fs-sm`, over 22 also wraps to 2 lines), price `--fs-sm`, payment halves with label (`--fs-xs` caps) and count (`--fs-xl`). Compact tiles: no price, one row per half.
 - **Sell button (`.pay-add`), tactile:** at rest exactly the flat half (`--ink-faint`, `--r-md`, same size) plus a 2px bottom edge, `inset 0 -2px 0 var(--ink-soft)`, inside the box so nothing moves. Pressed (`:active`): the edge flattens to 0, the face sinks 1px and scales to 0.97 (`--dur-tap`). A sold compact cell keeps its `--ink-line` ring with the edge (`var(--edge)`).
 - **Group tile:** group title `--fs-xl` (long ones `--fs-lg`), one pencil; one row per variant: name `--fs-md` + price `--fs-xs`, halves sell on tap (no + icon), counts `--fs-lg`. **Compact:** the name on its own line, payment labels once as column headers, rows 44px: variant name `--fs-sm` on one line (ellipsis) with its price `--fs-xs` under it; unsold counts `--fs-md` regular, sold `--fs-lg` bold with an `--ink-line` ring. **Folded:** tap the name row; only the header shows, chevron turned.
