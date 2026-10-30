@@ -277,6 +277,11 @@ p {
   margin-bottom: var(--s3);
 }
 
+/* Sell's title is the wordmark (owner): same row, size and baseline as every tab's title, spaced out. */
+.page-title.brand {
+  letter-spacing: 0.32em;
+}
+
 .page-title {
   flex: 1;
   min-width: 0;
