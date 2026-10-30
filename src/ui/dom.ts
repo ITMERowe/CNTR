@@ -174,9 +174,9 @@ export function openConfirmModal(message: string, confirmLabel: string, onConfir
   };
 }
 
-/** A message that must not vanish like a toast (errors, results). One OK button. */
+/** A message that must not vanish like a toast (errors, results). One Close button. */
 export function showMessage(title: string, message: string) {
-  openConfirmModal(message, 'OK', () => {}, { title, danger: false });
+  openConfirmModal(message, t('close'), () => {}, { title, danger: false });
   el.confirmModalCancelBtn.hidden = true;
 }
 

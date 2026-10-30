@@ -387,6 +387,14 @@ for (const width of [412, 1280]) {
     return { text: name.textContent, whole: name.scrollWidth <= name.clientWidth, minTarget: Math.min(...buttons), sold: [...document.querySelectorAll('.tile-group .pay.is-sold')].map((p) => `${p.closest('.variant').dataset.variant}/${p.dataset.payment}`).join() };
   });
   check('360px compact: a 16-character group name is not cut, every sell and undo target at least 44px, only the sold cell is marked', view.text === 'Fanservice Booth' && view.whole && view.minTarget >= 44 && view.sold === 'Fanservice Booth Pat/QRIS', view);
+  // Each compact row shows its price under the name, in full ink, inside the 44px row (no taller), nothing sideways.
+  const rows = await page.evaluate(() => [...document.querySelectorAll('.tile-group .variant')].map((v) => {
+    const price = v.querySelector('.product-price');
+    const r = v.getBoundingClientRect();
+    const p = price.getBoundingClientRect();
+    return { price: price.offsetParent ? price.textContent : null, opacity: getComputedStyle(price).opacity, height: Math.round(r.height), inside: p.top >= r.top - 0.5 && p.bottom <= r.bottom + 0.5, wide: document.documentElement.scrollWidth > innerWidth };
+  }));
+  check('360px compact: every variant row shows its price, full ink, inside a 44px row, no sideways scroll', rows.length === 3 && rows.every((r) => r.price === 'Rp 25.000' && r.opacity === '1' && r.height <= 44 && r.inside && !r.wide), rows);
   await page.close();
 }
 

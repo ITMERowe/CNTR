@@ -38,6 +38,7 @@
   --r-sm: 10px;
   --r-md: 14px;
   --r-lg: 20px;
+  --r-pill: 999px; /* chips, switches, toasts, handles */
   --s1: 4px;
   --s2: 8px;
   --s3: 12px;
@@ -54,6 +55,17 @@
   --dur-1: 200ms;
   --dur-2: 280ms;
   --dur-3: 420ms;
+
+  /* Type: one family, 5 sizes, 2 weights, 2 line-heights. The revenue figures are fluid (they shrink long amounts). */
+  --fs-xs: 12px; /* labels, captions, meta */
+  --fs-sm: 14px; /* secondary text, notes */
+  --fs-md: 16px; /* body, buttons, row and card titles */
+  --fs-lg: 20px; /* sheet titles, tile names, report numbers */
+  --fs-xl: 26px; /* page titles, single-tile counts, group titles */
+  --fw-regular: 500;
+  --fw-bold: 700;
+  --lh-tight: 1.15; /* headings, names, numbers */
+  --lh-body: 1.45; /* sentences and paragraphs */
 
   --on-negative: #1d0806;
   --tabbar-h: 68px;
@@ -102,8 +114,9 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-body);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
 }
@@ -199,8 +212,8 @@ p {
 }
 
 .brand {
-  font-size: 15px;
-  font-weight: 800;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.32em;
 }
 
@@ -276,8 +289,9 @@ p {
 .page-title {
   flex: 1;
   min-width: 0;
-  font-size: 26px;
-  font-weight: 800;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.025em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -307,8 +321,8 @@ p {
 }
 
 .eyebrow {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -317,9 +331,9 @@ p {
 .hero-figure {
   /* Shrinks long amounts (--chars is set by the view) to fit the screen width. */
   font-size: min(clamp(40px, 12vw, 52px), calc((min(100vw, 520px) - 40px) / (var(--chars, 1) * 0.6)));
-  font-weight: 800;
+  font-weight: var(--fw-bold);
   letter-spacing: -0.035em;
-  line-height: 1.08;
+  line-height: var(--lh-tight);
   margin-top: var(--s1);
   white-space: nowrap;
   overflow: hidden;
@@ -363,7 +377,7 @@ p {
 
 .hero-figure-symbol {
   font-size: 0.45em;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--text-3);
 }
 
@@ -373,8 +387,8 @@ p {
   flex-wrap: wrap;
   gap: var(--s2);
   margin-top: var(--s2);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
   color: var(--text-2);
 }
 
@@ -451,8 +465,8 @@ p {
   min-height: 48px;
   padding: 0 var(--s5);
   border-radius: var(--r-md);
-  font-weight: 700;
-  font-size: 15px;
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
   transition: background-color var(--dur-tap) var(--ease-out), transform var(--dur-tap) var(--ease-out), opacity var(--dur-1);
 }
 
@@ -549,10 +563,10 @@ p {
   min-width: 0;
   /* Never wider than one payment button below (tile-pay's two 1fr columns, same gap): matches the clicker it names. */
   max-width: calc((100cqw - var(--s2)) / 2);
-  font-size: 18px;
-  font-weight: 800;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.02em;
-  line-height: 1.2;
+  line-height: var(--lh-tight);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -560,7 +574,7 @@ p {
 
 /* A long name shrinks first; a very long one also wraps to a 2nd line (SalesGrid.tsx picks the class by length). */
 .product-name.is-long {
-  font-size: 14px;
+  font-size: var(--fs-sm);
 }
 
 .product-name.is-wrap {
@@ -573,8 +587,8 @@ p {
 
 .product-price {
   flex-shrink: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
   opacity: 0.78;
 }
 
@@ -631,12 +645,12 @@ p {
   gap: var(--s2);
   min-height: 44px;
   padding: 0 var(--s4);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--line-strong);
   background: var(--surface-1);
   color: var(--text-2);
-  font-weight: 700;
-  font-size: 14px;
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
   transition: background-color var(--dur-tap), transform var(--dur-tap) var(--ease-out);
 }
 
@@ -692,8 +706,8 @@ p {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -721,9 +735,9 @@ p {
 
 .payment-value {
   display: block;
-  font-size: 26px;
-  font-weight: 800;
-  line-height: 1.08;
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
@@ -810,11 +824,11 @@ p {
 
 /* The group's name heads its tile: a size above its variants' names (15px), long ones a step down. */
 .tile-group .group-name:not(.is-long) {
-  font-size: 26px;
+  font-size: var(--fs-xl);
 }
 
 .tile-group .group-name.is-long {
-  font-size: 18px;
+  font-size: var(--fs-lg);
 }
 
 .tile-group-heading {
@@ -848,8 +862,8 @@ p {
 
 .tile-group-sold {
   flex-shrink: 0;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
 }
 
 .tile-group-toggle .icon {
@@ -905,11 +919,11 @@ p {
 
 /* The variant's name is a step below the group's, so the group reads first. */
 .variant .product-name:not(.is-long) {
-  font-size: 15px;
+  font-size: var(--fs-md);
 }
 
 .variant .product-price {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   opacity: 1; /* full ink: a faded price falls under 2.6:1 on light tiles */
 }
 
@@ -924,7 +938,7 @@ p {
 }
 
 .variant .pay-label {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   letter-spacing: 0.04em;
 }
 
@@ -950,7 +964,7 @@ p {
 }
 
 .variant .payment-value {
-  font-size: 18px;
+  font-size: var(--fs-lg);
 }
 
 /* 4px in: its 44px-wide hit area stops inside the 8px gap, so it never covers a neighbouring sell button. */
@@ -959,7 +973,7 @@ p {
   bottom: var(--s1);
 }
 
-/* Compact tiles (Sell ⋮ menu): no price, and each half is one row (label, count, then −), so more tiles fit. */
+/* Compact tiles (Sell ⋮ menu): no price (a variant keeps it as a caption), and each half is one row (label, count, then −), so more tiles fit. */
 .is-compact .tile {
   padding: var(--s2);
 }
@@ -993,7 +1007,7 @@ p {
 }
 
 .is-compact .payment-value {
-  font-size: 18px;
+  font-size: var(--fs-lg);
 }
 
 .is-compact .pay-undo {
@@ -1021,7 +1035,7 @@ p {
 }
 
 .is-compact .tile-group .group-name {
-  font-size: 18px;
+  font-size: var(--fs-lg);
 }
 
 .is-compact .tile-group-title,
@@ -1039,21 +1053,35 @@ p {
 }
 
 /* Variant names a step under the group's, so the group reads first and the counts carry the row. */
+/* One line (ellipsis) with the price under it: both fit the 44px cell, so the row is no taller. Full ink, no fade. */
 .is-compact .variant .product-name {
-  font-size: 14px;
-  font-weight: 700;
+  display: block;
+  white-space: nowrap;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+.is-compact .variant .product-price {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-tight);
+}
+
+.is-compact .variant .variant-meta {
+  gap: 0;
 }
 
 /* An unsold cell is quiet; a sold one is set heavier and ringed, so the rows with sales stand out at a glance.
    A ring, not a lighter fill: lightening the cell would drop white ink under 2.6:1 on pink and yellow tiles. */
 .is-compact .variant .payment-value {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-regular);
 }
 
 .is-compact .variant .pay.is-sold .payment-value {
-  font-size: 18px;
-  font-weight: 800;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
 }
 
 .is-compact .variant .pay.is-sold .pay-add {
@@ -1085,8 +1113,8 @@ p {
   grid-column: auto;
   grid-row: auto;
   justify-content: center;
-  font-size: 11px;
-  line-height: 14px;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-tight);
   letter-spacing: 0;
 }
 
@@ -1178,13 +1206,14 @@ p {
 }
 
 .card-title {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
 }
 
 .card-note {
   color: var(--text-3);
-  font-size: 14px;
+  font-size: var(--fs-sm);
 }
 
 .page-sub {
@@ -1233,14 +1262,15 @@ p {
 }
 
 .kpi-label {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   color: var(--text-3);
 }
 
 .kpi-value {
-  font-size: 18px;
-  font-weight: 800;
+  font-size: var(--fs-lg);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -1249,11 +1279,11 @@ p {
 }
 
 .kpi-row-3 .kpi-value {
-  font-size: 18px;
+  font-size: var(--fs-lg);
 }
 
 .kpi-hint {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   white-space: nowrap;
   overflow: hidden;
@@ -1306,8 +1336,9 @@ p {
 }
 
 .list-title {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1317,7 +1348,7 @@ p {
   display: flex;
   align-items: center;
   gap: var(--s2);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   overflow: hidden;
   white-space: nowrap;
@@ -1330,8 +1361,21 @@ p {
   overflow-wrap: anywhere;
 }
 
+/* A long amount on a narrow phone moves the amount and buttons to a 2nd line, instead of squeezing the name to a letter a line. */
+.cost-item {
+  flex-wrap: wrap;
+}
+
+.cost-item .list-main {
+  flex-basis: 5em;
+}
+
+.cost-item .list-value {
+  margin-left: auto;
+}
+
 .list-value {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -1362,20 +1406,20 @@ p {
   place-items: center;
   border-radius: var(--r-md);
   background: var(--surface-2);
-  line-height: 1.15;
+  line-height: var(--lh-tight);
   text-align: center;
 }
 
 .row-date strong {
-  font-size: 15px;
-  font-weight: 800;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
   color: var(--text);
 }
 
 .row-date small {
   display: block;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -1394,7 +1438,7 @@ p {
   flex: none;
   align-self: stretch;
   width: 4px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 
 /* The bar runs the row's full height, divider to divider (cancels the row's vertical padding). */
@@ -1411,9 +1455,9 @@ p {
   align-items: center;
   gap: 6px;
   padding: 1px var(--s2) 1px 6px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   color: var(--text-2);
   background: var(--surface-3);
 }
@@ -1463,16 +1507,14 @@ p {
 /* Products screen: sections (On the counter / Hidden) of rows you tap to edit */
 .product-section-title {
   margin: 0 0 var(--s1) 0;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
   color: var(--text-3);
 }
 
 .product-section-note {
   margin: 0 0 var(--s2) 0;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
@@ -1519,7 +1561,7 @@ p {
 }
 
 .product-item-sub {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
@@ -1537,8 +1579,8 @@ p {
   gap: var(--s2);
   min-height: 48px;
   padding: var(--s2) 0;
-  font-size: 15px;
-  font-weight: 800;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
   color: var(--text);
   list-style: none;
   cursor: pointer;
@@ -1549,8 +1591,8 @@ p {
 }
 
 .product-group-count {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
   color: var(--text-3);
 }
 
@@ -1584,7 +1626,7 @@ p {
   display: block;
   width: 44px;
   height: 26px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--surface-3);
   transition: background-color var(--dur-1) var(--ease-out);
 }
@@ -1634,14 +1676,15 @@ p {
 }
 
 .empty-title {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
 }
 
 .empty-text {
   max-width: 30ch;
   color: var(--text-3);
-  font-size: 14px;
+  font-size: var(--fs-sm);
 }
 
 .empty .btn {
@@ -1689,12 +1732,12 @@ p {
 }
 
 .split-name {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .split-share {
   color: var(--text-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1702,23 +1745,23 @@ p {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
 }
 
 .split-amount small {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
   color: var(--text-3);
 }
 
 .chip {
   padding: 1px var(--s2);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--surface-3);
   color: var(--text-2);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
 }
 
 .rank {
@@ -1742,14 +1785,14 @@ p {
 .rank-name {
   flex: 1;
   min-width: 0;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .rank-count {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
 }
@@ -1758,12 +1801,12 @@ p {
   display: flex;
   justify-content: space-between;
   gap: var(--s3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   padding-left: 18px;
 }
 
 .rank-profit {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .rank-revenue {
@@ -1773,7 +1816,7 @@ p {
 .rank-track {
   height: 6px;
   margin-left: 18px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--surface-2);
   overflow: hidden;
 }
@@ -1781,7 +1824,7 @@ p {
 .rank-fill {
   display: block;
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   transform-origin: left;
   animation: grow-x var(--dur-3) var(--ease-out) both;
 }
@@ -1816,24 +1859,24 @@ p {
   min-width: 24px;
   height: 24px;
   padding: 0 var(--s2);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   display: grid;
   place-items: center;
   background: var(--text);
   color: var(--on-ink);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
 }
 
 .cmp-name {
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.3;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
   overflow-wrap: anywhere;
 }
 
 .cmp-when {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
@@ -1854,7 +1897,7 @@ p {
 
 .cmp-label {
   grid-column: 1 / -1;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   overflow-wrap: anywhere;
 }
@@ -1867,8 +1910,8 @@ p {
 }
 
 .cmp-value {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
@@ -1879,12 +1922,12 @@ p {
 
 .cmp-missing {
   color: var(--text-3);
-  font-weight: 600;
+  font-weight: var(--fw-regular);
 }
 
 .cmp-diff {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
   color: var(--text-3);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -1898,10 +1941,8 @@ p {
 
 .group-title {
   margin: 0 0 var(--s2) 0;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
   color: var(--text-3);
 }
 
@@ -1932,12 +1973,12 @@ p {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  font-weight: 600;
+  font-weight: var(--fw-regular);
 }
 
 .group-row-label small {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
   color: var(--text-3);
 }
 
@@ -1982,7 +2023,8 @@ p {
   border-radius: var(--r-sm);
   min-height: 44px;
   padding: 0 34px 0 var(--s3);
-  font-weight: 700;
+  font-size: var(--fs-sm); /* the value a step under its row's label, so "Bahasa Indonesia" fits beside it at 320px */
+  font-weight: var(--fw-bold);
   cursor: pointer;
 }
 
@@ -2043,10 +2085,8 @@ p {
 }
 
 .field-label {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   color: var(--text-3);
 }
 
@@ -2059,7 +2099,7 @@ p {
   border: 1px solid var(--line-strong);
   border-radius: var(--r-md);
   color: var(--text);
-  font-size: 15px;
+  font-size: var(--fs-md);
   outline: none;
   transition: border-color var(--dur-1), box-shadow var(--dur-1);
 }
@@ -2080,8 +2120,8 @@ p {
 
 .input-lg {
   min-height: 56px;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-regular);
 }
 
 /* Product editor: one screen of fields, so a normal product fits a small phone without scrolling. */
@@ -2130,7 +2170,7 @@ p {
 }
 
 .variant-head .field-label {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2140,7 +2180,7 @@ p {
   min-height: 44px;
   padding: 0 var(--s1);
   border-radius: var(--r-sm);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   text-overflow: ellipsis;
 }
 
@@ -2197,9 +2237,9 @@ p {
 }
 
 .swatch-name {
-  font-size: 26px;
-  line-height: 1.15;
-  font-weight: 800;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.02em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2207,19 +2247,19 @@ p {
 }
 
 .swatch-price {
-  font-size: 14px;
-  line-height: 1.3;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-regular);
   opacity: 0.78;
 }
 
 .color-text {
   flex-shrink: 0;
   padding: var(--s1) 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: rgba(0, 0, 0, 0.16);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.08em;
 }
 
@@ -2291,7 +2331,7 @@ p {
   position: relative;
   flex: 1;
   height: 14px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: linear-gradient(90deg, red, yellow, lime, aqua, blue, magenta, red);
   touch-action: none;
 }
@@ -2310,7 +2350,7 @@ p {
 .hue-value {
   min-width: 36px;
   text-align: right;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   font-variant-numeric: tabular-nums;
 }
@@ -2376,7 +2416,7 @@ p {
   width: 36px;
   height: 4px;
   margin-bottom: var(--s1);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--line-strong);
 }
 
@@ -2393,8 +2433,9 @@ p {
 }
 
 .sheet-title {
-  font-size: 18px;
-  font-weight: 800;
+  font-size: var(--fs-lg);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.015em;
 }
 
@@ -2405,7 +2446,7 @@ p {
 
 .sheet-text {
   color: var(--text-2);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   margin-top: calc(var(--s2) * -1);
 }
 
@@ -2439,8 +2480,9 @@ p {
   gap: var(--s2);
   min-width: 0;
   min-height: 44px;
-  font-size: 26px;
-  font-weight: 800;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.025em;
   color: var(--text);
   text-align: left;
@@ -2473,7 +2515,7 @@ p {
 
 .event-when {
   margin: calc(var(--s2) * -1) 0 var(--s3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
@@ -2521,17 +2563,17 @@ p {
   display: flex;
   align-items: center;
   gap: var(--s2);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .day-sub,
 .day-profit {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
 .day-revenue {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   white-space: nowrap;
 }
 
@@ -2567,7 +2609,7 @@ p {
 }
 
 .products-day-meta {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   white-space: nowrap;
 }
@@ -2619,7 +2661,7 @@ p {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .count-row .stepper {
@@ -2637,8 +2679,8 @@ p {
   display: inline-flex;
   align-items: center;
   gap: var(--s2);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   color: var(--text-2);
 }
 
@@ -2655,7 +2697,7 @@ p {
 
 .stepper-value {
   text-align: center;
-  font-weight: 800;
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
 }
 
@@ -2715,8 +2757,8 @@ body.is-editing-event .content {
   border-radius: var(--r-md);
   background: var(--surface-1);
   color: var(--text);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
 }
 
 .about-value {
@@ -2729,7 +2771,7 @@ body.is-editing-event .content {
   display: grid;
   gap: var(--s3);
   color: var(--text-2);
-  font-size: 14px;
+  font-size: var(--fs-sm);
 }
 
 .startup-error {
@@ -2861,19 +2903,19 @@ body.is-editing-event .content {
 }
 
 .check-text strong {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .check-text small {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
 .field-hint {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
@@ -2913,7 +2955,7 @@ body.is-editing-event .content {
   width: 28px;
   height: 2px;
   margin-left: -14px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--text);
   opacity: 0;
   transform: scaleX(0.4);
@@ -2934,8 +2976,8 @@ body.is-editing-event .content {
 
 .tab-label {
   position: relative;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
 }
 
 .tab.active {
@@ -2956,7 +2998,7 @@ body.is-editing-event .content {
   top: 8px;
   width: 56px;
   height: 30px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--text);
 }
 
@@ -2976,11 +3018,11 @@ body.is-editing-event .content {
   z-index: 20;
   max-width: calc(100% - 32px);
   padding: 10px var(--s4);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--text);
   color: var(--on-ink);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3072,7 +3114,7 @@ body.is-editing-event .content {
   }
 
   .kpi-row-3 .kpi-value {
-    font-size: 15px;
+    font-size: var(--fs-md);
   }
 }
 
@@ -3135,12 +3177,12 @@ body.is-editing-event .content {
 
 .tour-count {
   color: var(--text-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
 }
 
 .tour-text {
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
 }
 
 .tour-actions {

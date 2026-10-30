@@ -38,11 +38,14 @@ function scan() {
     // Text on product tiles: the owner keeps white down to 2.6:1 (see needsDarkText); everywhere else WCAG AA.
     if (ratio < (e.closest('.tile') ? 2.6 : large ? 3 : 4.5)) out.contrast.push(`${name(e)} "${e.textContent.trim().slice(0, 18)}" ${ratio.toFixed(2)}`);
   }
-  // Owner's type scale; the revenue figures are fluid (they shrink long amounts to fit) and the counter is 24px on small phones.
+  // Type scale (--fs-xs..xl in style.css); the revenue figures are fluid (they shrink long amounts to fit) and the counter is 24px on small phones.
   for (const e of document.querySelectorAll('body *')) {
     if (!visible(e) || ![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) || e.closest('.hero-figure')) continue;
     const size = parseFloat(getComputedStyle(e).fontSize);
-    if (![11, 12, 14, 15, 18, 26].includes(size) && !(size === 24 && e.matches('.payment-value') && innerWidth <= 360)) out.type.push(`${name(e)} ${size}px off the type scale`);
+    if (![12, 14, 16, 20, 26].includes(size) && !(size === 24 && e.matches('.payment-value') && innerWidth <= 360)) out.type.push(`${name(e)} ${size}px off the type scale`);
+    // Two weights: regular (500) and bold (700).
+    const weight = getComputedStyle(e).fontWeight;
+    if (weight !== '500' && weight !== '700') out.type.push(`${name(e)} weight ${weight}`);
   }
   return out;
 }
@@ -69,7 +72,7 @@ for (const [theme, language] of [['dark', 'en'], ['light', 'en'], ['dark', 'id']
     const r = await page.evaluate(scan);
     const wider = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
     const problems = [...r.overflow, ...r.small, ...r.unlabeled, ...r.contrast, ...r.type];
-    check(`${width}x${height} ${theme}${language === 'id' ? ' id' : ''} ${label}: no overflow, tap targets >= 44px, labels, contrast, type scale`, !wider && !problems.length, problems.join(' | ') || '');
+    check(`${width}x${height} ${theme}${language === 'id' ? ' id' : ''} ${label}: no overflow, tap targets >= 44px, labels, contrast, type scale and weights`, !wider && !problems.length, problems.join(' | ') || '');
   };
   // Two days of sales with a long expense, so the day cards show.
   await sellSome();
