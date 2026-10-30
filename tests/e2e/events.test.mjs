@@ -338,11 +338,13 @@ const link = await run(page, `${H}
   tab('eventScreen');
   const before = amount('#eventCard .hero-figure');
   document.getElementById('openAddExpenseBtn').click();
+  const folded = !document.getElementById('expenseProductsToggle').checked && document.getElementById('expenseProductsBody').hidden;
+  document.getElementById('expenseProductsToggle').click();
   const listed = rows().length;
   const hint = document.getElementById('expenseProductsHint').textContent;
   const rowHeight = rows()[0].getBoundingClientRect().height;
   // Focus goes to Cancel at the bottom; the sheet must still open at its top, the hint right under its label.
-  const opened = { scrollTop: document.querySelector('#expenseModalOverlay .sheet').scrollTop, hintAfter: document.getElementById('expenseProductsHint').previousElementSibling.id };
+  const opened = { scrollTop: document.querySelector('#expenseModalOverlay .sheet').scrollTop, hintFirst: document.getElementById('expenseProductsBody').firstElementChild.id };
   fill('Photocard print', '50000'); tick('Photocard');
   document.getElementById('addCostBtn').click(); await wait();
   const net = amount('#eventCard .hero-figure');
@@ -351,21 +353,24 @@ const link = await run(page, `${H}
   tab('salesScreen'); const sellProfit = amount('#stats .hero-meta span:last-child'); tab('eventScreen');
   document.querySelector('#eventCard .edit-cost').click();
   const reopened = rows().filter((r) => r.querySelector('input').checked).map((r) => r.textContent);
+  const reopenedOn = document.getElementById('expenseProductsToggle').checked;
   document.getElementById('expenseModalCancelBtn').click();
   // A past event from before ids: linking gives its product an id, saved with the edit
   tab('historyScreen'); document.querySelector('#pastEventList .event-row').click();
   const pastBefore = amount('#pastEventCard .hero-figure');
   document.getElementById('pastEventEditBtn').click();
   document.getElementById('openAddExpenseBtn').click();
+  document.getElementById('expenseProductsToggle').click();
   const pastListed = rows().map((r) => r.textContent).join();
   fill('Capsules', '20000'); tick('Gacha');
   document.getElementById('addCostBtn').click();
   document.getElementById('pastEventSaveBtn').click(); await wait(150);
   const past = stored('cntrEvents')[0];
-  return { before, listed, hint, rowHeight, opened, net, linkedId: cost.productIds?.join() === photocard.id && !!photocard.id, sellProfit, reopened: reopened.join(), pastBefore, pastListed, pastAfter: amount('#pastEventCard .hero-figure'), pastIds: past.expenses[0].productIds?.join(), pastProductId: past.products[0].id };
+  return { folded, reopenedOn, before, listed, hint, rowHeight, opened, net, linkedId: cost.productIds?.join() === photocard.id && !!photocard.id, sellProfit, reopened: reopened.join(), pastBefore, pastListed, pastAfter: amount('#pastEventCard .hero-figure'), pastIds: past.expenses[0].productIds?.join(), pastProductId: past.products[0].id };
 `);
 check('expense sheet lists the live products with the hint, rows ≥ 48px', link.listed === 8 && link.hint === "Ticked products' item cost won't be subtracted twice." && link.rowHeight >= 48, link);
-check('the expense sheet opens at its top (Name visible), with the hint directly under its label', link.opened.scrollTop === 0 && link.opened.hintAfter === 'expenseProductsLabel', link.opened);
+check('the expense sheet opens at its top (Name visible), with the hint directly under its label', link.opened.scrollTop === 0 && link.opened.hintFirst === 'expenseProductsHint', link.opened);
+check('the products list is folded behind a switch for a new expense, and open when editing a linked one', link.folded && link.reopenedOn, { folded: link.folded, reopenedOn: link.reopenedOn });
 check('a linked print expense replaces the item cost: net = before + 3 × 7.000 − 50.000', link.net === link.before + 3 * 7000 - 50000, link);
 check('the link is stored by product id', link.linkedId, link);
 check('Sell profit drops the linked item cost too', link.sellProfit === 3 * 15000 + 25000 - 12000, link);

@@ -409,9 +409,19 @@
             <input class="input" id="eventCostAmount" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off" />
           </label>
           <div class="field" id="expenseProductsField">
-            <span class="field-label" id="expenseProductsLabel" data-i18n="expense.products">For products (optional)</span>
-            <p class="field-hint" id="expenseProductsHint" data-i18n="expense.productsHint">Ticked products' item cost won't be subtracted twice.</p>
-            <div class="checklist" id="expenseProducts" role="group" aria-labelledby="expenseProductsLabel" aria-describedby="expenseProductsHint"></div>
+            <div class="group-body">
+              <label class="group-row" for="expenseProductsToggle">
+                <span class="group-row-label" id="expenseProductsLabel" data-i18n="expense.products">For products</span>
+                <span class="switch">
+                  <input type="checkbox" id="expenseProductsToggle" role="switch" />
+                  <span class="switch-track" aria-hidden="true"></span>
+                </span>
+              </label>
+            </div>
+            <div class="form-part" id="expenseProductsBody" hidden>
+              <p class="field-hint" id="expenseProductsHint" data-i18n="expense.productsHint">Ticked products' item cost won't be subtracted twice.</p>
+              <div class="checklist" id="expenseProducts" role="group" aria-labelledby="expenseProductsLabel" aria-describedby="expenseProductsHint"></div>
+            </div>
           </div>
           <div class="sheet-actions">
             <button type="button" class="btn btn-secondary" id="expenseModalCancelBtn" data-i18n="cancel">Cancel</button>

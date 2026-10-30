@@ -528,6 +528,8 @@ function openExpenseModal(id: string | null) {
   const products = linkableProducts();
   el.expenseProductsField.hidden = !products.length;
   renderView(h(ProductChecklist, { products, checked: cost?.productIds ?? [] }), el.expenseProducts);
+  // Most expenses aren't for products: the list stays folded unless this one already links some.
+  el.expenseProductsBody.hidden = !(el.expenseProductsToggle.checked = !!cost?.productIds?.length);
   updateExpenseButtonState();
   openSheet(el.expenseModalOverlay);
   lockBodyScroll();
@@ -546,7 +548,9 @@ function submitExpense() {
   // Ticked rows are indexes into the listed products; links to products no longer listed are kept.
   let products = linkableProducts();
   // A group's own box (value "on") is not a product: its variants' boxes carry the picks.
-  const ticked = new Set(checkedValues(el.expenseProducts).map(Number).filter(Number.isInteger));
+  // Switched off, the expense links nothing (earlier links included).
+  const linking = el.expenseProductsToggle.checked;
+  const ticked = new Set(linking ? checkedValues(el.expenseProducts).map(Number).filter(Number.isInteger) : []);
   if (editingPastEvent() && ticked.size) {
     // A snapshot from before ids gets them only when linked (saved with the edit): its sales' id, else a new one.
     products = products.map((product, index) => (product.id || !ticked.has(index) ? product : { ...product, id: draft!.sales.find((sale) => sale.product === product.name && sale.productId)?.productId ?? generateUUID() }));
@@ -554,7 +558,7 @@ function submitExpense() {
   }
   const listed = new Set(products.map((product) => product.id));
   const previous = activeExpenses().find((cost) => cost.id === editingExpenseId)?.productIds ?? [];
-  const productIds = [...previous.filter((id) => !listed.has(id)), ...products.filter((_, index) => ticked.has(index)).map((product) => product.id!)];
+  const productIds = !linking ? [] : [...previous.filter((id) => !listed.has(id)), ...products.filter((_, index) => ticked.has(index)).map((product) => product.id!)];
   if (editingPastEvent()) {
     const expenses = editingExpenseId
       ? draft!.expenses.map((cost) => (cost.id === editingExpenseId ? expenseRecord(cost.id, name, amount, productIds) : cost))
@@ -750,6 +754,10 @@ function wireDialogs() {
     updateExpenseButtonState();
   });
   el.expenseProducts.addEventListener('change', () => feedback('step'));
+  el.expenseProductsToggle.addEventListener('change', () => {
+    el.expenseProductsBody.hidden = !el.expenseProductsToggle.checked;
+    feedback('step');
+  });
   onClick(el.addCostBtn, submitExpense);
   onClick(el.expenseModalCloseBtn, closeExpenseModal);
   onClick(el.expenseModalCancelBtn, closeExpenseModal);

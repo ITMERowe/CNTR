@@ -194,6 +194,7 @@ for (const width of [412, 1280]) {
   // Expense sheet: ticking the group ticks all its variants; the expense links to each.
   await page.click('.tabbar .tab[data-tab="eventScreen"]');
   await page.click('#openAddExpenseBtn');
+  await page.click('label[for="expenseProductsToggle"]');
   await page.click('#expenseProducts .check-group .check-row:has(.check-all)');
   await page.fill('#eventCostName', 'Print run');
   await page.fill('#eventCostAmount', '100000');

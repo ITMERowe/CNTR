@@ -108,6 +108,8 @@ export const el = {
   addCostBtn: byId<HTMLButtonElement>('addCostBtn'),
   expenseProductsField: byId<HTMLDivElement>('expenseProductsField'),
   expenseProducts: byId<HTMLDivElement>('expenseProducts'),
+  expenseProductsToggle: byId<HTMLInputElement>('expenseProductsToggle'),
+  expenseProductsBody: byId<HTMLDivElement>('expenseProductsBody'),
   // Confirm dialog
   confirmModalOverlay: byId<HTMLDivElement>('confirmModalOverlay'),
   confirmModalTitle: byId<HTMLHeadingElement>('confirmModalTitle'),
