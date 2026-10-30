@@ -73,8 +73,9 @@ for (const width of [412, 1280]) {
     await compact();
     const tight = await size();
     await compact();
-    check(`${at} a 2-variant group is short (under 200px, compact under 160px), every sell button at least 44px`, normal.height < 200 && tight.height < 160 && !normal.small && !tight.small, { normal, tight });
-    check(`${at} compact tiles show the payment labels once, as column headers`, normal.labels === 4 && tight.labels === 2, { normal: normal.labels, tight: tight.labels });
+    // 3 variants here: about 62px per row by default (2 rows were 182px), 52px compact (2 rows were 148px).
+    check(`${at} a 3-variant group is short (under 260px, compact under 210px), every sell button at least 44px`, normal.height < 260 && tight.height < 210 && !normal.small && !tight.small, { normal, tight });
+    check(`${at} compact tiles show the payment labels once, as column headers`, normal.labels === 6 && tight.labels === 2, { normal: normal.labels, tight: tight.labels });
   }
 
   // Selling and undoing a variant.
