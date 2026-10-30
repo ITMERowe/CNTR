@@ -70,6 +70,8 @@ export interface AppSettings {
   autoSort: boolean;
   /** Sell: shorter tiles (no price, smaller counters), so more fit on screen. */
   compactTiles: boolean;
+  /** Sell: groups folded to their header row (lowercased group names). */
+  collapsedGroups: string[];
   /** Soft tones on sales, undo and finished actions (vibration is separate and always on). */
   sound: boolean;
   /** Colour theme. Resolved from the phone's own setting once, the first time there is no stored choice yet; after that it is just Light/Dark, chosen in Settings. */
