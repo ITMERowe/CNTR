@@ -6,7 +6,7 @@ import { DEFAULT_PAYMENTS, FREE_PAYMENT, PAYMENT_METHODS, paymentClass, productP
 import { deleteProduct, renameSales, saveProductHistory, saveProducts, saveSales, state } from '../state';
 import { loadSettings } from '../storage';
 import { closeColorPicker, getPickerColor, initColorPicker, setPickerColor } from './colorPicker';
-import { activeScreenId, el, openConfirmModal, openScreen, showToast } from './dom';
+import { activeScreenId, el, openConfirmModal, openScreen, showToast, wireHold } from './dom';
 import { createIconElement } from './icons';
 import { t } from '../i18n';
 import { MAX_NAME } from '../backup';
@@ -76,7 +76,7 @@ function setGroupMode(on: boolean) {
   el.productFields.hidden = on;
   el.groupNameField.hidden = el.variantsField.hidden = !on;
   el.removeProductBtn.style.display = editedProduct() || members.length ? 'grid' : 'none';
-  el.removeProductBtn.title = t(on ? 'product.deleteGroup' : 'delete_product');
+  el.removeProductBtn.title = t(on ? 'product.holdDeleteGroup' : 'product.holdDelete');
   el.removeProductBtn.setAttribute('aria-label', el.removeProductBtn.title);
 }
 
@@ -205,7 +205,7 @@ function leaveProductEditor() {
 /** Saving deletes these products for good (their rows were removed), so it asks first; Cancel keeps editing. */
 function confirmRemoved(removed: Product[], save: () => void) {
   if (!removed.length) save();
-  else openConfirmModal(t('product.removeVariantsMessage', { names: removed.map((product) => `'${product.name}'`).join(', ') }), t('delete'), save);
+  else openConfirmModal(t('product.removeVariantsMessage', { names: removed.map((product) => `'${product.name}'`).join(', ') }), t('delete'), save, { title: t('product.removeVariantsTitle') });
 }
 
 function closeProductEditor() {
@@ -217,17 +217,21 @@ function closeProductEditor() {
   onChange();
 }
 
-/** The one place a product (or a whole group) is deleted for good (the Products list only hides it from the counter). */
-function removeEditedProduct() {
-  const removed = el.editGroupToggle.checked ? members : [editedProduct()].filter((product) => product !== null);
+/** The one place a product (or a whole group) is deleted for good (the Products list only hides it from the counter).
+ *  Held Delete deletes at once; a keyboard or screen-reader press (`ask`) confirms in a dialog first. */
+function removeEditedProduct(ask: boolean) {
+  const group = el.editGroupToggle.checked;
+  const removed = group ? members : [editedProduct()].filter((product) => product !== null);
   if (!removed.length) return;
-  const name = el.editGroupToggle.checked ? el.editGroup.value.trim() || removed[0].group || removed[0].name : removed[0].name;
-  openConfirmModal(t(el.editGroupToggle.checked ? 'product.deleteGroupMessage' : 'product.deleteMessage', { name }), t('delete'), () => {
+  const name = group ? el.editGroup.value.trim() || removed[0].group || removed[0].name : removed[0].name;
+  const remove = () => {
     for (const product of removed) deleteProduct(product.name);
     feedback('remove');
     showToast(t('toast.deleted', { name }));
     closeProductEditor();
-  });
+  };
+  if (!ask) remove();
+  else openConfirmModal(t(group ? 'product.deleteGroupMessage' : 'product.deleteMessage', { name }), t('delete'), remove, { title: t(group ? 'product.deleteGroupTitle' : 'product.deleteTitle') });
 }
 
 const pickedColor = () => {
@@ -378,7 +382,7 @@ export function initProductEditor(changed: () => void) {
     row.querySelector('input')?.focus();
     feedback('step');
   });
-  el.removeProductBtn.addEventListener('click', removeEditedProduct);
+  wireHold(el.removeProductBtn, () => removeEditedProduct(false), () => removeEditedProduct(true));
   el.saveProductBtn.addEventListener('click', () => saveEditedProduct());
   el.editPayments.addEventListener('click', onPaymentOptionClick);
   el.closeEditBtn.addEventListener('click', leaveProductEditor);

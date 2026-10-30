@@ -137,7 +137,76 @@ export function openSheet(overlay: HTMLElement) {
   const sheet = overlay.querySelector<HTMLElement>('.sheet');
   // preventScroll: Cancel sits at the bottom; a long sheet must still open at its top (title and first fields).
   (sheet?.querySelector<HTMLElement>('.sheet-actions .btn-secondary') ?? sheet)?.focus({ preventScroll: true });
-  if (sheet) sheet.scrollTop = 0;
+  if (sheet) {
+    sheet.scrollTop = 0;
+    updateSheetFade(sheet);
+  }
+}
+
+/** Fades a sheet's top/bottom edge while there is more to scroll that way (`.fade-top` / `.fade-bottom` on its overlay). */
+function updateSheetFade(sheet: HTMLElement) {
+  const below = sheet.scrollHeight - sheet.clientHeight - sheet.scrollTop;
+  sheet.parentElement!.classList.toggle('fade-top', sheet.scrollTop > 1);
+  sheet.parentElement!.classList.toggle('fade-bottom', below > 1);
+}
+
+/** Keeps every sheet's scroll fade current: on scroll, and when it or its content changes size (lists growing, rotation, keyboard). */
+export function wireSheetFade() {
+  const observer = new ResizeObserver((entries) => {
+    for (const entry of entries) updateSheetFade(entry.target.closest<HTMLElement>('.sheet')!);
+  });
+  for (const sheet of document.querySelectorAll<HTMLElement>('.sheet')) {
+    sheet.addEventListener('scroll', () => updateSheetFade(sheet), { passive: true });
+    observer.observe(sheet);
+    for (const child of sheet.children) observer.observe(child);
+  }
+}
+
+/** How long a delete button must be held (matches --dur-hold in style.css). */
+export const HOLD_MS = 700;
+let holdTimer = 0;
+
+/**
+ * Hold to delete, as event handlers for a `.hold-delete` button (spread them in JSX, or wire with wireHold).
+ * A press fills the button (`.holding`) and runs `onHeld` after HOLD_MS; letting go early, sliding off or scrolling empties it.
+ * A click with no press behind it (keyboard Enter/Space, a screen reader: `detail` 0) runs `onAsk`, the confirm dialog, instead.
+ */
+export function holdToDelete(onHeld: () => void, onAsk: () => void) {
+  const stop = (event: PointerEvent) => {
+    const button = event.currentTarget as HTMLElement;
+    if (!button.classList.contains('holding')) return;
+    button.classList.remove('holding');
+    window.clearTimeout(holdTimer);
+    if (event.type === 'pointerup') showToast(t('hold.hint')); // a plain tap: say how it works
+  };
+  return {
+    onPointerDown(event: PointerEvent) {
+      if (event.button !== 0) return;
+      const button = event.currentTarget as HTMLElement;
+      // Touch captures the pointer to the button; release it so sliding off fires pointerleave and cancels.
+      if (button.hasPointerCapture(event.pointerId)) button.releasePointerCapture(event.pointerId);
+      button.classList.add('holding');
+      window.clearTimeout(holdTimer);
+      holdTimer = window.setTimeout(() => {
+        button.classList.remove('holding');
+        onHeld();
+      }, HOLD_MS);
+    },
+    onPointerUp: stop,
+    onPointerLeave: stop,
+    onPointerCancel: stop,
+    onClick(event: MouseEvent) {
+      if (event.detail === 0) onAsk();
+    },
+    onContextMenu(event: Event) {
+      event.preventDefault(); // Android's long-press menu would end the hold
+    },
+  };
+}
+
+/** holdToDelete for a plain DOM button. */
+export function wireHold(button: HTMLElement, onHeld: () => void, onAsk: () => void) {
+  for (const [name, handler] of Object.entries(holdToDelete(onHeld, onAsk))) button.addEventListener(name.slice(2).toLowerCase(), handler as EventListener);
 }
 
 /** Closes a sheet opened with openSheet: unblocks the page and returns focus to what opened it. */
@@ -149,7 +218,7 @@ export function closeSheet(overlay: HTMLElement) {
 }
 
 /** Asks before a destructive action; `onConfirm` runs only if the user confirms. */
-export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void, { title = t('are_you_sure'), danger = true, cancelLabel = t('cancel') } = {}) {
+export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void, { title, danger = true, cancelLabel = t('cancel') }: { title: string; danger?: boolean; cancelLabel?: string }) {
   const { confirmModalOverlay: overlay, confirmModalConfirmBtn: confirmBtn } = el;
   el.confirmModalTitle.textContent = title;
   el.confirmModalMessage.textContent = message;

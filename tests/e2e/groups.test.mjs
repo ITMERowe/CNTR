@@ -259,14 +259,19 @@ for (const width of [412, 1280]) {
     check(`${at} Products shows a free product as Free, not "Rp 0 · profit Rp 0"`, free === 'Free', free);
   }
 
-  // Delete on a group asks first, then removes every variant; their sales stay.
+  // Delete on a group: from the keyboard it asks (Cancel keeps it); a tap does nothing; held ~700ms it removes every variant; their sales stay.
   await openFromProducts('Print A3');
-  await page.click('#removeProductBtn');
-  const asked = await page.textContent('#confirmModalMessage');
-  await page.click('#confirmModalConfirmBtn');
-  await sleep(250);
+  await page.focus('#removeProductBtn');
+  await page.keyboard.press('Enter');
+  const asked = { title: await page.textContent('#confirmModalTitle'), text: await page.textContent('#confirmModalMessage'), label: await page.getAttribute('#removeProductBtn', 'aria-label') };
+  await page.click('#confirmModalCancelBtn');
+  const box = await page.locator('#removeProductBtn').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down(); await sleep(250); await page.mouse.up(); await sleep(150);
+  const afterTap = await names();
+  await page.mouse.down(); await sleep(900); await page.mouse.up(); await sleep(250);
   const left = await names();
-  check(`${at} deleting a group asks, then removes all its variants and keeps their sales`, asked.startsWith("Delete the group 'Print'") && left === 'Mug,Pin Big' && (await stored('cntrSales')).some((s) => s.product === 'Print A4'), { asked, left });
+  check(`${at} group Delete: Enter asks "Delete group?" (Cancel keeps it), a tap keeps it, holding removes all its variants and keeps their sales`, asked.title === 'Delete group?' && asked.text.startsWith("Delete the group 'Print'") && asked.label === 'Hold to delete group' && afterTap.includes('Print A3') && left === 'Mug,Pin Big' && (await stored('cntrSales')).some((s) => s.product === 'Print A4'), { asked, afterTap, left });
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   check(`${at} no sideways scroll`, !overflow);

@@ -66,6 +66,7 @@ import {
   showToast,
   unlockBodyScroll,
   updateHeaderActions,
+  wireSheetFade,
 } from './ui/dom';
 import { closeColorPicker } from './ui/colorPicker';
 import { hydrateIcons } from './ui/icons';
@@ -446,14 +447,18 @@ function adjustDraft(day: number, product: string, payment: string, delta: 1 | -
 function confirmDeletePastEvent() {
   const event = viewingId ? findPastEvent(viewingId) : undefined;
   if (!event) return;
-  openConfirmModal(t('deleteEvent.message', { name: event.name }), t('delete'), () =>
-    void withAutoBackup(() => {
-      if (deletePastEvent(event.id)) {
-        feedback('remove');
-        showToast(t('toast.eventDeleted'));
-      }
-      closePastEvent();
-    }),
+  openConfirmModal(
+    t('deleteEvent.message', { name: event.name }),
+    t('delete'),
+    () =>
+      void withAutoBackup(() => {
+        if (deletePastEvent(event.id)) {
+          feedback('remove');
+          showToast(t('toast.eventDeleted'));
+        }
+        closePastEvent();
+      }),
+    { title: t('deleteEvent.title') },
   );
 }
 
@@ -571,15 +576,18 @@ function submitExpense() {
   render();
 }
 
-function deleteExpense(id: string) {
+/** Held trash deletes at once; a keyboard or screen-reader press (`ask`) confirms in a dialog first. */
+function deleteExpense(id: string, ask: boolean) {
   const cost = activeExpenses().find((item) => item.id === id);
   if (!cost) return;
-  openConfirmModal(t('expense.deleteText', { name: cost.name, amount: fmt(cost.amount) }), t('delete'), () => {
+  const remove = () => {
     if (editingPastEvent()) draft = { ...draft!, expenses: draft!.expenses.filter((item) => item.id !== id) };
     else removeExpense(id);
     feedback('remove');
     render();
-  }, { title: t('expense.delete') });
+  };
+  if (!ask) remove();
+  else openConfirmModal(t('expense.deleteText', { name: cost.name, amount: fmt(cost.amount) }), t('delete'), remove, { title: t('expense.delete') });
 }
 
 // ---- Compare dialog ----
@@ -1089,6 +1097,7 @@ async function start() {
   wireHeader();
   wireSettings();
   wireDialogs();
+  wireSheetFade();
   wireBackup();
   initProductEditor(productsChanged);
   onClick(el.startTutorialBtn, confirmStartTutorial);

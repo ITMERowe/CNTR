@@ -55,6 +55,7 @@
   --dur-1: 200ms;
   --dur-2: 280ms;
   --dur-3: 420ms;
+  --dur-hold: 700ms; /* hold to delete; HOLD_MS in src/ui/dom.ts */
 
   /* Type: one family, 5 sizes, 2 weights, 2 line-heights. The revenue figures are fluid (they shrink long amounts). */
   --fs-xs: 12px; /* labels, captions, meta */
@@ -452,6 +453,34 @@ p {
   border-radius: var(--r-sm);
 }
 
+/* Hold to delete: the danger tint fills left to right while pressed (HOLD_MS); letting go empties it. */
+.hold-delete::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--negative);
+  opacity: 0.24;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-1) var(--ease-out);
+  pointer-events: none;
+}
+
+.hold-delete.holding::before {
+  transform: none;
+  transition: transform var(--dur-hold) linear;
+}
+
+.hold-delete {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.hold-delete > * {
+  position: relative; /* the icon stays over the fill */
+}
+
 .icon-btn-sm .icon {
   width: 18px;
   height: 18px;
@@ -690,12 +719,16 @@ p {
   border-radius: var(--r-md);
   background: var(--ink-faint);
   text-align: left;
-  transition: background-color var(--dur-tap) var(--ease-out), transform var(--dur-tap) var(--ease-out);
+  /* Tactile: a 2px bottom edge in the tile's own ink, inside the box (no layout shift). Pressing flattens it as the face sinks. */
+  --edge: inset 0 -2px 0 var(--ink-soft);
+  box-shadow: var(--edge);
+  transition: background-color var(--dur-tap) var(--ease-out), transform var(--dur-tap) var(--ease-out), box-shadow var(--dur-tap) var(--ease-out);
 }
 
 .pay-add:active {
+  --edge: inset 0 0 0 var(--ink-soft);
   background: var(--ink-soft);
-  transform: scale(0.97);
+  transform: translateY(1px) scale(0.97);
 }
 
 .pay-label {
@@ -1085,7 +1118,7 @@ p {
 }
 
 .is-compact .variant .pay.is-sold .pay-add {
-  box-shadow: inset 0 0 0 1.5px var(--ink-line);
+  box-shadow: inset 0 0 0 1.5px var(--ink-line), var(--edge);
 }
 
 .is-compact .tile-group .tile-edit {
@@ -1116,6 +1149,19 @@ p {
   font-size: var(--fs-xs);
   line-height: var(--lh-tight);
   letter-spacing: 0;
+}
+
+/* Exception (DESIGN.md): the two long method names are 10px, so TRANSFER / E-WALLET leave room in every tile mode. */
+/* Each keeps the 12px label's line box, so no row changes height. */
+:is([data-payment='Transfer'], [data-payment='E-wallet']) .pay-label {
+  font-size: 10px;
+  line-height: calc(var(--fs-xs) * var(--lh-body));
+}
+
+.tile-group-pays .pay-label:is([data-payment='Transfer'], [data-payment='E-wallet']) {
+  font-size: 10px;
+  line-height: calc(var(--fs-xs) * var(--lh-tight));
+  gap: 2px; /* icon to word: keeps 8px clear of the column edges on a 360px phone */
 }
 
 .is-compact .variant .pay-add {
@@ -2455,6 +2501,40 @@ p {
   grid-template-columns: 1fr 1fr;
   gap: var(--s3);
   margin-top: var(--s1);
+}
+
+/* Scroll fade: the sheet's top/bottom edge fades into its surface while there is more to scroll that way
+   (.fade-top / .fade-bottom, set by updateSheetFade in dom.ts). A surface-coloured veil, not mask-image:
+   a mask would also fade the sheet's own background into the scrim. Only scrolling sheets get it, and those are
+   at their 88dvh max-height, so the top edge sits at 100% - 88dvh. */
+.sheet-overlay::before,
+.sheet-overlay::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  width: calc(min(100%, 520px) - 2px);
+  height: var(--s6);
+  translate: -50% 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-1) var(--ease-out);
+}
+
+.sheet-overlay::before {
+  top: calc(100% - 88dvh + 1px);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  background: linear-gradient(var(--surface-1), transparent);
+}
+
+.sheet-overlay::after {
+  bottom: 0;
+  background: linear-gradient(transparent, var(--surface-1));
+}
+
+.sheet-overlay.fade-top::before,
+.sheet-overlay.fade-bottom::after {
+  opacity: 1;
 }
 
 /* A message sheet has only its OK button */

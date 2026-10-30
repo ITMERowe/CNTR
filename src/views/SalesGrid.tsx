@@ -112,7 +112,7 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit, coll
               {!folded && (
                 <div class={payments.length === 1 ? 'tile-group-pays tile-pay-single' : 'tile-group-pays'} aria-hidden="true">
                   {payments.map((payment) => (
-                    <span class="pay-label" key={payment}>
+                    <span class="pay-label" data-payment={payment} key={payment}>
                       <Icon name={PAYMENT_ICONS[payment] ?? 'banknote'} />
                       <span class="pay-name">{payment}</span>
                     </span>

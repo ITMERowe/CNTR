@@ -4,6 +4,7 @@ import { fmt } from '../formatters';
 import { paymentClass, productPayments, sortPayments } from '../payments';
 import { buildProductBreakdown, marginPercent } from '../reports';
 import type { EventCost, Product, SaleRecord } from '../types';
+import { holdToDelete } from '../ui/dom';
 import { Icon } from './Icon';
 import { Card, EmptyState, Hero, Kpi, PaymentSplit, ProductRows, profitClass } from './ReportParts';
 import { t, tn } from '../i18n';
@@ -30,7 +31,8 @@ interface Props {
   onRename?: () => void;
   onAddExpense?: () => void;
   onEditExpense?: (id: string) => void;
-  onDeleteExpense?: (id: string) => void;
+  /** `ask`: a keyboard or screen-reader press, which confirms first; a held press deletes at once. */
+  onDeleteExpense?: (id: string, ask: boolean) => void;
   onEndDay?: () => void;
   onEndEvent?: () => void;
   onGoToSell?: () => void;
@@ -222,7 +224,14 @@ export function EventScreen(props: Props) {
                     <button class="icon-btn icon-btn-sm edit-cost" type="button" data-id={cost.id} title={t('expense.edit')} aria-label={t('edit.named', { name: cost.name })} onClick={() => props.onEditExpense!(cost.id)}>
                       <Icon name="pencil" />
                     </button>
-                    <button class="icon-btn icon-btn-sm icon-btn-danger delete-cost" type="button" data-id={cost.id} title={t('expense.delete')} aria-label={t('delete.named', { name: cost.name })} onClick={() => props.onDeleteExpense!(cost.id)}>
+                    <button
+                      class="icon-btn icon-btn-sm icon-btn-danger hold-delete delete-cost"
+                      type="button"
+                      data-id={cost.id}
+                      title={t('hold.hint')}
+                      aria-label={t('hold.deleteNamed', { name: cost.name })}
+                      {...holdToDelete(() => props.onDeleteExpense!(cost.id, false), () => props.onDeleteExpense!(cost.id, true))}
+                    >
                       <Icon name="trash" />
                     </button>
                   </div>
