@@ -43,15 +43,15 @@ Dependencies point one way: `views/` and `ui/` read `state.ts`; `state.ts` never
 
 | Type | Meaning |
 |---|---|
-| `Product` | `name`, `price`, `cost`, `color`, `payments` (1–2 of `PAYMENT_METHODS` in `src/payments.ts`; missing on older data = Cash + QRIS). Optional `group`: products sharing it are one Sell tile (one row per variant) and share the group's colour and payments; the name is the full "Group Variant" and reports ignore the group. **The name is the identity key**: sales, history and reports all refer to products by name. |
-| `SaleRecord` | One tap of **+**: product name, price and cost *at the time*, payment (`Cash`/`QRIS`), timestamp. |
-| `EventCost` | An event expense: `id`, `name`, `amount`. |
+| `Product` | `name`, `price`, `cost`, `color`, `payments` (1–2 of `PAYMENT_METHODS` in `src/payments.ts`; missing on older data = Cash + QRIS). Optional `group`: products sharing it are one Sell tile (one row per variant) and share the group's colour and payments; the name is the full "Group Variant" and reports ignore the group. Products have an `id`; new sales store it as `productId`, and older sales (before ids) match by name, so names stay unique (case-insensitive). |
+| `SaleRecord` | One sell tap: product name and `productId`, price and cost *at the time*, payment (one of `PAYMENT_METHODS`, or `Free` for price 0), timestamp. |
+| `EventCost` | An event expense: `id`, `name`, `amount`, optional `productIds` (the products it pays for: in that event their per-item cost counts as 0, see `withLinkedCosts()`). |
 | `LiveEventMeta` | The live event's `id`, `name` (null = default "Event <date>"), `startedAt` and `dayBreaks` (times End day was pressed). Its sales and expenses are the live `cntrSales` / `cntrEventCosts`. |
 | `PastEvent` | A finished event: name, dates, `dayBreaks`, a `products` snapshot (colours and prices for edits), `sales`, `expenses`. |
 
 Event maths live in `src/events.ts` (pure, Node-tested): `splitDays()` (a sale belongs to the first day whose break is after it), `todaySales()`, `eventSummary()` (net = product profit − expenses), `adjustCount()` (History edits), `snapshotProducts()`. Every screen, Compare and the CSV use them, so totals always agree.
 
-Because names are identity, the product editor refuses a rename that would collide with an existing product (it would merge them). Renaming a product also renames its recorded sales.
+Because older sales match by name, the product editor refuses a name that collides with another product, ignoring case (it would merge them). Renaming a product also renames its recorded sales.
 
 Groups are made in the editor: with the Group switch on it edits the whole group (group name, shared colour and payments, one row per variant). `planGroup` (`groups.ts`) turns the form into the products to save and hide, all or nothing: existing variants keep their ids (sales and expense links follow), a removed row is hidden like Delete, and a clashing group or name refuses the save. Opening any grouped product opens its whole group; the switch turns off only with one variant left (`ungroup`).
 
@@ -63,7 +63,7 @@ The Sell tab shows `todayLiveSales()` (after the last End day); `removeLastSale(
 
 ## Storage
 
-Data is a set of JSON values under these keys. On the phone they live in an SQLite table `kv (key, value)` in the app's private storage (`src/kv.ts`; iOS: `Library/CapacitorDatabase`, not iCloud-synced). In a browser they stay in `localStorage`. The JSON format is the same in both and in backups.
+Data is a set of JSON values under these keys. On the phone they live in an SQLite table `kv (key, value)` in the app's private storage (`src/kv.ts`; iOS: `Library/CapacitorDatabase`, not iCloud-synced). `readAll()` reads each value in 250,000-character pieces, because Android reads a result row through a 2 MB window and all past events are one value. In a browser they stay in `localStorage`. The JSON format is the same in both and in backups.
 
 | Key | Contents |
 |---|---|
@@ -73,7 +73,7 @@ Data is a set of JSON values under these keys. On the phone they live in an SQLi
 | `cntrEventCosts` | The live event's expenses |
 | `cntrLiveEvent` | The live event's name, start and day breaks (`LiveEventMeta`); created on first launch from the existing sales |
 | `cntrEvents` | Past events (`PastEvent[]`), oldest first |
-| `cntrSettings` | Currency, compact money, products per day, sound effects, `theme` (system/light/dark), `language` (en/id; saved on first launch: `id` only for a fresh install on an Indonesian phone) |
+| `cntrSettings` | Currency, compact money, products per day, new day on date change, sort by best sellers, compact tiles, `collapsedGroups` (folded Sell groups, lowercased), sound effects, `theme` (light/dark, resolved from the phone once), `language` (en/id; saved on first launch: `id` only for a fresh install on an Indonesian phone) |
 
 - List loaders only accept arrays, so corrupt data falls back to empty instead of crashing startup.
 - Settings are cached in memory (`fmt()` runs for every amount on screen); `saveSettings()` invalidates the cache.
@@ -112,7 +112,7 @@ Tiles take the product colour as `--tile`. `needsDarkText()` (`formatters.ts`) g
 - **Wire static elements once** at startup; never attach listeners inside `render()`.
 - **Confirm destructive actions** with `openConfirmModal()` (End day, End event, delete an event, remove a product).
 - **Styling** uses the tokens at the top of `src/style.css`: surfaces (`--bg`, `--surface-1..3`, VS Code dark palette), text (`--text`, `--text-2`, `--text-3`, all >= 4.5:1), meaning (`--positive`, `--negative`, `--cash`, `--qris`), radii, a 4/8px spacing scale and motion. Never hard-code a colour in a component.
-- **Product colours** are shown exactly as chosen; text and icons on a tile are always white. Light colours (e.g. yellow) give white text low contrast, so prefer mid-to-dark colours for products.
+- **Product colours** are shown exactly as chosen; tile text and icons are white, or `#1e1e1e` where white falls below 2.6:1 (see Tile colours).
 - **Motion** uses only the motion tokens (`--dur-tap` 120ms, `--dur-1` 200ms, `--dur-2` 280ms, `--dur-3` 420ms; `--ease-out` to enter, `--ease-in` to exit) and animates only `transform`/`opacity`. `prefers-reduced-motion` turns it all off.
 - **Charts** follow the dataviz rules: thin bars with 4px rounded data-ends, a hairline baseline, values in text colour (never series colour), a written fallback instead of a one-bar chart. `--cash`/`--qris` were validated as a colour-blind-safe pair on the card surface; re-validate if you change either or the surface.
 - **Icons**: add new ones to `ICONS` in `ui/icons.ts` (Lucide), never an icon font or emoji.
@@ -123,11 +123,28 @@ Tiles take the product colour as `--tile`. `needsDarkText()` (`formatters.ts`) g
 
 `npm run build` (type-check + Vite) → `dist/` → `npx cap sync android` copies it into the Android project → Gradle builds the APK. `.github/workflows/build-apk.yml` runs these steps on every push and uploads the APK as an artifact named `CNTR_<versionName>.apk`.
 
-Versioning: `android/app/build.gradle` reads `BUILD_NUMBER` (CI passes the GitHub Actions run number; local builds use 1) and sets `versionCode = BUILD_NUMBER` and `versionName = 1.0.BUILD_NUMBER`, so every CI build is a newer version, as Android and Google Play require.
+Versioning: `android/app/build.gradle` sets `versionName` from `package.json` (CI adds `VERSION_SUFFIX` on non-release builds) and `versionCode = BUILD_NUMBER` (the GitHub Actions run number; local builds use 1), so every CI build is newer, as Android and Google Play require.
 
 Platform: Capacitor 8, Android `compileSdk`/`targetSdk` 36, `minSdk` 24 (Android 7.0), Android Gradle Plugin 8.13, Gradle 8.14.3, JDK 21.
 
 ## Themes and languages
 
-- **Themes**: `:root` holds the Dark+ tokens; `:root[data-theme="light"]` overrides them with Light+ (`--bg #ffffff`, `--surface-1 #f3f3f3`, `--text #1e1e1e`, `--positive #116329`, `--negative #c72c1c`, `--on-negative`, `--bar-bg`). `applyTheme()` resolves "Phone setting" with `matchMedia` and also updates `<meta name="theme-color">`. Tile colours do not change with the theme.
+- **Themes**: `:root` holds the Dark+ tokens; `:root[data-theme="light"]` overrides them with Light+ (`--bg #ffffff`, `--surface-1 #f3f3f3`, `--text #1e1e1e`, `--positive #116329`, `--negative #c72c1c`, `--on-negative`, `--bar-bg`). The phone's setting (`matchMedia`) only picks the first theme on a fresh install; after that it is the user's Dark theme switch. `applyTheme()` also updates `<meta name="theme-color">`. Tile colours do not change with the theme.
 - **Languages**: every user-facing string is a key in `src/i18n.ts` (`en`, and `id: Record<Key, string>` so a missing translation fails the build). Static markup uses `data-i18n` (text) and `data-i18n-aria` / `-title` / `-placeholder`; `translateStatic()` fills them on start and on a language change, then `render()` redraws the views. Counts use `tn()` with English `"one|other"` forms. Never translated: payment method names, CSV headers, user-typed text. `tests/e2e/i18n.test.mjs` walks every screen in Indonesian and fails on leftover English words.
+
+## Requirements
+
+What every change must keep true (the product reasons are in `PRODUCT.md`):
+
+- **Offline only:** no INTERNET permission, no network request, every asset bundled (font, icons). The Content-Security-Policy in `index.html` blocks anything else.
+- **A sale never waits:** a sell tap updates the screen in the same frame; the write follows a few ms later and is retried, never dropped. Work done on every render must not grow with History (cache per event, as `EventList` does).
+- **No data loss:** destructive actions confirm first; restore validates the whole file before changing anything; writes in one tick are all-or-nothing.
+- **Scale:** years of events (about 200,000 sales) must still start, back up (compact JSON, restore cap 200 MB) and stay responsive.
+- **Security:** user text is never HTML (Preact escapes it); CSV cells that start like a formula get a leading `'`; FileProvider shares only `Documents/CNTR` and CNTR's cache; backups are validated at the trust boundary with length caps.
+- **Platforms:** Android 7.0+ (`minSdk` 24), phones from 320px wide up to tablets; light and dark; English and Bahasa Indonesia; respects reduce-motion and system text size.
+
+## Testing and release
+
+- `npx tsc --noEmit` and `npm test` (Node unit tests in `tests/*.test.ts`: event maths, groups, storage and backups, payments, i18n, config).
+- `npm run build`, then `npm run test:e2e`: browser suites in `tests/e2e/` against `vite preview` (port 4320, or `CNTR_URL`), including a fake Android bridge with an in-memory SQLite for data-safety. A new screen, flow or rule gets a check there.
+- CI (`.github/workflows/build-apk.yml`) runs the browser tests, then builds a signed APK on every push. Branches: `dev` (daily work) → `main` (tested) → `playstore` (releases only: a push there creates the GitHub Release and uploads to Google Play). Release notes come from the version's section in `CHANGELOG.md`.
