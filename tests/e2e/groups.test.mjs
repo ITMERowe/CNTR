@@ -249,9 +249,9 @@ for (const width of [412, 1280]) {
       const [edit, sell] = [row.closest('.tile-group').querySelector('.tile-edit'), undo.closest('.pay').querySelector('.pay-add')];
       const [u, e, a] = [undo, edit, sell].map((n) => n.getBoundingClientRect());
       const at = (x, y, n) => !!document.elementFromPoint(x, y)?.closest('button') && document.elementFromPoint(x, y).closest('button') === n;
-      return { undo: at(u.left - 8, u.top + u.height / 2, undo) && at(u.left + u.width / 2, u.top - 8, undo), edit: at(e.left - 5, e.top + e.height / 2, edit) && at(e.left + e.width / 2, e.bottom + 5, edit), sellWins: at(a.left + a.width / 2, a.top + 1, sell), plusSells: ((p) => at(p.left + p.width / 2, p.top + p.height / 2, sell))(sell.querySelector('.pay-plus').getBoundingClientRect()) };
+      return { undo: at(u.left - 8, u.top + u.height / 2, undo) && at(u.left + u.width / 2, u.top - 8, undo), edit: at(e.left - 5, e.top + e.height / 2, edit) && at(e.left + e.width / 2, e.bottom + 5, edit), sellWins: at(a.left + a.width / 2, a.top + 1, sell), plusHidden: getComputedStyle(sell.querySelector('.pay-plus')).display === 'none' };
     });
-    check(`${at} undo and edit have 44px hit areas; the sell button wins where they meet and at its + hint`, hits.undo && hits.edit && hits.sellWins && hits.plusSells, hits);
+    check(`${at} undo and edit have 44px hit areas; the sell button wins where they meet; no + icon (the whole half sells)`, hits.undo && hits.edit && hits.sellWins && hits.plusHidden, hits);
     await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
     await sleep(300);
     const free = await page.evaluate(() => [...document.querySelectorAll('.product-item')].find((r) => r.querySelector('.list-title').textContent === 'Glossy Laminated Extra Large')?.querySelector('.product-item-sub').textContent);
@@ -350,7 +350,8 @@ for (const width of [412, 1280]) {
   await compact();
   const cutCompact = await cut();
   await compact();
-  check(`${at} Transfer and E-wallet labels are never cut, rows and compact headers`, !cutNormal.length && !cutCompact.length, { cutNormal, cutCompact });
+  const icons = await page.evaluate(() => [...document.querySelectorAll('.tile-group .pay-label .icon')].filter((n) => n.getBoundingClientRect().width > 0).length);
+  check(`${at} Transfer and E-wallet labels are never cut and keep their icons, rows and compact headers`, !cutNormal.length && !cutCompact.length && icons === 4, { cutNormal, cutCompact, icons });
 
   // The editor's variant rows hold a 7-digit price whole.
   await page.evaluate((products) => localStorage.setItem('cntrProducts', JSON.stringify(products)), [{ ...q('t1', 'Print A3'), price: 1500000, cost: 900000 }]);
