@@ -40,11 +40,6 @@ export function groupMembers(products: Product[], group: string) {
   return group ? products.filter((product) => !!product.group && same(product.group, group)) : [];
 }
 
-/** Gives every variant of `group` the group's colour and payment methods. */
-export function syncGroup(products: Product[], group: string, color: string, payments: string[]) {
-  for (const product of groupMembers(products, group)) Object.assign(product, { color, payments: [...payments] });
-}
-
 /** One row of the editor's group form; `id` is set for a variant that already exists. */
 export interface VariantRow {
   id?: string;

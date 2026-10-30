@@ -35,6 +35,8 @@ export const localStorageStore: KvStore = {
 };
 
 const DB_NAME = 'cntr';
+// Characters per read: at most 4 bytes each in UTF-8, so a piece stays under 1 MB.
+const READ_CHUNK = 250_000;
 
 /** SQLite in the app's private storage: survives WebView cache clearing, and writes are transactional. */
 export async function openSqliteStore(): Promise<KvStore> {
@@ -48,8 +50,17 @@ export async function openSqliteStore(): Promise<KvStore> {
 
   return {
     async readAll() {
-      const rows = (await db.query('SELECT key, value FROM kv;')).values ?? [];
-      return new Map(rows.map((row: { key: string; value: string }) => [row.key, row.value]));
+      // Android reads each result row through a 2 MB window, and one value (all past events) can outgrow it: read in pieces.
+      const rows: { key: string; size: number }[] = (await db.query('SELECT key, length(value) AS size FROM kv;')).values ?? [];
+      const values = new Map<string, string>();
+      for (const { key, size } of rows) {
+        let value = '';
+        for (let start = 1; start <= size; start += READ_CHUNK) {
+          value += (await db.query('SELECT substr(value, ?, ?) AS part FROM kv WHERE key = ?;', [start, READ_CHUNK, key])).values?.[0]?.part ?? '';
+        }
+        values.set(key, value);
+      }
+      return values;
     },
     async write(changes) {
       if (!changes.size) return;

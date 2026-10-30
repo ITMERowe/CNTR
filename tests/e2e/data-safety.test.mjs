@@ -146,7 +146,12 @@ function fakeNative() {
         const db = get('__db', {});
         if (method === 'checkConnectionsConsistency') return { result: false };
         if (method === 'isDBOpen') return { result: false };
-        if (method === 'query') return { values: Object.entries(db).map(([key, value]) => ({ key, value })) };
+        if (method === 'query') {
+          // readAll asks for sizes, then each value in pieces (substr is 1-based, like SQLite's).
+          if (options.statement.includes('length(value)')) return { values: Object.entries(db).map(([key, value]) => ({ key, size: value.length })) };
+          const [start, length, key] = options.values;
+          return { values: [{ part: db[key].substr(start - 1, length) }] };
+        }
         if (method === 'executeSet') {
           const delay = get('__sqlDelayMs', 0); // a slow database write (B35)
           if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
@@ -318,6 +323,21 @@ function fakeNative() {
   await page.reload(); await page.waitForTimeout(900);
   const again = await page.evaluate(() => JSON.parse(sessionStorage.__files ?? '[]').filter((f) => f.path.startsWith('CNTR/auto/')).length);
   check('B24 that backup is taken once, not on every launch', again === files.length, `${files.length} then ${again}`);
+  await ctx.close();
+}
+
+{
+  // A value bigger than one read piece (250,000 characters) comes back whole: Android can't read a row over 2 MB at once.
+  const { ctx, page } = await newPage(true);
+  await page.goto(URL);
+  const many = JSON.stringify(Array.from({ length: 3000 }, (_, i) => SALE(i % 60)));
+  await page.evaluate((s) => {
+    localStorage.clear(); sessionStorage.clear();
+    localStorage['cntrMeta.usingDatabase'] = '1';
+    sessionStorage.__db = JSON.stringify({ cntrSales: s, 'cntrMeta.migratedFromLocalStorage': '2026-10-26T00:00:00.000Z', 'cntrMeta.tutorialOffered': 'test' });
+  }, many);
+  await page.reload(); await page.waitForTimeout(1500);
+  check('B37 a stored value over one read piece loads whole (3000 sales)', many.length > 250000 && (await heroSales(page)) === '3000', `${many.length} chars, hero ${await heroSales(page)}`);
   await ctx.close();
 }
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { buildBackup, parseBackup } from '../src/backup.ts';
 import { eventSummary } from '../src/events.ts';
-import { groupedName, groupTiles, nameTaken, planGroup, syncGroup, ungroup, variantLabel } from '../src/groups.ts';
+import { groupedName, groupTiles, nameTaken, planGroup, ungroup, variantLabel } from '../src/groups.ts';
 import type { Product, SaleRecord } from '../src/types.ts';
 
 test('report name is "Group Variant" unless the variant already starts with the group', () => {
@@ -32,12 +32,6 @@ test('the Sell row shows the variant as typed', () => {
 test('a group is one tile at its first variant, whatever the case of its name', () => {
   const tiles = groupTiles([product('Poster A3', 'Poster'), product('Mug'), product('poster A4', 'poster'), product('Sticker')]);
   assert.deepEqual(tiles.map((tile) => tile.map((item) => item.name)), [['Poster A3', 'poster A4'], ['Mug'], ['Sticker']]);
-});
-
-test('the group colour and payments reach every variant, and nothing else', () => {
-  const list = [product('Poster A3', 'Poster'), product('Poster A4', 'poster'), product('Mug')];
-  syncGroup(list, 'Poster', '#4f6eff', ['Cash']);
-  assert.deepEqual(list.map((item) => [item.color, item.payments]), [['#4f6eff', ['Cash']], ['#4f6eff', ['Cash']], ['#f76495', undefined]]);
 });
 
 test('names are unique ignoring case; a product keeps its own name', () => {

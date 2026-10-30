@@ -788,7 +788,7 @@ function wireDialogs() {
   // The keyboard shrinks the page only after a field is focused, which can leave that field under it: bring it back into view.
   window.addEventListener('resize', () => {
     const field = document.activeElement;
-    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) field.scrollIntoView({ block: 'center' });
+    if (isTextInput(field) || field instanceof HTMLTextAreaElement) field.scrollIntoView({ block: 'center' });
   });
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' || event.defaultPrevented || !isTextInput(event.target)) return;
@@ -867,7 +867,7 @@ function blockedByTutorial() {
 async function exportBackup() {
   if (blockedByTutorial()) return;
   const now = new Date();
-  const ok = await exportFile(`cntr-backup-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2), 'application/json', t('backup'));
+  const ok = await exportFile(`cntr-backup-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now)), 'application/json', t('backup'));
   if (ok) {
     saveLastBackup(now.toISOString());
     updateLastBackupText();
@@ -911,7 +911,7 @@ async function restoreBackup() {
 async function applyRestore(values: Map<string, string>) {
   const now = new Date();
   try {
-    await saveSafetyCopy(`cntr-before-restore-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2));
+    await saveSafetyCopy(`cntr-before-restore-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now)));
   } catch (error) {
     showMessage(t('restore.cancelled'), t('restore.cancelledText', { error: errorText(error) }));
     return;
@@ -939,12 +939,12 @@ function lockForReload(locked: boolean) {
 /** Writes an automatic backup on the phone (Documents/CNTR/auto). Throws if it could not be saved. */
 async function autoBackup() {
   const now = new Date();
-  await saveAutoBackup(`cntr-auto-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2));
+  await saveAutoBackup(`cntr-auto-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now)));
 }
 
 /** Writes (replacing) the End day safety backup. Throws if it could not be saved. */
 async function dayBackup() {
-  await saveDayBackup(JSON.stringify(buildBackup(storedValues(), new Date()), null, 2));
+  await saveDayBackup(JSON.stringify(buildBackup(storedValues(), new Date())));
 }
 
 /** Once, when events replace saved reports: keep the old reports in an automatic backup, since exports no longer include them. */
@@ -953,7 +953,7 @@ async function backUpDroppedReports() {
   const now = new Date();
   const keys = [...DATA_KEYS, ...DROPPED_KEYS];
   try {
-    await saveAutoBackup(`cntr-auto-${fileStamp(now)}-saved-reports.json`, JSON.stringify(buildBackup(storedValues(keys), now, keys), null, 2));
+    await saveAutoBackup(`cntr-auto-${fileStamp(now)}-saved-reports.json`, JSON.stringify(buildBackup(storedValues(keys), now, keys)));
   } catch (error) {
     console.error('Could not back up the old saved reports', error); // they also stay in the database, untouched
   }

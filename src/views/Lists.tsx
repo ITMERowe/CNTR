@@ -138,12 +138,16 @@ export function ProductList({ products, activeNames, onEdit, onToggle, onAdd }: 
 }
 
 /** Past events, newest first: name, dates and days, net profit. */
+// Every tap re-renders History; past events are replaced, never changed in place, so their net profit is worked out once.
+const netByEvent = new WeakMap<PastEvent, number>();
+const eventNet = (event: PastEvent) => netByEvent.get(event) ?? netByEvent.set(event, eventSummary(event.sales, event.expenses, event.products).net).get(event)!;
+
 export function EventList({ events, onOpen }: { events: PastEvent[]; onOpen: (id: string) => void }) {
   if (!events.length) return <EmptyState icon="event" title={t('history.none')} text={t('history.noneText')} />;
   return (
     <>
       {[...events].reverse().map((event, index) => {
-        const { net } = eventSummary(event.sales, event.expenses, event.products);
+        const net = eventNet(event);
         const first = formatDay(event.startedAt);
         const last = formatDay(event.endedAt);
         const days = event.dayBreaks.length + 1;

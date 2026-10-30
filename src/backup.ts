@@ -6,7 +6,8 @@ import { t } from './i18n.ts';
 
 export const BACKUP_APP = 'CNTR';
 export const BACKUP_FORMAT = 1;
-const MAX_BACKUP_BYTES = 50 * 1024 * 1024;
+// Backups are compact JSON (about 160 bytes a sale): 200 MB is over a million sales, and still stops a wrong, huge file.
+const MAX_BACKUP_BYTES = 200 * 1024 * 1024;
 
 export interface BackupFile {
   app: typeof BACKUP_APP;
@@ -127,6 +128,10 @@ export function parseBackup(text: string): ParsedBackup {
   };
 }
 
+const pad = (n: number) => String(n).padStart(2, '0');
+// The phone's own time, as the app shows it (ISO would be UTC: hours off, and early sales on the day before).
+const localTime = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
 const csvCell = (value: string | number) => {
   // A name starting like a formula would run as one in Excel or Sheets; a leading ' makes it plain text.
   const text = typeof value === 'string' && /^[=+\-@\t\r]/.test(value) ? `'${value}` : String(value);
@@ -144,7 +149,7 @@ export function salesCsv(backup: BackupFile): string {
     const revived = sales.map((sale) => ({ ...sale, timestamp: new Date(sale.timestamp) }));
     const days = splitDays(withLinkedCosts(revived, list<EventCost>(expenses), list<Product>(products)), dayBreaks);
     days.forEach((day, index) => {
-      for (const sale of day) rows.push([name, index + 1, sale.timestamp.toISOString(), sale.product, sale.payment, sale.price, sale.cost]);
+      for (const sale of day) rows.push([name, index + 1, localTime(sale.timestamp), sale.product, sale.payment, sale.price, sale.cost]);
     });
   };
   const live = isObject(backup.data.cntrLiveEvent) ? (backup.data.cntrLiveEvent as StoredEvent) : null;

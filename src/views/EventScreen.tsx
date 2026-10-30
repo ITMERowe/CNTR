@@ -268,7 +268,7 @@ export function EventScreen(props: Props) {
           ))
         ) : (
           <Card title={t('products')}>
-            <ProductBreakdown sales={withLinkedCosts(sales, expenses, products)} products={products} colorFor={colorFor} />
+            <ProductBreakdown sales={withLinkedCosts(sales, expenses, linkable)} products={products} colorFor={colorFor} />
           </Card>
         ))}
 

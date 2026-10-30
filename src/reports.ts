@@ -25,10 +25,6 @@ export function marginPercent(revenue: number, profit: number) {
   return revenue ? (profit / revenue) * 100 : 0;
 }
 
-export function plural(count: number, noun: string) {
-  return `${count} ${noun}${count === 1 ? '' : 's'}`;
-}
-
 // Per-product totals for a set of sales. Products that were sold but are no longer in the
 // product list (e.g. deactivated) are still included so the breakdown matches the revenue.
 export function buildProductBreakdown(sales: SaleRecord[], products: Product[], colorFor: (name: string) => string = () => ''): ProductTotals[] {

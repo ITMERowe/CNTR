@@ -196,9 +196,11 @@ test('a backup with one damaged record is rejected whole, naming the problem', (
 test('CSV lists the live event and past events with day numbers, quoting commas and quotes', () => {
   const csv = salesCsv(buildBackup(fullData));
   assert.ok(csv.startsWith('\uFEFFEvent,Day,Time,Product,Payment,Price,Cost\r\n'));
-  assert.match(csv, /^Current event,1,2026-10-26T10:00:00.000Z,Gacha,Cash,25000,12000\r$/m);
-  assert.match(csv, /^"Day 1, ""Comic""",1,2026-10-25T03:00:00.000Z,Gacha,Cash,/m);
-  assert.match(csv, /^"Day 1, ""Comic""",2,2026-10-26T03:00:00.000Z,Gacha,QRIS,/m);
+  // Times are the phone's local time, like the screens (whatever time zone runs the test).
+  const local = (iso: string) => { const d = new Date(iso); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
+  assert.ok(csv.includes(`\r\nCurrent event,1,${local('2026-10-26T10:00:00.000Z')},Gacha,Cash,25000,12000\r\n`));
+  assert.ok(csv.includes(`\r\n"Day 1, ""Comic""",1,${local('2026-10-25T03:00:00.000Z')},Gacha,Cash,`));
+  assert.ok(csv.includes(`\r\n"Day 1, ""Comic""",2,${local('2026-10-26T03:00:00.000Z')},Gacha,QRIS,`));
 });
 
 test('CSV neutralises cells that start like a formula', () => {
@@ -234,7 +236,7 @@ test('expenses linked to products round-trip; old ones without links still load;
   assert.ok(parsed.ok);
   for (const [key, value] of linked) assert.equal(parsed.values.get(key), value, key);
   // The CSV's cost is the one the reports count: none for the linked product (old sale matched by name).
-  assert.match(salesCsv(buildBackup(linked)), /^Current event,1,2026-10-26T10:00:00.000Z,Gacha,Cash,25000,0\r$/m);
+  assert.match(salesCsv(buildBackup(linked)), /^Current event,1,[^,]+,Gacha,Cash,25000,0\r$/m);
   for (const productIds of ['p1', [1], null]) {
     const bad = buildBackup(fullData);
     bad.data.cntrEventCosts = [{ id: 'c1', name: 'Print', amount: 1, productIds }];
