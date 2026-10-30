@@ -70,7 +70,7 @@ async function restoreWith(page, buffer, confirm = true) {
 
   await page.click('.tabbar .tab[data-tab="salesScreen"]'); await sell(page, 2);
   const before = await page.evaluate(() => localStorage.cntrSales);
-  for (const [label, bad] of [['garbage', 'not json'], ['truncated', backupText.slice(0, backupText.length / 2)], ['foreign JSON', '{"a":1}'], ['damaged record', backupText.replace('"price": 25000', '"price": "x"')]]) {
+  for (const [label, bad] of [['garbage', 'not json'], ['truncated', backupText.slice(0, backupText.length / 2)], ['foreign JSON', '{"a":1}'], ['damaged record', backupText.replace(/"price": ?25000/, '"price":"x"')]]) {
     const m = await restoreWith(page, bad, false);
     check(`A5 malformed backup (${label}) rejected, data untouched`, m.title === 'Cannot restore this file' && (await page.evaluate(() => localStorage.cntrSales)) === before, m.text.slice(0, 70));
     await closeMessage(page);
