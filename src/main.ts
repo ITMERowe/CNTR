@@ -765,6 +765,11 @@ function wireDialogs() {
   document.addEventListener('focusin', (event) => {
     if (isTextInput(event.target)) event.target.enterKeyHint = nextField(event.target) ? 'next' : 'done';
   });
+  // The keyboard shrinks the page only after a field is focused, which can leave that field under it: bring it back into view.
+  window.addEventListener('resize', () => {
+    const field = document.activeElement;
+    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) field.scrollIntoView({ block: 'center' });
+  });
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' || event.defaultPrevented || !isTextInput(event.target)) return;
     event.preventDefault();

@@ -372,6 +372,17 @@ check('Sell profit drops the linked item cost too', link.sellProfit === 3 * 1500
 check('editing the expense shows its product ticked', link.reopened === 'Photocard', link);
 check('a past event from before ids can link: the product gets an id, net = before + 2 × 12.000 − 20.000', link.pastListed === 'Gacha' && !!link.pastProductId && link.pastIds === link.pastProductId && link.pastAfter === link.pastBefore + 2 * 12000 - 20000, link);
 
+// The keyboard opening (the page shrinks after focus) must not leave the focused field under it.
+await run(page, `${H} tab('eventScreen'); document.getElementById('openAddExpenseBtn').click(); await wait(300);`);
+await page.focus('#eventCostAmount');
+const keyboardTop = 360;
+const below = await page.$eval('#eventCostAmount', (n) => n.getBoundingClientRect().bottom);
+await page.setViewportSize({ width: 412, height: keyboardTop });
+await sleep(400);
+const field = await page.$eval('#eventCostAmount', (n) => { const r = n.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, height: innerHeight }; });
+check('a focused field scrolls back into view when the keyboard shrinks the page', below > keyboardTop && field.top >= 0 && field.bottom <= field.height, { below, field });
+await page.setViewportSize({ width: 412, height: 892 });
+
 check('no uncaught exceptions', errors.length === 0, errors.join(' | '));
 await browser.close();
 done();
