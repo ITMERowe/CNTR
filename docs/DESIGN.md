@@ -37,9 +37,9 @@ One family: Plus Jakarta Sans (bundled variable font, `--font`).
 |---|---|---|
 | `--fs-xs` | 12px | Labels, captions, meta, chips, tab labels, payment labels |
 | `--fs-sm` | 14px | Secondary text, notes, toasts, long tile names, setting values |
-| `--fs-md` | 16px | Body (`html`), buttons, row/card titles, tile and variant names |
-| `--fs-lg` | 20px | Sheet titles, report numbers (KPIs), compact counts, long group titles |
-| `--fs-xl` | 26px | Page titles, event name, single-tile counts, group titles |
+| `--fs-md` | 16px | Body (`html`), buttons, row/card titles, variant names, long tile and group names |
+| `--fs-lg` | 20px | Sheet titles, report numbers (KPIs), compact counts, tile names and group titles (one size, both modes) |
+| `--fs-xl` | 26px | Page titles, event name, single-tile counts |
 
 - Off-scale sizes are listed under [Exceptions](#exceptions); nothing else may leave the scale.
 - **Two weights:** `--fw-regular` 500 (body, secondary, meta) and `--fw-bold` 700 (headings, names, counts, buttons, labels). Nothing else.
@@ -90,7 +90,6 @@ Edge cases where a token doesn't fit. Each covers that element only; `tests/e2e/
 | `.hero-figure-symbol` | `0.45em` of the figure | The currency symbol follows the fluid figure | owner-approved 2026-10-31 |
 | `.payment-value` at `max-width: 360px` | 24px (not `--fs-xl` 26) | Count and label fit a 360px phone's halves | owner-approved 2026-10-31 |
 | `:is([data-payment='Transfer'], [data-payment='E-wallet']) .pay-label`; `.tile-group-pays .pay-label:is(...)` (compact group column header) | 10px bold caps; line box kept at the 12px label's (`--fs-xs` x `--lh-body`, header `--lh-tight`) so no row changes height; header icon gap 2px | TRANSFER / E-WALLET crowded the halves in every tile mode; now >= 8px clear to the cell's edges at 360px (layout test). Cash, QRIS, Card stay 12px | owner-approved 2026-10-31 |
-| Single-tile `.product-name` | `--fs-md` 16px (not `--fs-lg` 20) | The halves carry the tile; group titles are 26px | owner-approved 2026-10-31 |
 | Text on a tile (`--tile`) | contrast >= 2.6:1 (not 4.5:1) | Product colours are shown exactly as chosen (Tile ink rule) | owner-approved (standing) |
 
 ## Copy

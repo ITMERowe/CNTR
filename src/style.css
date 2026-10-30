@@ -592,7 +592,7 @@ p {
   min-width: 0;
   /* Never wider than one payment button below (tile-pay's two 1fr columns, same gap): matches the clicker it names. */
   max-width: calc((100cqw - var(--s2)) / 2);
-  font-size: var(--fs-md);
+  font-size: var(--fs-lg); /* the same as a group's title: every tile's name reads at one size */
   font-weight: var(--fw-bold);
   letter-spacing: -0.02em;
   line-height: var(--lh-tight);
@@ -603,7 +603,7 @@ p {
 
 /* A long name shrinks first; a very long one also wraps to a 2nd line (SalesGrid.tsx picks the class by length). */
 .product-name.is-long {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
 }
 
 .product-name.is-wrap {
@@ -855,13 +855,13 @@ p {
   max-width: none;
 }
 
-/* The group's name heads its tile: a size above its variants' names (15px), long ones a step down. */
+/* The group's name heads its tile at the same size as a single tile's name (20px), above its variants' (16px); long ones a step down. */
 .tile-group .group-name:not(.is-long) {
-  font-size: var(--fs-xl);
+  font-size: var(--fs-lg);
 }
 
 .tile-group .group-name.is-long {
-  font-size: var(--fs-lg);
+  font-size: var(--fs-md);
 }
 
 .tile-group-heading {
@@ -953,6 +953,10 @@ p {
 /* The variant's name is a step below the group's, so the group reads first. */
 .variant .product-name:not(.is-long) {
   font-size: var(--fs-md);
+}
+
+.variant .product-name.is-long {
+  font-size: var(--fs-sm);
 }
 
 .variant .product-price {
@@ -1065,10 +1069,6 @@ p {
 
 .is-compact .tile-group-title {
   grid-column: 1 / -1;
-}
-
-.is-compact .tile-group .group-name {
-  font-size: var(--fs-lg);
 }
 
 .is-compact .tile-group-title,
