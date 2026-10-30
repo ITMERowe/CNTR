@@ -219,7 +219,7 @@ async function startFromSettings(page) {
   await page.selectOption('#languageSelect', 'id');
   await sleep(200);
   const switched = await page.evaluate(() => ({ stored: JSON.parse(localStorage.cntrSettings).language, theme: document.getElementById('themeLabel').textContent }));
-  check('choosing Bahasa Indonesia in Settings switches without a reload and is saved', switched.stored === 'id' && switched.theme === 'Tema', switched);
+  check('choosing Bahasa Indonesia in Settings switches without a reload and is saved', switched.stored === 'id' && switched.theme === 'Tema gelap', switched);
 
   // A dialog open during a language switch is closed, not left in the old language.
   await page.click('#startTutorialBtn');

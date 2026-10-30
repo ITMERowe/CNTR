@@ -116,8 +116,9 @@ const perDay = await run(page, `${H}
   await wait();
   return { ...on, firstOpens, ...off, backOn: stored('cntrSettings').productsPerDay };
 `);
-check('Products per day is on by default: one card per day, only the latest open', perDay.onByDefault && perDay.cards === 2 && perDay.open.join() === 'false,true' && /Day 1/.test(perDay.titles[0]) && /Day 2/.test(perDay.titles[1]), perDay);
-check('a day card opens when tapped', perDay.firstOpens, perDay);
+// Day 2 has just started (no sales yet), so it gets no card: Day 1, the latest day with sales, is the open one.
+check('Products per day is on by default: a card per day with sales, the latest of them open', perDay.onByDefault && perDay.cards === 1 && perDay.open.join() === 'true' && /Day 1/.test(perDay.titles[0]), perDay);
+check('a day card folds when tapped', !perDay.firstOpens, perDay);
 check('turning it off shows one Products card again, and the choice is saved', perDay.offCards === 0 && perDay.offSetting === false && perDay.backOn === true, perDay);
 
 // 5. End event moves it to History and starts fresh

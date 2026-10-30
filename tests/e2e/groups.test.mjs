@@ -212,7 +212,7 @@ for (const width of [412, 1280]) {
 
   // Products tab: the variants sit together under the group's name.
   await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
-  const listed = await page.evaluate(() => [...document.querySelectorAll('#productHistoryList .product-group')].map((g) => `${g.querySelector('.product-group-title').textContent}:${[...g.querySelectorAll('.list-title')].map((n) => n.textContent).join('+')}`));
+  const listed = await page.evaluate(() => [...document.querySelectorAll('#productHistoryList .product-group')].map((g) => `${g.querySelector('.product-group-title span').textContent}:${[...g.querySelectorAll('.list-title')].map((n) => n.textContent).join('+')}`));
   check(`${at} Products lists a group's variants under its name`, listed.join() === 'Print:A3+A4+A2', listed);
 
   // Expense sheet: ticking the group ticks all its variants; the expense links to each.

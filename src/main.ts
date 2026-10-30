@@ -283,8 +283,6 @@ function renderProductList() {
     }),
     el.productHistoryList,
   );
-  const hidden = state.productHistory.length - state.products.length;
-  el.productsSummary.textContent = state.productHistory.length ? t('products.summary', { count: state.products.length, hidden }) : t('products.none');
 }
 
 /** Deactivates an active product (keeping its history), or puts an inactive one back on the counter. */
@@ -834,7 +832,6 @@ function updateLastBackupText() {
 }
 
 function updateThemeState() {
-  el.themeState.textContent = t(el.themeToggle.checked ? 'theme.dark' : 'theme.light');
 }
 
 /** Saves a file and reports where it went. Returns true if it was saved somewhere. */

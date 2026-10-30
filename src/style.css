@@ -1493,10 +1493,39 @@ p {
 
 /* Products screen: a group's variants indented under its name (like the expense sheet), so where the group ends is plain */
 .product-group-title {
-  margin: var(--s3) 0 0 0;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 48px;
+  padding: var(--s2) 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  list-style: none;
+  cursor: pointer;
+}
+
+.product-group-title::-webkit-details-marker {
+  display: none;
+}
+
+.product-group-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.product-group-title .icon {
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+  color: var(--text-3);
+  transform: rotate(-90deg);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.product-group[open] .product-group-title .icon {
+  transform: none;
 }
 
 .product-group .product-item {

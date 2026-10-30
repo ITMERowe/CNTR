@@ -104,7 +104,7 @@ export function ProductList({ products, activeNames, onEdit, onToggle, onAdd }: 
     );
   }
   const sections = [
-    { key: 'counter', title: t('products.counter'), note: t('products.counterNote'), items: products.filter((product) => activeNames.has(product.name)) },
+    { key: 'counter', title: t('products.counter'), note: '', items: products.filter((product) => activeNames.has(product.name)) },
     { key: 'hidden', title: t('products.hidden'), note: t('products.hiddenNote'), items: products.filter((product) => !activeNames.has(product.name)) },
   ].filter((section) => section.items.length);
   return (
@@ -114,7 +114,7 @@ export function ProductList({ products, activeNames, onEdit, onToggle, onAdd }: 
           <h2 class="product-section-title">
             {section.title} · {section.items.length}
           </h2>
-          <p class="product-section-note">{section.note}</p>
+          {section.note && <p class="product-section-note">{section.note}</p>}
           <div class="list list-card">
             {/* A group's variants sit together under its name. */}
             {groupTiles(section.items).map((tile) => {
@@ -123,10 +123,15 @@ export function ProductList({ products, activeNames, onEdit, onToggle, onAdd }: 
               ));
               if (!tile[0].group) return rows;
               return (
-                <div class="product-group" key={`group:${tile[0].group.toLowerCase()}`} role="group" aria-label={tile[0].group}>
-                  <h3 class="product-group-title">{tile[0].group}</h3>
+                // Open by default; a tap on the name folds it (re-renders keep what the user chose).
+                <details class="product-group" key={`group:${tile[0].group.toLowerCase()}`} open>
+                  <summary class="product-group-title">
+                    <span>{tile[0].group}</span>
+                    <span class="product-group-count">{tile.length}</span>
+                    <Icon name="chevron-down" />
+                  </summary>
                   {rows}
-                </div>
+                </details>
               );
             })}
           </div>

@@ -121,23 +121,10 @@ function CountEditor({ days, products, edit }: { days: SaleRecord[][]; products:
   );
 }
 
-/** Per-product rows for a set of sales, then the products not sold in it. */
+/** Per-product rows for a set of sales (only what sold). */
 function ProductBreakdown({ sales, products, colorFor }: { sales: SaleRecord[]; products: Product[]; colorFor: (name: string) => string }) {
   const rows = buildProductBreakdown(sales, products, colorFor).sort((a, b) => b.count - a.count || b.revenue - a.revenue);
-  const sold = rows.filter((row) => row.count > 0);
-  const unsold = rows.filter((row) => row.count === 0);
-  return (
-    <>
-      {sold.length > 0 && <ProductRows rows={sold} totalUnits={sales.length} />}
-      {unsold.length > 0 && (
-        <p class={sold.length ? 'card-note unsold' : 'card-note'}>
-          {sold.length ? t('products.notSold') : t('products.noSalesFor')}
-          {unsold.map((row) => row.name).join(', ')}
-        </p>
-      )}
-      {!rows.length && <EmptyState icon="package" title={t('products.noneYet')} text={t('products.addFromSell')} />}
-    </>
-  );
+  return <ProductRows rows={rows.filter((row) => row.count > 0)} totalUnits={sales.length} />;
 }
 
 export function EventScreen(props: Props) {
@@ -146,6 +133,8 @@ export function EventScreen(props: Props) {
   const summary = eventSummary(sales, expenses, linkable);
   // Day cards and product rows take linked expenses into account too (no item cost for the products they cover).
   const days = splitDays(withLinkedCosts(sales, expenses, linkable), dayBreaks);
+  // Days without sales get no Products card, so the one that starts open is the latest day with sales.
+  const lastSoldDay = days.map((day) => day.length > 0).lastIndexOf(true);
   const isEmpty = !sales.length && !expenses.length;
   // Nothing at all yet (no products either): one empty state instead of it stacked with another for the Products card below.
   const allEmpty = isEmpty && !products.length;
@@ -253,11 +242,11 @@ export function EventScreen(props: Props) {
       )}
 
       {!edit &&
-        !allEmpty &&
+        sales.length > 0 &&
         (props.productsPerDay ? (
-          days.map((day, index) => (
-            // Only the latest day starts open; `open` is set again only if that changes, so taps stick.
-            <details class="card products-day" key={index} open={index === days.length - 1}>
+          days.map((day, index) => day.length > 0 && (
+            // Only the latest day with sales starts open; `open` is set again only if that changes, so taps stick.
+            <details class="card products-day" key={index} open={index === lastSoldDay}>
               <summary class="products-day-head">
                 <h2 class="card-title">{days.length > 1 ? t('products.day', { n: index + 1 }) : t('products')}</h2>
                 <span class="products-day-meta">{tn('count.sale', day.length)}</span>
