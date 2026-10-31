@@ -8,7 +8,7 @@ Each version starts with **Highlights**: a short list for users, shown first on 
 - Product groups: one tile for a poster and its sizes, made on one page, foldable
 - Link an expense to products so their cost isn't counted twice
 - Tablets and landscape get 2 or 3 columns of tiles
-- Hold to delete products and expenses
+- Hold to delete products, variants and expenses: the button fills red
 - Tidier screens: one header row everywhere, denser product list
 - Taps vibrate on more phones
 
@@ -16,10 +16,12 @@ Each version starts with **Highlights**: a short list for users, shown first on 
 - **Product groups**: turn on *Group with variants* in the product editor to make a group (e.g. Poster) and its variants (A3, A4, A5), each with its own price and cost, on one page. Sell shows one tile per group with a row per variant, compact by default; tap the group's name to fold it. Reports, History, Compare and CSV count the variants like any product.
 - **Expenses for products**: an expense can be linked to products (*For products* switch). In that event those products count no per-item cost, so a print run isn't subtracted twice.
 - **Tablets and wide screens**: 2 tile columns from 720px wide, 3 from 1080px; other pages keep a comfortable width. Drag works across columns.
-- **Hold to delete**: products, groups and expenses delete with a 0.7-second hold instead of a dialog; big actions (End day, End event, Restore, delete an event) still ask.
+- **Hold to delete**: products, groups, variants and expenses delete with a 0.7-second hold that fills the button red, instead of a dialog; big actions (End day, End event, Restore, delete an event) still ask.
 
 ### Changed
 - One header row on every tab, with the title and its buttons on the same line; the Products list is denser (one line of price, profit and payment methods per product; a group's shared payments shown once).
+- Delete is a labelled red button at the bottom of the product editor and of a past event, instead of a trash icon in the header.
+- The group editor's variants read like a price list: one rounded row each, with a dashed *Add variant* line.
 - New type scale with clearer sizes and two weights; fewer sublabels; specific dialog titles ("Delete event?") and verb buttons.
 - Sell buttons press in slightly when tapped; long sheets fade at the edges that scroll.
 - Backups are smaller and big backups restore; CSV times are the phone's local time.
