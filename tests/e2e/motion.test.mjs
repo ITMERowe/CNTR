@@ -64,10 +64,10 @@ for (const reduced of [false, true]) {
   const trash = await page.locator('.delete-cost').boundingBox();
   await page.mouse.move(trash.x + trash.width / 2, trash.y + trash.height / 2);
   await page.mouse.down(); await sleep(150);
-  const fill = await page.evaluate(() => getComputedStyle(document.querySelector('.delete-cost'), '::before').transform);
+  const fill = await page.evaluate(() => getComputedStyle(document.querySelector('.delete-cost .hold-fill')).clipPath);
   await page.mouse.up(); await sleep(150);
   const kept = await page.evaluate(() => JSON.parse(localStorage.cntrEventCosts).length);
-  const scaleX = fill === 'none' ? 1 : +fill.slice(7).split(',')[0];
+  const scaleX = 1 - (+(/inset\(0px ([\d.]+)%/.exec(fill)?.[1] ?? 0) / 100); // the share of the button uncovered
   check(`${mode} hold fill ${reduced ? 'shows at once' : 'grows over the hold'}; let go early, nothing is deleted`, (reduced ? scaleX === 1 : scaleX > 0 && scaleX < 1) && kept === 1, { fill, kept });
   await page.close();
 }

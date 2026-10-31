@@ -29,9 +29,9 @@ How a seller moves through CNTR, screen by screen. Code-level navigation (`openS
 ## Products
 
 1. Add / edit opens the product editor: name, price, cost, payment methods (1–2), colour.
-2. **Group with variants** switch: group name, shared colour and payments, one row per variant (name, price, cost). Any variant opens the whole group. Removing rows asks "Remove variants?" before saving; leaving with changes asks Keep editing / Discard.
+2. **Group with variants** switch: group name, shared colour and payments, one row per variant (name, price, cost). Any variant opens the whole group. Removing a row is held (see Delete); leaving with changes asks Keep editing / Discard.
 3. Hiding a product keeps its sales; deleting never deletes sales. A sale keeps the price it was sold at.
-4. **Delete** (editor trash) is **held**: press and hold about 0.7 s while the button fills, and the product (or the whole group) is deleted, no dialog. A tap only shows "Hold to delete"; letting go early, sliding off or scrolling cancels. From a keyboard or screen reader it asks "Delete product?" / "Delete group?" instead.
+4. **Delete** (the red "Hold to delete" button under Save) is **held**: press and hold about 0.7 s while it fills red, and the product (or the whole group) is deleted, no dialog. A variant row's ✕ is held the same way, and Save then asks nothing more. A tap only shows "Hold to delete"; letting go early, sliding off or scrolling cancels. From a keyboard or screen reader it asks "Delete product?" / "Delete group?" instead.
 
 ## Event lifecycle
 
@@ -43,13 +43,13 @@ How a seller moves through CNTR, screen by screen. Code-level navigation (`openS
 
 ## History
 
-1. Past event → its report (same layout as the Event tab). Edit → change counts, expenses, name; leaving a changed edit asks Keep editing / Discard. Its trash asks "Delete event?" (a dialog, not a hold: it drops a whole event).
+1. Past event → its report (same layout as the Event tab). Edit → change counts, expenses, name; leaving a changed edit asks Keep editing / Discard. "Delete event" (red, under the report) asks "Delete event?" (a dialog, not a hold: it drops a whole event).
 2. Compare: pick 2 events; the older is A, B shows the change.
 
 ## Data safety
 
 - Everything stays on the phone (SQLite). Export backup / Restore from backup / Export sales as CSV live in Settings. Restore replaces all data and keeps a safety copy first.
 - Nothing needs an account or internet.
-- Big actions keep a dialog: End day, End event, Restore, delete a past event, remove variants on save. Small deletes (a product, a group, an expense) are held instead.
+- Big actions keep a dialog: End day, End event, Restore, delete a past event. Small deletes (a product, a group, a variant, an expense) are held instead.
 
 **Keep this file current:** a change that adds, removes or reorders a screen, step or confirm belongs here in the same commit.

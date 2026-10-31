@@ -233,6 +233,7 @@ export function EventScreen(props: Props) {
                       {...holdToDelete(() => props.onDeleteExpense!(cost.id, false), () => props.onDeleteExpense!(cost.id, true))}
                     >
                       <Icon name="trash" />
+                      <span class="hold-fill" aria-hidden="true"><Icon name="trash" /></span>
                     </button>
                   </div>
                 )}

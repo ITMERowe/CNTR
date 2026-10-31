@@ -13,6 +13,8 @@
   --line: rgba(255, 255, 255, 0.08);
   --line-strong: rgba(255, 255, 255, 0.14);
   --scrim: rgba(0, 0, 0, 0.62);
+  --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.4); /* menus, toast, dragged tile, tour bubble */
+  --shadow-sheet: 0 24px 60px rgba(0, 0, 0, 0.55); /* colour picker */
   --selection: #264f78; /* VS Code editor selection */
 
   /* Text (all >= 4.5:1 on every surface) */
@@ -232,7 +234,7 @@ p {
   background: var(--surface-1);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-lg);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--shadow-float);
   overflow: hidden;
   animation: tour-in var(--dur-2) var(--ease-out);
 }
@@ -242,6 +244,7 @@ p {
   overflow-y: auto;
   overflow-x: hidden;
   padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--s4));
+  scroll-padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--s4)); /* focus and scrollIntoView stop above the tab bar */
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   scrollbar-width: none;
@@ -459,32 +462,43 @@ p {
   border-radius: var(--r-sm);
 }
 
-/* Hold to delete: the danger tint fills left to right while pressed (HOLD_MS); letting go empties it. */
-.hold-delete::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--negative);
-  opacity: 0.24;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform var(--dur-1) var(--ease-out);
-  pointer-events: none;
-}
-
-.hold-delete.holding::before {
-  transform: none;
-  transition: transform var(--dur-hold) linear;
-}
-
+/* Hold to delete: a solid red copy of the button (.hold-fill) is uncovered left to right while pressed (HOLD_MS),
+   so the icon and label turn light exactly where the red has reached; letting go rolls it back. */
 .hold-delete {
+  position: relative;
   -webkit-touch-callout: none;
   user-select: none;
 }
 
-.hold-delete > * {
-  position: relative; /* the icon stays over the fill */
+.hold-fill {
+  position: absolute;
+  inset: 0;
+  display: inherit;
+  place-items: center;
+  justify-content: center;
+  gap: inherit;
+  border-radius: inherit;
+  background: var(--negative);
+  color: var(--on-negative);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path var(--dur-1) var(--ease-out);
+  pointer-events: none;
+}
+
+.hold-delete.holding .hold-fill {
+  clip-path: inset(0);
+  transition: clip-path var(--dur-hold) linear;
+}
+
+/* Deleting a whole thing (a product, a group, a past event): a labelled red outline at the bottom of its screen, never a header icon. */
+.btn-delete {
+  background: transparent;
+  color: var(--negative);
+  border: 1px solid var(--negative);
+}
+
+#pastEventDeleteBtn {
+  margin-top: var(--s4);
 }
 
 .icon-btn-sm .icon {
@@ -1199,7 +1213,7 @@ p {
   position: relative;
   z-index: 2;
   transition: none;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-float);
   scale: 1.02;
 }
 
@@ -1294,6 +1308,11 @@ p {
 
 .kpi-row-3 {
   gap: var(--s2);
+}
+
+/* An odd last KPI (Expenses) takes the whole row instead of leaving a hole beside it. */
+.kpi-row > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .kpi {
@@ -2263,15 +2282,30 @@ p {
   gap: var(--s2);
 }
 
-/* Equal columns, 4px apart: a 7-digit price (1.500.000) fits whole at 360px; a long variant name may cut off instead. */
+/* Each variant is one line of a price list: a single rounded bar holding name | price | cost | remove, no boxes inside.
+   Equal columns, no gaps: a 7-digit price (1.500.000) fits whole at 360px; a long variant name may cut off instead.
+   The header shares the bar's (transparent) border and padding so its labels sit over the values. */
 .variant-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr)) 44px;
   align-items: center;
-  gap: var(--s1);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+}
+
+.variant-list .variant-row {
+  background: var(--bg);
+  border-color: var(--line-strong);
+  transition: border-color var(--dur-1) var(--ease-out);
+  animation: rise var(--dur-3) var(--ease-out) both;
+}
+
+.variant-list .variant-row:focus-within {
+  border-color: var(--text-3);
 }
 
 .variant-head .field-label {
+  padding-left: var(--s2);
   font-size: var(--fs-xs);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2280,20 +2314,44 @@ p {
 
 #productEditScreen .variant-row .input {
   min-height: 44px;
-  padding: 0 var(--s1);
+  padding: 0 var(--s1) 0 var(--s2);
+  border: 0;
   border-radius: var(--r-sm);
+  background: transparent;
   font-size: var(--fs-sm);
   text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--dur-1) var(--ease-out);
+}
+
+/* The cell being typed in lights up; the bar's own border already shows the row. */
+#productEditScreen .variant-row .input:focus {
+  background: var(--surface-2);
+  box-shadow: none;
+}
+
+/* Name and price lead; cost is the quiet one. */
+#productEditScreen .variant-row .input:nth-child(-n + 2) {
+  font-weight: var(--fw-bold);
+}
+
+#productEditScreen .variant-row .input:nth-child(3) {
+  color: var(--text-2);
 }
 
 .variant-remove {
   color: var(--text-3);
 }
 
+/* Add variant reads as the next, still empty line of the list. */
 .add-variant {
-  justify-self: start;
+  width: 100%;
   min-height: 44px;
+  margin-top: var(--s2);
   padding: 0 var(--s4);
+  background: transparent;
+  border: 1px dashed var(--line-strong);
+  color: var(--text-2);
 }
 
 /* Colour field: a live preview of the product tile */
@@ -2375,7 +2433,7 @@ p {
   background: var(--surface-2);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-lg);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  box-shadow: var(--shadow-sheet);
   transform-origin: top center;
   opacity: 0;
   transform: translateY(-6px) scale(0.98);
@@ -3162,7 +3220,7 @@ body.is-editing-event .content {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-float);
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, 12px) scale(0.98);
@@ -3307,7 +3365,7 @@ body.is-editing-event .content {
   background: var(--surface-3);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-lg);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-float);
   color: var(--text);
 }
 

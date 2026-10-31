@@ -96,7 +96,16 @@ for (const width of [412, 1280]) {
   await openFromProducts('Poster A4');
   const opened = { on: await page.isChecked('#editGroupToggle'), group: await page.inputValue('#editGroup'), rows: (await rows()).join() };
   check(`${at} editing a variant opens the whole group, switch on, every variant listed`, opened.on && opened.group === 'Poster' && opened.rows === 'A3|30.000|10.000,A4|25.000|,A5|20.000|', opened);
+  // A saved variant's remove, from the keyboard (a click with no press), asks first, naming it; Cancel keeps the row.
   await removeRow('A5');
+  await sleep(250);
+  const removeAsk = await page.textContent('#confirmModalMessage');
+  await page.click('#confirmModalCancelBtn');
+  await sleep(250);
+  const keptRows = (await rows()).length;
+  await removeRow('A5');
+  await page.click('#confirmModalConfirmBtn');
+  await sleep(250);
   await fillRow(2, 'A2', 35000);
   await page.fill('#editGroup', 'Print');
   await page.click('#editPayments .payment-option[data-method="Transfer"]');
@@ -106,17 +115,11 @@ for (const width of [412, 1280]) {
   const backAsk = { title: await page.textContent('#confirmModalTitle'), keep: await page.textContent('#confirmModalCancelBtn') };
   await page.click('#confirmModalCancelBtn');
   await sleep(250);
-  // Saving would delete the removed row's product: asks first, naming it; Cancel keeps editing with nothing saved.
-  await save();
-  const removeAsk = await page.textContent('#confirmModalMessage');
-  await page.click('#confirmModalCancelBtn');
-  await sleep(250);
-  const kept = { screen: await screen(), a5: !!(await product('Poster A5')), rows: (await rows()).length };
+  const kept = { screen: await screen(), a5: !!(await product('Poster A5')), rows: (await rows()).length, keptRows };
   check(`${at} Back after changing rows asks Keep editing / Discard; Keep editing stays`, backAsk.title === 'Discard changes?' && backAsk.keep === 'Keep editing' && kept.screen === 'productEditScreen', backAsk);
-  check(`${at} saving with a removed row asks first, naming it; Cancel keeps editing and saves nothing`, removeAsk === "Saving deletes 'Poster A5'. Their sales stay in your reports." && kept.a5 && kept.rows === 3, { removeAsk, kept });
+  check(`${at} removing a saved variant from the keyboard asks first, naming it; Cancel keeps the row; nothing saves before Save`, removeAsk === "Saving deletes 'Poster A5'. Their sales stay in your reports." && kept.a5 && kept.keptRows === 3 && kept.rows === 3, { removeAsk, kept });
+  // The hold (or that dialog) was the confirmation: Save asks nothing more.
   await save();
-  await page.click('#confirmModalConfirmBtn');
-  await sleep(250);
   const list = await stored('cntrProducts');
   const history = await stored('cntrProductHistory');
   const [p3, p4, p2] = ['Print A3', 'Print A4', 'Print A2'].map((n) => list.find((p) => p.name === n));
@@ -159,13 +162,14 @@ for (const width of [412, 1280]) {
   await page.click('label[for="editGroupToggle"]');
   const refused = { on: await page.isChecked('#editGroupToggle'), toast: await toast() };
   await removeRow('Pin');
+  await sleep(250);
+  const offAsk = await page.textContent('#confirmModalMessage');
+  await page.click('#confirmModalConfirmBtn');
+  await sleep(250);
   await page.click('label[for="editGroupToggle"]');
   const off = { on: await page.isChecked('#editGroupToggle'), name: await page.inputValue('#editName'), price: await page.inputValue('#editPrice') };
   const bigId = (await product('Pin Big')).id;
   await save();
-  const offAsk = await page.textContent('#confirmModalMessage');
-  await page.click('#confirmModalConfirmBtn');
-  await sleep(250);
   const big = await product('Pin Big');
   check(`${at} Group can't be switched off with two variants`, refused.on && refused.toast === 'Remove variants until one is left, then turn Group off', refused);
   check(`${at} with one variant left, switching off makes it a normal product with its full name; the removed one goes`, !off.on && off.name === 'Pin Big' && off.price === 'Rp 8.000' && big?.id === bigId && !big.group && !(await product('Pin')) && offAsk.includes("'Pin'"), { off, big, offAsk, names: await names() });
@@ -264,7 +268,8 @@ for (const width of [412, 1280]) {
   await page.focus('#removeProductBtn');
   await page.keyboard.press('Enter');
   const asked = { title: await page.textContent('#confirmModalTitle'), text: await page.textContent('#confirmModalMessage'), label: await page.getAttribute('#removeProductBtn', 'aria-label') };
-  await page.click('#confirmModalCancelBtn');
+  await page.click('#confirmModalCancelBtn'); await sleep(300);
+  await page.locator('#removeProductBtn').scrollIntoViewIfNeeded(); // Delete sits under Save, below a long group form
   const box = await page.locator('#removeProductBtn').boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down(); await sleep(250); await page.mouse.up(); await sleep(150);

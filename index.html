@@ -75,9 +75,9 @@
               <button class="icon-btn back-btn" id="pastEventBackBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
               <h1 class="page-title" id="pastEventTitle">Event</h1>
               <button class="icon-btn" id="pastEventEditBtn" type="button" title="Edit event" data-i18n-title="edit_event" aria-label="Edit event" data-i18n-aria="edit_event"><i data-icon="pencil"></i></button>
-              <button class="icon-btn icon-btn-danger" id="pastEventDeleteBtn" type="button" title="Delete event" data-i18n-title="delete_event" aria-label="Delete event" data-i18n-aria="delete_event"><i data-icon="trash"></i></button>
             </div>
             <div class="stack" id="pastEventCard"></div>
+            <button class="btn btn-block btn-delete" id="pastEventDeleteBtn" type="button"><i data-icon="trash"></i><span data-i18n="delete_event">Delete event</span></button>
             <div class="edit-bar" id="pastEventEditBar" hidden>
               <button type="button" class="btn btn-secondary" id="pastEventCancelBtn" data-i18n="cancel">Cancel</button>
               <button type="button" class="btn btn-primary" id="pastEventSaveBtn" data-i18n="save_changes">Save changes</button>
@@ -112,7 +112,7 @@
                     </span>
                   </label>
                   <label class="group-row" for="newDayToggle">
-                    <span class="group-row-label"><span data-i18n="settings.newDay">New day when the date changes</span><small data-i18n="settings.newDayText">The first sale on a new date starts the next day by itself</small></span>
+                    <span class="group-row-label"><span data-i18n="settings.newDay">New day when the date changes</span><small data-i18n="settings.newDayText">On the first sale of a new date</small></span>
                     <span class="switch">
                       <input type="checkbox" id="newDayToggle" role="switch" />
                       <span class="switch-track" aria-hidden="true"></span>
@@ -253,7 +253,6 @@
             <div class="page-header">
               <button class="icon-btn back-btn" id="closeEditBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
               <h1 class="page-title" id="productEditTitle">Add product</h1>
-              <button class="icon-btn icon-btn-danger hold-delete" id="removeProductBtn" type="button" title="Hold to delete product" data-i18n-title="product.holdDelete" aria-label="Hold to delete product" data-i18n-aria="product.holdDelete"><i data-icon="trash"></i></button>
             </div>
             <div class="form">
               <div class="field color-field">
@@ -334,6 +333,7 @@
                 <button class="btn btn-secondary add-variant" id="addVariantBtn" type="button"><i data-icon="plus"></i><span data-i18n="product.addVariant">Add variant</span></button>
               </div>
               <button class="btn btn-primary btn-block" id="saveProductBtn" type="button" data-i18n="save">Save</button>
+              <button class="btn btn-block btn-delete hold-delete" id="removeProductBtn" type="button" title="Hold to delete product" data-i18n-title="product.holdDelete" aria-label="Hold to delete product" data-i18n-aria="product.holdDelete"><i data-icon="trash"></i><span data-i18n="hold.hint">Hold to delete</span><span class="hold-fill" aria-hidden="true"><i data-icon="trash"></i><span data-i18n="hold.hint">Hold to delete</span></span></button>
             </div>
           </div>
         </section>

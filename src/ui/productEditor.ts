@@ -75,7 +75,7 @@ function setGroupMode(on: boolean) {
   el.editGroupToggle.checked = on;
   el.productFields.hidden = on;
   el.groupNameField.hidden = el.variantsField.hidden = !on;
-  el.removeProductBtn.style.display = editedProduct() || members.length ? 'grid' : 'none';
+  el.removeProductBtn.hidden = !(editedProduct() || members.length);
   el.removeProductBtn.title = t(on ? 'product.holdDeleteGroup' : 'product.holdDelete');
   el.removeProductBtn.setAttribute('aria-label', el.removeProductBtn.title);
 }
@@ -91,9 +91,20 @@ function variantRow(row: VariantRow = { variant: '', price: 0, cost: 0 }) {
     field.placeholder = placeholder;
     return field;
   };
-  const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'icon-btn variant-remove' });
+  const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'icon-btn variant-remove hold-delete' });
   remove.setAttribute('aria-label', t('product.removeVariant'));
-  remove.append(createIconElement('close'));
+  const fill = Object.assign(document.createElement('span'), { className: 'hold-fill' });
+  fill.setAttribute('aria-hidden', 'true');
+  fill.append(createIconElement('close'));
+  remove.append(createIconElement('close'), fill);
+  // Held like Delete, so Save doesn't ask again. A keyboard press asks first for a saved variant; a new row just goes.
+  const removeRow = () => { div.remove(); feedback('step'); updatePreview(); };
+  const askRemove = () => {
+    if (!div.dataset.id) return removeRow();
+    const name = groupedName(el.editGroup.value.trim(), div.querySelector('input')!.value.trim());
+    openConfirmModal(t('product.removeVariantsMessage', { names: `'${name}'` }), t('delete'), removeRow, { title: t('product.removeVariantsTitle') });
+  };
+  wireHold(remove, removeRow, askRemove);
   div.append(
     input(row.variant, t('product.variant'), false, t('product.variantPlaceholder')),
     input(bare(String(row.price || '')), el.variantPriceLabel.textContent ?? '', true, t('product.freePlaceholder')),
@@ -202,11 +213,6 @@ function leaveProductEditor() {
   else openConfirmModal(t('discard.groupMessage'), t('discard.button'), closeProductEditor, { title: t('discard.title'), cancelLabel: t('discard.keep') });
 }
 
-/** Saving deletes these products for good (their rows were removed), so it asks first; Cancel keeps editing. */
-function confirmRemoved(removed: Product[], save: () => void) {
-  if (!removed.length) save();
-  else openConfirmModal(t('product.removeVariantsMessage', { names: removed.map((product) => `'${product.name}'`).join(', ') }), t('delete'), save, { title: t('product.removeVariantsTitle') });
-}
 
 function closeProductEditor() {
   closeColorPicker();
@@ -239,9 +245,9 @@ const pickedColor = () => {
   return color.startsWith('#') ? color : `#${color}`;
 };
 
-function saveEditedProduct(confirmed = false) {
+function saveEditedProduct() {
   if (el.editGroupToggle.checked) {
-    saveGroup(confirmed);
+    saveGroup();
     return;
   }
   const name = el.editName.value.trim().slice(0, MAX_NAME) || t('product.defaultName', { n: state.products.length + 1 });
@@ -265,7 +271,6 @@ function saveEditedProduct(confirmed = false) {
   }
   // Group switched off: the variants whose rows were removed go, exactly as a removed row does on a group save.
   const removed = members.filter((member) => member.id !== editing?.id);
-  if (!confirmed && removed.length) return confirmRemoved(removed, () => saveEditedProduct(true));
   for (const member of removed) deleteProduct(member.name);
   // Deleting re-copies the product lists, so the edited product is found again (by id) in them.
   const editedId = editing?.id;
@@ -314,7 +319,7 @@ function markInvalid(error: keyof typeof GROUP_ERRORS, name: string) {
 }
 
 /** Saves every row as a variant of the group, all or nothing; a removed row's product is hidden exactly like Delete. */
-function saveGroup(confirmed: boolean) {
+function saveGroup() {
   const color = members.length ? pickedColor() : chooseUniqueColor(state.products, pickedColor());
   const ids = new Set(members.map((member) => member.id));
   const plan = planGroup(el.editGroup.value, readRows(), { color, payments: selectedPayments }, members, allProducts().filter((product) => !ids.has(product.id)));
@@ -324,7 +329,6 @@ function saveGroup(confirmed: boolean) {
     markInvalid(plan.error, plan.name ?? '');
     return;
   }
-  if (!confirmed && plan.remove.length) return confirmRemoved(plan.remove, () => saveGroup(true));
   // Removed first, so a new row may take a removed variant's name.
   for (const product of plan.remove) deleteProduct(product.name);
   for (const product of plan.save) {
@@ -367,13 +371,6 @@ export function initProductEditor(changed: () => void) {
     const input = event.target as HTMLInputElement;
     if (input.inputMode === 'numeric') input.value = bare(input.value);
     input.removeAttribute('aria-invalid');
-    updatePreview();
-  });
-  el.editVariants.addEventListener('click', (event) => {
-    const row = (event.target as HTMLElement).closest('.variant-remove')?.closest('.variant-row');
-    if (!row) return;
-    row.remove();
-    feedback('step');
     updatePreview();
   });
   el.addVariantBtn.addEventListener('click', () => {
