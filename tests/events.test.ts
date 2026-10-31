@@ -1,7 +1,7 @@
 // Event maths: days, totals, History edits. Run with `npm test`.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { adjustCount, breakTime, defaultEventName, eventSummary, formatDay, saleTime, snapshotProducts, splitDays, todaySales } from '../src/events.ts';
+import { adjustCount, breakTime, defaultEventName, eventSummary, formatDay, saleTime, snapshotProducts, splitDays, todaySales, withLinkedCosts } from '../src/events.ts';
 import { setLanguage } from '../src/i18n.ts';
 import type { PastEvent, SaleRecord } from '../src/types.ts';
 
@@ -114,4 +114,34 @@ test('dates and the default event name follow the app language, not the phone', 
   assert.equal(formatDay('2026-10-05T12:00:00.000Z'), '5 Okt 2026');
   assert.equal(defaultEventName([], new Date('2026-10-05T12:00:00.000Z')), 'Acara 5 Okt 2026');
   setLanguage('en');
+});
+
+test('an expense linked to a product replaces that product item cost for every unit in the event', () => {
+  const photocard = { id: 'p-photo', name: 'Photocard', price: 2000, cost: 500, color: '#f76495' };
+  const sales = Array.from({ length: 300 }, () => ({ ...sale('Photocard', T1, 'Cash', 2000, 500), productId: 'p-photo' }));
+  const expenses = [{ id: 'x1', name: 'Photocard print', amount: 100000, productIds: ['p-photo'] }];
+  const summary = eventSummary(sales, expenses, [photocard]);
+  assert.equal(summary.revenue, 600000);
+  assert.equal(summary.productProfit, 600000); // no 300 × 500 item cost on top of the print run
+  assert.equal(summary.net, 500000); // total cost counted is exactly the 100k expense
+  // Without the link, item cost applies as usual.
+  assert.equal(eventSummary(sales, [{ id: 'x1', name: 'Photocard print', amount: 100000 }], [photocard]).net, 600000 - 150000 - 100000);
+});
+
+test('linked costs: only linked products; old sales without an id match by name; other events untouched', () => {
+  const products = [{ id: 'p-photo', name: 'Photocard', price: 2000, cost: 500, color: '' }];
+  const old = sale('Photocard', T1, 'Cash', 2000, 500); // from before ids
+  const other = sale('Poster', T1);
+  const covered = withLinkedCosts([old, other], [{ id: 'x', name: 'Print', amount: 1, productIds: ['p-photo'] }], products);
+  assert.deepEqual(covered.map((s) => s.cost), [0, 12000]);
+  assert.equal(old.cost, 500, 'input not changed');
+  assert.deepEqual(withLinkedCosts([old], [], products).map((s) => s.cost), [500]);
+});
+
+test('linked costs: a product hidden then re-added under the same name is covered for all its sales', () => {
+  const products = [{ id: 'p-new', name: 'Sticker', price: 2000, cost: 500, color: '' }];
+  const before = { ...sale('Sticker', T1, 'Cash', 2000, 500), productId: 'p-old' };
+  const after = { ...sale('Sticker', T1, 'Cash', 2000, 500), productId: 'p-new' };
+  const covered = withLinkedCosts([before, after], [{ id: 'x', name: 'Print', amount: 1, productIds: ['p-new'] }], products);
+  assert.deepEqual(covered.map((s) => s.cost), [0, 0]);
 });

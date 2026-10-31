@@ -1,24 +1,68 @@
 # Changelog
 
-## 0.1.0 (2026-10-28)
+Each version starts with **Highlights**: a short list for users, shown first on the GitHub Release and as Google Play's "What's new" (keep it under 500 characters). The sections after it are the full list; put the biggest changes first in each, since a release page shows only the first 5 of each section.
+
+## 0.1.1 (unreleased)
+
+### Highlights
+- Product groups: one tile for a poster and its sizes, made on one page, foldable
+- Link an expense to products so their cost isn't counted twice
+- Tablets and landscape get 2 or 3 columns of tiles
+- Hold to delete products and expenses
+- Tidier screens: one header row everywhere, denser product list
+- Taps vibrate on more phones
 
 ### Added
-- Settings → Event → **New day when the date changes** (off by default): the first sale on a new date starts the next day by itself.
-- **Bahasa Indonesia**: the whole app (screens, messages, the tutorial, backup errors) in English and Indonesian. A fresh install on an Indonesian phone starts in Indonesian; people updating stay in English until they choose it in Settings → Appearance → Language. Month names follow the app language. Payment method names and CSV headers stay English.
+- **Product groups**: turn on *Group with variants* in the product editor to make a group (e.g. Poster) and its variants (A3, A4, A5), each with its own price and cost, on one page. Sell shows one tile per group with a row per variant, compact by default; tap the group's name to fold it. Reports, History, Compare and CSV count the variants like any product.
+- **Expenses for products**: an expense can be linked to products (*For products* switch). In that event those products count no per-item cost, so a print run isn't subtracted twice.
+- **Tablets and wide screens**: 2 tile columns from 720px wide, 3 from 1080px; other pages keep a comfortable width. Drag works across columns.
+- **Hold to delete**: products, groups and expenses delete with a 0.7-second hold instead of a dialog; big actions (End day, End event, Restore, delete an event) still ask.
+
+### Changed
+- One header row on every tab, with the title and its buttons on the same line; the Products list is denser (one line of price, profit and payment methods per product; a group's shared payments shown once).
+- New type scale with clearer sizes and two weights; fewer sublabels; specific dialog titles ("Delete event?") and verb buttons.
+- Sell buttons press in slightly when tapped; long sheets fade at the edges that scroll.
+- Backups are smaller and big backups restore; CSV times are the phone's local time.
+- The Event tab's Products cards show only days with sales.
+
+### Fixed
+- Taps didn't vibrate on some phones (the system accepted the haptic but played nothing).
+- A field could stay hidden behind the keyboard.
+- Very large data could stop the app from starting on Android (it's now read in pieces).
+- The Sell tab could lag on every tap once History grew large.
+
+
+
+### Highlights
+- First release: tap-to-sell tiles, net profit after expenses, multi-day events, history and compare
+- Hold a tile to drag it into your own order, or sort by today's best sellers
+- Compact tiles fit more products on screen
+- Bahasa Indonesia and a light theme
+- Free items get their own counter
+- A hands-on tutorial with practice data
+
+### Added
+- **Arrange the Sell counter**: hold a tile, then drag it up or down to move it (the order is saved; a hold never records a sale). The new ⋮ menu on Sell has *Sort by best sellers* (most sold today first; the order only changes when you come back to Sell, so tiles never move mid-rush) and *Compact tiles* (no price, one row per payment, so more tiles fit).
+- **Bahasa Indonesia**: the whole app (screens, messages, the tutorial, backup errors) in English and Indonesian. A fresh install on an Indonesian phone starts in Indonesian; people updating stay in English until they choose it in Settings → Looks → Language. Month names follow the app language. Payment method names and CSV headers stay English.
 - **Light mode**: Settings → Looks → Theme, a Light/Dark toggle. The phone's own setting only resolves the very first choice (then saved); it is not followed afterwards. Light uses VS Code Light+ colours; all text keeps ≥ 4.5:1 contrast.
-- **Products tab**: a price of 0 shows as "Free" and gets a plain counter instead of Cash/QRIS buttons, for tracking giveaways.
+- **Hands-on tutorial**: a 30-step tour on rails (like a game tutorial: only the highlighted button responds, the rest is dimmed) with practice products and events (sell, undo, add a product, expenses, End day, End event, edit a past event, Compare). Offered once on an empty first launch; replay from Settings → About → Show tutorial. The real data is put aside and comes back exactly as it was on Finish, Quit, or the next launch after a crash. No backup files are written during the tour, and Export/Restore wait until it ends.
+- **Haptics and sound effects**: a tap on every sale, undo, stepper, switch and payment pick; a success buzz and soft chime on End day, End event, saved edits and exports; a warning buzz on refusals and failures. Settings → Sound → *Sound effects* turns the tones off (vibration stays).
+- **Free items**: a price of 0 shows as "Free" and gets a plain counter instead of Cash/QRIS buttons, for tracking giveaways.
+- Settings → Event → **New day when the date changes** (off by default): the first sale on a new date starts the next day by itself.
 - If the live event's last sale is over 3 days old, CNTR asks whether to end it before the next con's sales land in it.
 - Ending a day also makes a safety backup (replacing the previous one, unlike End event's), like ending an event already did.
 - A past event's detail screen shows its date range and day count.
 
 ### Fixed
+- Deleting a product no longer deletes any of its sales: they stay in every report under its name.
+- A product's new price applies only to sales made after the change; earlier sales keep the price they were sold at.
 - Leaving an edited past event with unsaved changes (another tab, Android back) asks first: Keep editing or Discard.
+- A damaged saved event can no longer stop the app from starting.
+- With *Compact money* on, amounts from 999,500 to 999,999 now show "1M" instead of "1.000K".
 - Deleting an expense asks first.
 - Escape closes every confirm sheet.
-- A product's new price applies only to sales made after the change; earlier sales keep the price they were sold at.
 - Every page opens at its top (it kept the previous page's scroll position).
 - The tile counters no longer risk being cut off with large system text.
-- Deleting a product no longer deletes any of its sales: they stay in every report under its name.
 - Saving an edited past event shows "Saving…" and locks Save, Cancel and Android back until the save is done (Cancel used to look like it cancelled while the save still went through).
 - An empty day card says "No sales yet" instead of a misleading date.
 - Leaving an edit with unsaved changes, and every other sheet, now blocks the page behind it and returns focus to Cancel on open, and to what opened it on close.
@@ -28,24 +72,28 @@
 - Compare's button is hidden until there are 2 events to compare; comparing happens as soon as a 2nd is picked.
 - The product editor's Price/Cost fields show the current currency's own symbol, not always "Rp".
 - "Products · Day 1" only shows once there's more than one day.
+- Renaming a product while *Sort by best sellers* is on no longer moves its tile to the end.
+- Compact tiles: payment names no longer overlap their counts on small phones.
+- Screens without header buttons no longer have an empty strip above their title; landscape keeps clear of side camera cutouts.
+- Tutorial: the highlight follows rounded corners and stays on screen around full-width sheets; the name, price and cost steps wait for Next instead of moving on after one character; the background is dimmed less and only slightly blurred, so it stays readable.
 
-### Security (review: `docs/security-review-2026-10-27.md`)
-- No INTERNET permission any more; a Content-Security-Policy; CSV cells that start like a formula are neutralised; file sharing limited to CNTR's own folders; CI with a read-only token, a pinned third-party action and guaranteed keystore cleanup; the privacy text now mentions Android's own Google account backup. Commits use the GitHub no-reply address.
-
-- **Hands-on tutorial**: a 28-step tour on rails (like a game tutorial: only the highlighted button responds, the rest is dimmed) with practice products and events (sell, undo, add a product, expenses, End day, End event, edit a past event, Compare). Offered once on an empty first launch; replay from Settings → Show tutorial. The real data is put aside and comes back exactly as it was on Finish, Quit, or the next launch after a crash. No backup files are written during the tour, and Export/Restore wait until it ends.
-- **Haptics and sound effects**: a tap on every sale, undo, stepper, switch and payment pick; a success buzz and soft chime on End day, End event, saved edits and exports; a warning buzz on refusals and failures. Settings → Sound → *Sound effects* turns the tones off (vibration stays).
+### Security
+- No INTERNET permission any more; a Content-Security-Policy; CSV cells that start like a formula are neutralised; file sharing limited to CNTR's own folders; the privacy text mentions Android's own Google account backup.
+- Backup files with absurdly long names are rejected; name fields stop at 1,000 characters.
+- Build tools: Vite 6 and a patched dependency, so no known vulnerabilities; the development server only listens on the computer it runs on.
+- CI: read-only token, pinned third-party actions, guaranteed keystore cleanup.
 
 ### Changed
+- **Products is now its own tab** (between Event and Sell), not a Settings submenu.
 - **Compare events** rebuilt: the older event on the left, rows lined up across both events, the change from A under each B value, expense items with the same name added up, "—" for a missing expense, no green "better" colouring.
+- "Profit" renamed to "Product profit" everywhere, so it is not confused with "Net profit" beside it.
 - Sales by hour removed from the event report.
+- Tab bar: solid background (no blur), a thin line marks the active tab instead of a pill; Sell, the middle tab, has its own always-filled, larger icon.
 - Recent sales and Products: the colour bar runs the full height of the row.
 - Version names come from `package.json`: releases are `0.1.0` (`CNTR_0.1.0.apk`, tag `v0.1.0`); other builds add their branch and CI run (`0.1.0-dev.36`). The internal `versionCode` (the CI run number) keeps rising, so every build still installs as an update over earlier ones (including the older `0.1.<build>` and `1.0.<build>` builds).
 - The two explanation notes under Settings → Backup were removed (the About → Privacy text stays).
-- **Products is now its own tab** (between Event and Sell), not a Settings submenu.
-- "Profit" renamed to "Product profit" everywhere, so it is not confused with "Net profit" beside it.
 - Disabled buttons and unpicked payment chips are readable, not washed-out or untappable.
 - The event name is now the Event screen's own title; the "CNTR" wordmark only shows on Sell.
-- Tab bar: solid background (no blur), a thin line marks the active tab instead of a pill; Sell, the middle tab, has its own always-filled, larger icon.
 - Cut the type scale (15 font sizes to 6, 7 weights to 3) and corner radii (4 sizes to 3).
 
 ## Earlier builds, named 1.0.x (branch `feature/signing-tests-about`)

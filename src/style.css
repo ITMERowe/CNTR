@@ -13,6 +13,8 @@
   --line: rgba(255, 255, 255, 0.08);
   --line-strong: rgba(255, 255, 255, 0.14);
   --scrim: rgba(0, 0, 0, 0.62);
+  --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.4); /* menus, toast, dragged tile, tour bubble */
+  --shadow-sheet: 0 24px 60px rgba(0, 0, 0, 0.55); /* colour picker */
   --selection: #264f78; /* VS Code editor selection */
 
   /* Text (all >= 4.5:1 on every surface) */
@@ -38,6 +40,7 @@
   --r-sm: 10px;
   --r-md: 14px;
   --r-lg: 20px;
+  --r-pill: 999px; /* chips, switches, toasts, handles */
   --s1: 4px;
   --s2: 8px;
   --s3: 12px;
@@ -54,6 +57,18 @@
   --dur-1: 200ms;
   --dur-2: 280ms;
   --dur-3: 420ms;
+  --dur-hold: 700ms; /* hold to delete; HOLD_MS in src/ui/dom.ts */
+
+  /* Type: one family, 5 sizes, 2 weights, 2 line-heights. The revenue figures are fluid (they shrink long amounts). */
+  --fs-xs: 12px; /* labels, captions, meta */
+  --fs-sm: 14px; /* secondary text, notes */
+  --fs-md: 16px; /* body, buttons, row and card titles */
+  --fs-lg: 20px; /* sheet titles, tile names, report numbers */
+  --fs-xl: 26px; /* page titles, single-tile counts, group titles */
+  --fw-regular: 500;
+  --fw-bold: 700;
+  --lh-tight: 1.15; /* headings, names, numbers */
+  --lh-body: 1.45; /* sentences and paragraphs */
 
   --on-negative: #1d0806;
   --tabbar-h: 68px;
@@ -102,15 +117,21 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-body);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
 }
 
+/* No square corners, even on a transparent wrapper: the tutorial's spotlight and focus rings follow an element's
+   radius. Zero specificity, so a component's own radius wins. Rows with a divider line and clipped (ellipsis)
+   text are left out: a radius there would bend the divider's ends or shave letters. */
+:where(.hero, .payment-options, .tab, .event-name, #compareEventCard, .field, .field-row, .field-hint, .checklist, .check-group, .check-group-head, .check-variants, .variant, .variant-meta, .tile-head, .tile-group-head, .tile-group-title, .tile-group-pays, .tile-pay, .pay, .page-header, .card-head, .sheet-header, .sheet-actions, .report-hero, .group, .product-section, .product-group, .stack, .list, .form, .split, .kpi-row, .variants, .variant-list, .variant-row, .form-part, .event-actions, .event-name-row, .topbar-row, .empty, .rank, .product-row, .product-toggle-btn, .page, .list-main, .rank-main, .rank-meta, .split-item, .split-legend, .tile-meta, .topbar-actions, .products-day-head, .cmp) {
+  border-radius: var(--r-sm);
+}
+
 body {
-  max-width: 520px;
-  margin: 0 auto;
   position: relative;
   overflow: hidden;
   -webkit-text-size-adjust: 100%;
@@ -180,23 +201,19 @@ p {
 }
 
 .topbar {
-  /* Sides: a landscape phone puts its camera cutout or 3-button nav bar on the left/right edge. */
-  padding: calc(env(safe-area-inset-top) + var(--s3)) calc(var(--s4) + env(safe-area-inset-right)) var(--s3) calc(var(--s4) + env(safe-area-inset-left));
+  /* Sides: a landscape phone puts its camera cutout or 3-button nav bar on the left/right edge. Off Sell it holds only the top inset. */
+  padding: env(safe-area-inset-top) calc(var(--s4) + env(safe-area-inset-right)) 0 calc(var(--s4) + env(safe-area-inset-left));
   background: var(--bg);
   z-index: 4;
 }
 
+/* Sell's page header, in the same place and size as every other screen's .page-header (.page's top padding + 52px + gap). */
 .topbar-row {
   display: flex;
   align-items: center;
-  gap: var(--s3);
-  min-height: 44px;
-}
-
-.brand {
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.32em;
+  gap: var(--s2);
+  min-height: 52px;
+  margin: var(--s2) 0 var(--s3);
 }
 
 .topbar-actions {
@@ -217,7 +234,7 @@ p {
   background: var(--surface-1);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-lg);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--shadow-float);
   overflow: hidden;
   animation: tour-in var(--dur-2) var(--ease-out);
 }
@@ -227,6 +244,7 @@ p {
   overflow-y: auto;
   overflow-x: hidden;
   padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--s4));
+  scroll-padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--s4)); /* focus and scrollIntoView stop above the tab bar */
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   scrollbar-width: none;
@@ -246,6 +264,9 @@ p {
 }
 
 .page {
+  /* Tablets and wide screens: a readable centred column instead of full width (phones are narrower). */
+  max-width: 640px;
+  margin: 0 auto;
   padding: var(--s2) var(--s4) var(--s4);
   /* The page's current side padding, so .edit-bar can cancel exactly it, including at the small-phone breakpoint below. */
   --page-x: var(--s4);
@@ -259,11 +280,17 @@ p {
   margin-bottom: var(--s3);
 }
 
+/* Sell's title is the wordmark (owner): same row, size and baseline as every tab's title, spaced out. */
+.page-title.brand {
+  letter-spacing: 0.32em;
+}
+
 .page-title {
   flex: 1;
   min-width: 0;
-  font-size: 26px;
-  font-weight: 800;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.025em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -289,12 +316,12 @@ p {
 .hero {
   display: flex;
   flex-direction: column;
-  padding: var(--s3) 0 var(--s1);
+  padding: 0 0 var(--s4);
 }
 
 .eyebrow {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -303,9 +330,9 @@ p {
 .hero-figure {
   /* Shrinks long amounts (--chars is set by the view) to fit the screen width. */
   font-size: min(clamp(40px, 12vw, 52px), calc((min(100vw, 520px) - 40px) / (var(--chars, 1) * 0.6)));
-  font-weight: 800;
+  font-weight: var(--fw-bold);
   letter-spacing: -0.035em;
-  line-height: 1.08;
+  line-height: var(--lh-tight);
   margin-top: var(--s1);
   white-space: nowrap;
   overflow: hidden;
@@ -317,13 +344,50 @@ p {
   font-size: calc(0.75 * min(clamp(40px, 12vw, 52px), calc((min(100vw, 520px) - 40px) / (var(--chars, 1) * 0.6))));
 }
 
+/* Phone landscape: the header and revenue share one row, so more than one row of tiles fits. */
+@media (max-height: 500px) {
+  /* Title, revenue, then the buttons, in one 52px row at the same place as the other screens' headers. */
+  .topbar-row:not([hidden]) {
+    display: contents;
+  }
+
+  .app:has(#salesScreen.active) .topbar {
+    display: flex;
+    align-items: center;
+    gap: var(--s4);
+    min-height: calc(env(safe-area-inset-top) + var(--s2) + 52px + var(--s3));
+    padding-top: calc(env(safe-area-inset-top) + var(--s2));
+    padding-bottom: var(--s3);
+  }
+
+  .topbar .page-title {
+    flex: none;
+  }
+
+  .topbar-actions {
+    order: 1;
+  }
+
+  .hero {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--s3);
+    padding: 0;
+  }
+
+  .hero .hero-figure,
+  .hero-meta {
+    margin-top: 0;
+  }
+}
+
 .hero-figure.is-negative {
   color: var(--negative);
 }
 
 .hero-figure-symbol {
   font-size: 0.45em;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--text-3);
 }
 
@@ -333,8 +397,8 @@ p {
   flex-wrap: wrap;
   gap: var(--s2);
   margin-top: var(--s2);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
   color: var(--text-2);
 }
 
@@ -398,6 +462,45 @@ p {
   border-radius: var(--r-sm);
 }
 
+/* Hold to delete: a solid red copy of the button (.hold-fill) is uncovered left to right while pressed (HOLD_MS),
+   so the icon and label turn light exactly where the red has reached; letting go rolls it back. */
+.hold-delete {
+  position: relative;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.hold-fill {
+  position: absolute;
+  inset: 0;
+  display: inherit;
+  place-items: center;
+  justify-content: center;
+  gap: inherit;
+  border-radius: inherit;
+  background: var(--negative);
+  color: var(--on-negative);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path var(--dur-1) var(--ease-out);
+  pointer-events: none;
+}
+
+.hold-delete.holding .hold-fill {
+  clip-path: inset(0);
+  transition: clip-path var(--dur-hold) linear;
+}
+
+/* Deleting a whole thing (a product, a group, a past event): a labelled red outline at the bottom of its screen, never a header icon. */
+.btn-delete {
+  background: transparent;
+  color: var(--negative);
+  border: 1px solid var(--negative);
+}
+
+#pastEventDeleteBtn {
+  margin-top: var(--s4);
+}
+
 .icon-btn-sm .icon {
   width: 18px;
   height: 18px;
@@ -411,8 +514,8 @@ p {
   min-height: 48px;
   padding: 0 var(--s5);
   border-radius: var(--r-md);
-  font-weight: 700;
-  font-size: 15px;
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
   transition: background-color var(--dur-tap) var(--ease-out), transform var(--dur-tap) var(--ease-out), opacity var(--dur-1);
 }
 
@@ -452,8 +555,24 @@ p {
   display: grid;
   /* A single column that cannot grow past the screen: without minmax(0, ...) an unbroken long name could still force it wider. */
   grid-template-columns: minmax(0, 1fr);
+  /* Each tile keeps its own height, so a taller tile doesn't stretch the ones beside it. */
+  align-items: start;
   gap: var(--s2);
   padding: var(--s2) var(--s4) var(--s4);
+}
+
+/* Phone landscape and tablets: more columns, each never narrower than a 360px phone's tile
+   (~340px, where compact TRANSFER + count and a 14-char name still fit). */
+@media (min-width: 720px) {
+  .sales-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1080px) {
+  .sales-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .tile {
@@ -461,6 +580,7 @@ p {
   --ink: #ffffff;
   --ink-soft: rgba(255, 255, 255, 0.16);
   --ink-faint: rgba(255, 255, 255, 0.09);
+  --ink-line: rgba(255, 255, 255, 0.4);
   position: relative;
   background: var(--tile);
   color: var(--ink);
@@ -492,10 +612,10 @@ p {
   min-width: 0;
   /* Never wider than one payment button below (tile-pay's two 1fr columns, same gap): matches the clicker it names. */
   max-width: calc((100cqw - var(--s2)) / 2);
-  font-size: 18px;
-  font-weight: 800;
+  font-size: var(--fs-lg); /* the same as a group's title: every tile's name reads at one size */
+  font-weight: var(--fw-bold);
   letter-spacing: -0.02em;
-  line-height: 1.2;
+  line-height: var(--lh-tight);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -503,7 +623,7 @@ p {
 
 /* A long name shrinks first; a very long one also wraps to a 2nd line (SalesGrid.tsx picks the class by length). */
 .product-name.is-long {
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 
 .product-name.is-wrap {
@@ -516,8 +636,8 @@ p {
 
 .product-price {
   flex-shrink: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
   opacity: 0.78;
 }
 
@@ -574,12 +694,12 @@ p {
   gap: var(--s2);
   min-height: 44px;
   padding: 0 var(--s4);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--line-strong);
   background: var(--surface-1);
   color: var(--text-2);
-  font-weight: 700;
-  font-size: 14px;
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
   transition: background-color var(--dur-tap), transform var(--dur-tap) var(--ease-out);
 }
 
@@ -619,12 +739,16 @@ p {
   border-radius: var(--r-md);
   background: var(--ink-faint);
   text-align: left;
-  transition: background-color var(--dur-tap) var(--ease-out), transform var(--dur-tap) var(--ease-out);
+  /* Tactile: a 2px bottom edge in the tile's own ink, inside the box (no layout shift). Pressing flattens it as the face sinks. */
+  --edge: inset 0 -2px 0 var(--ink-soft);
+  box-shadow: var(--edge);
+  transition: background-color var(--dur-tap) var(--ease-out), transform var(--dur-tap) var(--ease-out), box-shadow var(--dur-tap) var(--ease-out);
 }
 
 .pay-add:active {
+  --edge: inset 0 0 0 var(--ink-soft);
   background: var(--ink-soft);
-  transform: scale(0.97);
+  transform: translateY(1px) scale(0.97);
 }
 
 .pay-label {
@@ -635,11 +759,10 @@ p {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.85;
 }
 
 .pay-name {
@@ -665,9 +788,9 @@ p {
 
 .payment-value {
   display: block;
-  font-size: 26px;
-  font-weight: 800;
-  line-height: 1.08;
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
@@ -734,7 +857,180 @@ p {
   stroke-width: 2.6;
 }
 
-/* Compact tiles (Sell ⋮ menu): no price, and each half is one row (label, count, then −), so more tiles fit. */
+/* A product group: its name and one pencil once, then one row per variant: name (and price) beside its payment buttons,
+   each about a third of a single product's height. */
+.tile-group-head {
+  margin-bottom: var(--s2);
+}
+
+.tile-group-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+
+.tile-group .group-name {
+  max-width: none;
+}
+
+/* The group's name heads its tile at the same size as a single tile's name (20px), above its variants' (16px); long ones a step down. */
+.tile-group .group-name:not(.is-long) {
+  font-size: var(--fs-lg);
+}
+
+.tile-group .group-name.is-long {
+  font-size: var(--fs-md);
+}
+
+.tile-group-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The whole name row folds and unfolds the group (44px tall with its ::after); the pencil beside it doesn't. */
+.tile-group-toggle {
+  position: relative;
+  width: 100%;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  border-radius: var(--r-sm);
+  color: inherit;
+  text-align: left;
+  transition: background-color var(--dur-tap);
+}
+
+.tile-group-toggle::after {
+  content: '';
+  position: absolute;
+  inset: -6px 0;
+}
+
+.tile-group-toggle:active {
+  background: var(--ink-faint);
+}
+
+.tile-group-sold {
+  flex-shrink: 0;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+.tile-group-toggle .icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+  opacity: 0.85;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+/* Folded: just the header row, chevron pointing at the name. */
+.tile-group.is-folded .tile-group-head {
+  display: block;
+  margin-bottom: 0;
+}
+
+.is-folded .tile-group-toggle .icon {
+  transform: rotate(-90deg);
+}
+
+/* The payment labels as column headers: compact tiles only (otherwise each button carries its own). */
+.tile-group-pays {
+  display: none;
+}
+
+.variant {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  align-items: center;
+  gap: var(--s2);
+}
+
+.variant + .variant {
+  margin-top: var(--s2);
+}
+
+.variant-meta {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+/* The name column is narrow, so a variant's name may take 2 lines at any length; it never widens the row. */
+.variant .product-name {
+  max-width: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* The variant's name is a step below the group's, so the group reads first. */
+.variant .product-name:not(.is-long) {
+  font-size: var(--fs-md);
+}
+
+.variant .product-name.is-long {
+  font-size: var(--fs-sm);
+}
+
+.variant .product-price {
+  font-size: var(--fs-xs);
+  opacity: 1; /* full ink: a faded price falls under 2.6:1 on light tiles */
+}
+
+/* Each half: its label over its count, − in the corner; the whole half is the + (no separate + icon). */
+.variant .pay-add {
+  min-height: 52px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: center;
+  row-gap: 2px;
+  padding: var(--s2);
+}
+
+.variant .pay-label {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+}
+
+.variant .pay-plus {
+  display: none;
+}
+
+/* Icon and full name (TRANSFER, E-WALLET) both fit a 360px phone's narrow halves: smaller icon, no tracking. */
+.variant .pay-label,
+.tile-group-pays .pay-label {
+  gap: var(--s1);
+  letter-spacing: 0;
+}
+
+.variant .pay-label .icon,
+.tile-group-pays .pay-label .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.variant .pay-count {
+  align-self: center;
+}
+
+.variant .payment-value {
+  font-size: var(--fs-lg);
+}
+
+/* 4px in: its 44px-wide hit area stops inside the 8px gap, so it never covers a neighbouring sell button. */
+.variant .pay-undo {
+  right: var(--s1);
+  bottom: var(--s1);
+}
+
+/* Compact tiles (Sell ⋮ menu): no price (a variant keeps it as a caption), and each half is one row (label, count, then −), so more tiles fit. */
 .is-compact .tile {
   padding: var(--s2);
 }
@@ -768,10 +1064,138 @@ p {
 }
 
 .is-compact .payment-value {
-  font-size: 18px;
+  font-size: var(--fs-lg);
 }
 
 .is-compact .pay-undo {
+  bottom: calc(50% - 13px);
+}
+
+/* Compact group: a table. Payment labels once in the header row, then each variant is name | count | count, no price. */
+.is-compact .tile-group-head,
+.is-compact .variant {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 2fr);
+}
+
+/* The name gets the whole first line (never cut on a 360px phone); the payment labels sit on a slim line below,
+   centred over the counts they name. */
+.is-compact .tile-group-head {
+  display: grid;
+  align-items: center;
+  column-gap: var(--s2);
+  row-gap: 2px;
+  margin-bottom: var(--s1);
+}
+
+.is-compact .tile-group-title {
+  grid-column: 1 / -1;
+}
+
+.is-compact .tile-group-title,
+.is-compact .tile-group-toggle {
+  gap: var(--s1);
+}
+
+/* 28px like the pencil, still 44px to the finger: the extra line costs about 12px, not a row. */
+.is-compact .tile-group-toggle {
+  min-height: 28px;
+}
+
+.is-compact .tile-group-toggle::after {
+  inset: -8px 0;
+}
+
+/* Variant names a step under the group's, so the group reads first and the counts carry the row. */
+/* One line (ellipsis) with the price under it: both fit the 44px cell, so the row is no taller. Full ink, no fade. */
+.is-compact .variant .product-name {
+  display: block;
+  white-space: nowrap;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+.is-compact .variant .product-price {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-tight);
+}
+
+.is-compact .variant .variant-meta {
+  gap: 0;
+}
+
+/* An unsold cell is quiet; a sold one is set heavier and ringed, so the rows with sales stand out at a glance.
+   A ring, not a lighter fill: lightening the cell would drop white ink under 2.6:1 on pink and yellow tiles. */
+.is-compact .variant .payment-value {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-regular);
+}
+
+.is-compact .variant .pay.is-sold .payment-value {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+}
+
+.is-compact .variant .pay.is-sold .pay-add {
+  box-shadow: inset 0 0 0 1.5px var(--ink-line), var(--edge);
+}
+
+.is-compact .tile-group .tile-edit {
+  width: 28px;
+  height: 28px;
+}
+
+.is-compact .tile-group .tile-edit::after {
+  inset: -8px;
+}
+
+.is-compact .tile-group-pays {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s2);
+}
+
+.is-compact .tile-group-pays.tile-pay-single {
+  grid-template-columns: 1fr;
+}
+
+/* Over the counts below; 11px like the rows' labels, so icon + TRANSFER fit a 360px phone. */
+.tile-group-pays .pay-label {
+  grid-column: auto;
+  grid-row: auto;
+  justify-content: center;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-tight);
+  letter-spacing: 0;
+}
+
+/* Exception (DESIGN.md): the two long method names are 10px, so TRANSFER / E-WALLET leave room in every tile mode. */
+/* Each keeps the 12px label's line box, so no row changes height. */
+:is([data-payment='Transfer'], [data-payment='E-wallet']) .pay-label {
+  font-size: 10px;
+  line-height: calc(var(--fs-xs) * var(--lh-body));
+}
+
+.tile-group-pays .pay-label:is([data-payment='Transfer'], [data-payment='E-wallet']) {
+  font-size: 10px;
+  line-height: calc(var(--fs-xs) * var(--lh-tight));
+  gap: 2px; /* icon to word: keeps 8px clear of the column edges on a 360px phone */
+}
+
+.is-compact .variant .pay-add {
+  min-height: 44px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* The header names the column; a Free counter keeps its own label (it has no column). */
+.is-compact .variant .pay:not([data-payment='Free']) .pay-label {
+  display: none;
+}
+
+.is-compact .variant .pay-undo {
   bottom: calc(50% - 13px);
 }
 
@@ -789,7 +1213,7 @@ p {
   position: relative;
   z-index: 2;
   transition: none;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-float);
   scale: 1.02;
 }
 
@@ -848,13 +1272,14 @@ p {
 }
 
 .card-title {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
 }
 
 .card-note {
   color: var(--text-3);
-  font-size: 14px;
+  font-size: var(--fs-sm);
 }
 
 .page-sub {
@@ -885,6 +1310,11 @@ p {
   gap: var(--s2);
 }
 
+/* An odd last KPI (Expenses) takes the whole row instead of leaving a hole beside it. */
+.kpi-row > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
 .kpi {
   display: flex;
   flex-direction: column;
@@ -903,14 +1333,15 @@ p {
 }
 
 .kpi-label {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   color: var(--text-3);
 }
 
 .kpi-value {
-  font-size: 18px;
-  font-weight: 800;
+  font-size: var(--fs-lg);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -919,11 +1350,11 @@ p {
 }
 
 .kpi-row-3 .kpi-value {
-  font-size: 18px;
+  font-size: var(--fs-lg);
 }
 
 .kpi-hint {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   white-space: nowrap;
   overflow: hidden;
@@ -976,8 +1407,9 @@ p {
 }
 
 .list-title {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -987,7 +1419,7 @@ p {
   display: flex;
   align-items: center;
   gap: var(--s2);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   overflow: hidden;
   white-space: nowrap;
@@ -1000,8 +1432,21 @@ p {
   overflow-wrap: anywhere;
 }
 
+/* A long amount on a narrow phone moves the amount and buttons to a 2nd line, instead of squeezing the name to a letter a line. */
+.cost-item {
+  flex-wrap: wrap;
+}
+
+.cost-item .list-main {
+  flex-basis: 5em;
+}
+
+.cost-item .list-value {
+  margin-left: auto;
+}
+
 .list-value {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -1032,20 +1477,20 @@ p {
   place-items: center;
   border-radius: var(--r-md);
   background: var(--surface-2);
-  line-height: 1.15;
+  line-height: var(--lh-tight);
   text-align: center;
 }
 
 .row-date strong {
-  font-size: 15px;
-  font-weight: 800;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
   color: var(--text);
 }
 
 .row-date small {
   display: block;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -1064,7 +1509,7 @@ p {
   flex: none;
   align-self: stretch;
   width: 4px;
-  border-radius: 2px;
+  border-radius: var(--r-pill);
 }
 
 /* The bar runs the row's full height, divider to divider (cancels the row's vertical padding). */
@@ -1072,18 +1517,14 @@ p {
   margin-block: calc(-1 * var(--s2));
 }
 
-.product-edit-btn > .sale-bar {
-  margin-block: calc(-1 * var(--s3));
-}
-
 .pay-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 1px 8px 1px 6px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
+  gap: 6px;
+  padding: 1px var(--s2) 1px 6px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   color: var(--text-2);
   background: var(--surface-3);
 }
@@ -1130,43 +1571,70 @@ p {
   place-items: center;
 }
 
-/* Products screen: sections (On the counter / Hidden) of rows you tap to edit */
+/* Products screen: one card of rows (and a Hidden section) you tap to edit */
 .product-section-title {
   margin: 0 0 var(--s1) 0;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
   color: var(--text-3);
 }
 
 .product-section-note {
   margin: 0 0 var(--s2) 0;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
+}
+
+/* A product (or a whole group) in one row: its colour as a slim bar on the left, inset so neighbours' bars stay apart. */
+.product-item,
+.product-group {
+  position: relative;
 }
 
 .product-item {
   display: flex;
   align-items: center;
   gap: var(--s2);
-  border-bottom: 1px solid var(--line);
+  min-height: 64px;
   animation: rise var(--dur-2) var(--ease-out) both;
   animation-delay: calc(min(var(--i, 0), 8) * 30ms);
 }
 
-.product-item:last-child {
-  border-bottom: 0;
+:is(.product-item, .product-group)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--s3);
+  bottom: var(--s3);
+  width: 4px;
+  border-radius: var(--r-pill);
+  background: var(--bar);
+}
+
+/* A divider row: square, so the line above it stays straight (DESIGN: divider rows are the exception to "nothing square"). */
+.product-group {
+  border-radius: 0;
+}
+
+.product-group .product-item::before {
+  content: none;
+}
+
+/* One divider between neighbours, never a double line. */
+#productHistoryList .list-card > * + *,
+.product-group > .product-item {
+  border-top: 1px solid var(--line);
 }
 
 .product-edit-btn {
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: center;
-  gap: var(--s3);
-  min-height: 72px;
-  padding: var(--s3) 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  align-self: stretch;
+  padding: var(--s3) 0 var(--s3) var(--s4);
   text-align: left;
   border-radius: var(--r-sm);
   transition: background-color var(--dur-tap);
@@ -1176,32 +1644,102 @@ p {
   background: var(--surface-2);
 }
 
-.product-item-main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.product-item-main .list-title {
+.product-edit-btn .list-title {
   white-space: normal;
   overflow-wrap: anywhere;
 }
 
+/* Price · profit, then the payment methods; the methods drop to a 2nd line rather than being cut off. */
 .product-item-sub {
-  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--s3);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
   color: var(--text-3);
 }
 
-.product-item-methods {
-  display: flex;
-  flex-wrap: wrap;
+.product-pays {
+  display: inline-flex;
+  gap: var(--s2);
+}
+
+/* A payment method as a small labelled dot (the dot alone never carries the meaning). */
+.pay-dot {
+  display: inline-flex;
+  align-items: center;
   gap: var(--s1);
-  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.pay-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--chip-color, var(--text-3));
+}
+
+/* Group header: name, variant count and the payments the variants share; tap to fold. Variants sit indented under it. */
+.product-group-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 64px;
+  padding: var(--s3) 0 var(--s3) var(--s4);
+  list-style: none;
+  cursor: pointer;
+}
+
+.product-group-title::-webkit-details-marker {
+  display: none;
+}
+
+.product-group-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.product-group-name {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
+  overflow-wrap: anywhere;
+}
+
+.product-group-count {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
+  color: var(--text-3);
+}
+
+/* Centred in the same 48px column as the rows' switches. */
+.product-group-title .icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0 15px;
+  color: var(--text-3);
+  transform: rotate(-90deg);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.product-group[open] .product-group-title .icon {
+  transform: none;
+}
+
+.product-group .product-item {
+  margin-left: var(--s4);
 }
 
 #productHistoryList .product-section + .product-section {
-  margin-top: var(--s2);
+  margin-top: var(--s3);
 }
 
 .switch-track {
@@ -1209,7 +1747,7 @@ p {
   display: block;
   width: 44px;
   height: 26px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--surface-3);
   transition: background-color var(--dur-1) var(--ease-out);
 }
@@ -1259,14 +1797,15 @@ p {
 }
 
 .empty-title {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
 }
 
 .empty-text {
   max-width: 30ch;
   color: var(--text-3);
-  font-size: 14px;
+  font-size: var(--fs-sm);
 }
 
 .empty .btn {
@@ -1314,12 +1853,12 @@ p {
 }
 
 .split-name {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .split-share {
   color: var(--text-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1327,23 +1866,23 @@ p {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
 }
 
 .split-amount small {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
   color: var(--text-3);
 }
 
 .chip {
-  padding: 1px 8px;
-  border-radius: 999px;
+  padding: 1px var(--s2);
+  border-radius: var(--r-pill);
   background: var(--surface-3);
   color: var(--text-2);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
 }
 
 .rank {
@@ -1367,14 +1906,14 @@ p {
 .rank-name {
   flex: 1;
   min-width: 0;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .rank-count {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
 }
@@ -1383,12 +1922,12 @@ p {
   display: flex;
   justify-content: space-between;
   gap: var(--s3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   padding-left: 18px;
 }
 
 .rank-profit {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .rank-revenue {
@@ -1398,7 +1937,7 @@ p {
 .rank-track {
   height: 6px;
   margin-left: 18px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--surface-2);
   overflow: hidden;
 }
@@ -1406,7 +1945,7 @@ p {
 .rank-fill {
   display: block;
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   transform-origin: left;
   animation: grow-x var(--dur-3) var(--ease-out) both;
 }
@@ -1433,32 +1972,32 @@ p {
 .cmp-event {
   display: grid;
   justify-items: start;
-  gap: 4px;
+  gap: var(--s1);
   min-width: 0;
 }
 
 .cmp-tag {
   min-width: 24px;
   height: 24px;
-  padding: 0 8px;
-  border-radius: 999px;
+  padding: 0 var(--s2);
+  border-radius: var(--r-pill);
   display: grid;
   place-items: center;
   background: var(--text);
   color: var(--on-ink);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
 }
 
 .cmp-name {
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.3;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
   overflow-wrap: anywhere;
 }
 
 .cmp-when {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
@@ -1479,7 +2018,7 @@ p {
 
 .cmp-label {
   grid-column: 1 / -1;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   overflow-wrap: anywhere;
 }
@@ -1492,8 +2031,8 @@ p {
 }
 
 .cmp-value {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
@@ -1504,12 +2043,12 @@ p {
 
 .cmp-missing {
   color: var(--text-3);
-  font-weight: 600;
+  font-weight: var(--fw-regular);
 }
 
 .cmp-diff {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
   color: var(--text-3);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -1523,10 +2062,8 @@ p {
 
 .group-title {
   margin: 0 0 var(--s2) 0;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
   color: var(--text-3);
 }
 
@@ -1557,12 +2094,12 @@ p {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  font-weight: 600;
+  font-weight: var(--fw-regular);
 }
 
 .group-row-label small {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-regular);
   color: var(--text-3);
 }
 
@@ -1607,7 +2144,8 @@ p {
   border-radius: var(--r-sm);
   min-height: 44px;
   padding: 0 34px 0 var(--s3);
-  font-weight: 700;
+  font-size: var(--fs-sm); /* the value a step under its row's label, so "Bahasa Indonesia" fits beside it at 320px */
+  font-weight: var(--fw-bold);
   cursor: pointer;
 }
 
@@ -1662,14 +2200,14 @@ p {
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  /* A label that wraps (longer in Indonesian) must not push its input below its neighbour's. */
+  align-items: end;
   gap: var(--s3);
 }
 
 .field-label {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   color: var(--text-3);
 }
 
@@ -1682,7 +2220,7 @@ p {
   border: 1px solid var(--line-strong);
   border-radius: var(--r-md);
   color: var(--text);
-  font-size: 15px;
+  font-size: var(--fs-md);
   outline: none;
   transition: border-color var(--dur-1), box-shadow var(--dur-1);
 }
@@ -1693,14 +2231,127 @@ p {
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
 
+.input[aria-invalid='true'] {
+  border-color: var(--negative);
+}
+
 .input::placeholder {
   color: var(--text-3);
 }
 
 .input-lg {
   min-height: 56px;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-regular);
+}
+
+/* Product editor: one screen of fields, so a normal product fits a small phone without scrolling. */
+#productEditScreen .form,
+.form-part {
+  display: grid;
+  gap: var(--s2);
+}
+
+#saveProductBtn {
+  min-height: 48px;
+  margin-top: var(--s2);
+}
+
+#productEditScreen .field {
+  gap: var(--s1);
+}
+
+#productEditScreen .group-row {
+  min-height: 48px;
+}
+
+#productEditScreen .input {
+  min-height: 48px;
+}
+
+/* Group mode: the variants sit in an inset panel, one row each: name | price | cost | remove. */
+.variants {
+  padding: var(--s3) var(--s2);
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+
+.variant-list {
+  display: grid;
+  gap: var(--s2);
+}
+
+/* Each variant is one line of a price list: a single rounded bar holding name | price | cost | remove, no boxes inside.
+   Equal columns, no gaps: a 7-digit price (1.500.000) fits whole at 360px; a long variant name may cut off instead.
+   The header shares the bar's (transparent) border and padding so its labels sit over the values. */
+.variant-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 44px;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+}
+
+.variant-list .variant-row {
+  background: var(--bg);
+  border-color: var(--line-strong);
+  transition: border-color var(--dur-1) var(--ease-out);
+  animation: rise var(--dur-3) var(--ease-out) both;
+}
+
+.variant-list .variant-row:focus-within {
+  border-color: var(--text-3);
+}
+
+.variant-head .field-label {
+  padding-left: var(--s2);
+  font-size: var(--fs-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#productEditScreen .variant-row .input {
+  min-height: 44px;
+  padding: 0 var(--s1) 0 var(--s2);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font-size: var(--fs-sm);
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--dur-1) var(--ease-out);
+}
+
+/* The cell being typed in lights up; the bar's own border already shows the row. */
+#productEditScreen .variant-row .input:focus {
+  background: var(--surface-2);
+  box-shadow: none;
+}
+
+/* Name and price lead; cost is the quiet one. */
+#productEditScreen .variant-row .input:nth-child(-n + 2) {
+  font-weight: var(--fw-bold);
+}
+
+#productEditScreen .variant-row .input:nth-child(3) {
+  color: var(--text-2);
+}
+
+.variant-remove {
+  color: var(--text-3);
+}
+
+/* Add variant reads as the next, still empty line of the list. */
+.add-variant {
+  width: 100%;
+  min-height: 44px;
+  margin-top: var(--s2);
+  padding: 0 var(--s4);
+  background: transparent;
+  border: 1px dashed var(--line-strong);
+  color: var(--text-2);
 }
 
 /* Colour field: a live preview of the product tile */
@@ -1713,6 +2364,7 @@ p {
   --ink: #1e1e1e;
   --ink-soft: rgba(0, 0, 0, 0.14);
   --ink-faint: rgba(0, 0, 0, 0.08);
+  --ink-line: rgba(0, 0, 0, 0.3);
 }
 
 .color-swatch.on-light {
@@ -1724,8 +2376,9 @@ p {
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--s3);
-  min-height: 112px;
-  padding: var(--s4);
+  min-width: 0; /* a long name ellipsizes in .swatch-preview instead of widening the editor */
+  min-height: 72px;
+  padding: var(--s3) var(--s4);
   border-radius: var(--r-lg);
   background: var(--tile, #f76495);
   color: #ffffff;
@@ -1744,8 +2397,9 @@ p {
 }
 
 .swatch-name {
-  font-size: 26px;
-  font-weight: 800;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.02em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1753,18 +2407,19 @@ p {
 }
 
 .swatch-price {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-regular);
   opacity: 0.78;
 }
 
 .color-text {
   flex-shrink: 0;
-  padding: 4px 10px;
-  border-radius: 999px;
+  padding: var(--s1) 10px;
+  border-radius: var(--r-pill);
   background: rgba(0, 0, 0, 0.16);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.08em;
 }
 
@@ -1778,7 +2433,7 @@ p {
   background: var(--surface-2);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-lg);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  box-shadow: var(--shadow-sheet);
   transform-origin: top center;
   opacity: 0;
   transform: translateY(-6px) scale(0.98);
@@ -1836,7 +2491,7 @@ p {
   position: relative;
   flex: 1;
   height: 14px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: linear-gradient(90deg, red, yellow, lime, aqua, blue, magenta, red);
   touch-action: none;
 }
@@ -1855,7 +2510,7 @@ p {
 .hue-value {
   min-width: 36px;
   text-align: right;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   font-variant-numeric: tabular-nums;
 }
@@ -1921,7 +2576,7 @@ p {
   width: 36px;
   height: 4px;
   margin-bottom: var(--s1);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--line-strong);
 }
 
@@ -1938,8 +2593,9 @@ p {
 }
 
 .sheet-title {
-  font-size: 18px;
-  font-weight: 800;
+  font-size: var(--fs-lg);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.015em;
 }
 
@@ -1950,7 +2606,7 @@ p {
 
 .sheet-text {
   color: var(--text-2);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   margin-top: calc(var(--s2) * -1);
 }
 
@@ -1959,6 +2615,40 @@ p {
   grid-template-columns: 1fr 1fr;
   gap: var(--s3);
   margin-top: var(--s1);
+}
+
+/* Scroll fade: the sheet's top/bottom edge fades into its surface while there is more to scroll that way
+   (.fade-top / .fade-bottom, set by updateSheetFade in dom.ts). A surface-coloured veil, not mask-image:
+   a mask would also fade the sheet's own background into the scrim. Only scrolling sheets get it, and those are
+   at their 88dvh max-height, so the top edge sits at 100% - 88dvh. */
+.sheet-overlay::before,
+.sheet-overlay::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  width: calc(min(100%, 520px) - 2px);
+  height: var(--s6);
+  translate: -50% 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-1) var(--ease-out);
+}
+
+.sheet-overlay::before {
+  top: calc(100% - 88dvh + 1px);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  background: linear-gradient(var(--surface-1), transparent);
+}
+
+.sheet-overlay::after {
+  bottom: 0;
+  background: linear-gradient(transparent, var(--surface-1));
+}
+
+.sheet-overlay.fade-top::before,
+.sheet-overlay.fade-bottom::after {
+  opacity: 1;
 }
 
 /* A message sheet has only its OK button */
@@ -1984,8 +2674,9 @@ p {
   gap: var(--s2);
   min-width: 0;
   min-height: 44px;
-  font-size: 26px;
-  font-weight: 800;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.025em;
   color: var(--text);
   text-align: left;
@@ -2018,7 +2709,7 @@ p {
 
 .event-when {
   margin: calc(var(--s2) * -1) 0 var(--s3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
@@ -2066,17 +2757,17 @@ p {
   display: flex;
   align-items: center;
   gap: var(--s2);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .day-sub,
 .day-profit {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
 .day-revenue {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   white-space: nowrap;
 }
 
@@ -2112,7 +2803,7 @@ p {
 }
 
 .products-day-meta {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   white-space: nowrap;
 }
@@ -2164,7 +2855,7 @@ p {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .count-row .stepper {
@@ -2182,8 +2873,8 @@ p {
   display: inline-flex;
   align-items: center;
   gap: var(--s2);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
   color: var(--text-2);
 }
 
@@ -2200,7 +2891,7 @@ p {
 
 .stepper-value {
   text-align: center;
-  font-weight: 800;
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
 }
 
@@ -2260,8 +2951,8 @@ body.is-editing-event .content {
   border-radius: var(--r-md);
   background: var(--surface-1);
   color: var(--text);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
 }
 
 .about-value {
@@ -2274,7 +2965,7 @@ body.is-editing-event .content {
   display: grid;
   gap: var(--s3);
   color: var(--text-2);
-  font-size: 14px;
+  font-size: var(--fs-sm);
 }
 
 .startup-error {
@@ -2303,6 +2994,52 @@ body.is-editing-event .content {
   border-radius: var(--r-md);
   cursor: pointer;
   transition: border-color var(--dur-1), background-color var(--dur-1);
+}
+
+/* Expense sheet: a group's box, then its variants indented under it */
+.check-group {
+  display: grid;
+  gap: var(--s2);
+}
+
+#expenseProducts .check-row {
+  min-height: 48px;
+}
+
+.check-group-head {
+  display: flex;
+  gap: var(--s2);
+}
+
+.check-group-head .check-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.check-fold {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+}
+
+.check-fold .icon {
+  width: 18px;
+  height: 18px;
+  transform: rotate(-90deg);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.check-fold[aria-expanded='true'] .icon {
+  transform: none;
+}
+
+.check-variants {
+  display: grid;
+  gap: var(--s2);
+  margin-left: var(--s6);
 }
 
 .check-row input {
@@ -2360,14 +3097,19 @@ body.is-editing-event .content {
 }
 
 .check-text strong {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .check-text small {
-  font-size: 12px;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+.field-hint {
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
@@ -2393,7 +3135,7 @@ body.is-editing-event .content {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--s1);
   color: var(--text-3);
   transition: color var(--dur-1);
 }
@@ -2407,7 +3149,7 @@ body.is-editing-event .content {
   width: 28px;
   height: 2px;
   margin-left: -14px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--text);
   opacity: 0;
   transform: scaleX(0.4);
@@ -2418,7 +3160,7 @@ body.is-editing-event .content {
   position: relative;
   width: 22px;
   height: 22px;
-  margin-top: 4px;
+  margin-top: var(--s1);
   transition: transform var(--dur-tap) var(--ease-out);
 }
 
@@ -2428,8 +3170,8 @@ body.is-editing-event .content {
 
 .tab-label {
   position: relative;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
 }
 
 .tab.active {
@@ -2450,7 +3192,7 @@ body.is-editing-event .content {
   top: 8px;
   width: 56px;
   height: 30px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--text);
 }
 
@@ -2469,16 +3211,16 @@ body.is-editing-event .content {
   bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--s3));
   z-index: 20;
   max-width: calc(100% - 32px);
-  padding: 10px 16px;
-  border-radius: 999px;
+  padding: 10px var(--s4);
+  border-radius: var(--r-pill);
   background: var(--text);
   color: var(--on-ink);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-float);
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, 12px) scale(0.98);
@@ -2566,7 +3308,7 @@ body.is-editing-event .content {
   }
 
   .kpi-row-3 .kpi-value {
-    font-size: 15px;
+    font-size: var(--fs-md);
   }
 }
 
@@ -2623,18 +3365,18 @@ body.is-editing-event .content {
   background: var(--surface-3);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-lg);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-float);
   color: var(--text);
 }
 
 .tour-count {
   color: var(--text-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
 }
 
 .tour-text {
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
 }
 
 .tour-actions {

@@ -221,8 +221,8 @@ for (const width of [320, 360, 393, 412]) {
     await page.click('#sellMenuBtn');
     await page.click(`.tabbar .tab[data-tab="${tab}"]`); // the first tap outside only closes the menu
     await page.click(`.tabbar .tab[data-tab="${tab}"]`);
-    const state = await page.evaluate(() => ({ screen: document.querySelector('.screen.active').id, open: !document.getElementById('sellMenu').hidden, button: getComputedStyle(document.getElementById('sellMenuBtn')).display }));
-    if (state.screen !== tab || state.open || state.button !== 'none') shown.push({ tab, ...state });
+    const state = await page.evaluate(() => ({ screen: document.querySelector('.screen.active').id, open: !document.getElementById('sellMenu').hidden, button: Boolean(document.getElementById('sellMenuBtn').offsetParent) }));
+    if (state.screen !== tab || state.open || state.button) shown.push({ tab, ...state });
   }
   check('the ⋮ menu is only on Sell and never stays open on another tab', !shown.length, shown);
 
@@ -338,6 +338,30 @@ for (const width of [320, 360, 393, 412]) {
   await sleep(350);
   const one = await page.evaluate(() => ({ names: JSON.parse(localStorage.cntrProducts).map((p) => p.name).join(), transform: document.querySelector('.tile').style.transform, grid: document.getElementById('grid').className }));
   check('with one tile, a drag leaves it in place and sells nothing', one.names === 'Only' && !one.transform && !/is-reordering/.test(one.grid) && (await sales()) === 0, one);
+  await page.close();
+}
+
+// Tablet: with 2 columns, a held tile moves sideways and down to the slot under it.
+{
+  const page = await browser.newPage({ viewport: { width: 800, height: 1280 } });
+  await page.goto(URL);
+  await page.evaluate((p) => { localStorage.clear(); localStorage.cntrProducts = p; }, SAMPLE_PRODUCTS);
+  await page.reload();
+  await sleep(900);
+  const names = () => page.evaluate(() => [...document.querySelectorAll('.tile')].map((tile) => tile.dataset.product));
+  const centre = (selector) => page.evaluate((s) => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, selector);
+  const before = await names();
+  // Tile 1 (row 1, left) onto tile 4 (row 2, right).
+  const [grab, first, fourth] = [await centre('.tile:nth-child(1) .pay-add'), await centre('.tile:nth-child(1)'), await centre('.tile:nth-child(4)')];
+  await page.mouse.move(grab.x, grab.y);
+  await page.mouse.down();
+  await sleep(550);
+  for (let i = 1; i <= 10; i++) await page.mouse.move(grab.x + ((fourth.x - first.x) * i) / 10, grab.y + ((fourth.y - first.y) * i) / 10);
+  await page.mouse.up();
+  await sleep(300);
+  const after = await names();
+  const sold = await page.evaluate(() => JSON.parse(localStorage.cntrSales ?? '[]').length);
+  check('2 columns: dragging a tile diagonally drops it in that slot, in reading order, without selling', after[3] === before[0] && after.slice(0, 3).join() === before.slice(1, 4).join() && sold === 0, { before, after });
   await page.close();
 }
 

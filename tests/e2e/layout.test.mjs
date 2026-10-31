@@ -7,9 +7,10 @@ const browser = await launch();
 const TABS = ['salesScreen', 'eventScreen', 'historyScreen', 'settingsScreen'];
 
 function scan() {
+  const LONG_METHOD_LABEL = ":is([data-payment='Transfer'], [data-payment='E-wallet']) .pay-label .pay-name, .tile-group-pays .pay-label:is([data-payment='Transfer'], [data-payment='E-wallet']) .pay-name";
   const visible = (e) => e.offsetParent && getComputedStyle(e).visibility !== 'hidden';
   const name = (e) => `${e.id ? '#' + e.id : ''}.${String(e.className).split(' ')[0]}${e.getAttribute('aria-label') ? `[${e.getAttribute('aria-label')}]` : ''}`;
-  const out = { overflow: [], small: [], unlabeled: [], contrast: [] };
+  const out = { overflow: [], small: [], unlabeled: [], contrast: [], type: [] };
   for (const e of document.querySelectorAll('.screen.active *')) {
     if (visible(e) && !e.children.length && e.textContent.trim() && (e.getBoundingClientRect().right > innerWidth - 8 || e.scrollWidth > e.clientWidth + 1)) out.overflow.push(`${name(e)} "${e.textContent.trim().slice(0, 30)}"`);
     if (visible(e) && e.getBoundingClientRect().right > innerWidth + 0.5) out.overflow.push(`${name(e)} sticks out of the screen (right ${Math.round(e.getBoundingClientRect().right)}px)`);
@@ -38,6 +39,17 @@ function scan() {
     // Text on product tiles: the owner keeps white down to 2.6:1 (see needsDarkText); everywhere else WCAG AA.
     if (ratio < (e.closest('.tile') ? 2.6 : large ? 3 : 4.5)) out.contrast.push(`${name(e)} "${e.textContent.trim().slice(0, 18)}" ${ratio.toFixed(2)}`);
   }
+  // Type scale (--fs-xs..xl in style.css); the revenue figures are fluid (they shrink long amounts to fit) and the counter is 24px on small phones.
+  for (const e of document.querySelectorAll('body *')) {
+    if (!visible(e) || ![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) || e.closest('.hero-figure')) continue;
+    const size = parseFloat(getComputedStyle(e).fontSize);
+    // Exceptions (docs/DESIGN.md → Exceptions): the counter is 24px on small phones; TRANSFER / E-WALLET labels are 10px.
+    const exception = (size === 24 && e.matches('.payment-value') && innerWidth <= 360) || (size === 10 && e.matches(LONG_METHOD_LABEL));
+    if (![12, 14, 16, 20, 26].includes(size) && !exception) out.type.push(`${name(e)} ${size}px off the type scale`);
+    // Two weights: regular (500) and bold (700).
+    const weight = getComputedStyle(e).fontWeight;
+    if (weight !== '500' && weight !== '700') out.type.push(`${name(e)} weight ${weight}`);
+  }
   return out;
 }
 
@@ -62,8 +74,8 @@ for (const [theme, language] of [['dark', 'en'], ['light', 'en'], ['dark', 'id']
     await sleep(450);
     const r = await page.evaluate(scan);
     const wider = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
-    const problems = [...r.overflow, ...r.small, ...r.unlabeled, ...r.contrast];
-    check(`${width}x${height} ${theme}${language === 'id' ? ' id' : ''} ${label}: no overflow, tap targets >= 44px, labels, contrast`, !wider && !problems.length, problems.join(' | ') || '');
+    const problems = [...r.overflow, ...r.small, ...r.unlabeled, ...r.contrast, ...r.type];
+    check(`${width}x${height} ${theme}${language === 'id' ? ' id' : ''} ${label}: no overflow, tap targets >= 44px, labels, contrast, type scale and weights`, !wider && !problems.length, problems.join(' | ') || '');
   };
   // Two days of sales with a long expense, so the day cards show.
   await sellSome();
@@ -114,6 +126,101 @@ for (const [theme, language] of [['dark', 'en'], ['light', 'en'], ['dark', 'id']
   await page.click('#pastEventEditBtn');
   await assess('past event edit mode');
   await page.click('#pastEventCancelBtn');
+  await page.close();
+}
+
+// Wide screens: Sell gets 2 columns on a phone in landscape or a tablet in portrait, 3 on a big tablet; other pages stay a centred column.
+for (const [width, height, columns] of [[412, 892, 1], [915, 412, 2], [800, 1280, 2], [1280, 800, 3]]) {
+  const page = await browser.newPage({ viewport: { width, height } });
+  await page.goto(URL);
+  await page.evaluate((p) => { localStorage.clear(); localStorage.cntrProducts = p; }, SAMPLE_PRODUCTS);
+  await page.reload();
+  await sleep(600);
+  const cols = await page.evaluate(() => getComputedStyle(document.getElementById('grid')).gridTemplateColumns.split(' ').length);
+  check(`${width}x${height}: Sell shows ${columns} tile column(s)`, cols === columns, `${cols}`);
+  await page.click('.tabbar .tab[data-tab="settingsScreen"]');
+  const box = await page.evaluate(() => document.querySelector('#settingsScreen .page').getBoundingClientRect().toJSON());
+  check(`${width}x${height}: Settings is at most 640px wide and centred`, box.width <= 640 && Math.abs(box.left - (width - box.right)) < 1, box);
+  await page.close();
+}
+
+// Long method names (TRANSFER, E-WALLET) breathe in every tile mode: >= 8px clear to the cell's edges (a compact group's header label:
+// to its column's), never cut, and clear of the count, + and −.
+const LONG = [
+  { name: 'Badge', price: 15000, cost: 3000, color: '#f76495', payments: ['Transfer', 'E-wallet'] },
+  { name: 'Keychain', price: 25000, cost: 5000, color: '#1b2a4a', payments: ['E-wallet', 'Transfer'] },
+  { name: 'A3', price: 30000, cost: 9000, color: '#f76495', payments: ['Transfer', 'E-wallet'], group: 'Poster' },
+  { name: 'A4', price: 20000, cost: 6000, color: '#f76495', payments: ['Transfer', 'E-wallet'], group: 'Poster' },
+];
+for (const width of [360, 412]) for (const compact of [false, true]) {
+  const page = await browser.newPage({ viewport: { width, height: 892 } });
+  await page.goto(URL);
+  await page.evaluate(([p, c]) => {
+    localStorage.clear();
+    localStorage.cntrProducts = p;
+    localStorage.cntrSettings = JSON.stringify({ compactTiles: c });
+    // Sold halves show their − (and a compact group's sold ring).
+    localStorage.cntrSales = JSON.stringify(['Badge', 'A3'].map((product) => ({ product, price: 1, cost: 0, payment: 'Transfer', timestamp: new Date() })));
+  }, [JSON.stringify(LONG), compact]);
+  await page.reload();
+  await sleep(600);
+  const bad = await page.evaluate(() => {
+    const out = [];
+    for (const label of document.querySelectorAll('.pay-label')) {
+      if (!label.offsetParent) continue;
+      const range = document.createRange();
+      range.selectNodeContents(label);
+      const ink = range.getBoundingClientRect(); // the icon and the words, not the stretched grid box
+      const head = label.closest('.tile-group-pays');
+      const cell = head ? label.closest('.tile').querySelector('.variant').querySelectorAll('.pay-add')[[...head.querySelectorAll('.pay-label')].indexOf(label)] : label.closest('.pay-add');
+      const box = cell.getBoundingClientRect();
+      const name = label.textContent;
+      if (ink.left - box.left < 8 || box.right - ink.right < 8) out.push(`${name}: ${Math.round(ink.left - box.left)}/${Math.round(box.right - ink.right)}px to the edges`);
+      const words = label.querySelector('.pay-name');
+      if (words.scrollWidth > words.clientWidth) out.push(`${name}: cut`);
+      if (head) continue;
+      for (const other of [cell.querySelector('.pay-count'), cell.querySelector('.pay-plus'), label.closest('.pay').querySelector('.pay-undo:not(:disabled)')]) {
+        if (!other || !other.offsetParent || getComputedStyle(other).display === 'none') continue;
+        const o = other.getBoundingClientRect();
+        if (o.left < ink.right && o.right > ink.left && o.top < ink.bottom && o.bottom > ink.top) out.push(`${name} overlaps .${other.className}`);
+      }
+    }
+    return out;
+  });
+  check(`${width}px ${compact ? 'compact' : 'default'}: TRANSFER / E-WALLET labels have >= 8px to their cell's edges and overlap nothing`, !bad.length, bad.join(' | '));
+  await page.close();
+}
+
+// One page header everywhere: every tab's title row starts at the same top, is the same height, and its 26px title text sits
+// at the same height (Sell's is the fixed header row, the others are in the page). Products rows stay one compact line pair.
+for (const [width, height] of [[360, 640], [412, 915]]) {
+  const page = await browser.newPage({ viewport: { width, height } });
+  await page.goto(URL);
+  await page.evaluate((p) => {
+    localStorage.clear();
+    localStorage.cntrProducts = JSON.stringify([...JSON.parse(p), { name: 'Print A3', price: 30000, cost: 9000, color: '#f76495', group: 'Print' }, { name: 'Print A4', price: 0, cost: 0, color: '#f76495', group: 'Print' }]);
+  }, SAMPLE_PRODUCTS);
+  await page.reload();
+  await sleep(600);
+  const heads = {};
+  for (const tab of ['eventScreen', 'productHistoryScreen', 'salesScreen', 'historyScreen', 'settingsScreen']) {
+    await page.click(`.tabbar .tab[data-tab="${tab}"]`);
+    await sleep(450);
+    heads[tab] = await page.evaluate(() => {
+      const row = document.querySelector('.screen.active :is(.page-header, .event-name-row)') ?? document.querySelector('.topbar-row');
+      const title = row.querySelector('.event-name-text, .page-title');
+      const range = document.createRange();
+      range.selectNodeContents(title);
+      const [r, t] = [row.getBoundingClientRect(), range.getBoundingClientRect()];
+      return `${Math.round(r.top)}/${Math.round(r.height)}/${Math.round(t.top)}/${getComputedStyle(title).fontSize}`;
+    });
+  }
+  check(`${width}x${height}: all five tabs' title rows have the same top, height, title position and size`, new Set(Object.values(heads)).size === 1 && heads.salesScreen.endsWith('/26px'), heads);
+  await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
+  await sleep(450);
+  const rows = await page.evaluate(() => [...document.querySelectorAll('#productHistoryList :is(.product-item, .product-group-title)')].map((n) => Math.round(n.getBoundingClientRect().height)));
+  // 64px: name + one meta line; a narrow phone may wrap the payment methods to a 2nd meta line.
+  check(`${width}x${height}: Products rows are 64-${width > 360 ? 72 : 88}px (a product, a variant or a group header)`, rows.length > 5 && rows.every((h) => h >= 64 && h <= (width > 360 ? 72 : 88)), rows);
   await page.close();
 }
 

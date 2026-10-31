@@ -9,6 +9,8 @@ export interface Product {
   color: string;
   /** 1 or 2 of PAYMENT_METHODS (payments.ts); missing on older data, which means Cash + QRIS. */
   payments?: string[];
+  /** Group name (e.g. "Poster"): products sharing it are one tile on Sell, with the group's colour and payments. Reports ignore it. */
+  group?: string;
 }
 
 export interface SaleRecord {
@@ -31,6 +33,8 @@ export interface EventCost {
   id: string;
   name: string;
   amount: number;
+  /** Products this expense pays for (e.g. a print run): in its event they subtract no item cost (see withLinkedCosts). Optional; older data has none. */
+  productIds?: string[];
 }
 
 /** The live event's name and day breaks; its sales and expenses are the live `cntrSales` and `cntrEventCosts`. */
@@ -66,6 +70,8 @@ export interface AppSettings {
   autoSort: boolean;
   /** Sell: shorter tiles (no price, smaller counters), so more fit on screen. */
   compactTiles: boolean;
+  /** Sell: groups folded to their header row (lowercased group names). */
+  collapsedGroups: string[];
   /** Soft tones on sales, undo and finished actions (vibration is separate and always on). */
   sound: boolean;
   /** Colour theme. Resolved from the phone's own setting once, the first time there is no stored choice yet; after that it is just Light/Dark, chosen in Settings. */
