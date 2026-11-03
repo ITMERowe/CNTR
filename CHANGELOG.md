@@ -2,7 +2,7 @@
 
 Each version starts with **Highlights**: a short list for users, shown first on the GitHub Release and as Google Play's "What's new" (keep it under 500 characters). The sections after it are the full list; put the biggest changes first in each, since a release page shows only the first 5 of each section.
 
-## 0.1.1 (unreleased)
+## 0.1.1 (2026-11-03)
 
 ### Highlights
 - Product groups: one tile for a poster and its sizes, made on one page, foldable
