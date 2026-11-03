@@ -316,7 +316,14 @@ export function openScreen(screenId: string) {
   productListOrder = screenId === 'productHistoryScreen' ? state.productHistory.map((product) => product.name) : null;
 
   const tab = document.querySelector(`.tabbar .tab[data-tab="${screenId}"]`) ? screenId : PARENT_TAB[screenId];
-  if (tab) document.querySelectorAll('.tabbar .tab').forEach((button) => button.classList.toggle('active', button.getAttribute('data-tab') === tab));
+  if (tab) {
+    // Which way the tab pill travels, so its leading edge moves first (style.css, squash and stretch).
+    const tabs = [...document.querySelectorAll<HTMLElement>('.tabbar .tab')];
+    const from = tabs.findIndex((button) => button.classList.contains('active'));
+    const to = tabs.findIndex((button) => button.getAttribute('data-tab') === tab);
+    document.querySelector<HTMLElement>('.tabbar')!.dataset.dir = from < 0 || from === to ? '' : to > from ? 'right' : 'left';
+    tabs.forEach((button, i) => button.classList.toggle('active', i === to));
+  }
   el.stats.style.display = screenId === 'salesScreen' ? '' : 'none';
   updateHeaderActions(screenId);
 }

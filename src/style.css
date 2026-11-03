@@ -3239,40 +3239,45 @@ body.is-editing-event .content {
   transition: color var(--dur-1);
 }
 
-/* Active indicator: one accent pill behind the active tab's icon, sliding between tabs.
-   CSS only: :has() picks the column, transform moves it (reduce-motion makes it jump). */
+/* Active indicator: one accent pill behind the active tab's icon. Squash and stretch: its two edges move separately,
+   the one facing the new tab first (openScreen sets data-dir), so it stretches across the gap, thins, then catches up.
+   CSS only besides that: :has() picks the column (--i). Reduce-motion makes it jump. */
 .tabbar {
   container-type: inline-size;
 }
 
 .tabbar::before {
   --col: calc(100cqw / 5); /* cqw is the bar's content box: padding already left out */
+  --i: 0;
+  --edge: var(--dur-2) var(--ease-out);
   content: '';
   position: absolute;
   top: calc(var(--s1) + 6px);
-  left: calc(var(--s2) + env(safe-area-inset-left) + var(--col) / 2 - 28px);
-  width: 56px;
+  left: calc(var(--s2) + env(safe-area-inset-left) + var(--col) * (var(--i) + 0.5) - 28px);
+  right: calc(100cqw + var(--s2) + env(safe-area-inset-right) - var(--col) * (var(--i) + 0.5) - 28px);
   height: 32px;
   border-radius: var(--r-pill);
   background: var(--accent);
   opacity: 0;
-  transition: transform var(--dur-3) var(--ease-emphasis), opacity var(--dur-1);
+  transition: left var(--edge), right var(--edge), opacity var(--dur-1);
 }
 
-/* Squash and stretch (owner's reference reel): wide and flat while it travels, a little squash as it lands.
-   One keyframes name per tab, so every tab change swaps the name and replays it; `scale` stacks with the transform. */
+.tabbar[data-dir='right']::before { transition: right var(--edge), left var(--edge) 90ms, opacity var(--dur-1); }
+.tabbar[data-dir='left']::before { transition: left var(--edge), right var(--edge) 90ms, opacity var(--dur-1); }
+
+/* While stretched it thins, then lands with a small bulge. One keyframes name per tab, so each change replays it. */
 .tabbar:has(.tab.active)::before { opacity: 1; }
 .tabbar:has(.tab:nth-child(1).active)::before { animation: pill-squash-1 var(--dur-3) var(--ease-out); }
-.tabbar:has(.tab:nth-child(2).active)::before { transform: translateX(var(--col)); animation: pill-squash-2 var(--dur-3) var(--ease-out); }
-.tabbar:has(.tab:nth-child(3).active)::before { transform: translateX(calc(2 * var(--col))); animation: pill-squash-3 var(--dur-3) var(--ease-out); }
-.tabbar:has(.tab:nth-child(4).active)::before { transform: translateX(calc(3 * var(--col))); animation: pill-squash-4 var(--dur-3) var(--ease-out); }
-.tabbar:has(.tab:nth-child(5).active)::before { transform: translateX(calc(4 * var(--col))); animation: pill-squash-5 var(--dur-3) var(--ease-out); }
+.tabbar:has(.tab:nth-child(2).active)::before { --i: 1; animation: pill-squash-2 var(--dur-3) var(--ease-out); }
+.tabbar:has(.tab:nth-child(3).active)::before { --i: 2; animation: pill-squash-3 var(--dur-3) var(--ease-out); }
+.tabbar:has(.tab:nth-child(4).active)::before { --i: 3; animation: pill-squash-4 var(--dur-3) var(--ease-out); }
+.tabbar:has(.tab:nth-child(5).active)::before { --i: 4; animation: pill-squash-5 var(--dur-3) var(--ease-out); }
 
-@keyframes pill-squash-1 { 35% { scale: 1.45 0.8; } 70% { scale: 0.9 1.1; } }
-@keyframes pill-squash-2 { 35% { scale: 1.45 0.8; } 70% { scale: 0.9 1.1; } }
-@keyframes pill-squash-3 { 35% { scale: 1.45 0.8; } 70% { scale: 0.9 1.1; } }
-@keyframes pill-squash-4 { 35% { scale: 1.45 0.8; } 70% { scale: 0.9 1.1; } }
-@keyframes pill-squash-5 { 35% { scale: 1.45 0.8; } 70% { scale: 0.9 1.1; } }
+@keyframes pill-squash-1 { 40% { scale: 1 0.8; } 80% { scale: 1 1.06; } }
+@keyframes pill-squash-2 { 40% { scale: 1 0.8; } 80% { scale: 1 1.06; } }
+@keyframes pill-squash-3 { 40% { scale: 1 0.8; } 80% { scale: 1 1.06; } }
+@keyframes pill-squash-4 { 40% { scale: 1 0.8; } 80% { scale: 1 1.06; } }
+@keyframes pill-squash-5 { 40% { scale: 1 0.8; } 80% { scale: 1 1.06; } }
 
 .tab .icon {
   position: relative;
@@ -3298,6 +3303,8 @@ body.is-editing-event .content {
 
 .tab.active .icon {
   color: var(--on-accent);
+  /* Turns dark only once the pill is under it (it was dark on the bare bar mid-slide). */
+  transition: transform var(--dur-tap) var(--ease-out), color var(--dur-tap) 200ms;
 }
 
 /* Sell sits in the middle, as the main action: a bigger icon (it no longer has its own pill). */
