@@ -22,6 +22,8 @@
   --text-2: #cccccc;
   --text-3: #9d9d9d;
   --on-ink: #1e1e1e;
+  --accent: #3cc6d4; /* primary buttons, switches/checkboxes on, the tab pill; never tiles or money */
+  --on-accent: #10262a;
 
   /* Meaning */
   --positive: #4ade80;
@@ -91,6 +93,8 @@
   --text-2: #3b3b3b;
   --text-3: #616161;
   --on-ink: #ffffff;
+  --accent: #0b7285;
+  --on-accent: #ffffff;
 
   /* Darker greens and reds so money stays readable on white */
   --positive: #116329;
@@ -440,12 +444,13 @@ p {
 }
 
 .icon-btn-solid {
-  background: var(--text);
-  color: var(--on-ink);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .icon-btn-solid:active {
-  background: var(--text-2);
+  background: var(--accent);
+  opacity: 0.85;
 }
 
 .icon-btn-soft {
@@ -530,8 +535,8 @@ p {
 }
 
 .btn-primary {
-  background: var(--text);
-  color: var(--on-ink);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .btn-secondary {
@@ -1766,13 +1771,13 @@ p {
 
 .product-toggle-btn[aria-checked='true'] .switch-track,
 .switch input:checked + .switch-track {
-  background: var(--text);
+  background: var(--accent);
 }
 
 .product-toggle-btn[aria-checked='true'] .switch-track::before,
 .switch input:checked + .switch-track::before {
   transform: translateX(18px);
-  background: var(--on-ink);
+  background: var(--on-accent);
 }
 
 /* ---------- Empty states ---------- */
@@ -3065,7 +3070,7 @@ body.is-editing-event .content {
   top: 2px;
   width: 6px;
   height: 11px;
-  border: solid var(--on-ink);
+  border: solid var(--on-accent);
   border-width: 0 2.5px 2.5px 0;
   transform: rotate(45deg) scale(0);
   transition: transform var(--dur-1) var(--ease-emphasis);
@@ -3077,8 +3082,8 @@ body.is-editing-event .content {
 }
 
 .check-row input:checked + .check-box {
-  background: var(--text);
-  border-color: var(--text);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .check-row input:checked + .check-box::after {
@@ -3140,28 +3145,38 @@ body.is-editing-event .content {
   transition: color var(--dur-1);
 }
 
-/* Active indicator: a thin line, not a pill. */
-.tab::after {
+/* Active indicator: one accent pill behind the active tab's icon, sliding between tabs.
+   CSS only: :has() picks the column, transform moves it (reduce-motion makes it jump). */
+.tabbar {
+  container-type: inline-size;
+}
+
+.tabbar::before {
+  --col: calc(100cqw / 5); /* cqw is the bar's content box: padding already left out */
   content: '';
   position: absolute;
-  top: 0;
-  left: 50%;
-  width: 28px;
-  height: 2px;
-  margin-left: -14px;
+  top: calc(var(--s1) + 6px);
+  left: calc(var(--s2) + env(safe-area-inset-left) + var(--col) / 2 - 28px);
+  width: 56px;
+  height: 32px;
   border-radius: var(--r-pill);
-  background: var(--text);
+  background: var(--accent);
   opacity: 0;
-  transform: scaleX(0.4);
-  transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-emphasis);
+  transition: transform var(--dur-2) var(--ease-emphasis), opacity var(--dur-1);
 }
+
+.tabbar:has(.tab.active)::before { opacity: 1; }
+.tabbar:has(.tab:nth-child(2).active)::before { transform: translateX(var(--col)); }
+.tabbar:has(.tab:nth-child(3).active)::before { transform: translateX(calc(2 * var(--col))); }
+.tabbar:has(.tab:nth-child(4).active)::before { transform: translateX(calc(3 * var(--col))); }
+.tabbar:has(.tab:nth-child(5).active)::before { transform: translateX(calc(4 * var(--col))); }
 
 .tab .icon {
   position: relative;
   width: 22px;
   height: 22px;
   margin-top: var(--s1);
-  transition: transform var(--dur-tap) var(--ease-out);
+  transition: transform var(--dur-tap) var(--ease-out), color var(--dur-1);
 }
 
 .tab:active .icon {
@@ -3178,29 +3193,15 @@ body.is-editing-event .content {
   color: var(--text);
 }
 
-.tab.active::after {
-  opacity: 1;
-  transform: none;
+.tab.active .icon {
+  color: var(--on-accent);
 }
 
-/* Sell sits in the middle, as the main action: its own pill is always filled, with a bigger icon
-   (a deliberate exception to "no pill" above, since prominence is the whole point of this one tab).
-   Only the icon sits on the filled pill, so only it takes the ink/on-ink pair; the label stays on the bar itself. */
-.tab.tab-primary::before {
-  content: '';
-  position: absolute;
-  top: 8px;
-  width: 56px;
-  height: 30px;
-  border-radius: var(--r-pill);
-  background: var(--text);
-}
-
+/* Sell sits in the middle, as the main action: a bigger icon (it no longer has its own pill). */
 .tab.tab-primary .icon {
   width: 26px;
   height: 26px;
   margin-top: 2px;
-  color: var(--on-ink);
 }
 
 /* ---------- Toast ---------- */

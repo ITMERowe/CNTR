@@ -224,5 +224,27 @@ for (const [width, height] of [[360, 640], [412, 915]]) {
   await page.close();
 }
 
+// Sliding tab pill (a ::before on .tabbar): its centre sits under the active tab's icon, on every tab and width.
+for (const [width, height] of [[320, 640], [412, 892], [892, 412]]) {
+  const page = await browser.newPage({ viewport: { width, height } });
+  await page.goto(URL);
+  await sleep(300);
+  const offsets = [];
+  for (const tab of ['eventScreen', 'productHistoryScreen', 'salesScreen', 'historyScreen', 'settingsScreen']) {
+    await page.click(`.tabbar .tab[data-tab="${tab}"]`);
+    await sleep(450);
+    offsets.push(await page.evaluate((id) => {
+      const bar = document.querySelector('.tabbar');
+      const pill = getComputedStyle(bar, '::before');
+      const shift = new DOMMatrix(pill.transform === 'none' ? undefined : pill.transform).m41;
+      const centre = bar.getBoundingClientRect().left + parseFloat(pill.left) + shift + parseFloat(pill.width) / 2;
+      const icon = document.querySelector(`.tabbar .tab[data-tab="${id}"] .icon`).getBoundingClientRect();
+      return Math.round(centre - (icon.left + icon.width / 2));
+    }, tab));
+  }
+  check(`${width}x${height}: the tab pill is centred under the active tab's icon on all five tabs`, offsets.every((d) => Math.abs(d) <= 1), offsets);
+  await page.close();
+}
+
 await browser.close();
 done();

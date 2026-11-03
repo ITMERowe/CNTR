@@ -15,10 +15,12 @@ Quiet VS Code shell so product colours carry the personality. Text tokens are al
 | `--line` / `--line-strong` | white 8% / 14% | black 10% / 18% | Dividers / input borders |
 | `--scrim` | black 62% | black 40% | Behind sheets |
 | `--selection` | `#264f78` | `#add6ff` | Text selection |
-| `--text` | `#e7e7e7` | `#1e1e1e` | Primary text; primary button fill |
+| `--text` | `#e7e7e7` | `#1e1e1e` | Primary text |
 | `--text-2` | `#cccccc` | `#3b3b3b` | Secondary text |
 | `--text-3` | `#9d9d9d` | `#616161` | Quiet text (labels, meta). Never fainter than this. |
-| `--on-ink` | `#1e1e1e` | `#ffffff` | Text on `--text` fills |
+| `--on-ink` | `#1e1e1e` | `#ffffff` | Text on `--text` fills (toast, compare tag) |
+| `--accent` | `#3cc6d4` | `#0b7285` | The one accent (cyan, owner's ask 2026-11-03; picked to clash with no payment colour): primary buttons, solid icon buttons, switches and checkboxes when on, the tab pill. Never on tiles (product colour) or money (green/red). |
+| `--on-accent` | `#10262a` | `#ffffff` | Text and icons on `--accent` (7.7:1 dark, 5.6:1 light) |
 | `--positive` | `#4ade80` | `#116329` | Profit |
 | `--negative` | `#ff6b5e` | `#c72c1c` | Deficit, danger buttons |
 | `--on-negative` | `#1d0806` | `#ffffff` | Text on danger buttons |
@@ -66,6 +68,7 @@ One family: Plus Jakarta Sans (bundled variable font, `--font`).
 - Short landscape (max-height 500px): Sell's title, revenue and buttons share one header row.
 - Touch targets >= 44x44px (icon buttons 44px, buttons 48px tall, small visual controls grow their hit area with an absolute `::after`).
 - Safe areas: header, content, tab bar (`--tabbar-h` 68px) and sheets pad with `env(safe-area-inset-*)`.
+- **Tab bar:** five equal columns, icon over a `--fs-xs` bold label (`--text-3`, active `--text`). The active tab has one 56x32 `--accent` pill behind its icon (icon `--on-accent`) that slides to the tapped tab (`--dur-2`, `--ease-emphasis`; reduce-motion jumps). CSS only: `.tabbar::before`, column picked with `:has()`. Sell keeps the middle spot and a 26px icon (others 22px) but no pill of its own (owner, 2026-11-03). The layout test checks the pill is centred under each tab at 320, 412 and landscape.
 - Must fit at 320-360px wide (layout test runs 320, 360, 412 and 892 wide, both themes, English and Indonesian).
 
 ## Components
@@ -76,8 +79,8 @@ One family: Plus Jakarta Sans (bundled variable font, `--font`).
 - **Sell button (`.pay-add`), tactile:** at rest exactly the flat half (`--ink-faint`, `--r-md`, same size) plus a 2px bottom edge, `inset 0 -2px 0 var(--ink-soft)`, inside the box so nothing moves. Pressed (`:active`): the edge flattens to 0, the face sinks 1px and scales to 0.97 (`--dur-tap`). A sold compact cell keeps its `--ink-line` ring with the edge (`var(--edge)`).
 - **Group tile:** group title `--fs-xl` (long ones `--fs-lg`), one pencil; one row per variant: name `--fs-md` + price `--fs-xs`, halves sell on tap (no + icon), counts `--fs-lg`. **Compact:** the name on its own line, payment labels once as column headers, rows 44px: variant name `--fs-sm` on one line (ellipsis) with its price `--fs-xs` under it; unsold counts `--fs-md` regular, sold `--fs-lg` bold with an `--ink-line` ring. **Folded:** tap the name row; only the header shows, chevron turned.
 - **Sheets:** bottom sheets, `--surface-1`, top corners `--r-lg`, title `--fs-lg` bold, text `--fs-sm`, actions as a two-button row (Cancel left). **Scroll fade:** a sheet taller than the screen fades its top/bottom edge into `--surface-1` over `--s6` (24px), only toward where there is more to scroll (`.fade-top` / `.fade-bottom` on the overlay, from `updateSheetFade`). A surface-coloured veil, not `mask-image` (a mask would also fade the sheet's own surface into the scrim); it never takes taps.
-- **Switches:** 44x26 pill track (`--surface-3` off, `--text` on); the whole row is the label.
-- **Buttons:** `.btn` 48px, `--r-md`, `--fs-md` bold. Primary = `--text` fill / `--on-ink` text; secondary = `--surface-2`; danger = `--negative` / `--on-negative`, used for destructive confirms only (delete, discard, restore, continue without backup). End day and End event confirm with primary (nothing is lost).
+- **Switches:** 44x26 pill track (`--surface-3` off, `--accent` on, knob `--on-accent`); the whole row is the label. Checked checkboxes fill `--accent` with an `--on-accent` tick.
+- **Buttons:** `.btn` 48px, `--r-md`, `--fs-md` bold. Primary = `--accent` fill / `--on-accent` text; secondary = `--surface-2`; danger = `--negative` / `--on-negative`, used for destructive confirms only (delete, discard, restore, continue without backup). End day and End event confirm with primary (nothing is lost).
 - **Hold to delete (`.hold-delete`):** product/group Delete, an expense's trash and a variant row's ✕. Each button carries a `.hold-fill` copy of its icon/label in `--on-negative` on solid `--negative`; held, it is uncovered left to right (`clip-path`, `--dur-hold` linear), so the icon and label turn light exactly where the red has reached, and the delete runs at 700ms with the usual strong tap. A tap shows the toast "Hold to delete"; letting go, sliding off or `pointercancel` rolls it back (`--dur-1`). Keyboard and screen readers (a click with no press) get the confirm dialog instead (a saved variant's ✕ asks "Remove variants?"; a new, unsaved row goes at once). The hold is the confirmation: Save asks nothing more. Big actions keep their dialogs.
 - **Deleting a whole thing (`.btn-delete`):** a full-width labelled button at the bottom of its screen, never a header icon: `--negative` text and 1px `--negative` outline on no fill, trash icon. Product/group: "Hold to delete" under Save (held; shown only when editing an existing one). Past event: "Delete event" under the report (a dialog: it drops a whole event). A row inside a list (an expense, a variant) keeps its own icon in the row.
 - **Variant rows (product editor, group mode):** each variant is one rounded bar (`--bg`, `--line-strong` border, `--r-md`) holding name | price | cost | ✕ as borderless cells, no gaps; the column labels sit over the values. Name and price bold, cost `--text-2`, numbers tabular. The bar's border turns `--text-3` while a cell has focus, and that cell fills `--surface-2`. New rows rise in (`rise`, `--dur-3`). Add variant is the next, empty line: full width, 1px dashed `--line-strong`, `--text-2`.
