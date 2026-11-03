@@ -3053,7 +3053,7 @@ body.is-editing-event .content {
   width: 22px;
   height: 22px;
   flex-shrink: 0;
-  border-radius: 7px;
+  border-radius: var(--r-sm);
   border: 2px solid var(--text-3);
   transition: background-color var(--dur-1), border-color var(--dur-1);
 }
