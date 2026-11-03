@@ -428,5 +428,17 @@ function fakeNative() {
   await ctx.close();
 }
 
+// A13b: an unreadable History value is kept aside (not overwritten by the next save) and the seller is told.
+{
+  const page = await b.newPage();
+  await page.goto(URL);
+  await page.evaluate((p) => { localStorage.clear(); localStorage.cntrProducts = p; localStorage.cntrEvents = '[{"id":"e1",'; }, SAMPLE_PRODUCTS);
+  await page.reload(); await page.waitForTimeout(600);
+  await page.click('.tile [data-action="plus"][data-payment="Cash"]'); await page.waitForTimeout(300);
+  const r = await page.evaluate(() => ({ aside: localStorage['cntrMeta.damaged.cntrEvents'], alert: !document.querySelector('#storageAlert').hidden }));
+  check('A13b unreadable stored History is copied aside and the storage alert shows', r.aside === '[{"id":"e1",' && r.alert, r);
+  await page.close();
+}
+
 await b.close();
 done();

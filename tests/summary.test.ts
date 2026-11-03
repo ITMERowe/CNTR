@@ -68,3 +68,21 @@ test('empty event does not throw', () => {
   assert.equal(h.busiestWindow, null);
   assert.equal(eventHighlights({ ...comifuro, sales: [] }).biggestExpense?.salesToCover, null);
 });
+
+test('a day that earned nothing gives no revenue change (never Infinity%)', () => {
+  const free = { ...products[0], id: 'free', name: 'Sticker', price: 0, cost: 0 };
+  const sales: SaleRecord[] = [
+    { product: 'Sticker', productId: 'free', price: 0, cost: 0, payment: 'Cash', timestamp: new Date('2026-05-01T03:00:00.000Z') },
+    { product: 'Poster', productId: 'p5', price: 50000, cost: 0, payment: 'Cash', timestamp: new Date('2026-05-02T03:00:00.000Z') },
+  ];
+  const h = eventHighlights({ ...comifuro, products: [...products, free], sales, expenses: [] });
+  assert.deepEqual(h.bestDayChange, { day: 2, vsDay: 1, salesPct: 0, revenuePct: null });
+});
+
+test('no busiest half-hour when the top count is 1 or tied', () => {
+  const at = (iso: string): SaleRecord => ({ product: 'Poster', productId: 'p5', price: 50000, cost: 0, payment: 'Cash', timestamp: new Date(iso) });
+  const ones = eventHighlights({ ...comifuro, dayBreaks: [], expenses: [], sales: [at('2026-05-01T03:00:00Z'), at('2026-05-01T04:00:00Z')] });
+  assert.equal(ones.busiestWindow, null);
+  const tie = eventHighlights({ ...comifuro, dayBreaks: [], expenses: [], sales: [at('2026-05-01T03:00:00Z'), at('2026-05-01T03:10:00Z'), at('2026-05-01T04:00:00Z'), at('2026-05-01T04:10:00Z')] });
+  assert.equal(tie.busiestWindow, null);
+});

@@ -40,7 +40,8 @@ export function eventHighlights(event: PastEvent) {
   const selling = days.filter((day) => day.count > 0);
   const best = selling.reduce((top, day) => (day.revenue > top.revenue ? day : top), selling[0]);
   const before = selling.filter((day) => day.day < best?.day).pop();
-  const change = (now: number, was: number) => Math.round(((now - was) / was) * 100);
+  // Null when the earlier day had nothing to compare with (e.g. only free items), so a percentage is never Infinity.
+  const change = (now: number, was: number) => (was ? Math.round(((now - was) / was) * 100) : null);
   // Null when the best day is the first day with sales: there is no earlier day to compare with.
   const bestDayChange = best && before ? { day: best.day, vsDay: before.day, salesPct: change(best.count, before.count), revenuePct: change(best.revenue, before.revenue) } : null;
 
@@ -51,7 +52,7 @@ export function eventHighlights(event: PastEvent) {
   const big = event.expenses.reduce<(typeof event.expenses)[number] | null>((max, cost) => (!max || cost.amount > max.amount ? cost : max), null);
   const biggestExpense = big ? { name: big.name, amount: big.amount, shareOfExpenses: share(big.amount, expenses), shareOfRevenue: share(big.amount, revenue), salesToCover: salesToCover(big.amount) } : null;
 
-  // Busiest clock half-hour (10:00-10:30, local time) across all days; ties go to the earliest. Null when every sale is in one.
+  // Busiest clock half-hour (10:00-10:30, local time) across all days. Null when every sale is in one, or when the top count is 1 or tied: nothing stands out.
   const windows = dayLists.flatMap((daySales, index) => {
     const byStart = new Map<number, { day: number; start: Date; count: number; revenue: number }>();
     for (const sale of daySales) {
@@ -70,6 +71,6 @@ export function eventHighlights(event: PastEvent) {
     net, revenue, productProfit, expenses, salesCount,
     breakEvenSales: net < 0 ? salesToCover(-net) : null,
     days, bestDayChange, topGroup, biggestExpense,
-    busiestWindow: windows.length > 1 ? busiest : null,
+    busiestWindow: windows.length > 1 && busiest && busiest.count > 1 && windows.filter((w) => w.count === busiest.count).length === 1 ? busiest : null,
   };
 }

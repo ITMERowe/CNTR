@@ -193,6 +193,11 @@ function readJson<T>(key: string, fallback: T): T {
     const parsed = JSON.parse(stored) as T;
     return parsed ?? fallback;
   } catch {
+    // Unreadable: keep a copy aside before the next save can overwrite it, and tell the seller.
+    const aside = `cntrMeta.damaged.${key}`;
+    if (!cache.has(aside)) persist(aside, stored);
+    startupProblem = () => t('storage.damaged');
+    onProblem(saveProblem ?? startupProblem());
     return fallback;
   }
 }

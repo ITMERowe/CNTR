@@ -17,10 +17,20 @@ export function Highlights({ h }: { h: ReturnType<typeof eventHighlights> }) {
   const lines: string[] = [];
   if (h.net < 0 && h.breakEvenSales) lines.push(plural(t('hl.short', { amount: fmt(-h.net), n: h.breakEvenSales }), h.breakEvenSales));
   else if (h.net >= 0) lines.push(t('hl.made', { amount: fmt(h.net) }));
-  if (h.bestDayChange) lines.push(t('hl.bestDay', { day: h.bestDayChange.day, vs: h.bestDayChange.vsDay, sales: signed(h.bestDayChange.salesPct), revenue: signed(h.bestDayChange.revenuePct) }));
+  const best = h.bestDayChange;
+  if (best) {
+    const values = { day: best.day, vs: best.vsDay, sales: signed(best.salesPct ?? 0) };
+    lines.push(best.revenuePct === null ? t('hl.bestDaySales', values) : t('hl.bestDay', { ...values, revenue: signed(best.revenuePct) }));
+  }
   if (h.topGroup && h.topGroup.share < 100) lines.push(t('hl.topGroup', { name: h.topGroup.name, share: Math.round(h.topGroup.share) }));
   const cost = h.biggestExpense;
-  if (cost) lines.push(cost.salesToCover ? plural(t('hl.expense', { name: cost.name, share: Math.round(cost.shareOfExpenses), n: cost.salesToCover }), cost.salesToCover) : t('hl.expenseOnly', { name: cost.name, share: Math.round(cost.shareOfExpenses) }));
+  if (cost) {
+    // The only expense is 100% of costs: say what it cost instead. Past tense only when the sales made really covered it.
+    const what = cost.shareOfExpenses >= 100 ? t('hl.expenseSingle', { name: cost.name, amount: fmt(cost.amount) }) : t('hl.expenseOnly', { name: cost.name, share: Math.round(cost.shareOfExpenses) });
+    const n = cost.salesToCover;
+    const cover = !n ? '' : n <= h.salesCount ? plural(t('hl.covered', { n }), n) : t('hl.notCovered', { n, made: h.salesCount });
+    lines.push(cover ? `${what} ${cover}` : what);
+  }
   const busy = h.busiestWindow;
   if (busy) {
     const time = (date: Date) => date.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });

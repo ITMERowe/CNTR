@@ -655,8 +655,7 @@ p {
 .product-price {
   flex-shrink: 0;
   font-size: var(--fs-sm);
-  font-weight: var(--fw-regular);
-  opacity: 0.78;
+  font-weight: var(--fw-regular); /* full ink: fading it would drop below the 2.6:1 tile rule; size and weight carry the hierarchy */
 }
 
 .tile-edit {
@@ -1925,12 +1924,14 @@ p {
 
 .rank {
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* a long product name ellipsizes instead of pushing revenue off screen */
   gap: var(--s3);
 }
 
 /* Two lines: swatch, name, revenue; then units (+ profit when it differs) beside the share bar. */
 .product-row {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 2px;
   animation: rise var(--dur-2) var(--ease-out) both;
   animation-delay: calc(min(var(--i, 0), 8) * 30ms);
@@ -2458,7 +2459,6 @@ p {
   font-size: var(--fs-sm);
   line-height: var(--lh-tight);
   font-weight: var(--fw-regular);
-  opacity: 0.78;
 }
 
 .color-text {

@@ -532,7 +532,7 @@ function openExpenseModal(id: string | null) {
   el.expenseModalTitle.textContent = cost ? t('expense.edit') : t('add_expense');
   el.addCostBtn.textContent = cost ? t('save_changes') : t('add_expense');
   el.eventCostName.value = cost?.name ?? '';
-  el.eventCostAmount.value = cost ? formatInputNumber(String(cost.amount), loadSettings().currency) : '';
+  el.eventCostAmount.value = cost ? formatInputNumber(cost.amount, loadSettings().currency) : '';
   const products = linkableProducts();
   el.expenseProductsField.hidden = !products.length;
   renderView(h(ProductChecklist, { products, checked: cost?.productIds ?? [] }), el.expenseProducts);
@@ -967,17 +967,24 @@ async function backUpDroppedReports() {
 }
 
 /** Runs a destructive `action` after a safety backup (`backup`, default the full timestamped one); if the backup fails, asks before going ahead. */
+let backupRunning = false;
+
 async function withAutoBackup(action: () => void, backup: () => Promise<void> = autoBackup) {
   if (tutorialActive()) {
     action(); // practice data: no backup files to pile up
     return;
   }
+  // A second End event (or delete) confirmed while the first one's backup is still being written would run twice.
+  if (backupRunning) return;
+  backupRunning = true;
   try {
     await backup();
   } catch (error) {
     feedback('warn');
     openConfirmModal(t('autoBackup.failedText', { error: errorText(error) }), t('continue'), action, { title: t('autoBackup.failed') });
     return;
+  } finally {
+    backupRunning = false;
   }
   action();
 }

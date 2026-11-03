@@ -246,5 +246,21 @@ for (const [width, height] of [[320, 640], [412, 892], [892, 412]]) {
   await page.close();
 }
 
+// A long product name on the report ellipsizes; its revenue stays on screen at 320px (council audit, 2026-11-03).
+{
+  const page = await browser.newPage({ viewport: { width: 320, height: 640 } });
+  await page.goto(URL);
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.cntrProducts = JSON.stringify([{ name: 'Figure Skala 1/7 Kobo Kanaeru Pre-order Batch 2 Limited', price: 850000, cost: 0, color: '#4f6eff' }]);
+  });
+  await page.reload(); await sleep(600);
+  await page.click('.tile [data-action="plus"][data-payment="Cash"]');
+  await page.click('.tabbar .tab[data-tab="eventScreen"]'); await sleep(600);
+  const right = await page.evaluate(() => Math.round(document.querySelector('#eventScreen .rank-revenue').getBoundingClientRect().right));
+  check('320px: a long product name keeps its report revenue on screen', right <= 320, { right });
+  await page.close();
+}
+
 await browser.close();
 done();
