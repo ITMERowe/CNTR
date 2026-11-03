@@ -59,8 +59,37 @@ const exp2 = await run(page, `
   await new Promise((r) => setTimeout(r, 30)); return { before, afterEdit, asked, askText, left: JSON.parse(localStorage.cntrEventCosts).length };
 `);
 check('edit expense prefills and saves', exp2.before === 'Booth' && exp2.afterEdit === 'Booth fee', JSON.stringify(exp2));
-check('deleting an expense asks first, naming it and its amount', exp2.asked && exp2.askText === 'Delete Booth fee (Rp 150.000)?', JSON.stringify(exp2));
+check('deleting an expense from the keyboard / a screen reader (a click with no press) asks first, naming it and its amount', exp2.asked && exp2.askText === 'Delete Booth fee (Rp 150.000)?', JSON.stringify(exp2));
 check('delete expense', exp2.left === 0);
+
+// 3b. Hold to delete, with a real pointer: a tap only hints, sliding off cancels, holding ~700ms deletes (no dialog).
+const holdAt = async (selector, ms, { slideOff = false } = {}) => {
+  const box = await page.locator(selector).boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await sleep(ms / 2);
+  const filling = await page.evaluate((s) => document.querySelector(s)?.classList.contains('holding'), selector);
+  if (slideOff) await page.mouse.move(box.x - 60, box.y + box.height / 2);
+  await sleep(ms / 2);
+  await page.mouse.up();
+  await sleep(150);
+  return filling;
+};
+const dialogOpen = () => page.evaluate(() => document.getElementById('confirmModalOverlay').classList.contains('open'));
+const costsLeft = () => page.evaluate(() => JSON.parse(localStorage.cntrEventCosts).length);
+await run(page, `localStorage.cntrEventCosts = JSON.stringify([{ id: 'h1', name: 'Tape', amount: 5000 }]);`);
+await load();
+await page.click('.tabbar .tab[data-tab="eventScreen"]');
+const trashLabel = await page.getAttribute('.delete-cost', 'aria-label');
+await holdAt('.delete-cost', 200);
+const tapped = { left: await costsLeft(), asked: await dialogOpen(), toast: await page.textContent('#toast') };
+await holdAt('.delete-cost', 900, { slideOff: true });
+const slid = await costsLeft();
+const filling = await holdAt('.delete-cost', 900);
+check('expense trash says "Hold to delete Tape"', trashLabel === 'Hold to delete Tape', trashLabel);
+check('expense trash: a short press deletes nothing, opens no dialog and hints "Hold to delete"', tapped.left === 1 && !tapped.asked && tapped.toast === 'Hold to delete', tapped);
+check('expense trash: sliding off mid-hold cancels', slid === 1, slid);
+check('expense trash: holding fills it, then deletes it without a dialog', filling && (await costsLeft()) === 0 && !(await dialogOpen()), { filling });
 
 // 4. HTML in product name is escaped
 const esc = await run(page, `
@@ -188,6 +217,21 @@ const compact = await page.evaluate(() => ({
 check('compact money: 999.500 shows "Rp 1M" (tile and Sell revenue), 999.499 shows "Rp 999K"', compact.big === 'Rp 1M' && compact.almost === 'Rp 999K' && compact.revenue === 'Rp 1M', compact);
 await page.click('.tabbar .tab[data-tab="settingsScreen"]');
 await page.click('label[for="compactMoneyToggle"]');
+
+// 11c. Delete in the product editor is held too: a tap keeps the product, holding deletes it and keeps its sales.
+await page.click('.tabbar .tab[data-tab="salesScreen"]');
+const held = await page.getAttribute('.tile[data-product]', 'data-product');
+await page.click(`.tile[data-product="${held}"] .pay-add`);
+await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
+await page.click(`.product-edit-btn[data-name="${held}"]`);
+const products = () => page.evaluate(() => JSON.parse(localStorage.cntrProducts).map((p) => p.name));
+await holdAt('#removeProductBtn', 250);
+const editorTap = { kept: (await products()).includes(held), asked: await dialogOpen(), editing: await page.evaluate(() => document.querySelector('.screen.active').id) };
+const editorLabel = await page.getAttribute('#removeProductBtn', 'aria-label');
+await holdAt('#removeProductBtn', 900);
+const editorHeld = { gone: !(await products()).includes(held), asked: await dialogOpen(), sales: await page.evaluate((name) => JSON.parse(localStorage.cntrSales).some((s) => s.product === name), held) };
+check('editor Delete says "Hold to delete product"; a tap keeps the product, no dialog', editorLabel === 'Hold to delete product' && editorTap.kept && !editorTap.asked, { editorLabel, ...editorTap });
+check('editor Delete held ~700ms deletes the product without a dialog; its sales stay', editorHeld.gone && !editorHeld.asked && editorHeld.sales, editorHeld);
 
 // 12. Corrupt storage doesn't crash startup
 await run(page, `localStorage.cntrSales = '{"oops":1}'; localStorage.cntrEvents = 'null'; localStorage.cntrLiveEvent = '[]';`);

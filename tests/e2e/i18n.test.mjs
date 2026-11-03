@@ -111,7 +111,7 @@ await tab('settingsScreen');
 await look('Settings');
 await tab('productHistoryScreen');
 await look('Products');
-await page.click('#addProductBtn');
+await page.click('#productsAddBtn');
 await look('Product editor');
 await page.click('#removeProductBtn').catch(() => {});
 await page.click('#closeEditBtn');

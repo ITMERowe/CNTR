@@ -9,11 +9,12 @@ import { version as packageVersion } from '../package.json';
 import { buildBackup, parseBackup, salesCsv } from './backup';
 import { DATA_KEYS, DROPPED_KEYS } from './migrate';
 import { pickTextFile, saveAutoBackup, saveDayBackup, saveFile, saveSafetyCopy } from './files';
-import { adjustCount } from './events';
+import { adjustCount, withLinkedCosts } from './events';
 import { feedback } from './feedback';
 import { totals } from './reports';
 import {
   addExpense,
+  expenseRecord,
   deletePastEvent,
   endDay,
   endEvent,
@@ -65,14 +66,16 @@ import {
   showToast,
   unlockBodyScroll,
   updateHeaderActions,
+  wireSheetFade,
 } from './ui/dom';
 import { closeColorPicker } from './ui/colorPicker';
 import { hydrateIcons } from './ui/icons';
 import { editProductByName, initProductEditor, openProductEditor } from './ui/productEditor';
+import { groupTiles } from './groups';
 import { initTileDrag } from './ui/tileDrag';
 import { CompareView } from './views/Compare';
 import { EventScreen } from './views/EventScreen';
-import { EventChecklist, EventList, ProductList, RecentSales } from './views/Lists';
+import { EventChecklist, EventList, ProductChecklist, ProductList, RecentSales } from './views/Lists';
 import { SalesGrid, type TapPulse } from './views/SalesGrid';
 import { SalesHero } from './views/SalesHero';
 
@@ -124,7 +127,9 @@ function sellProducts() {
   if (!sellOrder || activeScreenId() !== 'salesScreen') {
     const sold = new Map<string, number>();
     for (const sale of todayLiveSales()) sold.set(sale.product, (sold.get(sale.product) ?? 0) + 1);
-    sellOrder = [...state.products].sort((a, b) => (sold.get(b.name) ?? 0) - (sold.get(a.name) ?? 0)).map(sortKey);
+    // A group sorts by its variants' units together, and stays one tile.
+    const units = (tile: Product[]) => tile.reduce((sum, product) => sum + (sold.get(product.name) ?? 0), 0);
+    sellOrder = groupTiles(state.products).sort((a, b) => units(b) - units(a)).flat().map(sortKey);
   }
   const order = sellOrder;
   const rank = (product: Product) => {
@@ -134,11 +139,13 @@ function sellProducts() {
   return [...state.products].sort((a, b) => rank(a) - rank(b));
 }
 
-/** Drag-and-drop on Sell: moves the product to `to` in the hand-made order. */
+/** Drag-and-drop on Sell: moves the tile holding the product (a group moves whole) to tile `to` in the hand-made order. */
 function moveProduct(name: string, to: number) {
-  const from = state.products.findIndex((product) => product.name === name);
+  const tiles = groupTiles(state.products);
+  const from = tiles.findIndex((tile) => tile.some((product) => product.name === name));
   if (from < 0) return;
-  state.products.splice(to, 0, ...state.products.splice(from, 1));
+  tiles.splice(to, 0, ...tiles.splice(from, 1));
+  state.products.splice(0, state.products.length, ...tiles.flat());
   saveProducts();
   render();
 }
@@ -149,9 +156,19 @@ function moveProduct(name: string, to: number) {
 let viewingId: string | null = null;
 let draft: PastEvent | null = null;
 
+/** Folds or unfolds a Sell group; names of groups that no longer exist drop out of the list. */
+function toggleGroup(group: string) {
+  const key = group.toLowerCase();
+  const live = new Set(state.products.map((product) => product.group?.toLowerCase()));
+  const list = loadSettings().collapsedGroups.filter((name) => live.has(name));
+  saveSettings({ ...loadSettings(), collapsedGroups: list.includes(key) ? list.filter((name) => name !== key) : [...list, key] });
+  feedback('step');
+  render();
+}
+
 function render() {
   const today = todayLiveSales();
-  const { revenue, profit } = totals(today);
+  const { revenue, profit } = totals(withLinkedCosts(today, state.eventCosts, [...state.products, ...state.productHistory]));
   renderView(h(SalesHero, { revenue, profit, count: today.length, day: liveDayCount() }), el.stats);
   renderView(
     h(SalesGrid, {
@@ -161,6 +178,8 @@ function render() {
       onAdd: addSale,
       onUndo: undoSale,
       onEdit: (product: Product) => openProductEditor(state.products.indexOf(product)),
+      collapsed: loadSettings().collapsedGroups,
+      onToggleGroup: toggleGroup,
       onAddProduct: () => openProductEditor(-1),
     }),
     el.grid,
@@ -174,6 +193,8 @@ function render() {
       dayBreaks: state.liveEvent.dayBreaks,
       expenses: state.eventCosts,
       products: state.products,
+      // Hidden products too, so a linked expense still covers their sales.
+      costProducts: [...state.products, ...state.productHistory],
       colorFor: productColor,
       productsPerDay: loadSettings().productsPerDay,
       live: true,
@@ -263,8 +284,6 @@ function renderProductList() {
     }),
     el.productHistoryList,
   );
-  const hidden = state.productHistory.length - state.products.length;
-  el.productsSummary.textContent = state.productHistory.length ? t('products.summary', { count: state.products.length, hidden }) : t('products.none');
 }
 
 /** Deactivates an active product (keeping its history), or puts an inactive one back on the counter. */
@@ -428,14 +447,18 @@ function adjustDraft(day: number, product: string, payment: string, delta: 1 | -
 function confirmDeletePastEvent() {
   const event = viewingId ? findPastEvent(viewingId) : undefined;
   if (!event) return;
-  openConfirmModal(t('deleteEvent.message', { name: event.name }), t('delete'), () =>
-    void withAutoBackup(() => {
-      if (deletePastEvent(event.id)) {
-        feedback('remove');
-        showToast(t('toast.eventDeleted'));
-      }
-      closePastEvent();
-    }),
+  openConfirmModal(
+    t('deleteEvent.message', { name: event.name }),
+    t('delete'),
+    () =>
+      void withAutoBackup(() => {
+        if (deletePastEvent(event.id)) {
+          feedback('remove');
+          showToast(t('toast.eventDeleted'));
+        }
+        closePastEvent();
+      }),
+    { title: t('deleteEvent.title') },
   );
 }
 
@@ -488,6 +511,8 @@ let editingExpenseId: string | null = null;
 
 const editingPastEvent = () => draft !== null && activeScreenId() === 'pastEventScreen';
 const activeExpenses = () => (editingPastEvent() ? draft!.expenses : state.eventCosts);
+/** The products an expense can be linked to: the counter's live, the event's snapshot when editing History. */
+const linkableProducts = () => (editingPastEvent() ? draft!.products : state.products);
 
 function updateExpenseButtonState() {
   const amount = parseCurrencyInput(el.eventCostAmount.value, loadSettings().currency);
@@ -503,6 +528,11 @@ function openExpenseModal(id: string | null) {
   el.addCostBtn.textContent = cost ? t('save_changes') : t('add_expense');
   el.eventCostName.value = cost?.name ?? '';
   el.eventCostAmount.value = cost ? formatInputNumber(String(cost.amount), loadSettings().currency) : '';
+  const products = linkableProducts();
+  el.expenseProductsField.hidden = !products.length;
+  renderView(h(ProductChecklist, { products, checked: cost?.productIds ?? [] }), el.expenseProducts);
+  // Most expenses aren't for products: the list stays folded unless this one already links some.
+  el.expenseProductsBody.hidden = !(el.expenseProductsToggle.checked = !!cost?.productIds?.length);
   updateExpenseButtonState();
   openSheet(el.expenseModalOverlay);
   lockBodyScroll();
@@ -518,29 +548,46 @@ function submitExpense() {
   const name = el.eventCostName.value.trim();
   const amount = parseCurrencyInput(el.eventCostAmount.value, loadSettings().currency);
   if (!name || !(amount > 0)) return;
+  // Ticked rows are indexes into the listed products; links to products no longer listed are kept.
+  let products = linkableProducts();
+  // A group's own box (value "on") is not a product: its variants' boxes carry the picks.
+  // Switched off, the expense links nothing (earlier links included).
+  const linking = el.expenseProductsToggle.checked;
+  const ticked = new Set(linking ? checkedValues(el.expenseProducts).map(Number).filter(Number.isInteger) : []);
+  if (editingPastEvent() && ticked.size) {
+    // A snapshot from before ids gets them only when linked (saved with the edit): its sales' id, else a new one.
+    products = products.map((product, index) => (product.id || !ticked.has(index) ? product : { ...product, id: draft!.sales.find((sale) => sale.product === product.name && sale.productId)?.productId ?? generateUUID() }));
+    draft = { ...draft!, products };
+  }
+  const listed = new Set(products.map((product) => product.id));
+  const previous = activeExpenses().find((cost) => cost.id === editingExpenseId)?.productIds ?? [];
+  const productIds = !linking ? [] : [...previous.filter((id) => !listed.has(id)), ...products.filter((_, index) => ticked.has(index)).map((product) => product.id!)];
   if (editingPastEvent()) {
     const expenses = editingExpenseId
-      ? draft!.expenses.map((cost) => (cost.id === editingExpenseId ? { ...cost, name, amount } : cost))
-      : [...draft!.expenses, { id: generateUUID(), name, amount }];
+      ? draft!.expenses.map((cost) => (cost.id === editingExpenseId ? expenseRecord(cost.id, name, amount, productIds) : cost))
+      : [...draft!.expenses, expenseRecord(generateUUID(), name, amount, productIds)];
     draft = { ...draft!, expenses };
   } else if (editingExpenseId) {
-    updateExpense(editingExpenseId, name, amount);
+    updateExpense(editingExpenseId, name, amount, productIds);
   } else {
-    addExpense(name, amount);
+    addExpense(name, amount, productIds);
   }
   closeExpenseModal();
   render();
 }
 
-function deleteExpense(id: string) {
+/** Held trash deletes at once; a keyboard or screen-reader press (`ask`) confirms in a dialog first. */
+function deleteExpense(id: string, ask: boolean) {
   const cost = activeExpenses().find((item) => item.id === id);
   if (!cost) return;
-  openConfirmModal(t('expense.deleteText', { name: cost.name, amount: fmt(cost.amount) }), t('delete'), () => {
+  const remove = () => {
     if (editingPastEvent()) draft = { ...draft!, expenses: draft!.expenses.filter((item) => item.id !== id) };
     else removeExpense(id);
     feedback('remove');
     render();
-  }, { title: t('expense.delete') });
+  };
+  if (!ask) remove();
+  else openConfirmModal(t('expense.deleteText', { name: cost.name, amount: fmt(cost.amount) }), t('delete'), remove, { title: t('expense.delete') });
 }
 
 // ---- Compare dialog ----
@@ -610,6 +657,7 @@ function wireNavigation() {
 
 function wireHeader() {
   onClick(el.openProductEdit, () => openProductEditor(-1));
+  onClick(el.productsAddBtn, () => openProductEditor(-1));
 
   // Sell's ⋮ menu: Sort by best sellers, Compact tiles. Closes on a tap outside it, Escape or Android back.
   onClick(el.sellMenuBtn, () => {
@@ -712,6 +760,11 @@ function wireDialogs() {
     el.eventCostAmount.value = formatInputNumber(el.eventCostAmount.value, loadSettings().currency);
     updateExpenseButtonState();
   });
+  el.expenseProducts.addEventListener('change', () => feedback('step'));
+  el.expenseProductsToggle.addEventListener('change', () => {
+    el.expenseProductsBody.hidden = !el.expenseProductsToggle.checked;
+    feedback('step');
+  });
   onClick(el.addCostBtn, submitExpense);
   onClick(el.expenseModalCloseBtn, closeExpenseModal);
   onClick(el.expenseModalCancelBtn, closeExpenseModal);
@@ -738,6 +791,11 @@ function wireDialogs() {
   const isTextInput = (target: EventTarget | null): target is HTMLInputElement => target instanceof HTMLInputElement && target.type === 'text';
   document.addEventListener('focusin', (event) => {
     if (isTextInput(event.target)) event.target.enterKeyHint = nextField(event.target) ? 'next' : 'done';
+  });
+  // The keyboard shrinks the page only after a field is focused, which can leave that field under it: bring it back into view.
+  window.addEventListener('resize', () => {
+    const field = document.activeElement;
+    if (isTextInput(field) || field instanceof HTMLTextAreaElement) field.scrollIntoView({ block: 'center' });
   });
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' || event.defaultPrevented || !isTextInput(event.target)) return;
@@ -783,7 +841,6 @@ function updateLastBackupText() {
 }
 
 function updateThemeState() {
-  el.themeState.textContent = t(el.themeToggle.checked ? 'theme.dark' : 'theme.light');
 }
 
 /** Saves a file and reports where it went. Returns true if it was saved somewhere. */
@@ -816,7 +873,7 @@ function blockedByTutorial() {
 async function exportBackup() {
   if (blockedByTutorial()) return;
   const now = new Date();
-  const ok = await exportFile(`cntr-backup-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2), 'application/json', t('backup'));
+  const ok = await exportFile(`cntr-backup-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now)), 'application/json', t('backup'));
   if (ok) {
     saveLastBackup(now.toISOString());
     updateLastBackupText();
@@ -860,7 +917,7 @@ async function restoreBackup() {
 async function applyRestore(values: Map<string, string>) {
   const now = new Date();
   try {
-    await saveSafetyCopy(`cntr-before-restore-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2));
+    await saveSafetyCopy(`cntr-before-restore-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now)));
   } catch (error) {
     showMessage(t('restore.cancelled'), t('restore.cancelledText', { error: errorText(error) }));
     return;
@@ -888,12 +945,12 @@ function lockForReload(locked: boolean) {
 /** Writes an automatic backup on the phone (Documents/CNTR/auto). Throws if it could not be saved. */
 async function autoBackup() {
   const now = new Date();
-  await saveAutoBackup(`cntr-auto-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now), null, 2));
+  await saveAutoBackup(`cntr-auto-${fileStamp(now)}.json`, JSON.stringify(buildBackup(storedValues(), now)));
 }
 
 /** Writes (replacing) the End day safety backup. Throws if it could not be saved. */
 async function dayBackup() {
-  await saveDayBackup(JSON.stringify(buildBackup(storedValues(), new Date()), null, 2));
+  await saveDayBackup(JSON.stringify(buildBackup(storedValues(), new Date())));
 }
 
 /** Once, when events replace saved reports: keep the old reports in an automatic backup, since exports no longer include them. */
@@ -902,7 +959,7 @@ async function backUpDroppedReports() {
   const now = new Date();
   const keys = [...DATA_KEYS, ...DROPPED_KEYS];
   try {
-    await saveAutoBackup(`cntr-auto-${fileStamp(now)}-saved-reports.json`, JSON.stringify(buildBackup(storedValues(keys), now, keys), null, 2));
+    await saveAutoBackup(`cntr-auto-${fileStamp(now)}-saved-reports.json`, JSON.stringify(buildBackup(storedValues(keys), now, keys)));
   } catch (error) {
     console.error('Could not back up the old saved reports', error); // they also stay in the database, untouched
   }
@@ -1041,6 +1098,7 @@ async function start() {
   wireHeader();
   wireSettings();
   wireDialogs();
+  wireSheetFade();
   wireBackup();
   initProductEditor(productsChanged);
   onClick(el.startTutorialBtn, confirmStartTutorial);

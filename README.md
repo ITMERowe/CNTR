@@ -6,13 +6,14 @@
 
 ## Features
 
-- **Sell**: one colored tile per product, with a large tap target for each of its 1 or 2 payment methods (Cash, QRIS, Transfer, Card, E-wallet). A small − undoes the last sale of that kind. A free product (price 0) gets one plain counter. Today's revenue and profit sit at the top.
+- **Sell**: one colored tile per product, with a large tap target for each of its 1 or 2 payment methods (Cash, QRIS, Transfer, Card, E-wallet). A small − undoes the last sale of that kind. A free product (price 0) gets one plain counter. Today's revenue and profit sit at the top. Tablets and landscape phones get 2 or 3 columns.
+- **Product groups**: a group (e.g. Poster) with variants (A3, A4) is one tile with a row per variant, foldable; each variant counts as its own product in every report.
 - **Arrange the counter**: hold a tile and drag it to reorder. The ⋮ menu has *Sort by best sellers* (most sold today first) and *Compact tiles* (shorter tiles, so more fit on screen).
 - **Event** (always one live event): net profit (product profit − expenses) leads, then revenue, product profit, expenses, the payment mix and a per-product breakdown. Rename it by tapping its name.
 - **Multi-day events**: *End day* starts the next day (or let a new calendar date do it, an option in Settings); the Sell counters restart while the event total keeps counting. *End event* names the event, saves an automatic backup and moves it to History.
-- **Expenses**: booth fees, transport and other costs per event; they come off the net profit.
+- **Expenses**: booth fees, transport and other costs per event; they come off the net profit. An expense can be linked to products (e.g. a print run), so their per-item cost isn't counted twice.
 - **History**: past events with their net profit. Open one to review it, **edit** it (rename, fix counts per product per day, change expenses), delete it, or **compare** two side by side.
-- **Products** tab: add, edit (name, price, cost, color, payment methods), take off the counter without losing history, or delete. A sale keeps the price it was sold at; deleting a product never deletes its sales.
+- **Products** tab: add, edit (name, price, cost, color, payment methods, or a whole group on one page), take off the counter without losing history, or delete (hold to delete). A sale keeps the price it was sold at; deleting a product never deletes its sales.
 - **Settings**: 8 currencies (IDR, USD, EUR, SGD, AUD, GBP, JPY, MYR) with an optional compact format (`Rp 1,5M`), light or dark theme, English or Bahasa Indonesia, sound effects, and backup.
 - **Tutorial**: an optional hands-on tour on practice data, offered on first launch and replayable from Settings; your own data is set aside and comes back exactly.
 - **Feedback**: haptics on every sale and action, plus optional short tones.
@@ -42,7 +43,7 @@
 | Assets | [Lucide](https://lucide.dev) icons, Plus Jakarta Sans (bundled via Fontsource) |
 | CI | GitHub Actions: tests, then an APK (and a Play bundle when signed) on every push |
 
-Code layout (details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)):
+Code layout (details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); screens and flows in [docs/APP-FLOW.md](docs/APP-FLOW.md); design tokens and rules in [docs/DESIGN.md](docs/DESIGN.md)):
 
 ```
 index.html          Screens and dialog shells

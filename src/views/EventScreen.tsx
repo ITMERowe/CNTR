@@ -1,9 +1,10 @@
 // The Event screen: the live event, or a past event from History (read-only or being edited).
-import { eventSummary, formatDay, splitDays } from '../events';
+import { eventSummary, formatDay, splitDays, withLinkedCosts } from '../events';
 import { fmt } from '../formatters';
 import { paymentClass, productPayments, sortPayments } from '../payments';
 import { buildProductBreakdown, marginPercent } from '../reports';
 import type { EventCost, Product, SaleRecord } from '../types';
+import { holdToDelete } from '../ui/dom';
 import { Icon } from './Icon';
 import { Card, EmptyState, Hero, Kpi, PaymentSplit, ProductRows, profitClass } from './ReportParts';
 import { t, tn } from '../i18n';
@@ -19,6 +20,8 @@ interface Props {
   expenses: EventCost[];
   /** Products to list (the counter's products live, the event's snapshot in History). */
   products: Product[];
+  /** Products a linked expense can match (defaults to `products`; live adds the hidden ones). */
+  costProducts?: Product[];
   colorFor: (name: string) => string;
   live: boolean;
   /** A past event's first and last sale dates, shown under its name (the live event shows the Live chip instead). */
@@ -28,7 +31,8 @@ interface Props {
   onRename?: () => void;
   onAddExpense?: () => void;
   onEditExpense?: (id: string) => void;
-  onDeleteExpense?: (id: string) => void;
+  /** `ask`: a keyboard or screen-reader press, which confirms first; a held press deletes at once. */
+  onDeleteExpense?: (id: string, ask: boolean) => void;
   onEndDay?: () => void;
   onEndEvent?: () => void;
   onGoToSell?: () => void;
@@ -119,29 +123,20 @@ function CountEditor({ days, products, edit }: { days: SaleRecord[][]; products:
   );
 }
 
-/** Per-product rows for a set of sales, then the products not sold in it. */
+/** Per-product rows for a set of sales (only what sold). */
 function ProductBreakdown({ sales, products, colorFor }: { sales: SaleRecord[]; products: Product[]; colorFor: (name: string) => string }) {
   const rows = buildProductBreakdown(sales, products, colorFor).sort((a, b) => b.count - a.count || b.revenue - a.revenue);
-  const sold = rows.filter((row) => row.count > 0);
-  const unsold = rows.filter((row) => row.count === 0);
-  return (
-    <>
-      {sold.length > 0 && <ProductRows rows={sold} totalUnits={sales.length} />}
-      {unsold.length > 0 && (
-        <p class={sold.length ? 'card-note unsold' : 'card-note'}>
-          {sold.length ? t('products.notSold') : t('products.noSalesFor')}
-          {unsold.map((row) => row.name).join(', ')}
-        </p>
-      )}
-      {!rows.length && <EmptyState icon="package" title={t('products.noneYet')} text={t('products.addFromSell')} />}
-    </>
-  );
+  return <ProductRows rows={rows.filter((row) => row.count > 0)} totalUnits={sales.length} />;
 }
 
 export function EventScreen(props: Props) {
   const { name, sales, dayBreaks, expenses, products, colorFor, live, edit } = props;
-  const summary = eventSummary(sales, expenses);
-  const days = splitDays(sales, dayBreaks);
+  const linkable = props.costProducts ?? products;
+  const summary = eventSummary(sales, expenses, linkable);
+  // Day cards and product rows take linked expenses into account too (no item cost for the products they cover).
+  const days = splitDays(withLinkedCosts(sales, expenses, linkable), dayBreaks);
+  // Days without sales get no Products card, so the one that starts open is the latest day with sales.
+  const lastSoldDay = days.map((day) => day.length > 0).lastIndexOf(true);
   const isEmpty = !sales.length && !expenses.length;
   // Nothing at all yet (no products either): one empty state instead of it stacked with another for the Products card below.
   const allEmpty = isEmpty && !products.length;
@@ -229,8 +224,16 @@ export function EventScreen(props: Props) {
                     <button class="icon-btn icon-btn-sm edit-cost" type="button" data-id={cost.id} title={t('expense.edit')} aria-label={t('edit.named', { name: cost.name })} onClick={() => props.onEditExpense!(cost.id)}>
                       <Icon name="pencil" />
                     </button>
-                    <button class="icon-btn icon-btn-sm icon-btn-danger delete-cost" type="button" data-id={cost.id} title={t('expense.delete')} aria-label={t('delete.named', { name: cost.name })} onClick={() => props.onDeleteExpense!(cost.id)}>
+                    <button
+                      class="icon-btn icon-btn-sm icon-btn-danger hold-delete delete-cost"
+                      type="button"
+                      data-id={cost.id}
+                      title={t('hold.hint')}
+                      aria-label={t('hold.deleteNamed', { name: cost.name })}
+                      {...holdToDelete(() => props.onDeleteExpense!(cost.id, false), () => props.onDeleteExpense!(cost.id, true))}
+                    >
                       <Icon name="trash" />
+                      <span class="hold-fill" aria-hidden="true"><Icon name="trash" /></span>
                     </button>
                   </div>
                 )}
@@ -249,11 +252,11 @@ export function EventScreen(props: Props) {
       )}
 
       {!edit &&
-        !allEmpty &&
+        sales.length > 0 &&
         (props.productsPerDay ? (
-          days.map((day, index) => (
-            // Only the latest day starts open; `open` is set again only if that changes, so taps stick.
-            <details class="card products-day" key={index} open={index === days.length - 1}>
+          days.map((day, index) => day.length > 0 && (
+            // Only the latest day with sales starts open; `open` is set again only if that changes, so taps stick.
+            <details class="card products-day" key={index} open={index === lastSoldDay}>
               <summary class="products-day-head">
                 <h2 class="card-title">{days.length > 1 ? t('products.day', { n: index + 1 }) : t('products')}</h2>
                 <span class="products-day-meta">{tn('count.sale', day.length)}</span>
@@ -264,7 +267,7 @@ export function EventScreen(props: Props) {
           ))
         ) : (
           <Card title={t('products')}>
-            <ProductBreakdown sales={sales} products={products} colorFor={colorFor} />
+            <ProductBreakdown sales={withLinkedCosts(sales, expenses, linkable)} products={products} colorFor={colorFor} />
           </Card>
         ))}
 

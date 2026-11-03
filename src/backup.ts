@@ -1,12 +1,13 @@
 // Backup files: build, validate and turn into CSV. Type-only imports, so Node can test it directly.
-import { splitDays } from './events.ts';
+import { splitDays, withLinkedCosts } from './events.ts';
 import { DATA_KEYS } from './migrate.ts'; // explicit extension so `node --test` can load it
-import type { SaleRecord } from './types.ts';
+import type { EventCost, Product, SaleRecord } from './types.ts';
 import { t } from './i18n.ts';
 
 export const BACKUP_APP = 'CNTR';
 export const BACKUP_FORMAT = 1;
-const MAX_BACKUP_BYTES = 50 * 1024 * 1024;
+// Backups are compact JSON (about 160 bytes a sale): 200 MB is over a million sales, and still stops a wrong, huge file.
+const MAX_BACKUP_BYTES = 200 * 1024 * 1024;
 
 export interface BackupFile {
   app: typeof BACKUP_APP;
@@ -52,7 +53,7 @@ function checkProduct(item: unknown) {
   // `payments` is optional (older backups have none): 1 or 2 method names.
   const payments = isObject(item) ? item.payments : undefined;
   const paymentsOk = payments === undefined || (Array.isArray(payments) && payments.length >= 1 && payments.length <= 2 && payments.every(isString));
-  return isObject(item) && (item.id === undefined || isString(item.id)) && isName(item.name) && isNumber(item.price) && isNumber(item.cost) && isString(item.color) && paymentsOk;
+  return isObject(item) && (item.id === undefined || isString(item.id)) && isName(item.name) && isNumber(item.price) && isNumber(item.cost) && isString(item.color) && paymentsOk && (item.group === undefined || isName(item.group));
 }
 
 function checkSale(item: unknown) {
@@ -60,7 +61,10 @@ function checkSale(item: unknown) {
 }
 
 function checkCost(item: unknown) {
-  return isObject(item) && isString(item.id) && isName(item.name) && isNumber(item.amount);
+  // `productIds` is optional (older backups have none): the ids of the products the expense pays for.
+  const ids = isObject(item) ? item.productIds : undefined;
+  const idsOk = ids === undefined || (Array.isArray(ids) && ids.length <= 1000 && ids.every(isName));
+  return isObject(item) && isString(item.id) && isName(item.name) && isNumber(item.amount) && idsOk;
 }
 
 /** Returns the first problem in `list`, or null. */
@@ -124,6 +128,10 @@ export function parseBackup(text: string): ParsedBackup {
   };
 }
 
+const pad = (n: number) => String(n).padStart(2, '0');
+// The phone's own time, as the app shows it (ISO would be UTC: hours off, and early sales on the day before).
+const localTime = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
 const csvCell = (value: string | number) => {
   // A name starting like a formula would run as one in Excel or Sheets; a leading ' makes it plain text.
   const text = typeof value === 'string' && /^[=+\-@\t\r]/.test(value) ? `'${value}` : String(value);
@@ -133,17 +141,20 @@ const csvCell = (value: string | number) => {
 /** Every recorded sale (the live event, then past events) as CSV, with day numbers. Starts with a BOM so Excel reads UTF-8. */
 export function salesCsv(backup: BackupFile): string {
   type StoredSale = Omit<SaleRecord, 'timestamp'> & { timestamp: string };
-  type StoredEvent = { name: string | null; dayBreaks: string[]; sales: StoredSale[] };
+  type StoredEvent = { name: string | null; dayBreaks: string[]; sales: StoredSale[]; expenses?: EventCost[]; products?: Product[] };
   const rows: (string | number)[][] = [['Event', 'Day', 'Time', 'Product', 'Payment', 'Price', 'Cost']];
-  const add = (name: string, dayBreaks: string[], sales: StoredSale[]) => {
-    const days = splitDays(sales.map((sale) => ({ ...sale, timestamp: new Date(sale.timestamp) })), dayBreaks);
+  const list = <T>(value: unknown) => (Array.isArray(value) ? (value as T[]) : []);
+  // Cost as the reports count it: 0 for products a linked expense of the same event pays for.
+  const add = (name: string, dayBreaks: string[], sales: StoredSale[], expenses: unknown, products: unknown) => {
+    const revived = sales.map((sale) => ({ ...sale, timestamp: new Date(sale.timestamp) }));
+    const days = splitDays(withLinkedCosts(revived, list<EventCost>(expenses), list<Product>(products)), dayBreaks);
     days.forEach((day, index) => {
-      for (const sale of day) rows.push([name, index + 1, sale.timestamp.toISOString(), sale.product, sale.payment, sale.price, sale.cost]);
+      for (const sale of day) rows.push([name, index + 1, localTime(sale.timestamp), sale.product, sale.payment, sale.price, sale.cost]);
     });
   };
   const live = isObject(backup.data.cntrLiveEvent) ? (backup.data.cntrLiveEvent as StoredEvent) : null;
-  if (Array.isArray(backup.data.cntrSales)) add(live?.name || 'Current event', live?.dayBreaks ?? [], backup.data.cntrSales as StoredSale[]);
+  if (Array.isArray(backup.data.cntrSales)) add(live?.name || 'Current event', live?.dayBreaks ?? [], backup.data.cntrSales as StoredSale[], backup.data.cntrEventCosts, [...list<Product>(backup.data.cntrProducts), ...list<Product>(backup.data.cntrProductHistory)]);
   const events = Array.isArray(backup.data.cntrEvents) ? (backup.data.cntrEvents as StoredEvent[]) : [];
-  for (const event of events) add(event.name ?? '', event.dayBreaks, event.sales);
+  for (const event of events) add(event.name ?? '', event.dayBreaks, event.sales, event.expenses, event.products);
   return '﻿' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
 }

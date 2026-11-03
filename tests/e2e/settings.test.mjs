@@ -30,7 +30,7 @@ const H = `
 const settings = await run(page, `${H}
   tab('settingsScreen');
   const groups = [...document.querySelectorAll('#settingsScreen .group')].map((g) => g.dataset.group);
-  return { groups, summary: document.getElementById('productsSummary').textContent, lastBackup: document.getElementById('lastBackupText').textContent };
+  return { groups, lastBackup: document.getElementById('lastBackupText').textContent };
 `);
 check('Settings order: Event, Money, Looks, Sound, Sales data, Backup, About', settings.groups.join() === 'event,money,looks,sound,sales,backup,about', settings.groups);
 
@@ -45,14 +45,14 @@ await sleep(150);
 const afterPhoneChange = await themeNow();
 const toggled = await run(page, `${H}
   tab('settingsScreen');
-  const before = { checked: document.getElementById('themeToggle').checked, label: document.getElementById('themeState').textContent };
+  const before = { checked: document.getElementById('themeToggle').checked, label: document.getElementById('themeLabel').textContent };
   document.getElementById('themeToggle').click();
   await wait(100);
-  return { before, after: { checked: document.getElementById('themeToggle').checked, label: document.getElementById('themeState').textContent }, stored: stored('cntrSettings').theme };
+  return { before, after: { checked: document.getElementById('themeToggle').checked }, stored: stored('cntrSettings').theme };
 `);
 check('a fresh install resolves the theme from the phone (light) and saves it, not "system"', fresh.theme === 'light' && fresh.stored === 'light', fresh);
 check('once resolved, the app does not keep following the phone', afterPhoneChange === 'light', afterPhoneChange);
-check('the Theme toggle switches Light/Dark, labelled, and saves the choice', !toggled.before.checked && toggled.before.label === 'Light' && toggled.after.checked && toggled.after.label === 'Dark' && toggled.stored === 'dark', toggled);
+check('the Dark theme switch turns dark on and saves the choice', !toggled.before.checked && toggled.before.label === 'Dark theme' && toggled.after.checked && toggled.stored === 'dark', toggled);
 
 // Restore the product data cleared above, for the Products tests below.
 await run(page, `
@@ -91,7 +91,6 @@ const sound = await run(page, `${H}
 `);
 check('Sound effects is on by default and a sale plays one soft tone', sound.onByDefault && sound.onTones === 1, sound);
 check('with Sound effects off a sale is silent, and the choice is saved', sound.offTones === 0 && sound.saved === false, sound);
-check('Products row says how many are on the counter and hidden', settings.summary === '2 on the counter · 1 hidden', settings.summary);
 check('Backup shows the last backup plainly ("Never" before the first)', settings.lastBackup === 'Never', settings.lastBackup);
 
 // 2. Products: two sections, rows show price, profit and methods; no delete button on rows
@@ -103,12 +102,12 @@ const list = await run(page, `${H}
     counter: rows('counter'), hidden: rows('hidden'),
     heads: [...document.querySelectorAll('#productHistoryList .product-section-title')].map((h) => h.textContent),
     pinText: pin.textContent, deleteButtons: document.querySelectorAll('#productHistoryList .product-delete-btn, #productHistoryList .icon-btn-danger').length,
-    addButton: !!document.getElementById('addProductBtn'),
+    addButton: !document.getElementById('addProductBtn') && !!document.getElementById('productsAddBtn').offsetParent,
   };
 `);
-check('Products split into On the counter and Hidden, with counts', list.counter.join() === 'Gacha,Pin' && list.hidden.join() === 'Old badge' && list.heads.join() === 'On the counter · 2,Hidden · 1', list);
+check('Products: the counter first (no heading of its own), then Hidden with its count', list.counter.join() === 'Gacha,Pin' && list.hidden.join() === 'Old badge' && list.heads.join() === 'Hidden · 1', list);
 check('a row shows price, profit per item and its payment methods', /Rp 5\.000/.test(list.pinText) && /profit Rp 4\.000/.test(list.pinText) && /E-wallet/.test(list.pinText), list.pinText);
-check('no delete buttons on rows; an Add product button at the end', list.deleteButtons === 0 && list.addButton, list);
+check('no delete buttons on rows; Add product is the + in the page header (no second one at the end)', list.deleteButtons === 0 && list.addButton, list);
 
 // 3. Tapping the switch moves a product between sections; tapping a row opens the editor
 const moves = await run(page, `${H}

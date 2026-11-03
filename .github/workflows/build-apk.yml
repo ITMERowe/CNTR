@@ -139,6 +139,10 @@ jobs:
     permissions:
       contents: write
     steps:
+      # For CHANGELOG.md and the release notes template.
+      - name: Checkout
+        uses: actions/checkout@v7
+
       - name: Download the build
         uses: actions/download-artifact@v8
         with:
@@ -157,10 +161,14 @@ jobs:
             exit 1
           fi
           name="$(basename "$aab" .aab)"   # CNTR_<package.json version>, e.g. CNTR_0.1.0
+          version="${name#CNTR_}"
+          # Notes come from the version's section in CHANGELOG.md (its Highlights first) and .github/release-template.md.
+          previous="$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName // ""')"
+          node .github/scripts/release-notes.mjs "$version" "$previous"
           # One release per version: bump "version" in package.json before the next release, or this stops
           # here because the release already exists (a pushed tag of the same name is reused).
-          gh release create "v${name#CNTR_}" release/* --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" --title "${name/_/ }" --generate-notes
+          gh release create "v${version}" release/* --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" --title "CNTR ${version}" --notes-file release-notes.md
 
   # On a push to playstore: the .aab goes to a Google Play track. Skipped until the PLAY_SERVICE_ACCOUNT_JSON secret exists.
   # Play only accepts API uploads once the app exists in Play Console with one bundle uploaded by hand.
@@ -182,6 +190,10 @@ jobs:
             echo "::notice::No PLAY_SERVICE_ACCOUNT_JSON secret; skipping the Google Play upload."
           fi
 
+      - name: Checkout
+        if: steps.creds.outputs.ok == 'true'
+        uses: actions/checkout@v7
+
       - name: Download the bundle
         if: steps.creds.outputs.ok == 'true'
         uses: actions/download-artifact@v8
@@ -189,6 +201,14 @@ jobs:
           pattern: 'CNTR_*.aab'
           path: release
           merge-multiple: true
+
+      # Play's "What's new" text: the version's Highlights from CHANGELOG.md.
+      - name: Write "What's new"
+        if: steps.creds.outputs.ok == 'true'
+        run: |
+          aab="$(ls release/CNTR_*.aab | head -1)"
+          name="$(basename "$aab" .aab)"
+          node .github/scripts/release-notes.mjs "${name#CNTR_}"
 
       - name: Upload to Google Play
         if: steps.creds.outputs.ok == 'true'
@@ -199,3 +219,4 @@ jobs:
           releaseFiles: release/CNTR_*.aab
           track: ${{ vars.PLAY_TRACK || 'internal' }}
           status: ${{ vars.PLAY_RELEASE_STATUS || 'draft' }}
+          whatsNewDirectory: whatsnew

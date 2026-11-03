@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   newDayOnDateChange: false,
   autoSort: false,
   compactTiles: false,
+  collapsedGroups: [],
   sound: true,
   theme: 'dark',
   language: 'en',
@@ -244,7 +245,7 @@ export function saveSales(sales: SaleRecord[]) {
 
 export function loadEventCosts(): EventCost[] {
   // Older versions stored a `category` field; keep only the current shape.
-  return readArray<EventCost & { category?: string }>(EVENT_COST_STORAGE_KEY).map((item) => ({ id: item.id, name: item.name, amount: item.amount }));
+  return readArray<EventCost & { category?: string }>(EVENT_COST_STORAGE_KEY).map((item) => ({ id: item.id, name: item.name, amount: item.amount, ...(item.productIds && { productIds: item.productIds }) }));
 }
 
 export function saveEventCosts(eventCosts: EventCost[]) {
@@ -297,6 +298,7 @@ export function loadSettings(): AppSettings {
     newDayOnDateChange: typeof stored.newDayOnDateChange === 'boolean' ? stored.newDayOnDateChange : DEFAULT_SETTINGS.newDayOnDateChange,
     autoSort: stored.autoSort === true,
     compactTiles: stored.compactTiles === true,
+    collapsedGroups: Array.isArray(stored.collapsedGroups) ? stored.collapsedGroups.filter((name) => typeof name === 'string') : [],
     sound: typeof stored.sound === 'boolean' ? stored.sound : DEFAULT_SETTINGS.sound,
     theme: stored.theme === 'light' || stored.theme === 'dark' ? stored.theme : resolveTheme(),
     language: stored.language === 'en' || stored.language === 'id' ? stored.language : initialLanguage(navigator.language, freshInstall),

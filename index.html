@@ -13,20 +13,20 @@
     <div class="app">
       <header class="topbar">
         <div class="topbar-row">
-          <div class="brand" id="brand" aria-label="CNTR">CNTR</div>
+          <h1 class="page-title brand" id="sellTitle" aria-label="CNTR">CNTR</h1>
           <div class="topbar-actions">
             <button class="icon-btn icon-btn-soft" id="openProductEdit" type="button" title="Add product" data-i18n-title="add_product" aria-label="Add product" data-i18n-aria="add_product"><i data-icon="plus"></i></button>
             <button class="icon-btn icon-btn-soft" id="sellMenuBtn" type="button" aria-expanded="false" aria-controls="sellMenu" title="Sell options" data-i18n-title="sell_options" aria-label="Sell options" data-i18n-aria="sell_options"><i data-icon="more"></i></button>
             <div class="menu" id="sellMenu" hidden>
               <label class="group-row" for="autoSortToggle">
-                <span class="group-row-label"><span data-i18n="auto_sort">Sort by best sellers</span><small data-i18n="auto_sort_hint">Most sold today first. Turn off to drag tiles into your own order.</small></span>
+                <span class="group-row-label"><span data-i18n="auto_sort">Sort by best sellers</span><small data-i18n="auto_sort_hint">Turn off to drag tiles into your own order</small></span>
                 <span class="switch">
                   <input type="checkbox" id="autoSortToggle" role="switch" />
                   <span class="switch-track" aria-hidden="true"></span>
                 </span>
               </label>
               <label class="group-row" for="compactTilesToggle">
-                <span class="group-row-label"><span data-i18n="compact_tiles">Compact tiles</span><small data-i18n="compact_tiles_hint">Shorter tiles without the price, so more fit on screen</small></span>
+                <span class="group-row-label"><span data-i18n="compact_tiles">Compact tiles</span></span>
                 <span class="switch">
                   <input type="checkbox" id="compactTilesToggle" role="switch" />
                   <span class="switch-track" aria-hidden="true"></span>
@@ -75,9 +75,9 @@
               <button class="icon-btn back-btn" id="pastEventBackBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
               <h1 class="page-title" id="pastEventTitle">Event</h1>
               <button class="icon-btn" id="pastEventEditBtn" type="button" title="Edit event" data-i18n-title="edit_event" aria-label="Edit event" data-i18n-aria="edit_event"><i data-icon="pencil"></i></button>
-              <button class="icon-btn icon-btn-danger" id="pastEventDeleteBtn" type="button" title="Delete event" data-i18n-title="delete_event" aria-label="Delete event" data-i18n-aria="delete_event"><i data-icon="trash"></i></button>
             </div>
             <div class="stack" id="pastEventCard"></div>
+            <button class="btn btn-block btn-delete" id="pastEventDeleteBtn" type="button"><i data-icon="trash"></i><span data-i18n="delete_event">Delete event</span></button>
             <div class="edit-bar" id="pastEventEditBar" hidden>
               <button type="button" class="btn btn-secondary" id="pastEventCancelBtn" data-i18n="cancel">Cancel</button>
               <button type="button" class="btn btn-primary" id="pastEventSaveBtn" data-i18n="save_changes">Save changes</button>
@@ -105,14 +105,14 @@
                 <h2 class="group-title" data-i18n="event">Event</h2>
                 <div class="group-body">
                   <label class="group-row" for="productsPerDayToggle">
-                    <span class="group-row-label"><span data-i18n="products_per_day">Products per day</span><small data-i18n="one_collapsible_products_card_for_each_d">One collapsible Products card for each day</small></span>
+                    <span class="group-row-label"><span data-i18n="products_per_day">Products per day</span></span>
                     <span class="switch">
                       <input type="checkbox" id="productsPerDayToggle" role="switch" />
                       <span class="switch-track" aria-hidden="true"></span>
                     </span>
                   </label>
                   <label class="group-row" for="newDayToggle">
-                    <span class="group-row-label"><span data-i18n="settings.newDay">New day when the date changes</span><small data-i18n="settings.newDayText">The first sale on a new date starts the next day by itself</small></span>
+                    <span class="group-row-label"><span data-i18n="settings.newDay">New day when the date changes</span><small data-i18n="settings.newDayText">On the first sale of a new date</small></span>
                     <span class="switch">
                       <input type="checkbox" id="newDayToggle" role="switch" />
                       <span class="switch-track" aria-hidden="true"></span>
@@ -151,7 +151,7 @@
                 <h2 class="group-title" data-i18n="settings.looks">Looks</h2>
                 <div class="group-body">
                   <label class="group-row" for="themeToggle">
-                    <span class="group-row-label"><span id="themeLabel" data-i18n="settings.theme">Theme</span><small id="themeState"></small></span>
+                    <span class="group-row-label"><span id="themeLabel" data-i18n="settings.theme">Dark theme</span></span>
                     <span class="switch">
                       <input type="checkbox" id="themeToggle" role="switch" />
                       <span class="switch-track" aria-hidden="true"></span>
@@ -172,7 +172,7 @@
                 <h2 class="group-title" data-i18n="sound">Sound</h2>
                 <div class="group-body">
                   <label class="group-row" for="soundToggle">
-                    <span class="group-row-label"><span data-i18n="sound_effects">Sound effects</span><small data-i18n="soft_clicks_when_you_sell_undo_or_finish">Soft clicks when you sell, undo or finish something</small></span>
+                    <span class="group-row-label"><span data-i18n="sound_effects">Sound effects</span></span>
                     <span class="switch">
                       <input type="checkbox" id="soundToggle" role="switch" />
                       <span class="switch-track" aria-hidden="true"></span>
@@ -183,14 +183,14 @@
               <section class="group" data-group="sales">
                 <h2 class="group-title" data-i18n="sales_data">Sales data</h2>
                 <div class="group-body">
-                  <button class="group-row group-link" id="exportCsvBtn" type="button"><span class="group-icon"><i data-icon="csv"></i></span><span class="group-row-label"><span data-i18n="export_sales_as_csv">Export sales as CSV</span><small data-i18n="every_sale_for_a_spreadsheet_not_a_backu">Every sale, for a spreadsheet. Not a backup.</small></span><i data-icon="chevron-right"></i></button>
+                  <button class="group-row group-link" id="exportCsvBtn" type="button"><span class="group-icon"><i data-icon="csv"></i></span><span class="group-row-label"><span data-i18n="export_sales_as_csv">Export sales as CSV</span><small data-i18n="every_sale_for_a_spreadsheet_not_a_backu">For spreadsheets. Not a backup.</small></span><i data-icon="chevron-right"></i></button>
                 </div>
               </section>
               <section class="group" data-group="backup">
                 <h2 class="group-title" data-i18n="backup">Backup</h2>
                 <div class="group-body">
                   <div class="group-row"><span class="group-row-label" data-i18n="last_backup">Last backup</span><span class="about-value" id="lastBackupText">Never</span></div>
-                  <button class="group-row group-link" id="exportBackupBtn" type="button"><span class="group-icon"><i data-icon="backup"></i></span><span class="group-row-label"><span data-i18n="export_backup">Export backup</span><small data-i18n="saves_all_data_as_one_file_you_can_resto">Saves all data as one file you can restore</small></span><i data-icon="chevron-right"></i></button>
+                  <button class="group-row group-link" id="exportBackupBtn" type="button"><span class="group-icon"><i data-icon="backup"></i></span><span class="group-row-label"><span data-i18n="export_backup">Export backup</span></span><i data-icon="chevron-right"></i></button>
                   <button class="group-row group-link" id="restoreBackupBtn" type="button"><span class="group-icon"><i data-icon="restore"></i></span><span class="group-row-label"><span data-i18n="restore_from_backup">Restore from backup</span><small data-i18n="replaces_all_data_on_this_phone">Replaces all data on this phone</small></span><i data-icon="chevron-right"></i></button>
                 </div>
                 <input type="file" id="restoreFileInput" hidden />
@@ -198,7 +198,7 @@
               <section class="group" data-group="about">
                 <div class="group-body">
                   <button class="group-row group-link" id="openAboutMenuBtn" type="button"><span class="group-icon"><i data-icon="info"></i></span><span class="group-row-label" data-i18n="about">About</span><i data-icon="chevron-right"></i></button>
-                  <button class="group-row group-link" id="startTutorialBtn" type="button"><span class="group-icon"><i data-icon="tutorial"></i></span><span class="group-row-label"><span data-i18n="show_tutorial">Show tutorial</span><small data-i18n="a_hands_on_tour_with_practice_data">A hands-on tour with practice data</small></span><i data-icon="chevron-right"></i></button>
+                  <button class="group-row group-link" id="startTutorialBtn" type="button"><span class="group-icon"><i data-icon="tutorial"></i></span><span class="group-row-label"><span data-i18n="show_tutorial">Show tutorial</span></span><i data-icon="chevron-right"></i></button>
                 </div>
               </section>
             </div>
@@ -209,8 +209,8 @@
           <div class="page">
             <div class="page-header">
               <h1 class="page-title" data-i18n="products">Products</h1>
+              <button class="icon-btn icon-btn-soft" id="productsAddBtn" type="button" title="Add product" data-i18n-title="add_product" aria-label="Add product" data-i18n-aria="add_product"><i data-icon="plus"></i></button>
             </div>
-            <p class="card-note page-sub" id="productsSummary"></p>
             <div class="stack" id="productHistoryList"></div>
           </div>
         </section>
@@ -253,12 +253,11 @@
             <div class="page-header">
               <button class="icon-btn back-btn" id="closeEditBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
               <h1 class="page-title" id="productEditTitle">Add product</h1>
-              <button class="icon-btn icon-btn-danger" id="removeProductBtn" type="button" title="Delete product" data-i18n-title="delete_product" aria-label="Delete product" data-i18n-aria="delete_product"><i data-icon="trash"></i></button>
             </div>
             <div class="form">
               <div class="field color-field">
-                <span class="field-label" id="colorFieldLabel" data-i18n="color">Color</span>
                 <div class="color-swatch" id="colorField" role="button" tabindex="0" aria-labelledby="colorFieldLabel editColorHex" aria-haspopup="dialog">
+                  <span class="sr-only" id="colorFieldLabel" data-i18n="color">Color</span>
                   <span class="swatch-preview" aria-hidden="true">
                     <span class="swatch-name" id="editPreviewName" data-i18n="product_name">Product name</span>
                     <span class="swatch-price" id="editPreviewPrice"></span>
@@ -291,25 +290,50 @@
                   </div>
                 </div>
               </div>
-              <label class="field">
-                <span class="field-label" data-i18n="name">Name</span>
-                <input class="input input-lg" id="editName" maxlength="1000" type="text" placeholder="Product name" data-i18n-placeholder="product_name" autocomplete="off" />
-              </label>
-              <div class="field-row">
-                <label class="field">
-                  <span class="field-label" id="editPriceLabel">Price</span>
-                  <input class="input" id="editPrice" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
-                </label>
-                <label class="field">
-                  <span class="field-label" id="editCostLabel">Cost</span>
-                  <input class="input" id="editCost" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+              <div class="group-body">
+                <label class="group-row" for="editGroupToggle">
+                  <span class="group-row-label" data-i18n="product.group">Group with variants</span>
+                  <span class="switch">
+                    <input type="checkbox" id="editGroupToggle" role="switch" />
+                    <span class="switch-track" aria-hidden="true"></span>
+                  </span>
                 </label>
               </div>
+              <div class="form-part" id="productFields">
+                <label class="field">
+                  <span class="field-label" data-i18n="name">Name</span>
+                  <input class="input input-lg" id="editName" maxlength="1000" type="text" placeholder="Product name" data-i18n-placeholder="product_name" autocomplete="off" />
+                </label>
+                <div class="field-row">
+                  <label class="field">
+                    <span class="field-label" id="editPriceLabel">Price</span>
+                    <input class="input" id="editPrice" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span class="field-label" id="editCostLabel">Cost</span>
+                    <input class="input" id="editCost" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                  </label>
+                </div>
+              </div>
+              <label class="field" id="groupNameField" hidden>
+                <span class="field-label" data-i18n="product.groupName">Group name</span>
+                <input class="input input-lg" id="editGroup" maxlength="1000" type="text" placeholder="e.g. Poster" data-i18n-placeholder="product.groupPlaceholder" autocomplete="off" />
+              </label>
               <div class="field">
                 <span class="field-label" id="editPaymentsLabel" data-i18n="payment_methods_pick_1_or_2">Payment methods · pick 1 or 2</span>
                 <div class="payment-options" id="editPayments" role="group" aria-labelledby="editPaymentsLabel"></div>
               </div>
+              <div class="field variants" id="variantsField" hidden>
+                <div class="variant-row variant-head" aria-hidden="true">
+                  <span class="field-label" data-i18n="product.variant">Variant</span>
+                  <span class="field-label" id="variantPriceLabel">Price</span>
+                  <span class="field-label" id="variantCostLabel">Cost</span>
+                </div>
+                <div class="variant-list" id="editVariants"></div>
+                <button class="btn btn-secondary add-variant" id="addVariantBtn" type="button"><i data-icon="plus"></i><span data-i18n="product.addVariant">Add variant</span></button>
+              </div>
               <button class="btn btn-primary btn-block" id="saveProductBtn" type="button" data-i18n="save">Save</button>
+              <button class="btn btn-block btn-delete hold-delete" id="removeProductBtn" type="button" title="Hold to delete product" data-i18n-title="product.holdDelete" aria-label="Hold to delete product" data-i18n-aria="product.holdDelete"><i data-icon="trash"></i><span data-i18n="hold.hint">Hold to delete</span><span class="hold-fill" aria-hidden="true"><i data-icon="trash"></i><span data-i18n="hold.hint">Hold to delete</span></span></button>
             </div>
           </div>
         </section>
@@ -384,6 +408,21 @@
             <span class="field-label" data-i18n="amount">Amount</span>
             <input class="input" id="eventCostAmount" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off" />
           </label>
+          <div class="field" id="expenseProductsField">
+            <div class="group-body">
+              <label class="group-row" for="expenseProductsToggle">
+                <span class="group-row-label"><span id="expenseProductsLabel" data-i18n="expense.products">For products</span><small data-i18n="expense.productsSub">Paid for stock, like a print run</small></span>
+                <span class="switch">
+                  <input type="checkbox" id="expenseProductsToggle" role="switch" />
+                  <span class="switch-track" aria-hidden="true"></span>
+                </span>
+              </label>
+            </div>
+            <div class="form-part" id="expenseProductsBody" hidden>
+              <p class="field-hint" id="expenseProductsHint" data-i18n="expense.productsHint">Their item cost won't be counted again.</p>
+              <div class="checklist" id="expenseProducts" role="group" aria-labelledby="expenseProductsLabel" aria-describedby="expenseProductsHint"></div>
+            </div>
+          </div>
           <div class="sheet-actions">
             <button type="button" class="btn btn-secondary" id="expenseModalCancelBtn" data-i18n="cancel">Cancel</button>
             <button type="button" class="btn btn-primary" id="addCostBtn">Add expense</button>

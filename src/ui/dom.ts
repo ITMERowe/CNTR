@@ -6,10 +6,11 @@ const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) 
 
 export const el = {
   grid: byId<HTMLDivElement>('grid'),
-  brand: byId<HTMLDivElement>('brand'),
+  sellTitle: byId<HTMLHeadingElement>('sellTitle'),
   stats: byId<HTMLDivElement>('stats'),
   toast: byId<HTMLDivElement>('toast'),
   openProductEdit: byId<HTMLButtonElement>('openProductEdit'),
+  productsAddBtn: byId<HTMLButtonElement>('productsAddBtn'),
   sellMenuBtn: byId<HTMLButtonElement>('sellMenuBtn'),
   sellMenu: byId<HTMLDivElement>('sellMenu'),
   autoSortToggle: byId<HTMLInputElement>('autoSortToggle'),
@@ -19,6 +20,15 @@ export const el = {
   closeEditBtn: byId<HTMLButtonElement>('closeEditBtn'),
   removeProductBtn: byId<HTMLButtonElement>('removeProductBtn'),
   editName: byId<HTMLInputElement>('editName'),
+  editGroup: byId<HTMLInputElement>('editGroup'),
+  editGroupToggle: byId<HTMLInputElement>('editGroupToggle'),
+  productFields: byId<HTMLElement>('productFields'),
+  groupNameField: byId<HTMLElement>('groupNameField'),
+  variantsField: byId<HTMLElement>('variantsField'),
+  editVariants: byId<HTMLDivElement>('editVariants'),
+  addVariantBtn: byId<HTMLButtonElement>('addVariantBtn'),
+  variantPriceLabel: byId<HTMLElement>('variantPriceLabel'),
+  variantCostLabel: byId<HTMLElement>('variantCostLabel'),
   editPriceLabel: byId<HTMLElement>('editPriceLabel'),
   editPrice: byId<HTMLInputElement>('editPrice'),
   editCostLabel: byId<HTMLElement>('editCostLabel'),
@@ -59,9 +69,7 @@ export const el = {
   newDayToggle: byId<HTMLInputElement>('newDayToggle'),
   soundToggle: byId<HTMLInputElement>('soundToggle'),
   themeToggle: byId<HTMLInputElement>('themeToggle'),
-  themeState: byId<HTMLElement>('themeState'),
   languageSelect: byId<HTMLSelectElement>('languageSelect'),
-  productsSummary: byId<HTMLElement>('productsSummary'),
   openAboutMenuBtn: byId<HTMLButtonElement>('openAboutMenuBtn'),
   startTutorialBtn: byId<HTMLButtonElement>('startTutorialBtn'),
   aboutBackBtn: byId<HTMLButtonElement>('aboutBackBtn'),
@@ -97,6 +105,10 @@ export const el = {
   eventCostName: byId<HTMLInputElement>('eventCostName'),
   eventCostAmount: byId<HTMLInputElement>('eventCostAmount'),
   addCostBtn: byId<HTMLButtonElement>('addCostBtn'),
+  expenseProductsField: byId<HTMLDivElement>('expenseProductsField'),
+  expenseProducts: byId<HTMLDivElement>('expenseProducts'),
+  expenseProductsToggle: byId<HTMLInputElement>('expenseProductsToggle'),
+  expenseProductsBody: byId<HTMLDivElement>('expenseProductsBody'),
   // Confirm dialog
   confirmModalOverlay: byId<HTMLDivElement>('confirmModalOverlay'),
   confirmModalTitle: byId<HTMLHeadingElement>('confirmModalTitle'),
@@ -124,7 +136,78 @@ export function openSheet(overlay: HTMLElement) {
   for (const blocked of document.querySelectorAll<HTMLElement>('.app > header, .app > main, .app > nav')) blocked.inert = true;
   // Cancel (the safe action), not the first input or the primary/destructive button.
   const sheet = overlay.querySelector<HTMLElement>('.sheet');
-  (sheet?.querySelector<HTMLElement>('.sheet-actions .btn-secondary') ?? sheet)?.focus();
+  // preventScroll: Cancel sits at the bottom; a long sheet must still open at its top (title and first fields).
+  (sheet?.querySelector<HTMLElement>('.sheet-actions .btn-secondary') ?? sheet)?.focus({ preventScroll: true });
+  if (sheet) {
+    sheet.scrollTop = 0;
+    updateSheetFade(sheet);
+  }
+}
+
+/** Fades a sheet's top/bottom edge while there is more to scroll that way (`.fade-top` / `.fade-bottom` on its overlay). */
+function updateSheetFade(sheet: HTMLElement) {
+  const below = sheet.scrollHeight - sheet.clientHeight - sheet.scrollTop;
+  sheet.parentElement!.classList.toggle('fade-top', sheet.scrollTop > 1);
+  sheet.parentElement!.classList.toggle('fade-bottom', below > 1);
+}
+
+/** Keeps every sheet's scroll fade current: on scroll, and when it or its content changes size (lists growing, rotation, keyboard). */
+export function wireSheetFade() {
+  const observer = new ResizeObserver((entries) => {
+    for (const entry of entries) updateSheetFade(entry.target.closest<HTMLElement>('.sheet')!);
+  });
+  for (const sheet of document.querySelectorAll<HTMLElement>('.sheet')) {
+    sheet.addEventListener('scroll', () => updateSheetFade(sheet), { passive: true });
+    observer.observe(sheet);
+    for (const child of sheet.children) observer.observe(child);
+  }
+}
+
+/** How long a delete button must be held (matches --dur-hold in style.css). */
+export const HOLD_MS = 700;
+let holdTimer = 0;
+
+/**
+ * Hold to delete, as event handlers for a `.hold-delete` button (spread them in JSX, or wire with wireHold).
+ * A press fills the button (`.holding`) and runs `onHeld` after HOLD_MS; letting go early, sliding off or scrolling empties it.
+ * A click with no press behind it (keyboard Enter/Space, a screen reader: `detail` 0) runs `onAsk`, the confirm dialog, instead.
+ */
+export function holdToDelete(onHeld: () => void, onAsk: () => void) {
+  const stop = (event: PointerEvent) => {
+    const button = event.currentTarget as HTMLElement;
+    if (!button.classList.contains('holding')) return;
+    button.classList.remove('holding');
+    window.clearTimeout(holdTimer);
+    if (event.type === 'pointerup') showToast(t('hold.hint')); // a plain tap: say how it works
+  };
+  return {
+    onPointerDown(event: PointerEvent) {
+      if (event.button !== 0) return;
+      const button = event.currentTarget as HTMLElement;
+      // Touch captures the pointer to the button; release it so sliding off fires pointerleave and cancels.
+      if (button.hasPointerCapture(event.pointerId)) button.releasePointerCapture(event.pointerId);
+      button.classList.add('holding');
+      window.clearTimeout(holdTimer);
+      holdTimer = window.setTimeout(() => {
+        button.classList.remove('holding');
+        onHeld();
+      }, HOLD_MS);
+    },
+    onPointerUp: stop,
+    onPointerLeave: stop,
+    onPointerCancel: stop,
+    onClick(event: MouseEvent) {
+      if (event.detail === 0) onAsk();
+    },
+    onContextMenu(event: Event) {
+      event.preventDefault(); // Android's long-press menu would end the hold
+    },
+  };
+}
+
+/** holdToDelete for a plain DOM button. */
+export function wireHold(button: HTMLElement, onHeld: () => void, onAsk: () => void) {
+  for (const [name, handler] of Object.entries(holdToDelete(onHeld, onAsk))) button.addEventListener(name.slice(2).toLowerCase(), handler as EventListener);
 }
 
 /** Closes a sheet opened with openSheet: unblocks the page and returns focus to what opened it. */
@@ -136,7 +219,7 @@ export function closeSheet(overlay: HTMLElement) {
 }
 
 /** Asks before a destructive action; `onConfirm` runs only if the user confirms. */
-export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void, { title = t('are_you_sure'), danger = true, cancelLabel = t('cancel') } = {}) {
+export function openConfirmModal(message: string, confirmLabel: string, onConfirm: () => void, { title, danger = true, cancelLabel = t('cancel') }: { title: string; danger?: boolean; cancelLabel?: string }) {
   const { confirmModalOverlay: overlay, confirmModalConfirmBtn: confirmBtn } = el;
   el.confirmModalTitle.textContent = title;
   el.confirmModalMessage.textContent = message;
@@ -161,9 +244,9 @@ export function openConfirmModal(message: string, confirmLabel: string, onConfir
   };
 }
 
-/** A message that must not vanish like a toast (errors, results). One OK button. */
+/** A message that must not vanish like a toast (errors, results). One Close button. */
 export function showMessage(title: string, message: string) {
-  openConfirmModal(message, 'OK', () => {}, { title, danger: false });
+  openConfirmModal(message, t('close'), () => {}, { title, danger: false });
   el.confirmModalCancelBtn.hidden = true;
 }
 
@@ -191,10 +274,8 @@ export function activeScreenId() {
 
 /** Shows the header buttons that make sense for `screenId`. */
 export function updateHeaderActions(screenId = activeScreenId()) {
-  el.openProductEdit.style.display = screenId === 'salesScreen' || screenId === 'productHistoryScreen' ? 'inline-grid' : 'none';
-  el.sellMenuBtn.style.display = screenId === 'salesScreen' ? 'inline-grid' : 'none';
-  // Screens with no header button (or wordmark) drop the empty 44px row instead of leaving a gap above their title.
-  el.brand.parentElement!.hidden = screenId !== 'salesScreen' && screenId !== 'productHistoryScreen';
+  // The fixed header row is Sell's page header; every other screen has its own in the page, in the same place.
+  el.sellTitle.parentElement!.hidden = screenId !== 'salesScreen';
   if (screenId !== 'salesScreen') closeSellMenu();
 }
 
@@ -238,7 +319,5 @@ export function openScreen(screenId: string) {
   const tab = document.querySelector(`.tabbar .tab[data-tab="${screenId}"]`) ? screenId : PARENT_TAB[screenId];
   if (tab) document.querySelectorAll('.tabbar .tab').forEach((button) => button.classList.toggle('active', button.getAttribute('data-tab') === tab));
   el.stats.style.display = screenId === 'salesScreen' ? '' : 'none';
-  // The "CNTR" wordmark only earns its place on Sell; every other screen has its own title.
-  el.brand.style.display = screenId === 'salesScreen' ? '' : 'none';
   updateHeaderActions(screenId);
 }
