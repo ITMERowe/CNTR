@@ -22,8 +22,8 @@
   --text-2: #cccccc;
   --text-3: #9d9d9d;
   --on-ink: #1e1e1e;
-  --accent: #3cc6d4; /* primary buttons, switches/checkboxes on, the tab pill; never tiles or money */
-  --on-accent: #10262a;
+  --accent: #8b93ff; /* indigo (owner, 0.1.2): primary buttons, switches/checkboxes on, the tab pill; never tiles or money */
+  --on-accent: #12143a;
 
   /* Meaning */
   --positive: #4ade80;
@@ -93,7 +93,7 @@
   --text-2: #3b3b3b;
   --text-3: #616161;
   --on-ink: #ffffff;
-  --accent: #0b7285;
+  --accent: #4338ca;
   --on-accent: #ffffff;
 
   /* Darker greens and reds so money stays readable on white */
@@ -2830,6 +2830,59 @@ p {
 }
 
 /* Settings → Products per day: each day's Products card collapses */
+/* Report: an ended event's Highlights, a few short sentences; an accent dot marks each. */
+.highlights {
+  display: grid;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.highlights li {
+  position: relative;
+  padding-left: var(--s4);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-2);
+}
+
+.highlights li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Report: Products by day or combined (2+ days with sales). Two halves of one pill; the chosen one takes the accent. */
+.view-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s1);
+  padding: var(--s1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface-1);
+}
+
+.view-switch-btn {
+  min-height: 44px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--text-2);
+  transition: background-color var(--dur-1), color var(--dur-1);
+}
+
+.view-switch-btn[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
 .products-day-head {
   display: flex;
   align-items: center;
@@ -3203,14 +3256,23 @@ body.is-editing-event .content {
   border-radius: var(--r-pill);
   background: var(--accent);
   opacity: 0;
-  transition: transform var(--dur-2) var(--ease-emphasis), opacity var(--dur-1);
+  transition: transform var(--dur-3) var(--ease-emphasis), opacity var(--dur-1);
 }
 
+/* Squash and stretch (owner's reference reel): wide and flat while it travels, a little squash as it lands.
+   One keyframes name per tab, so every tab change swaps the name and replays it; `scale` stacks with the transform. */
 .tabbar:has(.tab.active)::before { opacity: 1; }
-.tabbar:has(.tab:nth-child(2).active)::before { transform: translateX(var(--col)); }
-.tabbar:has(.tab:nth-child(3).active)::before { transform: translateX(calc(2 * var(--col))); }
-.tabbar:has(.tab:nth-child(4).active)::before { transform: translateX(calc(3 * var(--col))); }
-.tabbar:has(.tab:nth-child(5).active)::before { transform: translateX(calc(4 * var(--col))); }
+.tabbar:has(.tab:nth-child(1).active)::before { animation: pill-squash-1 var(--dur-3) var(--ease-out); }
+.tabbar:has(.tab:nth-child(2).active)::before { transform: translateX(var(--col)); animation: pill-squash-2 var(--dur-3) var(--ease-out); }
+.tabbar:has(.tab:nth-child(3).active)::before { transform: translateX(calc(2 * var(--col))); animation: pill-squash-3 var(--dur-3) var(--ease-out); }
+.tabbar:has(.tab:nth-child(4).active)::before { transform: translateX(calc(3 * var(--col))); animation: pill-squash-4 var(--dur-3) var(--ease-out); }
+.tabbar:has(.tab:nth-child(5).active)::before { transform: translateX(calc(4 * var(--col))); animation: pill-squash-5 var(--dur-3) var(--ease-out); }
+
+@keyframes pill-squash-1 { 35% { scale: 1.45 0.8; } 70% { scale: 0.9 1.1; } }
+@keyframes pill-squash-2 { 35% { scale: 1.45 0.8; } 70% { scale: 0.9 1.1; } }
+@keyframes pill-squash-3 { 35% { scale: 1.45 0.8; } 70% { scale: 0.9 1.1; } }
+@keyframes pill-squash-4 { 35% { scale: 1.45 0.8; } 70% { scale: 0.9 1.1; } }
+@keyframes pill-squash-5 { 35% { scale: 1.45 0.8; } 70% { scale: 0.9 1.1; } }
 
 .tab .icon {
   position: relative;
