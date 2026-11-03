@@ -43,7 +43,7 @@ How a seller moves through CNTR, screen by screen. Code-level navigation (`openS
 
 ## History
 
-1. Past event → its report (same layout as the Event tab), opening with **Highlights**: up to 5 plain sentences worked out from its numbers (result and break-even gap, best day, top group, biggest expense, main payment method). With 2+ days of sales a **By day / Combined** switch sits above the Products: ended events open Combined, the live Event tab By day; the choice isn't saved (it replaced the old Settings → Products per day). Edit → change counts, expenses, name; leaving a changed edit asks Keep editing / Discard. "Delete event" (red, under the report) asks "Delete event?" (a dialog, not a hold: it drops a whole event).
+1. Past event → its report (same layout as the Event tab), opening with **Highlights**: up to 5 plain sentences worked out from its numbers (result and break-even gap, best day, top group, biggest expense, busiest half-hour). With 2+ days of sales a **By day / Combined** switch sits above the Products: ended events open Combined, the live Event tab By day; the choice isn't saved (it replaced the old Settings → Products per day). Edit → change counts, expenses, name; leaving a changed edit asks Keep editing / Discard. "Delete event" (red, under the report) asks "Delete event?" (a dialog, not a hold: it drops a whole event).
 2. Compare: pick 2 events; the older is A, B shows the change.
 
 ## Data safety

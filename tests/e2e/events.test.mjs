@@ -125,6 +125,7 @@ const end = await run(page, `${H}
 `);
 check('End event prefills the current name', end.prefill === 'Comifuro', end);
 check('End event opens the ended report, Highlights first (result line first)', end.opened === 'pastEventScreen' && end.highlights.length >= 2 && /^(Ended|Made) /.test(end.highlights[0]), end);
+check('Highlights end with the busiest half-hour', /^Busiest half-hour: .*\d\d:\d\d–\d\d:\d\d, \d+ sales/.test(end.highlights.at(-1)), end.highlights);
 check('a past event starts at its first sale (not when the previous event ended)', end.startedAtFirstSale, end);
 check('End event stores the event with all sales, breaks and expenses', end.count === 1 && end.name === 'Comifuro 21' && end.sales === 4 && end.breaks === 1 && end.expenses === 1, end);
 check('fresh live event after End event', end.liveSales === 0 && end.liveCosts === 0 && end.liveBreaks === 0 && end.empty, end);

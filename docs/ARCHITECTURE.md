@@ -19,7 +19,7 @@ src/
   i18n.ts              English + Bahasa Indonesia dictionaries, t() / tn(), locale(), first-launch language, data-i18n markup
   groups.ts            Product groups: report names ("Poster A3"), Sell tiles per group, shared colour/payments, the group form's save plan
   reports.ts           Pure report maths: totals, product breakdowns, compare rows
-  summary.ts           Ended event's highlights maths (break-even gap, best day, top group, biggest expense, payments); shown as the Highlights card (ReportParts.tsx) on ended events
+  summary.ts           Ended event's highlights maths (break-even gap, best day, top group, biggest expense, busiest clock half-hour); shown as the Highlights card (ReportParts.tsx) on ended events
   formatters.ts        Money formatting/parsing, colour helpers
   data.ts              Default products, product-history helper, UUIDs
   types.ts             Shared types

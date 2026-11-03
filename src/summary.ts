@@ -51,13 +51,25 @@ export function eventHighlights(event: PastEvent) {
   const big = event.expenses.reduce<(typeof event.expenses)[number] | null>((max, cost) => (!max || cost.amount > max.amount ? cost : max), null);
   const biggestExpense = big ? { name: big.name, amount: big.amount, shareOfExpenses: share(big.amount, expenses), shareOfRevenue: share(big.amount, revenue), salesToCover: salesToCover(big.amount) } : null;
 
-  const payments = tally(sales, (sale) => sale.payment)
-    .sort((a, b) => b.revenue - a.revenue)
-    .map(({ name, count, revenue: paid }) => ({ payment: name, count, revenue: paid, share: share(paid, revenue), avgTicket: Math.round(paid / count) }));
+  // Busiest clock half-hour (10:00-10:30, local time) across all days; ties go to the earliest. Null when every sale is in one.
+  const windows = dayLists.flatMap((daySales, index) => {
+    const byStart = new Map<number, { day: number; start: Date; count: number; revenue: number }>();
+    for (const sale of daySales) {
+      const start = new Date(sale.timestamp);
+      start.setMinutes(start.getMinutes() < 30 ? 0 : 30, 0, 0);
+      const entry = byStart.get(start.getTime()) ?? { day: index + 1, start, count: 0, revenue: 0 };
+      entry.count += 1;
+      entry.revenue += sale.price;
+      byStart.set(start.getTime(), entry);
+    }
+    return [...byStart.values()].sort((a, b) => a.start.getTime() - b.start.getTime());
+  });
+  const busiest = windows.reduce<(typeof windows)[number] | null>((top, w) => (!top || w.count > top.count ? w : top), null);
 
   return {
     net, revenue, productProfit, expenses, salesCount,
     breakEvenSales: net < 0 ? salesToCover(-net) : null,
-    days, bestDayChange, topGroup, biggestExpense, payments,
+    days, bestDayChange, topGroup, biggestExpense,
+    busiestWindow: windows.length > 1 ? busiest : null,
   };
 }

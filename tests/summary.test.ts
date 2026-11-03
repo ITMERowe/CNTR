@@ -52,9 +52,8 @@ test('Comifuro 23 highlights', () => {
   assert.deepEqual(h.bestDayChange, { day: 2, vsDay: 1, salesPct: 64, revenuePct: 99 });
   assert.deepEqual(h.topGroup, { name: 'Fanservice', count: 27, revenue: 1750000, share: 43.6 });
   assert.deepEqual(h.biggestExpense, { name: 'Booth', amount: 2500000, shareOfExpenses: 56.7, shareOfRevenue: 62.3, salesToCover: 44 });
-  assert.equal(h.payments[0].payment, 'QRIS');
-  assert.equal(h.payments[0].share, 67.2);
-  assert.equal(h.payments[0].avgTicket, 64286); // 2700000 / 42 = 64285.7, Math.round
+  // Day 2's sales are a minute apart from 03:00Z: the first 30 fall in one clock half-hour (Cheki 9, Pangku 8, Photocard Bundle 6, Gacha 4, Poster sexy Bundle 3).
+  assert.deepEqual(h.busiestWindow, { day: 2, start: new Date('2026-05-02T03:00:00.000Z'), count: 30, revenue: 2045000 });
 });
 
 test('profitable event has no break-even; single day has no day comparison', () => {
@@ -66,6 +65,6 @@ test('profitable event has no break-even; single day has no day comparison', () 
 test('empty event does not throw', () => {
   const h = eventHighlights({ ...comifuro, sales: [], expenses: [] });
   assert.deepEqual([h.net, h.salesCount, h.breakEvenSales, h.bestDayChange, h.topGroup, h.biggestExpense], [0, 0, null, null, null, null]);
-  assert.deepEqual(h.payments, []);
+  assert.equal(h.busiestWindow, null);
   assert.equal(eventHighlights({ ...comifuro, sales: [] }).biggestExpense?.salesToCover, null);
 });

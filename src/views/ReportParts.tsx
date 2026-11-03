@@ -6,7 +6,7 @@ import type { eventHighlights } from '../summary';
 import type { SaleRecord } from '../types';
 import type { IconName } from '../ui/icons';
 import { Icon } from './Icon';
-import { t, tn } from '../i18n';
+import { locale, t, tn } from '../i18n';
 
 const signed = (pct: number) => `${pct > 0 ? '+' : ''}${pct}%`;
 /** A template with "one|other" forms (English), picked by n like tn(). */
@@ -21,9 +21,12 @@ export function Highlights({ h }: { h: ReturnType<typeof eventHighlights> }) {
   if (h.topGroup && h.topGroup.share < 100) lines.push(t('hl.topGroup', { name: h.topGroup.name, share: Math.round(h.topGroup.share) }));
   const cost = h.biggestExpense;
   if (cost) lines.push(cost.salesToCover ? plural(t('hl.expense', { name: cost.name, share: Math.round(cost.shareOfExpenses), n: cost.salesToCover }), cost.salesToCover) : t('hl.expenseOnly', { name: cost.name, share: Math.round(cost.shareOfExpenses) }));
-  if (h.payments.length > 1) {
-    const [top] = h.payments;
-    lines.push(t('hl.payments', { payment: top.payment, share: Math.round(top.share), avg: fmt(top.avgTicket) }));
+  const busy = h.busiestWindow;
+  if (busy) {
+    const time = (date: Date) => date.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
+    const end = new Date(busy.start.getTime() + 30 * 60000);
+    const values = { day: busy.day, from: time(busy.start), to: time(end), n: busy.count, amount: fmt(busy.revenue) };
+    lines.push(t(h.days.filter((day) => day.count).length > 1 ? 'hl.busyDay' : 'hl.busy', values));
   }
   return (
     <ul class="highlights">
