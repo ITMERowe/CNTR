@@ -55,20 +55,9 @@ export function eventHighlights(event: PastEvent) {
     .sort((a, b) => b.revenue - a.revenue)
     .map(({ name, count, revenue: paid }) => ({ payment: name, count, revenue: paid, share: share(paid, revenue), avgTicket: Math.round(paid / count) }));
 
-  // Product names that sold on one day only (needs 2+ days with sales, or every product would qualify).
-  const daysSoldOn = new Map<string, number[]>();
-  dayLists.forEach((daySales, index) => daySales.forEach((sale) => daysSoldOn.set(sale.product, [...new Set([...(daysSoldOn.get(sale.product) ?? []), index + 1])])));
-  const oneDayProducts = selling.length < 2 ? [] : [...daysSoldOn].filter(([, on]) => on.length === 1).map(([name, on]) => ({ name, day: on[0] }));
-
-  const margin = (item: { revenue: number; cost: number }) => (item.revenue - item.cost) / item.revenue;
-  const lowest = tally(sales, (sale) => sale.product)
-    .filter((item) => item.revenue > 0 && item.cost > 0)
-    .sort((a, b) => margin(a) - margin(b))[0];
-  const lowestMargin = lowest ? { name: lowest.name, margin: share(lowest.revenue - lowest.cost, lowest.revenue), unitCost: Math.round(lowest.cost / lowest.count) } : null;
-
   return {
     net, revenue, productProfit, expenses, salesCount,
     breakEvenSales: net < 0 ? salesToCover(-net) : null,
-    days, bestDayChange, topGroup, biggestExpense, payments, oneDayProducts, lowestMargin,
+    days, bestDayChange, topGroup, biggestExpense, payments,
   };
 }

@@ -16,7 +16,6 @@ export const CURRENCIES: Currency[] = ['IDR', 'USD', 'EUR', 'SGD', 'AUD', 'GBP',
 export const DEFAULT_SETTINGS: AppSettings = {
   currency: 'IDR',
   compactMoney: false,
-  productsPerDay: true,
   newDayOnDateChange: false,
   autoSort: false,
   compactTiles: false,
@@ -294,7 +293,6 @@ export function loadSettings(): AppSettings {
     currency: CURRENCIES.includes(stored.currency as Currency) ? (stored.currency as Currency) : DEFAULT_SETTINGS.currency,
     compactMoney: stored.compactMoney === true,
     // Settings saved before this option (or a damaged value) get the default.
-    productsPerDay: typeof stored.productsPerDay === 'boolean' ? stored.productsPerDay : DEFAULT_SETTINGS.productsPerDay,
     newDayOnDateChange: typeof stored.newDayOnDateChange === 'boolean' ? stored.newDayOnDateChange : DEFAULT_SETTINGS.newDayOnDateChange,
     autoSort: stored.autoSort === true,
     compactTiles: stored.compactTiles === true,

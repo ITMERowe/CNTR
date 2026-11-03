@@ -19,7 +19,7 @@ src/
   i18n.ts              English + Bahasa Indonesia dictionaries, t() / tn(), locale(), first-launch language, data-i18n markup
   groups.ts            Product groups: report names ("Poster A3"), Sell tiles per group, shared colour/payments, the group form's save plan
   reports.ts           Pure report maths: totals, product breakdowns, compare rows
-  summary.ts           Ended event's highlights maths (break-even gap, best day, top group, biggest expense, payments); no UI yet
+  summary.ts           Ended event's highlights maths (break-even gap, best day, top group, biggest expense, payments); shown as the Highlights card (ReportParts.tsx) on ended events
   formatters.ts        Money formatting/parsing, colour helpers
   data.ts              Default products, product-history helper, UUIDs
   types.ts             Shared types
@@ -76,7 +76,7 @@ Data is a set of JSON values under these keys. On the phone they live in an SQLi
 | `cntrEventCosts` | The live event's expenses |
 | `cntrLiveEvent` | The live event's name, start and day breaks (`LiveEventMeta`); created on first launch from the existing sales |
 | `cntrEvents` | Past events (`PastEvent[]`), oldest first |
-| `cntrSettings` | Currency, compact money, products per day, new day on date change, sort by best sellers, compact tiles, `collapsedGroups` (folded Sell groups, lowercased), sound effects, `theme` (light/dark, resolved from the phone once), `language` (en/id; saved on first launch: `id` only for a fresh install on an Indonesian phone) |
+| `cntrSettings` | Currency, compact money, new day on date change, sort by best sellers, compact tiles, `collapsedGroups` (folded Sell groups, lowercased), sound effects, `theme` (light/dark, resolved from the phone once), `language` (en/id; saved on first launch: `id` only for a fresh install on an Indonesian phone) |
 
 - List loaders only accept arrays, so corrupt data falls back to empty instead of crashing startup.
 - Settings are cached in memory (`fmt()` runs for every amount on screen); `saveSettings()` invalidates the cache.

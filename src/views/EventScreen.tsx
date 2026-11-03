@@ -1,12 +1,14 @@
 // The Event screen: the live event, or a past event from History (read-only or being edited).
+import { useState } from 'preact/hooks';
 import { eventSummary, formatDay, splitDays, withLinkedCosts } from '../events';
 import { fmt } from '../formatters';
 import { paymentClass, productPayments, sortPayments } from '../payments';
 import { buildProductBreakdown, marginPercent } from '../reports';
+import { eventHighlights } from '../summary';
 import type { EventCost, Product, SaleRecord } from '../types';
 import { holdToDelete } from '../ui/dom';
 import { Icon } from './Icon';
-import { Card, EmptyState, Hero, Kpi, PaymentSplit, ProductRows, profitClass } from './ReportParts';
+import { Card, EmptyState, Hero, Highlights, Kpi, PaymentSplit, ProductRows, profitClass } from './ReportParts';
 import { t, tn } from '../i18n';
 
 export interface EventEditHandlers {
@@ -26,8 +28,6 @@ interface Props {
   live: boolean;
   /** A past event's first and last sale dates, shown under its name (the live event shows the Live chip instead). */
   dates?: { startedAt: string; endedAt: string };
-  /** One collapsible Products card per day (Settings → Products per day). */
-  productsPerDay: boolean;
   onRename?: () => void;
   onAddExpense?: () => void;
   onEditExpense?: (id: string) => void;
@@ -138,6 +138,9 @@ export function EventScreen(props: Props) {
   // Days without sales get no Products card, so the one that starts open is the latest day with sales.
   const lastSoldDay = days.map((day) => day.length > 0).lastIndexOf(true);
   const isEmpty = !sales.length && !expenses.length;
+  // Products by day or for the whole event: an ended event opens combined, the live one by day (owner, 0.1.2). Not saved.
+  const [combined, setCombined] = useState(!live);
+  const soldDays = days.filter((day) => day.length > 0).length;
   // Nothing at all yet (no products either): one empty state instead of it stacked with another for the Products card below.
   const allEmpty = isEmpty && !products.length;
 
@@ -194,6 +197,11 @@ export function EventScreen(props: Props) {
             <Kpi label={t('profit')} value={fmt(summary.productProfit)} hint={t('margin', { pct: marginPercent(summary.revenue, summary.productProfit).toFixed(1) })} tone={summary.productProfit < 0 ? 'is-negative' : undefined} />
             <Kpi label={t('expenses')} value={fmt(summary.expenses)} hint={tn('count.item', expenses.length)} />
           </div>
+          {!live && !edit && sales.length > 0 && (
+            <Card title={t('highlights')}>
+              <Highlights h={eventHighlights({ id: '', name, startedAt: '', endedAt: '', dayBreaks, products: linkable, sales, expenses })} />
+            </Card>
+          )}
         </>
       )}
 
@@ -251,9 +259,19 @@ export function EventScreen(props: Props) {
         </Card>
       )}
 
+      {!edit && soldDays > 1 && (
+        <div class="view-switch" role="group" aria-label={t('products')}>
+          {[false, true].map((value) => (
+            <button type="button" class="view-switch-btn" aria-pressed={combined === value} onClick={() => setCombined(value)}>
+              {t(value ? 'view.combined' : 'view.byDay')}
+            </button>
+          ))}
+        </div>
+      )}
+
       {!edit &&
         sales.length > 0 &&
-        (props.productsPerDay ? (
+        (!combined && soldDays > 1 ? (
           days.map((day, index) => day.length > 0 && (
             // Only the latest day with sales starts open; `open` is set again only if that changes, so taps stick.
             <details class="card products-day" key={index} open={index === lastSoldDay}>

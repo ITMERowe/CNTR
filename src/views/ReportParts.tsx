@@ -2,10 +2,35 @@ import type { ComponentChildren } from 'preact';
 import { fmt, splitFigure } from '../formatters';
 import { paymentClass, paymentsInUse } from '../payments';
 import type { ProductTotals } from '../reports';
+import type { eventHighlights } from '../summary';
 import type { SaleRecord } from '../types';
 import type { IconName } from '../ui/icons';
 import { Icon } from './Icon';
 import { t, tn } from '../i18n';
+
+const signed = (pct: number) => `${pct > 0 ? '+' : ''}${pct}%`;
+/** A template with "one|other" forms (English), picked by n like tn(). */
+const plural = (text: string, n: number) => text.split('|')[n === 1 ? 0 : text.split('|').length - 1];
+
+/** An ended event's report opens with a few plain sentences: arithmetic on its own numbers, no advice (owner, 0.1.2). */
+export function Highlights({ h }: { h: ReturnType<typeof eventHighlights> }) {
+  const lines: string[] = [];
+  if (h.net < 0 && h.breakEvenSales) lines.push(plural(t('hl.short', { amount: fmt(-h.net), n: h.breakEvenSales }), h.breakEvenSales));
+  else if (h.net >= 0) lines.push(t('hl.made', { amount: fmt(h.net) }));
+  if (h.bestDayChange) lines.push(t('hl.bestDay', { day: h.bestDayChange.day, vs: h.bestDayChange.vsDay, sales: signed(h.bestDayChange.salesPct), revenue: signed(h.bestDayChange.revenuePct) }));
+  if (h.topGroup && h.topGroup.share < 100) lines.push(t('hl.topGroup', { name: h.topGroup.name, share: Math.round(h.topGroup.share) }));
+  const cost = h.biggestExpense;
+  if (cost) lines.push(cost.salesToCover ? plural(t('hl.expense', { name: cost.name, share: Math.round(cost.shareOfExpenses), n: cost.salesToCover }), cost.salesToCover) : t('hl.expenseOnly', { name: cost.name, share: Math.round(cost.shareOfExpenses) }));
+  if (h.payments.length > 1) {
+    const [top] = h.payments;
+    lines.push(t('hl.payments', { payment: top.payment, share: Math.round(top.share), avg: fmt(top.avgTicket) }));
+  }
+  return (
+    <ul class="highlights">
+      {lines.map((line) => <li key={line}>{line}</li>)}
+    </ul>
+  );
+}
 
 export function profitClass(value: number) {
   return value < 0 ? 'is-negative' : value === 0 ? 'is-zero' : 'is-positive';
@@ -138,13 +163,11 @@ export function ProductRows({ rows, totalUnits }: { rows: ProductTotals[]; total
             <div class="rank-meta">
               <span class="rank-count">
                 {tn('count.sale', item.count)}
-                {/* No item cost: profit equals revenue, so it would only repeat the number above. */}
-                {item.profit !== item.revenue && (
-                  <span class="rank-profit-part">
-                    {' · '}
-                    <span class={`rank-profit ${profitClass(item.profit)}`}>{t('profit.amount', { amount: fmt(item.profit) })}</span>
-                  </span>
-                )}
+                {/* Always shown, even when it equals revenue (no item cost, e.g. paid by a linked expense): owner, 0.1.2. */}
+                <span class="rank-profit-part">
+                  {' · '}
+                  <span class={`rank-profit ${profitClass(item.profit)}`}>{t('profit.amount', { amount: fmt(item.profit) })}</span>
+                </span>
               </span>
               <span class="rank-track" aria-hidden="true">
                 <span class="rank-fill" style={{ width: `${share > 0 ? Math.max(2, share) : 0}%`, background: item.color || 'var(--text-3)' }} />

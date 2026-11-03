@@ -64,13 +64,13 @@ export function defaultEventName(sales: SaleRecord[], now: Date): string {
   return t('event.defaultName', { date: formatDay(first ?? now) });
 }
 
-/** One product per name sold: the latest sale's price and cost, the colour from `known` ('' if unknown). */
+/** One product per name sold: the latest sale's price and cost, the colour, payments and group from `known` ('' colour if unknown). */
 export function snapshotProducts(sales: SaleRecord[], known: Product[]): Product[] {
   const byName = new Map<string, Product>();
   for (const sale of [...sales].sort((a, b) => time(a.timestamp) - time(b.timestamp))) {
     const match = known.find((product) => product.name === sale.product);
     const id = sale.productId ?? match?.id;
-    byName.set(sale.product, { ...(id && { id }), name: sale.product, price: sale.price, cost: sale.cost, color: match?.color ?? '', ...(match?.payments && { payments: [...match.payments] }) });
+    byName.set(sale.product, { ...(id && { id }), name: sale.product, price: sale.price, cost: sale.cost, color: match?.color ?? '', ...(match?.payments && { payments: [...match.payments] }), ...(match?.group && { group: match.group }) });
   }
   return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
 }

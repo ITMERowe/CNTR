@@ -65,7 +65,6 @@ export const el = {
   // Settings and its sub-screens
   currencySelect: byId<HTMLSelectElement>('currencySelect'),
   compactMoneyToggle: byId<HTMLInputElement>('compactMoneyToggle'),
-  productsPerDayToggle: byId<HTMLInputElement>('productsPerDayToggle'),
   newDayToggle: byId<HTMLInputElement>('newDayToggle'),
   soundToggle: byId<HTMLInputElement>('soundToggle'),
   themeToggle: byId<HTMLInputElement>('themeToggle'),

@@ -96,30 +96,15 @@ const reprice = await run(page, `${H}
 `);
 check('editing a product price does not change an ended day', reprice.before === reprice.after, reprice);
 
-// 4c. Settings → Products per day (on by default): one collapsible Products card per day (latest open); off = one card
+// 4c. Products by day / combined: a switch on the report itself (no setting), only once 2+ days have sales
 const perDay = await run(page, `${H}
-  tab('settingsScreen');
-  const toggle = document.getElementById('productsPerDayToggle');
-  const onByDefault = toggle.checked;
   tab('eventScreen');
-  const cards = [...document.querySelectorAll('#eventCard details.products-day')];
-  const on = { onByDefault, cards: cards.length, open: cards.map((c) => c.open), titles: cards.map((c) => c.querySelector('summary').textContent) };
-  cards[0].querySelector('summary').click();
-  const firstOpens = cards[0].open;
-  tab('settingsScreen');
-  toggle.click();
-  await wait();
-  tab('eventScreen');
-  const off = { offCards: document.querySelectorAll('#eventCard details.products-day').length, offSetting: stored('cntrSettings').productsPerDay };
-  tab('settingsScreen');
-  toggle.click(); // back on for the rest of the run
-  await wait();
-  return { ...on, firstOpens, ...off, backOn: stored('cntrSettings').productsPerDay };
+  const cards = () => document.querySelectorAll('#eventCard details.products-day').length;
+  const sw = () => [...document.querySelectorAll('#eventCard .view-switch-btn')];
+  return { settingGone: !document.getElementById('productsPerDayToggle'), switches: sw().length, oneDayCards: cards() };
 `);
-// Day 2 has just started (no sales yet), so it gets no card: Day 1, the latest day with sales, is the open one.
-check('Products per day is on by default: a card per day with sales, the latest of them open', perDay.onByDefault && perDay.cards === 1 && perDay.open.join() === 'true' && /Day 1/.test(perDay.titles[0]), perDay);
-check('a day card folds when tapped', !perDay.firstOpens, perDay);
-check('turning it off shows one Products card again, and the choice is saved', perDay.offCards === 0 && perDay.offSetting === false && perDay.backOn === true, perDay);
+// Only Day 1 has sales so far: no switch, one Products card (the switch needs 2+ days with sales; checked after End event below).
+check('Products per day is no longer a setting; with one day of sales there is no By day / Combined switch', perDay.settingGone && perDay.switches === 0 && perDay.oneDayCards === 0, perDay);
 
 // 5. End event moves it to History and starts fresh
 const end = await run(page, `${H}
@@ -132,11 +117,14 @@ const end = await run(page, `${H}
   await nameSheet('Comifuro 21');
   await confirmYes();
   await wait(100);
+  const opened = document.querySelector('.screen.active').id;
+  const highlights = [...document.querySelectorAll('#pastEventCard .highlights li')].map((li) => li.textContent);
   const events = stored('cntrEvents');
   const firstSale = events[0].sales.map((s) => s.timestamp).sort()[0];
-  return { startedAtFirstSale: events[0].startedAt === firstSale, total, prefill, count: events.length, name: events[0]?.name, sales: events[0]?.sales.length, breaks: events[0]?.dayBreaks.length, expenses: events[0]?.expenses.length, liveSales: stored('cntrSales').length, liveCosts: stored('cntrEventCosts').length, liveBreaks: stored('cntrLiveEvent').dayBreaks.length, empty: !!document.querySelector('#eventCard .empty') };
+  return { opened, highlights, startedAtFirstSale: events[0].startedAt === firstSale, total, prefill, count: events.length, name: events[0]?.name, sales: events[0]?.sales.length, breaks: events[0]?.dayBreaks.length, expenses: events[0]?.expenses.length, liveSales: stored('cntrSales').length, liveCosts: stored('cntrEventCosts').length, liveBreaks: stored('cntrLiveEvent').dayBreaks.length, empty: !!document.querySelector('#eventCard .empty') };
 `);
 check('End event prefills the current name', end.prefill === 'Comifuro', end);
+check('End event opens the ended report, Highlights first (result line first)', end.opened === 'pastEventScreen' && end.highlights.length >= 2 && /^(Ended|Made) /.test(end.highlights[0]), end);
 check('a past event starts at its first sale (not when the previous event ended)', end.startedAtFirstSale, end);
 check('End event stores the event with all sales, breaks and expenses', end.count === 1 && end.name === 'Comifuro 21' && end.sales === 4 && end.breaks === 1 && end.expenses === 1, end);
 check('fresh live event after End event', end.liveSales === 0 && end.liveCosts === 0 && end.liveBreaks === 0 && end.empty, end);
@@ -149,12 +137,19 @@ const view = await run(page, `${H}
   const screen = document.querySelector('.screen.active').id;
   const hero = amount('#pastEventCard .hero-figure');
   const ends = !!document.querySelector('#pastEventCard #endDayBtn, #pastEventCard #endEventBtn');
+  const sw = () => [...document.querySelectorAll('#pastEventCard .view-switch-btn')];
+  const days = () => document.querySelectorAll('#pastEventCard details.products-day').length;
+  const opened = { pressed: sw().map((b) => b.getAttribute('aria-pressed')).join(), days: days() };
+  sw()[0].click();
+  await wait();
+  const byDay = { pressed: sw().map((b) => b.getAttribute('aria-pressed')).join(), days: days() };
   document.getElementById('pastEventBackBtn').click();
-  return { rows, screen, hero, ends, back: document.querySelector('.screen.active').id };
+  return { rows, screen, hero, ends, opened, byDay, back: document.querySelector('.screen.active').id };
 `);
 check('History lists the ended event', view.rows.length === 1 && view.rows[0].includes('Comifuro 21'), view);
 check('past event view shows the same net, no End buttons', view.screen === 'pastEventScreen' && view.hero === end.total && !view.ends, view);
 check('back from past event returns to History', view.back === 'historyScreen', view);
+check('an ended 2-day event opens Combined (one Products card); By day shows a card per day', view.opened.pressed === 'false,true' && view.opened.days === 0 && view.byDay.pressed === 'true,false' && view.byDay.days === 2, view);
 
 // 7. Edit: −1 then Save removes one sale from that day; Cancel changes nothing
 const edit = await run(page, `${H}

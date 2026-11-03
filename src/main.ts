@@ -155,6 +155,8 @@ function moveProduct(name: string, to: number) {
 
 /** The past event open in History, and its unsaved edit copy while editing. */
 let viewingId: string | null = null;
+/** Where a past event's Back goes: History, or the new live event right after End event. */
+let pastEventBack = 'historyScreen';
 let draft: PastEvent | null = null;
 
 /** Folds or unfolds a Sell group; names of groups that no longer exist drop out of the list. */
@@ -197,7 +199,6 @@ function render() {
       // Hidden products too, so a linked expense still covers their sales.
       costProducts: [...state.products, ...state.productHistory],
       colorFor: productColor,
-      productsPerDay: loadSettings().productsPerDay,
       live: true,
       onRename: () => openNameSheet('rename-live'),
       onAddExpense: () => openExpenseModal(null),
@@ -240,7 +241,7 @@ function renderPastEvent() {
       expenses: event.expenses,
       products: event.products,
       colorFor: snapshotColor,
-      productsPerDay: loadSettings().productsPerDay,
+      key: event.id,
       live: false,
       dates: { startedAt: event.startedAt, endedAt: event.endedAt },
       ...(draft
@@ -329,10 +330,12 @@ function confirmEndEvent(name: string) {
     t('endEvent.button'),
     () =>
       void withAutoBackup(() => {
-        endEvent(name);
+        const ended = endEvent(name);
         render();
         feedback('success');
         showToast(t('toast.movedToHistory'));
+        // Straight to its report, Highlights first (owner, 0.1.2); Back goes to the new live event.
+        openPastEvent(ended.id, 'eventScreen');
       }),
     { title: t('endEvent.title'), danger: false },
   );
@@ -359,8 +362,9 @@ function checkStaleEvent() {
 
 // ---- Past events ----
 
-function openPastEvent(id: string) {
+function openPastEvent(id: string, back = 'historyScreen') {
   if (!findPastEvent(id)) return;
+  pastEventBack = back;
   viewingId = id;
   draft = null;
   goTo('pastEventScreen');
@@ -369,7 +373,7 @@ function openPastEvent(id: string) {
 function closePastEvent() {
   viewingId = null;
   draft = null;
-  goTo('historyScreen');
+  goTo(pastEventBack);
 }
 
 /** A deep copy to edit; Save replaces the stored event, Cancel drops it. */
@@ -705,11 +709,6 @@ function wireSettings() {
   el.compactMoneyToggle.addEventListener('change', () => {
     saveSettings({ ...loadSettings(), compactMoney: el.compactMoneyToggle.checked });
     productsChanged();
-  });
-  el.productsPerDayToggle.checked = loadSettings().productsPerDay;
-  el.productsPerDayToggle.addEventListener('change', () => {
-    saveSettings({ ...loadSettings(), productsPerDay: el.productsPerDayToggle.checked });
-    render();
   });
   el.newDayToggle.checked = loadSettings().newDayOnDateChange;
   el.newDayToggle.addEventListener('change', () => {

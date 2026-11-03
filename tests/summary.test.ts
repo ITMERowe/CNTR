@@ -55,20 +55,17 @@ test('Comifuro 23 highlights', () => {
   assert.equal(h.payments[0].payment, 'QRIS');
   assert.equal(h.payments[0].share, 67.2);
   assert.equal(h.payments[0].avgTicket, 64286); // 2700000 / 42 = 64285.7, Math.round
-  assert.deepEqual(h.oneDayProducts.map((p) => `${p.name}:${p.day}`).sort(), ['Fanservice Hug:2', 'Fanservice Kabedon:2', 'Poster sexy Bundle:2']);
-  assert.deepEqual(h.lowestMargin, { name: 'Cheki', margin: 67.3, unitCost: 18000 });
 });
 
 test('profitable event has no break-even; single day has no day comparison', () => {
   const h = eventHighlights({ ...comifuro, dayBreaks: [], expenses: [] });
   assert.equal(h.breakEvenSales, null);
   assert.equal(h.bestDayChange, null);
-  assert.deepEqual(h.oneDayProducts, []);
 });
 
 test('empty event does not throw', () => {
   const h = eventHighlights({ ...comifuro, sales: [], expenses: [] });
-  assert.deepEqual([h.net, h.salesCount, h.breakEvenSales, h.bestDayChange, h.topGroup, h.biggestExpense, h.lowestMargin], [0, 0, null, null, null, null, null]);
+  assert.deepEqual([h.net, h.salesCount, h.breakEvenSales, h.bestDayChange, h.topGroup, h.biggestExpense], [0, 0, null, null, null, null]);
   assert.deepEqual(h.payments, []);
   assert.equal(eventHighlights({ ...comifuro, sales: [] }).biggestExpense?.salesToCover, null);
 });
