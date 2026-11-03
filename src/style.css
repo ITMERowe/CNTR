@@ -2228,7 +2228,7 @@ p {
 .input:focus,
 .picker-hex input:focus {
   border-color: var(--text-2);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px var(--line); /* themed: white 8% dark, black 10% light */
 }
 
 .input[aria-invalid='true'] {
@@ -3318,7 +3318,7 @@ body.is-editing-event .content {
   position: fixed;
   inset: 0;
   z-index: 39;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--scrim);
   backdrop-filter: blur(1px);
   -webkit-backdrop-filter: blur(1px);
   pointer-events: none;
@@ -3331,7 +3331,7 @@ body.is-editing-event .content {
   z-index: 40;
   box-sizing: border-box;
   border: 2px solid var(--text);
-  box-shadow: 0 0 0 4px rgba(231, 231, 231, 0.18);
+  box-shadow: 0 0 0 4px var(--line-strong);
   pointer-events: none;
 }
 
