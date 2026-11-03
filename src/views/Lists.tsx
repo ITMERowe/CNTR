@@ -95,16 +95,12 @@ function ProductRow({ product, active, index, variant, onEdit, onToggle }: { pro
 
 export function ProductList({ products, activeNames, onEdit, onToggle, onAdd }: ProductListProps) {
   if (!products.length) {
+    // Same dashed slot as Sell's empty grid: the empty space itself is the add.
     return (
-      <>
-        <section class="card">
-          <EmptyState icon="package" title={t('products.noneYet')} text={t('products.emptyText')} />
-        </section>
-        <button class="btn btn-secondary btn-block" id="addProductBtn" type="button" onClick={onAdd}>
-          <Icon name="plus" />
-          {t('add_product')}
-        </button>
-      </>
+      <button class="grid-empty" id="addProductBtn" type="button" onClick={onAdd}>
+        <strong>{t('products.noneYet')}</strong>
+        <span>{t('products.emptyText')}</span>
+      </button>
     );
   }
   // The counter needs no heading (it is what the page is); Hidden keeps one, with the note that explains it.
