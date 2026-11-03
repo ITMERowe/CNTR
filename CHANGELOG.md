@@ -22,6 +22,7 @@ Each version starts with **Highlights**: a short list for users, shown first on 
 - One header row on every tab, with the title and its buttons on the same line; the Products list is denser (one line of price, profit and payment methods per product; a group's shared payments shown once).
 - Delete is a labelled red button at the bottom of the product editor and of a past event, instead of a trash icon in the header.
 - The group editor's variants read like a price list: one rounded row each, with a dashed *Add variant* line.
+- An empty Products list is one dashed slot to tap, like the empty Sell tab.
 - New type scale with clearer sizes and two weights; fewer sublabels; specific dialog titles ("Delete event?") and verb buttons.
 - Sell buttons press in slightly when tapped; long sheets fade at the edges that scroll.
 - Backups are smaller and big backups restore; CSV times are the phone's local time.
