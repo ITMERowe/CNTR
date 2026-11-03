@@ -31,14 +31,13 @@ function useCountUp(value: number, duration = 420) {
   return shown;
 }
 
-/** Today's totals at the top of the Sell screen; after End day the label says which day. */
-export function SalesHero({ revenue, profit, count, day }: { revenue: number; profit: number; count: number; day: number }) {
+/** Today's totals at the top of the Sell screen. No label (owner, 0.1.2): the figure is clearly revenue; screen readers still hear it. */
+export function SalesHero({ revenue, profit, count }: { revenue: number; profit: number; count: number }) {
   const shown = useCountUp(revenue);
   const { sign, symbol, number } = splitFigure(fmt(shown));
   return (
     <>
-      <span class="eyebrow">{day > 1 ? t('hero.dayRevenue', { day }) : t('revenue')}</span>
-      <span class="hero-figure" aria-label={fmt(revenue)} style={{ '--chars': fmt(revenue).length }}>
+      <span class="hero-figure" aria-label={`${t('revenue')} ${fmt(revenue)}`} style={{ '--chars': fmt(revenue).length }}>
         {sign}
         <span class="hero-figure-symbol">{symbol}</span> {number}
       </span>

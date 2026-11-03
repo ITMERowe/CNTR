@@ -73,6 +73,7 @@ import { hydrateIcons } from './ui/icons';
 import { editProductByName, initProductEditor, openProductEditor } from './ui/productEditor';
 import { groupTiles } from './groups';
 import { initTileDrag } from './ui/tileDrag';
+import { initMasonry } from './ui/masonry';
 import { CompareView } from './views/Compare';
 import { EventScreen } from './views/EventScreen';
 import { EventChecklist, EventList, ProductChecklist, ProductList, RecentSales } from './views/Lists';
@@ -169,7 +170,7 @@ function toggleGroup(group: string) {
 function render() {
   const today = todayLiveSales();
   const { revenue, profit } = totals(withLinkedCosts(today, state.eventCosts, [...state.products, ...state.productHistory]));
-  renderView(h(SalesHero, { revenue, profit, count: today.length, day: liveDayCount() }), el.stats);
+  renderView(h(SalesHero, { revenue, profit, count: today.length }), el.stats);
   renderView(
     h(SalesGrid, {
       products: sellProducts(),
@@ -691,6 +692,7 @@ function wireHeader() {
   });
 
   initTileDrag(el.grid, () => !loadSettings().autoSort, moveProduct);
+  initMasonry(el.grid);
 }
 
 function wireSettings() {

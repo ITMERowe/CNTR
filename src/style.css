@@ -566,6 +566,12 @@ p {
   padding: var(--s2) var(--s4) var(--s4);
 }
 
+/* 2-3 columns: src/ui/masonry.ts places each tile in the shortest column on 1px rows (the gap is in its span). */
+.sales-grid.is-masonry {
+  grid-auto-rows: 1px;
+  row-gap: 0;
+}
+
 /* Phone landscape and tablets: more columns, each never narrower than a 360px phone's tile
    (~340px, where compact TRANSFER + count and a 14-char name still fit). */
 @media (min-width: 720px) {
@@ -1037,7 +1043,7 @@ p {
 
 /* Compact tiles (Sell ⋮ menu): no price (a variant keeps it as a caption), and each half is one row (label, count, then −), so more tiles fit. */
 .is-compact .tile {
-  padding: var(--s2);
+  padding: var(--s3); /* owner, 0.1.2: s2 put text too close to the edges */
 }
 
 .is-compact .tile-head {
@@ -1079,7 +1085,7 @@ p {
 /* Compact group: a table. Payment labels once in the header row, then each variant is name | count | count, no price. */
 .is-compact .tile-group-head,
 .is-compact .variant {
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr); /* 1.4 (was 1.5) keeps TRANSFER 8px clear in its cell with the s3 tile padding */
 }
 
 /* The name gets the whole first line (never cut on a 360px phone); the payment labels sit on a slim line below,
@@ -1127,7 +1133,7 @@ p {
 }
 
 .is-compact .variant .variant-meta {
-  gap: 0;
+  gap: 2px; /* name and price touched at 0 */
 }
 
 /* An unsold cell is quiet; a sold one is set heavier and ringed, so the rows with sales stand out at a glance.
@@ -1301,31 +1307,16 @@ p {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--s2) 0 var(--s3);
+  padding: 0 0 var(--s1);
   animation: rise var(--dur-3) var(--ease-out) both;
 }
 
+/* The hero's three parts as one ledger card: a row each, label (and hint) left, full amount right.
+   Full-width rows keep long amounts (Rp 4.015.000) whole at 320px, which three side-by-side tiles could not. */
 .kpi-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s3);
-}
-
-.kpi-row-3 {
-  gap: var(--s2);
-}
-
-/* An odd last KPI (Expenses) takes the whole row instead of leaving a hole beside it. */
-.kpi-row > :last-child:nth-child(odd) {
-  grid-column: 1 / -1;
-}
-
-.kpi {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: var(--s3) var(--s4);
+  padding: 0 var(--s4);
   background: var(--surface-1);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
@@ -1333,37 +1324,50 @@ p {
   animation-delay: 40ms;
 }
 
-.kpi-row-3 .kpi {
-  padding: var(--s3);
+.kpi {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.kpi:last-child {
+  border-bottom: 0;
+}
+
+/* Label and hint share a line; on a narrow phone the hint wraps under the label, never the amount. */
+.kpi-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--s2);
 }
 
 .kpi-label {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
-  color: var(--text-3);
+  color: var(--text-2);
 }
 
 .kpi-value {
+  flex: none;
   font-size: var(--fs-lg);
   line-height: var(--lh-tight);
   font-weight: var(--fw-bold);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.kpi-row-3 .kpi-value {
-  font-size: var(--fs-lg);
 }
 
 .kpi-hint {
   font-size: var(--fs-xs);
   color: var(--text-3);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .list {
@@ -1440,6 +1444,9 @@ p {
 /* A long amount on a narrow phone moves the amount and buttons to a 2nd line, instead of squeezing the name to a letter a line. */
 .cost-item {
   flex-wrap: wrap;
+  /* Dense: a one-line expense is one 44px line; with edit buttons the 48px buttons set the height. */
+  min-height: 44px;
+  padding-block: var(--s1);
 }
 
 .cost-item .list-main {
@@ -1819,58 +1826,77 @@ p {
 
 /* ---------- Report charts (dataviz specs) ---------- */
 
-.split-bar {
+/* Payment mix: an 88px donut with the labelled legend beside it (method, share, amount, sales). */
+.split {
   display: flex;
-  gap: 2px; /* surface gap between segments */
-  height: 12px;
+  align-items: center;
+  gap: var(--s4);
 }
 
-.split-seg {
-  border-radius: 4px;
-  transform-origin: left;
-  animation: grow-x var(--dur-3) var(--ease-out) both;
+.donut {
+  flex: none;
+  width: 88px;
+  height: 88px;
+  transform: rotate(-90deg); /* segments start at 12 o'clock; the card's own rise is the entrance */
 }
 
-.split-seg + .split-seg {
-  animation-delay: 60ms;
+.donut-seg {
+  fill: none;
+  stroke: var(--chip-color, var(--chart-rest));
+  stroke-width: 6; /* about 12px of ring at 88px */
 }
 
-.split-seg,
 .split-item .swatch {
   background: var(--chip-color, var(--chart-rest));
 }
 
 .seg-empty {
-  background: var(--chart-rest);
+  stroke: var(--chart-rest);
 }
 
 .split-legend {
+  flex: 1;
+  min-width: 0;
   display: grid;
   gap: var(--s2);
-  margin-top: var(--s4);
 }
 
+/* Two lines per method: dot, name and share; then the amount and sales count under the name. */
 .split-item {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'dot name share' '. amount amount';
   align-items: center;
-  gap: var(--s2) var(--s3);
+  column-gap: var(--s2);
+}
+
+.split-item .swatch {
+  grid-area: dot;
 }
 
 .split-name {
+  grid-area: name;
   font-weight: var(--fw-bold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .split-share {
-  color: var(--text-3);
-  font-size: var(--fs-xs);
+  grid-area: share;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
 }
 
 .split-amount {
+  grid-area: amount;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--s2);
+  font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
 }
@@ -1892,12 +1918,13 @@ p {
 
 .rank {
   display: grid;
-  gap: var(--s4);
+  gap: var(--s3);
 }
 
+/* Two lines: swatch, name, revenue; then units (+ profit when it differs) beside the share bar. */
 .product-row {
   display: grid;
-  gap: 6px;
+  gap: 2px;
   animation: rise var(--dur-2) var(--ease-out) both;
   animation-delay: calc(min(var(--i, 0), 8) * 30ms);
 }
@@ -1918,14 +1945,15 @@ p {
 }
 
 .rank-count {
-  font-size: var(--fs-xs);
-  color: var(--text-2);
+  color: var(--text-3);
   font-variant-numeric: tabular-nums;
 }
 
+/* The bar is a fixed 40% column, so bars line up and compare across rows whatever the text beside them. */
 .rank-meta {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40%;
+  align-items: center;
   gap: var(--s3);
   font-size: var(--fs-xs);
   padding-left: 18px;
@@ -1935,13 +1963,21 @@ p {
   font-weight: var(--fw-bold);
 }
 
+/* On a narrow phone the profit moves to its own line as a whole, never split mid-amount. */
+.rank-profit-part {
+  white-space: nowrap;
+}
+
 .rank-revenue {
-  color: var(--text-3);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .rank-track {
+  display: block;
   height: 6px;
-  margin-left: 18px;
   border-radius: var(--r-pill);
   background: var(--surface-2);
   overflow: hidden;
@@ -2712,8 +2748,13 @@ p {
   color: var(--text-3);
 }
 
+/* A past event's dates sit right under its name (the 52px name row already leaves air below the text). */
+.event-name-row:has(+ .event-when) {
+  margin-bottom: 0;
+}
+
 .event-when {
-  margin: calc(var(--s2) * -1) 0 var(--s3);
+  margin: calc(var(--s2) * -1) 0 0;
   font-size: var(--fs-xs);
   color: var(--text-3);
 }
@@ -3306,10 +3347,6 @@ body.is-editing-event .content {
 
   .payment-value {
     font-size: 24px;
-  }
-
-  .kpi-row-3 .kpi-value {
-    font-size: var(--fs-md);
   }
 }
 

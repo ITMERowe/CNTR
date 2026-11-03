@@ -214,7 +214,7 @@ const compact = await page.evaluate(() => ({
   almost: document.querySelector('.tile[data-product="Almost"] .product-price').textContent,
   revenue: document.querySelector('#stats .hero-figure')?.getAttribute('aria-label'),
 }));
-check('compact money: 999.500 shows "Rp 1M" (tile and Sell revenue), 999.499 shows "Rp 999K"', compact.big === 'Rp 1M' && compact.almost === 'Rp 999K' && compact.revenue === 'Rp 1M', compact);
+check('compact money: 999.500 shows "Rp 1M" (tile and Sell revenue), 999.499 shows "Rp 999K"', compact.big === 'Rp 1M' && compact.almost === 'Rp 999K' && compact.revenue === 'Revenue Rp 1M', compact);
 await page.click('.tabbar .tab[data-tab="settingsScreen"]');
 await page.click('label[for="compactMoneyToggle"]');
 

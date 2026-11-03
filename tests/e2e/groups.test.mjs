@@ -75,7 +75,8 @@ for (const width of [412, 1280]) {
     await compact();
     // 3 variants here: about 62px per row by default (2 rows were 182px), 52px compact (2 rows were 148px).
     // Compact was 200px; the group's name now has its own line over the column labels (+12px once per tile, rows unchanged).
-    check(`${at} a 3-variant group is short (under 260px, compact under 220px), every sell button at least 44px`, normal.height < 260 && tight.height < 220 && !normal.small && !tight.small, { normal, tight });
+    // 0.1.2: compact tiles pad s3 instead of s2 (owner: text was too close to the edges), +8px once per tile.
+    check(`${at} a 3-variant group is short (under 260px, compact under 228px), every sell button at least 44px`, normal.height < 260 && tight.height < 228 && !normal.small && !tight.small, { normal, tight });
     check(`${at} compact tiles show the payment labels once, as column headers`, normal.labels === 6 && tight.labels === 2, { normal: normal.labels, tight: tight.labels });
   }
 

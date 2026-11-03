@@ -34,11 +34,11 @@ const live = await run(page, `${H}
   tab('eventScreen');
   const sales = stored('cntrSales');
   const profit = sales.reduce((s, x) => s + x.price - x.cost, 0);
-  return { tabsFill, eyebrow: document.querySelector('#stats .eyebrow').textContent, tabs, hero: amount('#eventCard .hero-figure'), profit, dayCards: document.querySelectorAll('#eventCard .day-card').length, endDay: !!document.getElementById('endDayBtn'), endEvent: !!document.getElementById('endEventBtn') };
+  return { tabsFill, eyebrow: !!document.querySelector('#stats .eyebrow'), heroLabel: document.querySelector('#stats .hero-figure').getAttribute('aria-label'), tabs, hero: amount('#eventCard .hero-figure'), profit, dayCards: document.querySelectorAll('#eventCard .day-card').length, endDay: !!document.getElementById('endDayBtn'), endEvent: !!document.getElementById('endEventBtn') };
 `);
 check('tabs are Event, Products, Sell, History, Settings', live.tabs === 'Event,Products,Sell,History,Settings', live.tabs);
 check('the 5 tabs fill the tab bar', live.tabsFill, live);
-check('Sell hero says Revenue before any End day', live.eyebrow === 'Revenue', live.eyebrow);
+check('Sell hero has no label on screen; screen readers hear "Revenue"', !live.eyebrow && live.heroLabel.startsWith('Revenue '), live);
 check('Event hero = product profit with no save step', live.hero === live.profit && live.profit > 0, live);
 check('no day cards before End day; End buttons shown', live.dayCards === 0 && live.endDay && live.endEvent, live);
 
@@ -72,14 +72,14 @@ const day = await run(page, `${H}
   const dayCards = document.querySelectorAll('#eventCard .day-card').length;
   tab('salesScreen');
   const counter = document.querySelector('.tile[data-product="Gacha"] [data-counter-for="Cash"]').textContent;
-  const eyebrow = document.querySelector('#stats .eyebrow').textContent;
+  const eyebrow = !!document.querySelector('#stats .eyebrow');
   const minus = document.querySelector('.tile[data-product="Gacha"] [data-payment="Cash"][data-action="minus"]');
   minus.click();
   await wait();
   return { asked, dayCards, counter, eyebrow, minusDisabled: minus.disabled, sales: stored('cntrSales').length, breaks: stored('cntrLiveEvent').dayBreaks.length };
 `);
 check('End day asks first and shows 2 day cards', day.asked && day.dayCards === 2, day);
-check('Sell counters show today only after End day, and the hero says which day', day.counter === '0' && day.eyebrow === 'Day 2 revenue', day);
+check('Sell counters show today only after End day, still with no hero label', day.counter === '0' && !day.eyebrow, day);
 check('undo after End day never removes an ended day\'s sale', day.minusDisabled && day.sales === 3 && day.breaks === 1, day);
 
 // 4b. Changing a product's price later never reprices an ended day
