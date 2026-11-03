@@ -42,9 +42,11 @@ export function Hero({ label, value, tone }: { label: string; value: string; ton
 export function Kpi({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: string }) {
   return (
     <div class="kpi">
-      <span class="kpi-label">{label}</span>
+      <span class="kpi-text">
+        <span class="kpi-label">{label}</span>
+        {hint && <span class="kpi-hint">{hint}</span>}
+      </span>
       <span class={tone ? `kpi-value ${tone}` : 'kpi-value'}>{value}</span>
-      {hint && <span class="kpi-hint">{hint}</span>}
     </div>
   );
 }
@@ -62,25 +64,47 @@ export function EmptyState({ icon, title, text, action }: { icon: IconName; titl
   );
 }
 
-/** The payment methods used, as one part-to-whole bar with a labelled legend (never colour alone). */
+/** Donut ring geometry: r = 100 / 2π, so the circumference is 100 and dash lengths are percentages. */
+const RING_R = 15.9155;
+/** Surface gap between segments, in circumference units (about 2px at the drawn size). */
+const RING_GAP = 1;
+
+/** The payment methods used, as a part-to-whole donut with a labelled legend beside it (never colour alone). */
 export function PaymentSplit({ sales }: { sales: SaleRecord[] }) {
   const parts = paymentsInUse(sales).map((payment) => {
     const matching = sales.filter((sale) => sale.payment === payment);
     return { payment, count: matching.length, amount: matching.reduce((sum, sale) => sum + sale.price, 0) };
   });
   const total = parts.reduce((sum, part) => sum + part.amount, 0);
+  const drawn = parts.filter((part) => part.amount > 0);
+  // One method (or no money yet) is a full ring with no gap.
+  const gap = drawn.length > 1 ? RING_GAP : 0;
+  let start = 0;
 
   return (
     <div class="split">
-      <div class="split-bar" role="img" aria-label={parts.map((part) => `${part.payment} ${fmt(part.amount)}`).join(', ')}>
+      <svg class="donut" viewBox="0 0 42 42" role="img" aria-label={parts.map((part) => `${part.payment} ${fmt(part.amount)}`).join(', ')}>
         {total > 0 ? (
-          parts
-            .filter((part) => part.amount > 0)
-            .map((part) => <span key={part.payment} class={`split-seg ${paymentClass(part.payment)}`} style={{ flexGrow: part.amount }} />)
+          drawn.map((part) => {
+            const length = (part.amount / total) * 100;
+            const seg = (
+              <circle
+                key={part.payment}
+                class={`donut-seg ${paymentClass(part.payment)}`}
+                cx="21"
+                cy="21"
+                r={RING_R}
+                stroke-dasharray={`${Math.max(length - gap, 0.01)} ${100 - Math.max(length - gap, 0.01)}`}
+                stroke-dashoffset={-start}
+              />
+            );
+            start += length;
+            return seg;
+          })
         ) : (
-          <span class="split-seg seg-empty" style={{ flexGrow: 1 }} />
+          <circle class="donut-seg seg-empty" cx="21" cy="21" r={RING_R} />
         )}
-      </div>
+      </svg>
       <div class="split-legend">
         {parts.map((part) => (
           <div class="split-item" key={part.payment}>
@@ -98,7 +122,7 @@ export function PaymentSplit({ sales }: { sales: SaleRecord[] }) {
   );
 }
 
-/** Ranked product rows: swatch + name, profit and revenue; units and share on the right; thin bar below. */
+/** Ranked product rows, two lines each: swatch + name + revenue; then units (and profit when it differs from revenue) beside a share bar. */
 export function ProductRows({ rows, totalUnits }: { rows: ProductTotals[]; totalUnits: number }) {
   return (
     <div class="rank">
@@ -109,14 +133,22 @@ export function ProductRows({ rows, totalUnits }: { rows: ProductTotals[]; total
             <div class="rank-main">
               <span class="swatch" style={{ background: item.color || 'var(--text-3)' }} aria-hidden="true" />
               <span class="rank-name">{item.name}</span>
-              <span class="rank-count">{tn('count.sale', item.count)}</span>
-            </div>
-            <div class="rank-meta">
-              <span class={`rank-profit ${profitClass(item.profit)}`}>{t('profit.amount', { amount: fmt(item.profit) })}</span>
               <span class="rank-revenue">{fmt(item.revenue)}</span>
             </div>
-            <div class="rank-track" aria-hidden="true">
-              <span class="rank-fill" style={{ width: `${share > 0 ? Math.max(2, share) : 0}%`, background: item.color || 'var(--text-3)' }} />
+            <div class="rank-meta">
+              <span class="rank-count">
+                {tn('count.sale', item.count)}
+                {/* No item cost: profit equals revenue, so it would only repeat the number above. */}
+                {item.profit !== item.revenue && (
+                  <span class="rank-profit-part">
+                    {' · '}
+                    <span class={`rank-profit ${profitClass(item.profit)}`}>{t('profit.amount', { amount: fmt(item.profit) })}</span>
+                  </span>
+                )}
+              </span>
+              <span class="rank-track" aria-hidden="true">
+                <span class="rank-fill" style={{ width: `${share > 0 ? Math.max(2, share) : 0}%`, background: item.color || 'var(--text-3)' }} />
+              </span>
             </div>
           </div>
         );

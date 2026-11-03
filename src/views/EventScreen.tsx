@@ -189,7 +189,7 @@ export function EventScreen(props: Props) {
       ) : (
         <>
           <Hero label={summary.net < 0 ? t('deficit') : t('net_profit')} value={fmt(summary.net)} tone={summary.net < 0 ? 'negative' : undefined} />
-          <div class="kpi-row kpi-row-3">
+          <div class="kpi-row">
             <Kpi label={t('revenue')} value={fmt(summary.revenue)} hint={tn('count.sale', summary.count)} />
             <Kpi label={t('profit')} value={fmt(summary.productProfit)} hint={t('margin', { pct: marginPercent(summary.revenue, summary.productProfit).toFixed(1) })} tone={summary.productProfit < 0 ? 'is-negative' : undefined} />
             <Kpi label={t('expenses')} value={fmt(summary.expenses)} hint={tn('count.item', expenses.length)} />

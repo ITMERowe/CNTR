@@ -19,6 +19,7 @@ src/
   i18n.ts              English + Bahasa Indonesia dictionaries, t() / tn(), locale(), first-launch language, data-i18n markup
   groups.ts            Product groups: report names ("Poster A3"), Sell tiles per group, shared colour/payments, the group form's save plan
   reports.ts           Pure report maths: totals, product breakdowns, compare rows
+  summary.ts           Ended event's highlights maths (break-even gap, best day, top group, biggest expense, payments); no UI yet
   formatters.ts        Money formatting/parsing, colour helpers
   data.ts              Default products, product-history helper, UUIDs
   types.ts             Shared types
@@ -27,13 +28,15 @@ src/
     productEditor.ts   Add / edit / remove product screen (colour field = live tile preview); Group switch = a whole group with its variant rows
     colorPicker.ts     HSV colour picker
     icons.ts           Bundled Lucide SVG icons; hydrateIcons() fills <i data-icon> in index.html
+    tileDrag.ts        Hold a Sell tile, then drag to reorder
+    masonry.ts         Sell on 2-3 columns: each tile in the shortest column (placeColumns is pure, unit-tested)
   views/               Preact components
     SalesGrid.tsx      Sell tab tiles (counters, undo, haptic-triggering callbacks)
     SalesHero.tsx      Revenue total at the top of the Sell tab (count-up animation)
     EventScreen.tsx    Event tab (live) and a past event in History (read-only or editing)
     Lists.tsx          Recent sales, Products, past-event list, compare checklist
     Compare.tsx        Compare sales / compare events
-    ReportParts.tsx    Shared pieces: hero figure, KPI tiles, payment split, hourly chart, product rows, empty states
+    ReportParts.tsx    Shared pieces: hero figure, KPI ledger rows, payment-mix donut, hourly chart, product rows, empty states
     Icon.tsx           SVG icon component
 ```
 
