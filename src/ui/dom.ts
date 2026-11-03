@@ -294,6 +294,8 @@ const PARENT_TAB: Record<string, string> = {
 
 // The entrance animation plays once per screen, not on every tab switch back to it.
 const enteredScreens = new Set<string>([document.querySelector('.screen.active')?.id ?? 'salesScreen']);
+// Screens that show new content each time they open (another event, another product): their entrances play every time.
+const OPENS_FRESH = new Set(['pastEventScreen', 'compareEventScreen', 'productEditScreen']);
 
 let productListOrder: string[] | null = null;
 
@@ -309,10 +311,13 @@ export function openScreen(screenId: string) {
     document.querySelector('.content')?.scrollTo(0, 0);
     window.scrollTo(0, 0);
   }
+  // A screen once left plays no item entrances again: display:none → block would replay them on every return (style.css .entered).
+  const leaving = document.querySelector('.screen.active');
+  if (leaving && leaving.id !== screenId && !OPENS_FRESH.has(leaving.id)) leaving.classList.add('entered');
   document.querySelectorAll<HTMLElement>('.screen').forEach((screen) => screen.classList.toggle('active', screen.id === screenId));
   const enteringScreen = document.getElementById(screenId);
   if (enteringScreen) enteringScreen.style.animation = enteredScreens.has(screenId) ? 'none' : '';
-  enteredScreens.add(screenId);
+  if (!OPENS_FRESH.has(screenId)) enteredScreens.add(screenId);
   productListOrder = screenId === 'productHistoryScreen' ? state.productHistory.map((product) => product.name) : null;
 
   const tab = document.querySelector(`.tabbar .tab[data-tab="${screenId}"]`) ? screenId : PARENT_TAB[screenId];

@@ -58,9 +58,13 @@ One family: Plus Jakarta Sans (bundled variable font, `--font`).
 
 ## Motion
 
-- Durations: `--dur-tap` 120ms (press), `--dur-1` 200ms, `--dur-2` 280ms, `--dur-3` 420ms (list/tile entrance), `--dur-hold` 700ms (hold to delete; `HOLD_MS` in `src/ui/dom.ts` must match).
-- Easing: `--ease-out` to enter, `--ease-in` to exit, `--ease-emphasis` for a small overshoot (count roll).
-- Animate `transform` / `opacity` only (the sell button's edge also eases its inset `box-shadow`). `prefers-reduced-motion: reduce` sets every animation and transition to 1ms: presses and the hold fill show at once, but a hold still takes 700ms.
+- Durations: `--dur-tap` 120ms (press), `--dur-1` 200ms, `--dur-2` 280ms, `--dur-3` 420ms (list/tile entrance), `--dur-hold` 700ms (hold to delete; `HOLD_MS` in `src/ui/dom.ts` must match), `--dur-liquid` 340ms (tab pill only).
+- Easing: `--ease-out` to enter and to exit (never ease-in: it delays the moment the user watches), `--ease-emphasis` for a small overshoot (count roll), `--ease-liquid` (a spring as a `linear()` curve, 4.6% overshoot; tab pill only).
+- Animate `transform` / `opacity` only (the sell button's edge also eases its inset `box-shadow`; the tab pill moves its `left`/`right` edges). `prefers-reduced-motion: reduce` sets every animation and transition to 1ms (and drops the tab pill and tab icon delays) except the fades of sheets, toasts and the colour picker (200ms, no movement): presses and the hold fill show at once, but a hold still takes 700ms.
+- Entrances (`rise`, `grow-x`) play on a screen's first visit only; `openScreen` marks a screen `.entered` when it is left, which turns them off on every return. Screens that open with new content (past event, Compare, product editor) play them every time.
+- The per-sale toast and checkbox tick never start from nothing: the toast slides in with `--ease-out` (no overshoot), the tick grows from 0.5 with a fade.
+- Sell's revenue counts up over 200ms per sale, from the number on screen (a sale mid-count continues, it does not jump).
+- Presses shrink to 0.95–0.97 (`--dur-tap`, `--ease-out`): 0.97 buttons, 0.96 icon buttons, 0.95 small controls.
 
 ## Layout
 
@@ -68,7 +72,7 @@ One family: Plus Jakarta Sans (bundled variable font, `--font`).
 - Short landscape (max-height 500px): Sell's title, revenue and buttons share one header row.
 - Touch targets >= 44x44px (icon buttons 44px, buttons 48px tall, small visual controls grow their hit area with an absolute `::after`).
 - Safe areas: header, content, tab bar (`--tabbar-h` 68px) and sheets pad with `env(safe-area-inset-*)`.
-- **Tab bar:** five equal columns, icon over a `--fs-xs` bold label (`--text-3`, active `--text`). The active tab has one 56x32 `--accent` pill behind its icon (icon `--on-accent`) that moves to the tapped tab with squash and stretch (owner's reference, fixed after the owner's screen recording): its two edges move separately (`--dur-2`, `--ease-out`), the one facing the new tab first and the other 90ms later (`openScreen` sets `data-dir`), so it stretches across the gap; it thins to 0.8 height mid-way and lands with a 1.06 bulge (one keyframes name per tab). The new tab's icon turns `--on-accent` only after 200ms, once the pill is under it. Reduce-motion jumps. `.tabbar::before`, column picked with `:has()` (`--i`). Sell keeps the middle spot and a 26px icon (others 22px) but no pill of its own (owner, 2026-11-03). The layout test checks the pill is centred under each tab at 320, 412 and landscape.
+- **Tab bar:** five equal columns, icon over a `--fs-xs` bold label (`--text-3`, active `--text`). The active tab has one 56x32 `--accent` pill behind its icon (icon `--on-accent`) that moves to the tapped tab like liquid (owner, 2026-11-03): its two edges spring separately (`--dur-liquid` 340ms, `--ease-liquid`; plain `--dur-2` `--ease-out` where `linear()` is unsupported), the one facing the new tab first and the other 70ms later (`openScreen` sets `data-dir`), so it stretches across the gap; it thins to 0.78 height while stretched and lands with a 1.05 swell over the same 340ms (one keyframes name per tab). A tap mid-move bends it toward the new tab from where it is. The new tab's icon turns `--on-accent` only after 200ms, once the pill is under it. Reduce-motion jumps. `.tabbar::before`, column picked with `:has()` (`--i`). Sell keeps the middle spot and a 26px icon (others 22px) but no pill of its own (owner, 2026-11-03). The layout test checks the pill is centred under each tab at 320, 412 and landscape.
 - Must fit at 320-360px wide (layout test runs 320, 360, 412 and 892 wide, both themes, English and Indonesian).
 
 ## Components

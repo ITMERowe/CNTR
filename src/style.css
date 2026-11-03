@@ -53,13 +53,15 @@
 
   /* Motion: one vocabulary everywhere */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --ease-emphasis: cubic-bezier(0.34, 1.25, 0.64, 1);
   --dur-tap: 120ms;
   --dur-1: 200ms;
   --dur-2: 280ms;
   --dur-3: 420ms;
   --dur-hold: 700ms; /* hold to delete; HOLD_MS in src/ui/dom.ts */
+  /* Spring (duration 0.3s, bounce 0.3) as a curve: overshoots 4.6% and settles; used by the tab pill only. */
+  --ease-liquid: linear(0, 0.051 5%, 0.173 10%, 0.327 15%, 0.485 20%, 0.632 25%, 0.756 30%, 0.856 35%, 0.931 40%, 0.984 45%, 1.018 50%, 1.037 55%, 1.045 60%, 1.046 65%, 1.042 70%, 1.035 75%, 1.028 80%, 1.021 85%, 1.015 90%, 1.009 95%, 1);
+  --dur-liquid: 340ms;
 
   /* Type: one family, 5 sizes, 2 weights, 2 line-heights. The revenue figures are fluid (they shrink long amounts). */
   --fs-xs: 12px; /* labels, captions, meta */
@@ -267,6 +269,11 @@ p {
   animation: screen-in var(--dur-2) var(--ease-out);
 }
 
+/* Entrances play on a screen's first visit only: display:none → block would replay them on every tab switch. */
+.screen.entered :is(.tile, .card, .report-hero, .kpi-row, .list-row, .product-item, .product-row, .rank-fill, .group, .variant-row) {
+  animation: none;
+}
+
 .page {
   /* Tablets and wide screens: a readable centred column instead of full width (phones are narrower). */
   max-width: 640px;
@@ -440,7 +447,7 @@ p {
 
 .icon-btn:active {
   background: var(--surface-2);
-  transform: scale(0.94);
+  transform: scale(0.96);
 }
 
 .icon-btn-solid {
@@ -667,7 +674,7 @@ p {
 
 .tile-edit:active {
   background: var(--ink-soft);
-  transform: scale(0.94);
+  transform: scale(0.96);
 }
 
 .tile-edit::after {
@@ -854,7 +861,7 @@ p {
 }
 
 .pay-undo:active:not(:disabled) {
-  transform: scale(0.9);
+  transform: scale(0.95);
 }
 
 .pay-undo:disabled {
@@ -2571,7 +2578,7 @@ p {
 }
 
 .color-preset:active {
-  transform: scale(0.9);
+  transform: scale(0.95);
 }
 
 /* ---------- Bottom sheets (dialogs) ---------- */
@@ -2586,7 +2593,7 @@ p {
   background: var(--scrim);
   opacity: 0;
   visibility: hidden;
-  transition: opacity var(--dur-1) var(--ease-in), visibility 0s linear var(--dur-1);
+  transition: opacity var(--dur-1) var(--ease-out), visibility 0s linear var(--dur-1);
 }
 
 .sheet-overlay.open {
@@ -2608,7 +2615,7 @@ p {
   border-bottom: 0;
   border-radius: var(--r-lg) var(--r-lg) 0 0;
   transform: translateY(100%);
-  transition: transform var(--dur-1) var(--ease-in);
+  transition: transform var(--dur-1) var(--ease-out);
 }
 
 .sheet::before {
@@ -3006,7 +3013,7 @@ p {
 }
 
 .step-btn:active:not(:disabled) {
-  transform: scale(0.92);
+  transform: scale(0.95);
 }
 
 .step-btn:disabled {
@@ -3166,8 +3173,9 @@ body.is-editing-event .content {
   height: 11px;
   border: solid var(--on-accent);
   border-width: 0 2.5px 2.5px 0;
-  transform: rotate(45deg) scale(0);
-  transition: transform var(--dur-1) var(--ease-emphasis);
+  opacity: 0;
+  transform: rotate(45deg) scale(0.5);
+  transition: transform var(--dur-1) var(--ease-emphasis), opacity var(--dur-1) var(--ease-out);
 }
 
 .check-row:has(input:checked) {
@@ -3181,6 +3189,7 @@ body.is-editing-event .content {
 }
 
 .check-row input:checked + .check-box::after {
+  opacity: 1;
   transform: rotate(45deg) scale(1);
 }
 
@@ -3239,7 +3248,7 @@ body.is-editing-event .content {
   transition: color var(--dur-1);
 }
 
-/* Active indicator: one accent pill behind the active tab's icon. Squash and stretch: its two edges move separately,
+/* Active indicator: one accent pill behind the active tab's icon. Liquid squash and stretch: its two edges spring separately,
    the one facing the new tab first (openScreen sets data-dir), so it stretches across the gap, thins, then catches up.
    CSS only besides that: :has() picks the column (--i). Reduce-motion makes it jump. */
 .tabbar {
@@ -3262,22 +3271,29 @@ body.is-editing-event .content {
   transition: left var(--edge), right var(--edge), opacity var(--dur-1);
 }
 
-.tabbar[data-dir='right']::before { transition: right var(--edge), left var(--edge) 90ms, opacity var(--dur-1); }
-.tabbar[data-dir='left']::before { transition: left var(--edge), right var(--edge) 90ms, opacity var(--dur-1); }
+.tabbar[data-dir='right']::before { transition: right var(--edge), left var(--edge) 70ms, opacity var(--dur-1); }
+.tabbar[data-dir='left']::before { transition: left var(--edge), right var(--edge) 70ms, opacity var(--dur-1); }
 
-/* While stretched it thins, then lands with a small bulge. One keyframes name per tab, so each change replays it. */
+/* The edges spring where the WebView supports linear(); older ones keep the plain ease-out. */
+@supports (transition-timing-function: linear(0, 1)) {
+  .tabbar::before {
+    --edge: var(--dur-liquid) var(--ease-liquid);
+  }
+}
+
+/* While stretched it thins, then lands with a small swell, over the same time as the edges. One keyframes name per tab, so each change replays it. */
 .tabbar:has(.tab.active)::before { opacity: 1; }
-.tabbar:has(.tab:nth-child(1).active)::before { animation: pill-squash-1 var(--dur-3) var(--ease-out); }
-.tabbar:has(.tab:nth-child(2).active)::before { --i: 1; animation: pill-squash-2 var(--dur-3) var(--ease-out); }
-.tabbar:has(.tab:nth-child(3).active)::before { --i: 2; animation: pill-squash-3 var(--dur-3) var(--ease-out); }
-.tabbar:has(.tab:nth-child(4).active)::before { --i: 3; animation: pill-squash-4 var(--dur-3) var(--ease-out); }
-.tabbar:has(.tab:nth-child(5).active)::before { --i: 4; animation: pill-squash-5 var(--dur-3) var(--ease-out); }
+.tabbar:has(.tab:nth-child(1).active)::before { animation: pill-squash-1 var(--dur-liquid) var(--ease-out); }
+.tabbar:has(.tab:nth-child(2).active)::before { --i: 1; animation: pill-squash-2 var(--dur-liquid) var(--ease-out); }
+.tabbar:has(.tab:nth-child(3).active)::before { --i: 2; animation: pill-squash-3 var(--dur-liquid) var(--ease-out); }
+.tabbar:has(.tab:nth-child(4).active)::before { --i: 3; animation: pill-squash-4 var(--dur-liquid) var(--ease-out); }
+.tabbar:has(.tab:nth-child(5).active)::before { --i: 4; animation: pill-squash-5 var(--dur-liquid) var(--ease-out); }
 
-@keyframes pill-squash-1 { 40% { scale: 1 0.8; } 80% { scale: 1 1.06; } }
-@keyframes pill-squash-2 { 40% { scale: 1 0.8; } 80% { scale: 1 1.06; } }
-@keyframes pill-squash-3 { 40% { scale: 1 0.8; } 80% { scale: 1 1.06; } }
-@keyframes pill-squash-4 { 40% { scale: 1 0.8; } 80% { scale: 1 1.06; } }
-@keyframes pill-squash-5 { 40% { scale: 1 0.8; } 80% { scale: 1 1.06; } }
+@keyframes pill-squash-1 { 35% { scale: 1 0.78; } 75% { scale: 1 1.05; } }
+@keyframes pill-squash-2 { 35% { scale: 1 0.78; } 75% { scale: 1 1.05; } }
+@keyframes pill-squash-3 { 35% { scale: 1 0.78; } 75% { scale: 1 1.05; } }
+@keyframes pill-squash-4 { 35% { scale: 1 0.78; } 75% { scale: 1 1.05; } }
+@keyframes pill-squash-5 { 35% { scale: 1 0.78; } 75% { scale: 1 1.05; } }
 
 .tab .icon {
   position: relative;
@@ -3288,7 +3304,7 @@ body.is-editing-event .content {
 }
 
 .tab:active .icon {
-  transform: scale(0.88);
+  transform: scale(0.95);
 }
 
 .tab-label {
@@ -3335,13 +3351,13 @@ body.is-editing-event .content {
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, 12px) scale(0.98);
-  transition: opacity var(--dur-1) var(--ease-in), transform var(--dur-1) var(--ease-in);
+  transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
 }
 
 .toast.show {
   opacity: 1;
   transform: translate(-50%, 0);
-  transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-emphasis);
+  transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); /* shown on every sale: no overshoot */
 }
 
 /* ---------- Motion ---------- */
@@ -3380,12 +3396,6 @@ body.is-editing-event .content {
   }
 }
 
-@keyframes grow-y {
-  from {
-    transform: scaleY(0);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -3393,6 +3403,28 @@ body.is-editing-event .content {
     animation-duration: 1ms !important;
     animation-delay: 0ms !important;
     transition-duration: 1ms !important;
+  }
+
+  /* Gentler, not zero: things still fade in and out; only the movement goes (no transform transition, so it jumps). */
+  .sheet-overlay,
+  .color-picker {
+    transition: opacity var(--dur-1) var(--ease-out), visibility 0s linear var(--dur-1) !important;
+  }
+
+  .sheet-overlay.open,
+  .color-picker.open {
+    transition: opacity var(--dur-1) var(--ease-out), visibility 0s !important;
+  }
+
+  .toast,
+  .toast.show {
+    transition: opacity var(--dur-1) var(--ease-out) !important;
+  }
+
+  /* The global rule leaves transition delays: without this the pill sits stretched for 70ms and the icon stays light for 200ms. */
+  .tabbar::before,
+  .tab.active .icon {
+    transition-delay: 0s !important;
   }
 }
 

@@ -5,14 +5,15 @@ import { t, tn } from '../i18n';
 const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
 /** Counts from the previous value to `value` with an ease-out, so a new sale "lands" in the total. */
-function useCountUp(value: number, duration = 420) {
+function useCountUp(value: number, duration = 200) {
   const [shown, setShown] = useState(value);
-  const from = useRef(value);
+  // The number on screen, so a sale landing mid-count continues from there instead of jumping.
+  const onScreen = useRef(value);
 
   useEffect(() => {
-    const start = from.current;
-    from.current = value;
+    const start = onScreen.current;
     if (start === value || prefersReducedMotion()) {
+      onScreen.current = value;
       setShown(value);
       return;
     }
@@ -21,7 +22,8 @@ function useCountUp(value: number, duration = 420) {
     const step = (now: number) => {
       const t = Math.min(1, (now - startedAt) / duration);
       const eased = 1 - (1 - t) ** 3;
-      setShown(Math.round(start + (value - start) * eased));
+      onScreen.current = Math.round(start + (value - start) * eased);
+      setShown(onScreen.current);
       if (t < 1) frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);
