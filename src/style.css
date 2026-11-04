@@ -2571,10 +2571,25 @@ p {
 }
 
 .color-preset {
+  position: relative;
   aspect-ratio: 1;
   border-radius: var(--r-sm);
   background: var(--preset);
   transition: transform var(--dur-tap) var(--ease-out);
+}
+
+/* 7 across leaves under 44px per swatch on the narrowest phones. */
+@media (max-width: 360px) {
+  .picker-presets {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* The swatch alone can be under 44px: the tap area also covers the gaps around it. */
+.color-preset::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--s2) / -2);
 }
 
 .color-preset:active {
@@ -2739,6 +2754,14 @@ p {
   overflow-wrap: anywhere;
 }
 
+/* ...but a very long one stops at 3 lines, so one event can't fill the list. */
+.event-row .list-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
 .event-row .list-sub {
   flex-wrap: wrap;
   row-gap: 0;
@@ -2848,6 +2871,7 @@ p {
 
 .highlights li {
   position: relative;
+  overflow-wrap: anywhere;
   padding-left: var(--s4);
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
@@ -3332,6 +3356,10 @@ body.is-editing-event .content {
 
 /* ---------- Toast ---------- */
 
+.screen:focus {
+  outline: none; /* focused from code after Back, not a control */
+}
+
 .toast {
   position: absolute;
   left: 50%;
@@ -3509,7 +3537,7 @@ body.is-editing-event .content {
 }
 
 .tour-count {
-  color: var(--text-3);
+  color: var(--text-2);
   font-size: var(--fs-xs);
 }
 

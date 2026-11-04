@@ -125,7 +125,7 @@ export function SalesGrid({ products, counts, pulse, onAdd, onUndo, onEdit, coll
               return (
                 <section class="variant" key={variant.name} data-variant={variant.name}>
                   <div class="variant-meta">
-                    <h3 class={nameClass(label)}>{label}</h3>
+                    <h3 class={nameClass(label)} title={label}>{label}</h3>
                     <span class="product-price">{variant.price === 0 ? FREE_PAYMENT : fmt(variant.price)}</span>
                   </div>
                   {row(variant)}

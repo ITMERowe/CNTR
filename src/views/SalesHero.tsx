@@ -39,7 +39,8 @@ export function SalesHero({ revenue, profit, count }: { revenue: number; profit:
   const { sign, symbol, number } = splitFigure(fmt(shown));
   return (
     <>
-      <span class="hero-figure" aria-label={`${t('revenue')} ${fmt(revenue)}`} style={{ '--chars': fmt(revenue).length }}>
+      <span class="sr-only">{`${t('revenue')} ${fmt(revenue)}`}</span>
+      <span class="hero-figure" aria-hidden="true" style={{ '--chars': fmt(revenue).length }}>
         {sign}
         <span class="hero-figure-symbol">{symbol}</span> {number}
       </span>

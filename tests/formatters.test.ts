@@ -50,6 +50,6 @@ test('every currency: a filled field reads back as the same amount', () => {
 });
 
 test('compact money rounds by the shown unit', () => {
-  assert.equal(formatMoney(999500, 'IDR', true), 'Rp 1M');
-  assert.equal(formatMoney(-1500, 'USD', true), '-$ 1.5K');
+  assert.equal(formatMoney(999500, 'IDR', true), 'Rp\u00a01M');
+  assert.equal(formatMoney(-1500, 'USD', true), '-$\u00a01.5K');
 });

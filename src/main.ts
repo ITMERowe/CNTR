@@ -92,7 +92,8 @@ function addSale(product: Product, payment: string) {
   pulse = { product: product.name, payment, direction: 'up', id: ++pulseId };
   feedback('sale');
   render();
-  showToast(newDay ? t('toast.newDay', { day: liveDayCount() }) : `${product.name} · ${payment}`);
+  if (newDay) showToast(t('toast.newDay', { day: liveDayCount() }));
+  else showToast(`${product.name} · ${payment}`, 900);
 }
 
 function undoSale(product: Product, payment: string) {

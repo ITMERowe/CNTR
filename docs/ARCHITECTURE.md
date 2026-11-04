@@ -107,7 +107,7 @@ Tiles take the product colour as `--tile`. `needsDarkText()` (`formatters.ts`) g
 
 ## Navigation
 
-`openScreen(id)` in `ui/dom.ts` is the only way to change screens. Besides toggling the `.screen.active` section it highlights the bottom-nav tab (sub-screens map to their parent via `PARENT_TAB`), shows the revenue hero only on the Sell screen, and sets the header buttons for that screen. Add new screens to `index.html` as a `<section class="screen">` and, if they are a sub-screen, to `PARENT_TAB`.
+`openScreen(id)` in `ui/dom.ts` is the only way to change screens. Besides toggling the `.screen.active` section it highlights the bottom-nav tab and sets its `aria-current` (sub-screens map to their parent via `PARENT_TAB`), moves focus to the new screen when it was on something now hidden (screens have `tabindex="-1"`), shows the revenue hero only on the Sell screen, and sets the header buttons for that screen. Add new screens to `index.html` as a `<section class="screen">` and, if they are a sub-screen, to `PARENT_TAB`.
 
 **Android back** (`@capacitor/app` `backButton`, native only) runs `goBack()` in `main.ts`: it closes the colour picker or an open sheet (by clicking its `…CloseBtn`), else cancels an edit of a past event, else clicks the active screen's visible `.back-btn`, else opens Sell, else minimises the app. A new sub-screen therefore needs a `.back-btn` for back to work there.
 
@@ -150,6 +150,6 @@ What every change must keep true (the product reasons are in `PRODUCT.md`):
 
 ## Testing and release
 
-- `npx tsc --noEmit` and `npm test` (Node unit tests in `tests/*.test.ts`: event maths, groups, storage and backups, payments, i18n, config).
+- `npx tsc --noEmit` and `npm test` (Node unit tests in `tests/*.test.ts`: event maths, report maths, groups, storage and backups, payments, i18n, config).
 - `npm run build`, then `npm run test:e2e`: browser suites in `tests/e2e/` against `vite preview` (port 4320, or `CNTR_URL`), including a fake Android bridge with an in-memory SQLite for data-safety. A new screen, flow or rule gets a check there.
 - CI (`.github/workflows/build-apk.yml`) runs the browser tests, then builds a signed APK on every push. Branches: `dev` (daily work) → `main` (tested) → `playstore` (releases only: a push there creates the GitHub Release and uploads to Google Play). Release notes come from the version's section in `CHANGELOG.md`.

@@ -1,6 +1,6 @@
 // Pure report calculations, shared by the report screens and compare views.
-import { eventSummary, withLinkedCosts } from './events';
-import type { PastEvent, Product, SaleRecord } from './types';
+import { eventSummary, withLinkedCosts } from './events.ts'; // explicit extensions so `node --test` can load it
+import type { PastEvent, Product, SaleRecord } from './types.ts';
 
 export interface ProductTotals {
   name: string;
@@ -19,6 +19,18 @@ export function totals(sales: SaleRecord[]) {
     },
     { revenue: 0, profit: 0 },
   );
+}
+
+/** Whole percentages that add up to exactly 100 (largest remainder), so a legend never totals 99 or 101. */
+export function roundedShares(values: number[]) {
+  const total = values.reduce((sum, value) => sum + value, 0);
+  if (!total) return values.map(() => 0);
+  const exact = values.map((value) => (value / total) * 100);
+  const shares = exact.map(Math.floor);
+  const left = 100 - shares.reduce((sum, share) => sum + share, 0);
+  const byRemainder = exact.map((value, i) => ({ i, rest: value - shares[i] })).sort((a, b) => b.rest - a.rest);
+  for (const { i } of byRemainder.slice(0, left)) shares[i] += 1;
+  return shares;
 }
 
 export function marginPercent(revenue: number, profit: number) {

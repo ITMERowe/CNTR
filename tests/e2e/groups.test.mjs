@@ -405,7 +405,7 @@ for (const width of [412, 1280]) {
     const p = price.getBoundingClientRect();
     return { price: price.offsetParent ? price.textContent : null, opacity: getComputedStyle(price).opacity, height: Math.round(r.height), inside: p.top >= r.top - 0.5 && p.bottom <= r.bottom + 0.5, wide: document.documentElement.scrollWidth > innerWidth };
   }));
-  check('360px compact: every variant row shows its price, full ink, inside a 44px row, no sideways scroll', rows.length === 3 && rows.every((r) => r.price === 'Rp 25.000' && r.opacity === '1' && r.height <= 44 && r.inside && !r.wide), rows);
+  check('360px compact: every variant row shows its price, full ink, inside a 44px row, no sideways scroll', rows.length === 3 && rows.every((r) => r.price === 'Rp\u00a025.000' && r.opacity === '1' && r.height <= 44 && r.inside && !r.wide), rows);
   await page.close();
 }
 

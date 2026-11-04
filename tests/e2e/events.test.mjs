@@ -34,7 +34,7 @@ const live = await run(page, `${H}
   tab('eventScreen');
   const sales = stored('cntrSales');
   const profit = sales.reduce((s, x) => s + x.price - x.cost, 0);
-  return { tabsFill, eyebrow: !!document.querySelector('#stats .eyebrow'), heroLabel: document.querySelector('#stats .hero-figure').getAttribute('aria-label'), tabs, hero: amount('#eventCard .hero-figure'), profit, dayCards: document.querySelectorAll('#eventCard .day-card').length, endDay: !!document.getElementById('endDayBtn'), endEvent: !!document.getElementById('endEventBtn') };
+  return { tabsFill, eyebrow: !!document.querySelector('#stats .eyebrow'), heroLabel: document.querySelector('#stats .sr-only').textContent, tabs, hero: amount('#eventCard .hero-figure'), profit, dayCards: document.querySelectorAll('#eventCard .day-card').length, endDay: !!document.getElementById('endDayBtn'), endEvent: !!document.getElementById('endEventBtn') };
 `);
 check('tabs are Event, Products, Sell, History, Settings', live.tabs === 'Event,Products,Sell,History,Settings', live.tabs);
 check('the 5 tabs fill the tab bar', live.tabsFill, live);
@@ -272,7 +272,7 @@ const cmp2 = await run(page, `${H}
   const rows = [...document.querySelectorAll('#compareEventCard .cmp-row')].map((r) => [r.querySelector('.cmp-label').textContent, ...[...r.querySelectorAll('.cmp-value')].map((v) => v.textContent)].join('|'));
   return { rows, green: document.querySelectorAll('#compareEventCard .is-positive, #compareEventCard .is-winner').length };
 `);
-check('compare: one row per expense name, same names added up, a missing one is "—"', ['Booth|Rp 50.000|Rp 60.000', 'Transport|—|Rp 30.000', 'Parking|Rp 20.000|—'].every((row) => cmp2.rows.includes(row)), cmp2.rows);
+check('compare: one row per expense name, same names added up, a missing one is "—"', ['Booth|Rp\u00a050.000|Rp\u00a060.000', 'Transport|—|Rp\u00a030.000', 'Parking|Rp\u00a020.000|—'].every((row) => cmp2.rows.includes(row)), cmp2.rows);
 check('compare: no "better" colouring', cmp2.green === 0, cmp2);
 
 const discard = await run(page, `${H}
@@ -384,6 +384,54 @@ await sleep(400);
 const field = await page.$eval('#eventCostAmount', (n) => { const r = n.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, height: innerHeight }; });
 check('a focused field scrolls back into view when the keyboard shrinks the page', below > keyboardTop && field.top >= 0 && field.bottom <= field.height, { below, field });
 await page.setViewportSize({ width: 412, height: 892 });
+
+// End day, then End event with no new sales: the sales stay, and no empty day appears.
+await load();
+const dayThenEnd = await run(page, `${H}
+  tab('salesScreen');
+  tap('Poster', 'Cash');
+  await wait();
+  tab('eventScreen');
+  document.getElementById('endDayBtn').click();
+  await confirmYes();
+  const before = stored('cntrEvents').length;
+  const sold = stored('cntrSales').length;
+  document.getElementById('endEventBtn').click();
+  await nameSheet('No new sales');
+  await confirmYes();
+  await wait(100);
+  if (document.getElementById('confirmModalOverlay').classList.contains('open')) await confirmYes();
+  await wait(100);
+  const events = stored('cntrEvents');
+  return { added: events.length - before, sold, sales: events.at(-1).sales.length, name: events.at(-1).name, days: document.querySelectorAll('#pastEventCard .day-card').length, opened: document.querySelector('.screen.active').id };
+`);
+check('End day then End event with no new sales: one event, its sale kept, no empty day', dayThenEnd.added === 1 && dayThenEnd.sold > 0 && dayThenEnd.sales === dayThenEnd.sold && dayThenEnd.name === 'No new sales' && dayThenEnd.days <= 1 && dayThenEnd.opened === 'pastEventScreen', dayThenEnd);
+
+// Accessibility: the tab says which page is open, a sale is announced once, Back keeps focus on the page, the colour field opens from the keyboard.
+await load();
+const a11y = await run(page, `${H}
+  tab('historyScreen');
+  const current = [...document.querySelectorAll('.tabbar .tab[aria-current="page"]')].map((n) => n.dataset.tab).join();
+  tab('salesScreen');
+  return { current, live: document.getElementById('stats').hasAttribute('aria-live'), heroHidden: document.querySelector('#stats .hero-figure').getAttribute('aria-hidden') };
+`);
+check('the open tab has aria-current; the hero is quiet (the toast announces a sale)', a11y.current === 'historyScreen' && !a11y.live && a11y.heroHidden === 'true', a11y);
+await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
+await page.click('.product-edit-btn');
+await sleep(300);
+await page.focus('#colorField');
+await page.keyboard.press('Enter');
+await sleep(100);
+const picker = await page.evaluate(() => ({ open: document.getElementById('colorPickerMenu').classList.contains('open'), focus: document.activeElement?.id, preset: document.querySelector('.color-preset').getBoundingClientRect().width }));
+await page.keyboard.press('Escape');
+await sleep(100);
+const closed = await page.evaluate(() => ({ open: document.getElementById('colorPickerMenu').classList.contains('open'), focus: document.activeElement?.id }));
+check('Enter opens the colour picker on the hex field; Escape closes it back on the field', picker.open && picker.focus === 'editColorHexInput' && !closed.open && closed.focus === 'colorField', { picker, closed });
+await page.focus('.screen.active .back-btn');
+await page.keyboard.press('Enter');
+await sleep(200);
+const afterBack = await page.evaluate(() => ({ screen: document.querySelector('.screen.active').id, focus: document.activeElement?.id }));
+check('Back moves focus to the screen it opens, not nowhere', afterBack.focus === afterBack.screen, afterBack);
 
 check('no uncaught exceptions', errors.length === 0, errors.join(' | '));
 await browser.close();

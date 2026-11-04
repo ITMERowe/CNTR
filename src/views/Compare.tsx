@@ -12,9 +12,12 @@ function Diff({ a, b, money }: { a: number; b: number; money: boolean }) {
   if (!delta) return null;
   const amount = money ? fmt(Math.abs(delta)) : String(Math.abs(delta));
   return (
-    <span class="cmp-diff" aria-label={t(delta > 0 ? 'compare.more' : 'compare.less', { amount })}>
-      {delta > 0 ? '▲' : '▼'} {amount}
-    </span>
+    <>
+      <span class="sr-only">{t(delta > 0 ? 'compare.more' : 'compare.less', { amount })}</span>
+      <span class="cmp-diff" aria-hidden="true">
+        {delta > 0 ? '▲' : '▼'} {amount}
+      </span>
+    </>
   );
 }
 

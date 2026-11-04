@@ -4,6 +4,9 @@ import { test } from 'node:test';
 import { eventHighlights } from '../src/summary.ts';
 import type { PastEvent, Product, SaleRecord } from '../src/types.ts';
 
+// Busiest half-hours follow the local clock: a :30 or :45 time zone would shift them.
+process.env.TZ = 'UTC';
+
 const catalog: [string, string | undefined, number, number][] = [
   ['Fanservice Gacha', 'Fanservice', 50000, 0], ['Fanservice Pangku', 'Fanservice', 75000, 0], ['Fanservice Whisper', 'Fanservice', 50000, 0],
   ['Fanservice Hug', 'Fanservice', 75000, 0], ['Fanservice Kabedon', 'Fanservice', 75000, 0], ['Poster', 'Poster', 50000, 0],

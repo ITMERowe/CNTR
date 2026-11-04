@@ -106,7 +106,7 @@ const list = await run(page, `${H}
   };
 `);
 check('Products: the counter first (no heading of its own), then Hidden with its count', list.counter.join() === 'Gacha,Pin' && list.hidden.join() === 'Old badge' && list.heads.join() === 'Hidden · 1', list);
-check('a row shows price, profit per item and its payment methods', /Rp 5\.000/.test(list.pinText) && /profit Rp 4\.000/.test(list.pinText) && /E-wallet/.test(list.pinText), list.pinText);
+check('a row shows price, profit per item and its payment methods', /Rp\s5\.000/.test(list.pinText) && /profit Rp\s4\.000/.test(list.pinText) && /E-wallet/.test(list.pinText), list.pinText);
 check('no delete buttons on rows; Add product is the + in the page header (no second one at the end)', list.deleteButtons === 0 && list.addButton, list);
 
 // 3. Tapping the switch moves a product between sections; tapping a row opens the editor

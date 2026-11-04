@@ -119,11 +119,12 @@ export const el = {
 
 let toastTimer: number | undefined;
 
-export function showToast(message: string) {
+/** Long enough to read; a per-sale toast passes a shorter time so a rush doesn't pile them up. */
+export function showToast(message: string, ms = 3000) {
   el.toast.textContent = message;
   el.toast.classList.add('show');
   window.clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => el.toast.classList.remove('show'), 900);
+  toastTimer = window.setTimeout(() => el.toast.classList.remove('show'), ms);
 }
 
 let sheetReturnFocus: HTMLElement | null = null;
@@ -317,6 +318,8 @@ export function openScreen(screenId: string) {
   document.querySelectorAll<HTMLElement>('.screen').forEach((screen) => screen.classList.toggle('active', screen.id === screenId));
   const enteringScreen = document.getElementById(screenId);
   if (enteringScreen) enteringScreen.style.animation = enteredScreens.has(screenId) ? 'none' : '';
+  // Focus was on something now hidden (Back, a row): keyboard and screen readers carry on from the new screen.
+  if (enteringScreen && document.activeElement?.closest('.screen:not(.active)')) enteringScreen.focus({ preventScroll: true });
   if (!OPENS_FRESH.has(screenId)) enteredScreens.add(screenId);
   productListOrder = screenId === 'productHistoryScreen' ? state.productHistory.map((product) => product.name) : null;
 
@@ -327,7 +330,11 @@ export function openScreen(screenId: string) {
     const from = tabs.findIndex((button) => button.classList.contains('active'));
     const to = tabs.findIndex((button) => button.getAttribute('data-tab') === tab);
     document.querySelector<HTMLElement>('.tabbar')!.dataset.dir = from < 0 || from === to ? '' : to > from ? 'right' : 'left';
-    tabs.forEach((button, i) => button.classList.toggle('active', i === to));
+    tabs.forEach((button, i) => {
+      button.classList.toggle('active', i === to);
+      if (i === to) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
   }
   el.stats.style.display = screenId === 'salesScreen' ? '' : 'none';
   updateHeaderActions(screenId);

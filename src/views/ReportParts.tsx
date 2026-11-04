@@ -1,7 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { fmt, splitFigure } from '../formatters';
-import { paymentClass, paymentsInUse } from '../payments';
-import type { ProductTotals } from '../reports';
+import { FREE_PAYMENT, paymentClass, paymentsInUse } from '../payments';
+import { roundedShares, type ProductTotals } from '../reports';
 import type { eventHighlights } from '../summary';
 import type { SaleRecord } from '../types';
 import type { IconName } from '../ui/icons';
@@ -9,6 +9,8 @@ import { Icon } from './Icon';
 import { locale, t, tn } from '../i18n';
 
 const signed = (pct: number) => `${pct > 0 ? '+' : ''}${pct}%`;
+/** Names can be 1000 characters: one must not fill the card. */
+const clip = (name: string) => (name.length > 40 ? `${name.slice(0, 39)}…` : name);
 /** A template with "one|other" forms (English), picked by n like tn(). */
 const plural = (text: string, n: number) => text.split('|')[n === 1 ? 0 : text.split('|').length - 1];
 
@@ -22,11 +24,11 @@ export function Highlights({ h }: { h: ReturnType<typeof eventHighlights> }) {
     const values = { day: best.day, vs: best.vsDay, sales: signed(best.salesPct ?? 0) };
     lines.push(best.revenuePct === null ? t('hl.bestDaySales', values) : t('hl.bestDay', { ...values, revenue: signed(best.revenuePct) }));
   }
-  if (h.topGroup && h.topGroup.share < 100) lines.push(t('hl.topGroup', { name: h.topGroup.name, share: Math.round(h.topGroup.share) }));
+  if (h.topGroup && h.topGroup.share < 100) lines.push(t('hl.topGroup', { name: clip(h.topGroup.name), share: Math.round(h.topGroup.share) }));
   const cost = h.biggestExpense;
   if (cost) {
     // The only expense is 100% of costs: say what it cost instead. Past tense only when the sales made really covered it.
-    const what = cost.shareOfExpenses >= 100 ? t('hl.expenseSingle', { name: cost.name, amount: fmt(cost.amount) }) : t('hl.expenseOnly', { name: cost.name, share: Math.round(cost.shareOfExpenses) });
+    const what = cost.shareOfExpenses >= 100 ? t('hl.expenseSingle', { name: clip(cost.name), amount: fmt(cost.amount) }) : t('hl.expenseOnly', { name: clip(cost.name), share: Math.round(cost.shareOfExpenses) });
     const n = cost.salesToCover;
     const cover = !n ? '' : n <= h.salesCount ? plural(t('hl.covered', { n }), n) : t('hl.notCovered', { n, made: h.salesCount });
     lines.push(cover ? `${what} ${cover}` : what);
@@ -106,10 +108,15 @@ export function EmptyState({ icon, title, text, action }: { icon: IconName; titl
 const RING_R = 15.9155;
 /** Surface gap between segments, in circumference units (about 2px at the drawn size). */
 const RING_GAP = 1;
+/** Shortest visible arc, gap included, so a tiny share still shows on the ring. */
+const RING_MIN = 2;
 
 /** The payment methods used, as a part-to-whole donut with a labelled legend beside it (never colour alone). */
 export function PaymentSplit({ sales }: { sales: SaleRecord[] }) {
-  const parts = paymentsInUse(sales).map((payment) => {
+  // Free is not a way of paying: it only shows when nothing else was sold.
+  const methods = paymentsInUse(sales);
+  const paid = methods.filter((payment) => payment !== FREE_PAYMENT);
+  const parts = (paid.length ? paid : methods).map((payment) => {
     const matching = sales.filter((sale) => sale.payment === payment);
     return { payment, count: matching.length, amount: matching.reduce((sum, sale) => sum + sale.price, 0) };
   });
@@ -117,14 +124,17 @@ export function PaymentSplit({ sales }: { sales: SaleRecord[] }) {
   const drawn = parts.filter((part) => part.amount > 0);
   // One method (or no money yet) is a full ring with no gap.
   const gap = drawn.length > 1 ? RING_GAP : 0;
+  const shares = roundedShares(parts.map((part) => part.amount));
+  const raised = drawn.map((part) => Math.max((part.amount / total) * 100, drawn.length > 1 ? RING_MIN : 0));
+  const scale = 100 / raised.reduce((sum, length) => sum + length, 0);
   let start = 0;
 
   return (
     <div class="split">
-      <svg class="donut" viewBox="0 0 42 42" role="img" aria-label={parts.map((part) => `${part.payment} ${fmt(part.amount)}`).join(', ')}>
+      <svg class="donut" viewBox="0 0 42 42" role="img" aria-label={parts.map((part, i) => `${part.payment} ${shares[i]}% ${fmt(part.amount)}`).join(', ')}>
         {total > 0 ? (
-          drawn.map((part) => {
-            const length = (part.amount / total) * 100;
+          drawn.map((part, i) => {
+            const length = raised[i] * scale;
             const seg = (
               <circle
                 key={part.payment}
@@ -144,11 +154,11 @@ export function PaymentSplit({ sales }: { sales: SaleRecord[] }) {
         )}
       </svg>
       <div class="split-legend">
-        {parts.map((part) => (
+        {parts.map((part, i) => (
           <div class="split-item" key={part.payment}>
             <span class={`swatch ${paymentClass(part.payment)}`} aria-hidden="true" />
             <span class="split-name">{part.payment}</span>
-            <span class="split-share">{total ? Math.round((part.amount / total) * 100) : 0}%</span>
+            <span class="split-share">{shares[i]}%</span>
             <span class="split-amount">
               {fmt(part.amount)}
               <small>{tn('count.sale', part.count)}</small>
@@ -160,12 +170,13 @@ export function PaymentSplit({ sales }: { sales: SaleRecord[] }) {
   );
 }
 
-/** Ranked product rows, two lines each: swatch + name + revenue; then units (and profit when it differs from revenue) beside a share bar. */
-export function ProductRows({ rows, totalUnits }: { rows: ProductTotals[]; totalUnits: number }) {
+/** Ranked product rows, two lines each: swatch + name + revenue; then units and profit beside a bar for the revenue above it. */
+export function ProductRows({ rows }: { rows: ProductTotals[] }) {
+  const totalRevenue = rows.reduce((sum, row) => sum + row.revenue, 0);
   return (
     <div class="rank">
       {rows.map((item, index) => {
-        const share = totalUnits ? (item.count / totalUnits) * 100 : 0;
+        const share = totalRevenue ? (item.revenue / totalRevenue) * 100 : 0;
         return (
           <div class="product-row" key={item.name} style={{ '--i': index }}>
             <div class="rank-main">

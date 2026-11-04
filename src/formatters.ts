@@ -13,7 +13,7 @@ export const fmt = (n: number) => {
 export function splitFigure(formatted: string): { sign: string; symbol: string; number: string } {
   const sign = formatted.startsWith('-') ? '-' : '';
   const rest = sign ? formatted.slice(1) : formatted;
-  const space = rest.indexOf(' ');
+  const space = rest.indexOf(' ');
   return space < 0 ? { sign, symbol: '', number: rest } : { sign, symbol: rest.slice(0, space), number: rest.slice(space + 1) };
 }
 

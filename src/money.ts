@@ -88,6 +88,7 @@ export function formatInputNumber(raw: string | number, currency: Currency) {
   return `${symbol} ${formatNumeric(Number(whole || '0'), currency)}${decimal}${cents}`;
 }
 
+/** No-break space after the symbol, so a sentence never wraps between "Rp" and the number. */
 export function formatMoney(n: number, currency: Currency, compact: boolean) {
   const symbol = CURRENCY_SYMBOLS[currency];
   const sign = n < 0 ? '-' : '';
@@ -98,9 +99,9 @@ export function formatMoney(n: number, currency: Currency, compact: boolean) {
     const isMillions = Math.round(abs / 1000) >= 1000;
     const value = abs / (isMillions ? 1000000 : 1000);
     const precision = value >= 100 ? 0 : value >= 10 ? 1 : 2;
-    return `${sign}${symbol} ${formatNumeric(Number(value.toFixed(precision)), currency)}${isMillions ? 'M' : 'K'}`;
+    return `${sign}${symbol} ${formatNumeric(Number(value.toFixed(precision)), currency)}${isMillions ? 'M' : 'K'}`;
   }
 
-  return `${sign}${symbol} ${formatNumeric(abs, currency)}`;
+  return `${sign}${symbol} ${formatNumeric(abs, currency)}`;
 }
 

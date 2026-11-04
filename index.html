@@ -35,22 +35,22 @@
             </div>
           </div>
         </div>
-        <div class="hero" id="stats" aria-live="polite"></div>
+        <div class="hero" id="stats"></div>
       </header>
 
       <main class="content">
         <p class="storage-alert" id="storageAlert" role="alert" hidden></p>
-        <section class="screen active" id="salesScreen">
+        <section class="screen active" tabindex="-1" id="salesScreen">
           <div class="sales-grid" id="grid"></div>
         </section>
 
-        <section class="screen" id="eventScreen">
+        <section class="screen" tabindex="-1" id="eventScreen">
           <div class="page">
             <div class="stack" id="eventCard"></div>
           </div>
         </section>
 
-        <section class="screen" id="historyScreen">
+        <section class="screen" tabindex="-1" id="historyScreen">
           <div class="page">
             <div class="page-header">
               <h1 class="page-title" data-i18n="history">History</h1>
@@ -69,7 +69,7 @@
           </div>
         </section>
 
-        <section class="screen" id="pastEventScreen">
+        <section class="screen" tabindex="-1" id="pastEventScreen">
           <div class="page">
             <div class="page-header">
               <button class="icon-btn back-btn" id="pastEventBackBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
@@ -85,7 +85,7 @@
           </div>
         </section>
 
-        <section class="screen" id="compareEventScreen">
+        <section class="screen" tabindex="-1" id="compareEventScreen">
           <div class="page">
             <div class="page-header">
               <button class="icon-btn back-btn" id="compareEventBackBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
@@ -95,7 +95,7 @@
           </div>
         </section>
 
-        <section class="screen" id="settingsScreen">
+        <section class="screen" tabindex="-1" id="settingsScreen">
           <div class="page">
             <div class="page-header">
               <h1 class="page-title" data-i18n="settings">Settings</h1>
@@ -198,7 +198,7 @@
           </div>
         </section>
 
-        <section class="screen" id="productHistoryScreen">
+        <section class="screen" tabindex="-1" id="productHistoryScreen">
           <div class="page">
             <div class="page-header">
               <h1 class="page-title" data-i18n="products">Products</h1>
@@ -208,7 +208,7 @@
           </div>
         </section>
 
-        <section class="screen" id="aboutScreen">
+        <section class="screen" tabindex="-1" id="aboutScreen">
           <div class="page">
             <div class="page-header">
               <button class="icon-btn back-btn" id="aboutBackBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
@@ -241,7 +241,7 @@
           </div>
         </section>
 
-        <section class="screen" id="productEditScreen">
+        <section class="screen" tabindex="-1" id="productEditScreen">
           <div class="page">
             <div class="page-header">
               <button class="icon-btn back-btn" id="closeEditBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
@@ -335,7 +335,7 @@
       <nav class="tabbar" aria-label="Main" data-i18n-aria="main">
         <button class="tab" data-tab="eventScreen" type="button"><i data-icon="event"></i><span class="tab-label" data-i18n="event">Event</span></button>
         <button class="tab" data-tab="productHistoryScreen" type="button"><i data-icon="package"></i><span class="tab-label" data-i18n="products">Products</span></button>
-        <button class="tab tab-primary active" data-tab="salesScreen" type="button"><i data-icon="sell"></i><span class="tab-label" data-i18n="sell">Sell</span></button>
+        <button class="tab tab-primary active" data-tab="salesScreen" type="button" aria-current="page"><i data-icon="sell"></i><span class="tab-label" data-i18n="sell">Sell</span></button>
         <button class="tab" data-tab="historyScreen" type="button"><i data-icon="history"></i><span class="tab-label" data-i18n="history">History</span></button>
         <button class="tab" data-tab="settingsScreen" type="button"><i data-icon="settings"></i><span class="tab-label" data-i18n="settings">Settings</span></button>
       </nav>

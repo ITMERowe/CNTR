@@ -126,7 +126,7 @@ function CountEditor({ days, products, edit }: { days: SaleRecord[][]; products:
 /** Per-product rows for a set of sales (only what sold). */
 function ProductBreakdown({ sales, products, colorFor }: { sales: SaleRecord[]; products: Product[]; colorFor: (name: string) => string }) {
   const rows = buildProductBreakdown(sales, products, colorFor).sort((a, b) => b.count - a.count || b.revenue - a.revenue);
-  return <ProductRows rows={rows.filter((row) => row.count > 0)} totalUnits={sales.length} />;
+  return <ProductRows rows={rows.filter((row) => row.count > 0)} />;
 }
 
 export function EventScreen(props: Props) {
