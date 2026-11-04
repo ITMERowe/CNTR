@@ -26,7 +26,7 @@ function scan() {
   }
   const rgb = (c) => (c.match(/[\d.]+/g) || []).map(Number);
   const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
-  const background = (e) => { for (let n = e; n; n = n.parentElement) { const c = rgb(getComputedStyle(n).backgroundColor); if (c.length === 3 || c[3] > 0.9) return c.slice(0, 3); } return [30, 30, 30]; };
+  const background = (e) => { if (e.matches('.view-switch-btn[aria-pressed="true"]')) return rgb(getComputedStyle(e.parentElement, '::before').backgroundColor).slice(0, 3); /* its pill is the parent's ::before */ for (let n = e; n; n = n.parentElement) { const c = rgb(getComputedStyle(n).backgroundColor); if (c.length === 3 || c[3] > 0.9) return c.slice(0, 3); } return [30, 30, 30]; };
   for (const e of document.querySelectorAll('body *')) {
     if (!visible(e) || ![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
     const s = getComputedStyle(e);

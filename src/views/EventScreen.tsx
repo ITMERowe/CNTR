@@ -1,5 +1,5 @@
 // The Event screen: the live event, or a past event from History (read-only or being edited).
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { eventSummary, formatDay, splitDays, withLinkedCosts } from '../events';
 import { fmt } from '../formatters';
 import { paymentClass, productPayments, sortPayments } from '../payments';
@@ -140,6 +140,15 @@ export function EventScreen(props: Props) {
   const isEmpty = !sales.length && !expenses.length;
   // Products by day or for the whole event: an ended event opens combined, the live one by day (owner, 0.1.2). Not saved.
   const [combined, setCombined] = useState(!live);
+  // Which way the switch is moving, only while it moves: a return to this tab must not replay it. Once switched, rows stop their own entrance.
+  const [swap, setSwap] = useState<'left' | 'right' | undefined>();
+  const switched = useRef(false);
+  const chooseView = (value: boolean) => {
+    if (value === combined) return;
+    switched.current = true;
+    setCombined(value);
+    setSwap(value ? 'right' : 'left');
+  };
   const soldDays = days.filter((day) => day.length > 0).length;
   // Nothing at all yet (no products either): one empty state instead of it stacked with another for the Products card below.
   const allEmpty = isEmpty && !products.length;
@@ -260,34 +269,36 @@ export function EventScreen(props: Props) {
       )}
 
       {!edit && soldDays > 1 && (
-        <div class="view-switch" role="group" aria-label={t('products')}>
+        <div class="view-switch" role="group" aria-label={t('products')} data-swap={swap} onAnimationEnd={() => setSwap(undefined)}>
           {[false, true].map((value) => (
-            <button type="button" class="view-switch-btn" aria-pressed={combined === value} onClick={() => setCombined(value)}>
+            <button type="button" class="view-switch-btn" aria-pressed={combined === value} onClick={() => chooseView(value)}>
               {t(value ? 'view.combined' : 'view.byDay')}
             </button>
           ))}
         </div>
       )}
 
-      {!edit &&
-        sales.length > 0 &&
-        (!combined && soldDays > 1 ? (
-          days.map((day, index) => day.length > 0 && (
-            // Only the latest day with sales starts open; `open` is set again only if that changes, so taps stick.
-            <details class="card products-day" key={index} open={index === lastSoldDay}>
-              <summary class="products-day-head">
-                <h2 class="card-title">{days.length > 1 ? t('products.day', { n: index + 1 }) : t('products')}</h2>
-                <span class="products-day-meta">{tn('count.sale', day.length)}</span>
-                <Icon name="chevron-right" />
-              </summary>
-              <ProductBreakdown sales={day} products={products} colorFor={colorFor} />
-            </details>
-          ))
-        ) : (
-          <Card title={t('products')}>
-            <ProductBreakdown sales={withLinkedCosts(sales, expenses, linkable)} products={products} colorFor={colorFor} />
-          </Card>
-        ))}
+      {!edit && sales.length > 0 && (
+        <div class={switched.current ? 'stack view-swap is-switched' : 'stack view-swap'} data-swap={swap}>
+          {!combined && soldDays > 1 ? (
+            days.map((day, index) => day.length > 0 && (
+              // Only the latest day with sales starts open; `open` is set again only if that changes, so taps stick.
+              <details class="card products-day" key={index} open={index === lastSoldDay}>
+                <summary class="products-day-head">
+                  <h2 class="card-title">{days.length > 1 ? t('products.day', { n: index + 1 }) : t('products')}</h2>
+                  <span class="products-day-meta">{tn('count.sale', day.length)}</span>
+                  <Icon name="chevron-right" />
+                </summary>
+                <ProductBreakdown sales={day} products={products} colorFor={colorFor} />
+              </details>
+            ))
+          ) : (
+            <Card title={t('products')}>
+              <ProductBreakdown sales={withLinkedCosts(sales, expenses, linkable)} products={products} colorFor={colorFor} />
+            </Card>
+          )}
+        </div>
+      )}
 
       {live && (
         <div class="event-actions">

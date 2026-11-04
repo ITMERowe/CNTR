@@ -144,9 +144,17 @@ const view = await run(page, `${H}
   sw()[0].click();
   await wait();
   const byDay = { pressed: sw().map((b) => b.getAttribute('aria-pressed')).join(), days: days() };
+  const box = document.querySelector('#pastEventCard .view-switch');
+  const content = document.querySelector('#pastEventCard .view-swap');
+  const moving = { pill: box.dataset.swap, content: content.dataset.swap };
+  await wait(600);
+  const pill = getComputedStyle(box, '::before');
+  const first = sw()[0].getBoundingClientRect();
+  const settled = { swap: box.dataset.swap ?? null, contentSwap: content.dataset.swap ?? null, left: Math.abs(box.getBoundingClientRect().left + box.clientLeft + parseFloat(pill.left) - first.left), width: Math.abs(parseFloat(pill.width) - first.width), rowsStill: !document.querySelector('#pastEventCard .view-swap .product-row')?.getAnimations().length };
   document.getElementById('pastEventBackBtn').click();
-  return { rows, screen, hero, ends, opened, byDay, back: document.querySelector('.screen.active').id };
+  return { moving, settled, rows, screen, hero, ends, opened, byDay, back: document.querySelector('.screen.active').id };
 `);
+check('By day / Combined: a tap moves the pill and slides the Products the same way, then settles exactly on the chosen half', view.moving.pill === 'left' && view.moving.content === 'left' && view.settled.swap === null && view.settled.contentSwap === null && view.settled.left < 1 && view.settled.width < 1 && view.settled.rowsStill, view);
 check('History lists the ended event', view.rows.length === 1 && view.rows[0].includes('Comifuro 21'), view);
 check('past event view shows the same net, no End buttons', view.screen === 'pastEventScreen' && view.hero === end.total && !view.ends, view);
 check('back from past event returns to History', view.back === 'historyScreen', view);

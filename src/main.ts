@@ -50,7 +50,7 @@ import {
 } from './storage';
 import { practiceData, runTour, TOUR_SESSION_KEY, TOUR_STEPS, tourRunning } from './tutorial';
 import { initialLanguage, language, locale, setLanguage, t, tn, translateStatic, type Lang } from './i18n';
-import { applyTheme } from './theme';
+import { applyTheme, revealTheme } from './theme';
 import type { AppSettings, Currency, PastEvent, Product } from './types';
 import {
   activeScreenId,
@@ -731,7 +731,7 @@ function wireSettings() {
   el.themeToggle.addEventListener('change', () => {
     const theme: AppSettings['theme'] = el.themeToggle.checked ? 'dark' : 'light';
     saveSettings({ ...loadSettings(), theme });
-    applyTheme(theme);
+    revealTheme(theme, el.themeToggle.parentElement!);
     updateThemeState();
     feedback('step');
   });

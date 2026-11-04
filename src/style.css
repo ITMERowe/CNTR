@@ -1279,6 +1279,11 @@ p {
   animation-delay: 120ms;
 }
 
+/* A form part a switch just showed. */
+.reveal:not([hidden]) {
+  animation: rise var(--dur-2) var(--ease-out) both;
+}
+
 .card-head {
   display: flex;
   align-items: center;
@@ -2869,7 +2874,10 @@ p {
   list-style: none;
 }
 
+/* Ended reports only, and rare: the sentences land one after another. */
 .highlights li {
+  animation: rise var(--dur-2) var(--ease-out) both;
+  animation-delay: calc(120ms + var(--i, 0) * 60ms);
   position: relative;
   overflow-wrap: anywhere;
   padding-left: var(--s4);
@@ -2891,6 +2899,8 @@ p {
 
 /* Report: Products by day or combined (2+ days with sales). Two halves of one pill; the chosen one takes the accent. */
 .view-switch {
+  position: relative;
+  overflow: clip; /* the pill's spring overshoot stays inside the outline */
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--s1);
@@ -2900,21 +2910,80 @@ p {
   background: var(--surface-1);
 }
 
+/* The chosen half's pill moves like the tab bar's: the edge facing the new half springs first, the other 70ms later, so it stretches across. */
+.view-switch::before {
+  --edge: var(--dur-2) var(--ease-out);
+  content: '';
+  position: absolute;
+  top: var(--s1);
+  bottom: var(--s1);
+  left: var(--s1);
+  right: calc(50% + var(--s1) / 2);
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  transition: left var(--edge), right var(--edge) 70ms;
+}
+
+.view-switch:has(.view-switch-btn:last-child[aria-pressed='true'])::before {
+  left: calc(50% + var(--s1) / 2);
+  right: var(--s1);
+  transition: right var(--edge), left var(--edge) 70ms;
+}
+
+@supports (transition-timing-function: linear(0, 1)) {
+  .view-switch::before {
+    --edge: var(--dur-liquid) var(--ease-liquid);
+  }
+}
+
+/* The tab pill's squash and swell; one name per direction, so a tap mid-move replays it. */
+.view-switch[data-swap='left']::before { animation: pill-squash-1 var(--dur-liquid) var(--ease-out); }
+.view-switch[data-swap='right']::before { animation: pill-squash-2 var(--dur-liquid) var(--ease-out); }
+
 .view-switch-btn {
+  position: relative;
   min-height: 44px;
   border-radius: var(--r-pill);
   font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
   color: var(--text-2);
-  transition: background-color var(--dur-1), color var(--dur-1);
+  transition: color var(--dur-tap), transform var(--dur-tap) var(--ease-out);
 }
 
+.view-switch-btn:active {
+  transform: scale(0.97);
+}
+
+/* Darkens once the pill is under it, like the tab icon. */
 .view-switch-btn[aria-pressed='true'] {
-  background: var(--accent);
   color: var(--on-accent);
+  transition: color var(--dur-tap) var(--dur-tap), transform var(--dur-tap) var(--ease-out);
+}
+
+/* The Products below slide in from the side the pill moved to, as one block. */
+.view-swap.is-switched :is(.card, .product-row, .rank-fill) {
+  animation: none;
+}
+
+.view-swap[data-swap='left'] { animation: view-in-left var(--dur-2) var(--ease-out); }
+.view-swap[data-swap='right'] { animation: view-in-right var(--dur-2) var(--ease-out); }
+
+@keyframes view-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--s4)));
+  }
+}
+
+@keyframes view-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(var(--s4));
+  }
 }
 
 .products-day-head {
+  transition: margin-bottom var(--dur-2) var(--ease-out);
   display: flex;
   align-items: center;
   gap: var(--s2);
@@ -2948,6 +3017,26 @@ p {
 
 .products-day[open] > .products-day-head {
   margin-bottom: var(--s3);
+}
+
+/* Folds slide open and shut where the WebView supports it (Chromium 131+); older ones snap. */
+@supports selector(::details-content) {
+  :is(.products-day, .product-group) {
+    interpolate-size: allow-keywords;
+  }
+
+  :is(.products-day, .product-group)::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow: clip;
+    overflow-clip-margin: var(--s1);
+    transition: block-size var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out), content-visibility var(--dur-2) allow-discrete;
+  }
+
+  :is(.products-day, .product-group)[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
 }
 
 .products-day[open] > .products-day-head .icon {
@@ -3418,6 +3507,40 @@ body.is-editing-event .content {
   }
 }
 
+/* Dark and light swap as a circle centred on the switch (theme.ts sets --reveal-*): the light page is always the circle. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+:root[data-reveal='grow']::view-transition-new(root) {
+  animation: theme-grow var(--dur-3) var(--ease-out);
+}
+
+:root[data-reveal='shrink']::view-transition-old(root) {
+  z-index: 1;
+  animation: theme-shrink var(--dur-3) var(--ease-out) both;
+}
+
+@keyframes theme-grow {
+  from {
+    clip-path: circle(0 at var(--reveal-x) var(--reveal-y));
+  }
+  to {
+    clip-path: circle(var(--reveal-r) at var(--reveal-x) var(--reveal-y));
+  }
+}
+
+@keyframes theme-shrink {
+  from {
+    clip-path: circle(var(--reveal-r) at var(--reveal-x) var(--reveal-y));
+  }
+  to {
+    clip-path: circle(0 at var(--reveal-x) var(--reveal-y));
+  }
+}
+
 @keyframes grow-x {
   from {
     transform: scaleX(0);
@@ -3451,7 +3574,9 @@ body.is-editing-event .content {
 
   /* The global rule leaves transition delays: without this the pill sits stretched for 70ms and the icon stays light for 200ms. */
   .tabbar::before,
-  .tab.active .icon {
+  .tab.active .icon,
+  .view-switch::before,
+  .view-switch-btn {
     transition-delay: 0s !important;
   }
 }

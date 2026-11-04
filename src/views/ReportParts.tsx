@@ -42,7 +42,7 @@ export function Highlights({ h }: { h: ReturnType<typeof eventHighlights> }) {
   }
   return (
     <ul class="highlights">
-      {lines.map((line) => <li key={line}>{line}</li>)}
+      {lines.map((line, index) => <li key={line} style={{ '--i': index }}>{line}</li>)}
     </ul>
   );
 }
