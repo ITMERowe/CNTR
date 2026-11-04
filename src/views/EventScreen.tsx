@@ -1,12 +1,14 @@
 // The Event screen: the live event, or a past event from History (read-only or being edited).
+import { useRef, useState } from 'preact/hooks';
 import { eventSummary, formatDay, splitDays, withLinkedCosts } from '../events';
 import { fmt } from '../formatters';
 import { paymentClass, productPayments, sortPayments } from '../payments';
 import { buildProductBreakdown, marginPercent } from '../reports';
+import { eventHighlights } from '../summary';
 import type { EventCost, Product, SaleRecord } from '../types';
 import { holdToDelete } from '../ui/dom';
 import { Icon } from './Icon';
-import { Card, EmptyState, Hero, Kpi, PaymentSplit, ProductRows, profitClass } from './ReportParts';
+import { Card, EmptyState, Hero, Highlights, Kpi, PaymentSplit, ProductRows, profitClass } from './ReportParts';
 import { t, tn } from '../i18n';
 
 export interface EventEditHandlers {
@@ -26,8 +28,6 @@ interface Props {
   live: boolean;
   /** A past event's first and last sale dates, shown under its name (the live event shows the Live chip instead). */
   dates?: { startedAt: string; endedAt: string };
-  /** One collapsible Products card per day (Settings → Products per day). */
-  productsPerDay: boolean;
   onRename?: () => void;
   onAddExpense?: () => void;
   onEditExpense?: (id: string) => void;
@@ -126,7 +126,7 @@ function CountEditor({ days, products, edit }: { days: SaleRecord[][]; products:
 /** Per-product rows for a set of sales (only what sold). */
 function ProductBreakdown({ sales, products, colorFor }: { sales: SaleRecord[]; products: Product[]; colorFor: (name: string) => string }) {
   const rows = buildProductBreakdown(sales, products, colorFor).sort((a, b) => b.count - a.count || b.revenue - a.revenue);
-  return <ProductRows rows={rows.filter((row) => row.count > 0)} totalUnits={sales.length} />;
+  return <ProductRows rows={rows.filter((row) => row.count > 0)} />;
 }
 
 export function EventScreen(props: Props) {
@@ -138,6 +138,18 @@ export function EventScreen(props: Props) {
   // Days without sales get no Products card, so the one that starts open is the latest day with sales.
   const lastSoldDay = days.map((day) => day.length > 0).lastIndexOf(true);
   const isEmpty = !sales.length && !expenses.length;
+  // Products by day or for the whole event: an ended event opens combined, the live one by day (owner, 0.1.2). Not saved.
+  const [combined, setCombined] = useState(!live);
+  // Which way the switch is moving, only while it moves: a return to this tab must not replay it. Once switched, rows stop their own entrance.
+  const [swap, setSwap] = useState<'left' | 'right' | undefined>();
+  const switched = useRef(false);
+  const chooseView = (value: boolean) => {
+    if (value === combined) return;
+    switched.current = true;
+    setCombined(value);
+    setSwap(value ? 'right' : 'left');
+  };
+  const soldDays = days.filter((day) => day.length > 0).length;
   // Nothing at all yet (no products either): one empty state instead of it stacked with another for the Products card below.
   const allEmpty = isEmpty && !products.length;
 
@@ -189,11 +201,16 @@ export function EventScreen(props: Props) {
       ) : (
         <>
           <Hero label={summary.net < 0 ? t('deficit') : t('net_profit')} value={fmt(summary.net)} tone={summary.net < 0 ? 'negative' : undefined} />
-          <div class="kpi-row kpi-row-3">
+          <div class="kpi-row">
             <Kpi label={t('revenue')} value={fmt(summary.revenue)} hint={tn('count.sale', summary.count)} />
             <Kpi label={t('profit')} value={fmt(summary.productProfit)} hint={t('margin', { pct: marginPercent(summary.revenue, summary.productProfit).toFixed(1) })} tone={summary.productProfit < 0 ? 'is-negative' : undefined} />
             <Kpi label={t('expenses')} value={fmt(summary.expenses)} hint={tn('count.item', expenses.length)} />
           </div>
+          {!live && !edit && sales.length > 0 && (
+            <Card title={t('highlights')}>
+              <Highlights h={eventHighlights({ id: '', name, startedAt: '', endedAt: '', dayBreaks, products: linkable, sales, expenses })} />
+            </Card>
+          )}
         </>
       )}
 
@@ -251,25 +268,37 @@ export function EventScreen(props: Props) {
         </Card>
       )}
 
-      {!edit &&
-        sales.length > 0 &&
-        (props.productsPerDay ? (
-          days.map((day, index) => day.length > 0 && (
-            // Only the latest day with sales starts open; `open` is set again only if that changes, so taps stick.
-            <details class="card products-day" key={index} open={index === lastSoldDay}>
-              <summary class="products-day-head">
-                <h2 class="card-title">{days.length > 1 ? t('products.day', { n: index + 1 }) : t('products')}</h2>
-                <span class="products-day-meta">{tn('count.sale', day.length)}</span>
-                <Icon name="chevron-right" />
-              </summary>
-              <ProductBreakdown sales={day} products={products} colorFor={colorFor} />
-            </details>
-          ))
-        ) : (
-          <Card title={t('products')}>
-            <ProductBreakdown sales={withLinkedCosts(sales, expenses, linkable)} products={products} colorFor={colorFor} />
-          </Card>
-        ))}
+      {!edit && soldDays > 1 && (
+        <div class="view-switch" role="group" aria-label={t('products')} data-swap={swap} onAnimationEnd={() => setSwap(undefined)}>
+          {[false, true].map((value) => (
+            <button type="button" class="view-switch-btn" aria-pressed={combined === value} onClick={() => chooseView(value)}>
+              {t(value ? 'view.combined' : 'view.byDay')}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!edit && sales.length > 0 && (
+        <div class={switched.current ? 'stack view-swap is-switched' : 'stack view-swap'} data-swap={swap}>
+          {!combined && soldDays > 1 ? (
+            days.map((day, index) => day.length > 0 && (
+              // Only the latest day with sales starts open; `open` is set again only if that changes, so taps stick.
+              <details class="card products-day" key={index} open={index === lastSoldDay}>
+                <summary class="products-day-head">
+                  <h2 class="card-title">{days.length > 1 ? t('products.day', { n: index + 1 }) : t('products')}</h2>
+                  <span class="products-day-meta">{tn('count.sale', day.length)}</span>
+                  <Icon name="chevron-right" />
+                </summary>
+                <ProductBreakdown sales={day} products={products} colorFor={colorFor} />
+              </details>
+            ))
+          ) : (
+            <Card title={t('products')}>
+              <ProductBreakdown sales={withLinkedCosts(sales, expenses, linkable)} products={products} colorFor={colorFor} />
+            </Card>
+          )}
+        </div>
+      )}
 
       {live && (
         <div class="event-actions">

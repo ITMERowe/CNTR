@@ -26,7 +26,7 @@ function scan() {
   }
   const rgb = (c) => (c.match(/[\d.]+/g) || []).map(Number);
   const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
-  const background = (e) => { for (let n = e; n; n = n.parentElement) { const c = rgb(getComputedStyle(n).backgroundColor); if (c.length === 3 || c[3] > 0.9) return c.slice(0, 3); } return [30, 30, 30]; };
+  const background = (e) => { if (e.matches('.view-switch-btn[aria-pressed="true"]')) return rgb(getComputedStyle(e.parentElement, '::before').backgroundColor).slice(0, 3); /* its pill is the parent's ::before */ for (let n = e; n; n = n.parentElement) { const c = rgb(getComputedStyle(n).backgroundColor); if (c.length === 3 || c[3] > 0.9) return c.slice(0, 3); } return [30, 30, 30]; };
   for (const e of document.querySelectorAll('body *')) {
     if (!visible(e) || ![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
     const s = getComputedStyle(e);
@@ -221,6 +221,44 @@ for (const [width, height] of [[360, 640], [412, 915]]) {
   const rows = await page.evaluate(() => [...document.querySelectorAll('#productHistoryList :is(.product-item, .product-group-title)')].map((n) => Math.round(n.getBoundingClientRect().height)));
   // 64px: name + one meta line; a narrow phone may wrap the payment methods to a 2nd meta line.
   check(`${width}x${height}: Products rows are 64-${width > 360 ? 72 : 88}px (a product, a variant or a group header)`, rows.length > 5 && rows.every((h) => h >= 64 && h <= (width > 360 ? 72 : 88)), rows);
+  await page.close();
+}
+
+// Sliding tab pill (a ::before on .tabbar): its centre sits under the active tab's icon, on every tab and width.
+for (const [width, height] of [[320, 640], [412, 892], [892, 412]]) {
+  const page = await browser.newPage({ viewport: { width, height } });
+  await page.goto(URL);
+  await sleep(300);
+  const offsets = [];
+  for (const tab of ['eventScreen', 'productHistoryScreen', 'salesScreen', 'historyScreen', 'settingsScreen']) {
+    await page.click(`.tabbar .tab[data-tab="${tab}"]`);
+    await sleep(450);
+    offsets.push(await page.evaluate((id) => {
+      const bar = document.querySelector('.tabbar');
+      const pill = getComputedStyle(bar, '::before');
+      const shift = new DOMMatrix(pill.transform === 'none' ? undefined : pill.transform).m41;
+      const centre = bar.getBoundingClientRect().left + parseFloat(pill.left) + shift + parseFloat(pill.width) / 2;
+      const icon = document.querySelector(`.tabbar .tab[data-tab="${id}"] .icon`).getBoundingClientRect();
+      return Math.round(centre - (icon.left + icon.width / 2));
+    }, tab));
+  }
+  check(`${width}x${height}: the tab pill is centred under the active tab's icon on all five tabs`, offsets.every((d) => Math.abs(d) <= 1), offsets);
+  await page.close();
+}
+
+// A long product name on the report ellipsizes; its revenue stays on screen at 320px (council audit, 2026-11-03).
+{
+  const page = await browser.newPage({ viewport: { width: 320, height: 640 } });
+  await page.goto(URL);
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.cntrProducts = JSON.stringify([{ name: 'Figure Skala 1/7 Kobo Kanaeru Pre-order Batch 2 Limited', price: 850000, cost: 0, color: '#4f6eff' }]);
+  });
+  await page.reload(); await sleep(600);
+  await page.click('.tile [data-action="plus"][data-payment="Cash"]');
+  await page.click('.tabbar .tab[data-tab="eventScreen"]'); await sleep(600);
+  const right = await page.evaluate(() => Math.round(document.querySelector('#eventScreen .rank-revenue').getBoundingClientRect().right));
+  check('320px: a long product name keeps its report revenue on screen', right <= 320, { right });
   await page.close();
 }
 

@@ -27,9 +27,9 @@ let paymentPickOrder: string[] = DEFAULT_PAYMENTS;
 let openedForm = '';
 
 const currency = () => loadSettings().currency;
-const money = (value: number) => (value ? formatInputNumber(String(value), currency()) : '');
+const money = (value: number) => (value ? formatInputNumber(value, currency()) : '');
 /** A variant cell's number without the currency symbol, which its column header already shows. */
-const bare = (raw: string) => formatInputNumber(raw, currency()).replace(/^\S+ /, '');
+const bare = (raw: string | number) => formatInputNumber(raw, currency()).replace(/^\S+ /, '');
 /** Every product once, active ones first (in Sell order), then hidden ones. */
 const allProducts = () => [...new Map([...state.products, ...state.productHistory].map((product) => [product.id ?? product.name, product])).values()];
 
@@ -87,7 +87,7 @@ function variantRow(row: VariantRow = { variant: '', price: 0, cost: 0 }) {
   const input = (value: string, label: string, numeric: boolean, placeholder: string) => {
     const field = Object.assign(document.createElement('input'), { className: 'input', type: 'text', value, autocomplete: 'off', maxLength: 1000 });
     field.setAttribute('aria-label', label);
-    if (numeric) Object.assign(field, { inputMode: 'numeric', pattern: '[0-9]*' });
+    if (numeric) field.inputMode = 'decimal';
     field.placeholder = placeholder;
     return field;
   };
@@ -107,8 +107,8 @@ function variantRow(row: VariantRow = { variant: '', price: 0, cost: 0 }) {
   wireHold(remove, removeRow, askRemove);
   div.append(
     input(row.variant, t('product.variant'), false, t('product.variantPlaceholder')),
-    input(bare(String(row.price || '')), el.variantPriceLabel.textContent ?? '', true, t('product.freePlaceholder')),
-    input(bare(String(row.cost || '')), el.variantCostLabel.textContent ?? '', true, '0'),
+    input(bare(row.price || ''), el.variantPriceLabel.textContent ?? '', true, t('product.freePlaceholder')),
+    input(bare(row.cost || ''), el.variantCostLabel.textContent ?? '', true, '0'),
     remove,
   );
   return div;
@@ -369,7 +369,7 @@ export function initProductEditor(changed: () => void) {
   el.editGroupToggle.addEventListener('change', onGroupToggle);
   el.editVariants.addEventListener('input', (event) => {
     const input = event.target as HTMLInputElement;
-    if (input.inputMode === 'numeric') input.value = bare(input.value);
+    if (input.inputMode === 'decimal') input.value = bare(input.value);
     input.removeAttribute('aria-invalid');
     updatePreview();
   });

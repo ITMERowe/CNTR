@@ -65,7 +65,6 @@ export const el = {
   // Settings and its sub-screens
   currencySelect: byId<HTMLSelectElement>('currencySelect'),
   compactMoneyToggle: byId<HTMLInputElement>('compactMoneyToggle'),
-  productsPerDayToggle: byId<HTMLInputElement>('productsPerDayToggle'),
   newDayToggle: byId<HTMLInputElement>('newDayToggle'),
   soundToggle: byId<HTMLInputElement>('soundToggle'),
   themeToggle: byId<HTMLInputElement>('themeToggle'),
@@ -120,11 +119,12 @@ export const el = {
 
 let toastTimer: number | undefined;
 
-export function showToast(message: string) {
+/** Long enough to read; a per-sale toast passes a shorter time so a rush doesn't pile them up. */
+export function showToast(message: string, ms = 3000) {
   el.toast.textContent = message;
   el.toast.classList.add('show');
   window.clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => el.toast.classList.remove('show'), 900);
+  toastTimer = window.setTimeout(() => el.toast.classList.remove('show'), ms);
 }
 
 let sheetReturnFocus: HTMLElement | null = null;
@@ -295,6 +295,8 @@ const PARENT_TAB: Record<string, string> = {
 
 // The entrance animation plays once per screen, not on every tab switch back to it.
 const enteredScreens = new Set<string>([document.querySelector('.screen.active')?.id ?? 'salesScreen']);
+// Screens that show new content each time they open (another event, another product): their entrances play every time.
+const OPENS_FRESH = new Set(['pastEventScreen', 'compareEventScreen', 'productEditScreen']);
 
 let productListOrder: string[] | null = null;
 
@@ -310,14 +312,30 @@ export function openScreen(screenId: string) {
     document.querySelector('.content')?.scrollTo(0, 0);
     window.scrollTo(0, 0);
   }
+  // A screen once left plays no item entrances again: display:none → block would replay them on every return (style.css .entered).
+  const leaving = document.querySelector('.screen.active');
+  if (leaving && leaving.id !== screenId && !OPENS_FRESH.has(leaving.id)) leaving.classList.add('entered');
   document.querySelectorAll<HTMLElement>('.screen').forEach((screen) => screen.classList.toggle('active', screen.id === screenId));
   const enteringScreen = document.getElementById(screenId);
   if (enteringScreen) enteringScreen.style.animation = enteredScreens.has(screenId) ? 'none' : '';
-  enteredScreens.add(screenId);
+  // Focus was on something now hidden (Back, a row): keyboard and screen readers carry on from the new screen.
+  if (enteringScreen && document.activeElement?.closest('.screen:not(.active)')) enteringScreen.focus({ preventScroll: true });
+  if (!OPENS_FRESH.has(screenId)) enteredScreens.add(screenId);
   productListOrder = screenId === 'productHistoryScreen' ? state.productHistory.map((product) => product.name) : null;
 
   const tab = document.querySelector(`.tabbar .tab[data-tab="${screenId}"]`) ? screenId : PARENT_TAB[screenId];
-  if (tab) document.querySelectorAll('.tabbar .tab').forEach((button) => button.classList.toggle('active', button.getAttribute('data-tab') === tab));
+  if (tab) {
+    // Which way the tab pill travels, so its leading edge moves first (style.css, squash and stretch).
+    const tabs = [...document.querySelectorAll<HTMLElement>('.tabbar .tab')];
+    const from = tabs.findIndex((button) => button.classList.contains('active'));
+    const to = tabs.findIndex((button) => button.getAttribute('data-tab') === tab);
+    document.querySelector<HTMLElement>('.tabbar')!.dataset.dir = from < 0 || from === to ? '' : to > from ? 'right' : 'left';
+    tabs.forEach((button, i) => {
+      button.classList.toggle('active', i === to);
+      if (i === to) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
+  }
   el.stats.style.display = screenId === 'salesScreen' ? '' : 'none';
   updateHeaderActions(screenId);
 }

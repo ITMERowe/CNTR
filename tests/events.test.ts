@@ -145,3 +145,8 @@ test('linked costs: a product hidden then re-added under the same name is covere
   const covered = withLinkedCosts([before, after], [{ id: 'x', name: 'Print', amount: 1, productIds: ['p-new'] }], products);
   assert.deepEqual(covered.map((s) => s.cost), [0, 0]);
 });
+
+test('snapshotProducts keeps the group, so an ended event can still total by group (Highlights)', () => {
+  const [poster] = snapshotProducts([sale('Poster A3', T1)], [{ name: 'Poster A3', price: 1, cost: 1, color: '#123456', group: 'Poster' }]);
+  assert.equal(poster.group, 'Poster');
+});

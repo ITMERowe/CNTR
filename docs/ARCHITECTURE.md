@@ -19,7 +19,9 @@ src/
   i18n.ts              English + Bahasa Indonesia dictionaries, t() / tn(), locale(), first-launch language, data-i18n markup
   groups.ts            Product groups: report names ("Poster A3"), Sell tiles per group, shared colour/payments, the group form's save plan
   reports.ts           Pure report maths: totals, product breakdowns, compare rows
-  formatters.ts        Money formatting/parsing, colour helpers
+  summary.ts           Ended event's highlights maths (break-even gap, best day, top group, biggest expense, busiest clock half-hour); shown as the Highlights card (ReportParts.tsx) on ended events
+  formatters.ts        `fmt()` (money in the user's settings), colour helpers; re-exports money.ts
+  money.ts             Money formatting and typed amounts per currency (pure: cents in all but IDR/JPY)
   data.ts              Default products, product-history helper, UUIDs
   types.ts             Shared types
   ui/
@@ -27,13 +29,15 @@ src/
     productEditor.ts   Add / edit / remove product screen (colour field = live tile preview); Group switch = a whole group with its variant rows
     colorPicker.ts     HSV colour picker
     icons.ts           Bundled Lucide SVG icons; hydrateIcons() fills <i data-icon> in index.html
+    tileDrag.ts        Hold a Sell tile, then drag to reorder
+    masonry.ts         Sell on 2-3 columns: each tile in the shortest column (placeColumns is pure, unit-tested)
   views/               Preact components
     SalesGrid.tsx      Sell tab tiles (counters, undo, haptic-triggering callbacks)
     SalesHero.tsx      Revenue total at the top of the Sell tab (count-up animation)
     EventScreen.tsx    Event tab (live) and a past event in History (read-only or editing)
     Lists.tsx          Recent sales, Products, past-event list, compare checklist
     Compare.tsx        Compare sales / compare events
-    ReportParts.tsx    Shared pieces: hero figure, KPI tiles, payment split, hourly chart, product rows, empty states
+    ReportParts.tsx    Shared pieces: hero figure, KPI ledger rows, payment-mix donut, hourly chart, product rows, empty states
     Icon.tsx           SVG icon component
 ```
 
@@ -73,7 +77,7 @@ Data is a set of JSON values under these keys. On the phone they live in an SQLi
 | `cntrEventCosts` | The live event's expenses |
 | `cntrLiveEvent` | The live event's name, start and day breaks (`LiveEventMeta`); created on first launch from the existing sales |
 | `cntrEvents` | Past events (`PastEvent[]`), oldest first |
-| `cntrSettings` | Currency, compact money, products per day, new day on date change, sort by best sellers, compact tiles, `collapsedGroups` (folded Sell groups, lowercased), sound effects, `theme` (light/dark, resolved from the phone once), `language` (en/id; saved on first launch: `id` only for a fresh install on an Indonesian phone) |
+| `cntrSettings` | Currency, compact money, new day on date change, sort by best sellers, compact tiles, `collapsedGroups` (folded Sell groups, lowercased), sound effects, `theme` (light/dark, resolved from the phone once), `language` (en/id; saved on first launch: `id` only for a fresh install on an Indonesian phone) |
 
 - List loaders only accept arrays, so corrupt data falls back to empty instead of crashing startup.
 - Settings are cached in memory (`fmt()` runs for every amount on screen); `saveSettings()` invalidates the cache.
@@ -83,6 +87,7 @@ Data is a set of JSON values under these keys. On the phone they live in an SQLi
 - **Reads are synchronous** from an in-memory copy loaded by `initStorage()` before the app starts (`main.ts` `start()`, then `initState()`). **Writes** update that copy at once and are written to the store in order, a few milliseconds later. A failed write (e.g. disk full) is kept, retried every 5 s, and shown in a warning banner until it succeeds; it is never dropped.
 - **Migration** (`migrate.ts`, first launch on the phone): copy the legacy `localStorage` keys into SQLite, read them back and compare, then set `cntrMeta.migratedFromLocalStorage`. The legacy copy is never changed or deleted. Rerunning is harmless: values are written by key, and once the flag is set it does nothing. If the database cannot be opened before migration ever succeeded, the app keeps running on `localStorage` (still the only, current copy) with a warning and retries next launch. Once the database has been used (`cntrMeta.usingDatabase` in `localStorage`), a database failure shows a "Try again" screen instead, because the old copy is stale.
 - **Backup** (`backup.ts`): `{ app: "CNTR", format: 1, exportedAt, data: { <key>: <parsed value> } }`. `parseBackup()` validates every record before anything changes and rejects the whole file on any problem. Restore saves a safety copy (`Documents/CNTR/cntr-before-restore-*.json`, else app-private storage), writes all keys in one SQLite transaction (keys missing from the backup are deleted), then reloads.
+- `cntrMeta.damaged.<key>`: a stored value that could not be read is copied here once, before the next save can overwrite it, and the storage alert asks the seller to restore a backup. Not part of backups.
 - `cntrMeta.lastBackup` (when the last backup was exported) is not part of backups.
 - **Automatic backups** (`main.ts` `withAutoBackup()`, `files.ts` `saveAutoBackup()`): before ending an event, saving an edit to a past event or deleting one, a full backup is written to `Documents/CNTR/auto/cntr-auto-<timestamp>.json` (app-private storage if Documents is refused); the newest 20 are kept. If it fails before a destructive action, the user is asked before going ahead. Native only; the browser build writes nothing.
 - **Tutorial** (`tutorial.ts`, `storage.ts` `startTutorialData()` / `endTutorialData()`): offered once on an empty first launch (`cntrMeta.tutorialOffered`), and from Settings → Show tutorial. Starting writes, in one all-or-nothing step, the practice data over the data keys and a copy of the real data under `cntrMeta.tutorialSavedData` (not a data key, so never in a backup), then reloads with `cntrTourRunning` in `sessionStorage`. Finish or Quit writes the real data back and drops the copy, again in one step. A launch that finds the copy but no `cntrTourRunning` (the app was closed mid-tour) puts the real data back before anything else. While practice data is in place, automatic backups are skipped and Export, CSV and Restore are refused. The tour polls each step's `done()` every 250 ms. It is on rails: a capture-phase guard on `window` swallows taps outside the bubble, the step's target and its `allow` list (and Cancel/close/back buttons inside the target), Escape is swallowed, and `goBack()` does nothing while `tourRunning()`.
@@ -102,7 +107,7 @@ Tiles take the product colour as `--tile`. `needsDarkText()` (`formatters.ts`) g
 
 ## Navigation
 
-`openScreen(id)` in `ui/dom.ts` is the only way to change screens. Besides toggling the `.screen.active` section it highlights the bottom-nav tab (sub-screens map to their parent via `PARENT_TAB`), shows the revenue hero only on the Sell screen, and sets the header buttons for that screen. Add new screens to `index.html` as a `<section class="screen">` and, if they are a sub-screen, to `PARENT_TAB`.
+`openScreen(id)` in `ui/dom.ts` is the only way to change screens. Besides toggling the `.screen.active` section it highlights the bottom-nav tab and sets its `aria-current` (sub-screens map to their parent via `PARENT_TAB`), moves focus to the new screen when it was on something now hidden (screens have `tabindex="-1"`), shows the revenue hero only on the Sell screen, and sets the header buttons for that screen. Add new screens to `index.html` as a `<section class="screen">` and, if they are a sub-screen, to `PARENT_TAB`.
 
 **Android back** (`@capacitor/app` `backButton`, native only) runs `goBack()` in `main.ts`: it closes the colour picker or an open sheet (by clicking its `…CloseBtn`), else cancels an edit of a past event, else clicks the active screen's visible `.back-btn`, else opens Sell, else minimises the app. A new sub-screen therefore needs a `.back-btn` for back to work there.
 
@@ -113,7 +118,7 @@ Tiles take the product colour as `--tile`. `needsDarkText()` (`formatters.ts`) g
 - **Confirm destructive actions** with `openConfirmModal()` (End day, End event, delete an event, remove a product).
 - **Styling** uses the tokens at the top of `src/style.css`: surfaces (`--bg`, `--surface-1..3`, VS Code dark palette), text (`--text`, `--text-2`, `--text-3`, all >= 4.5:1), meaning (`--positive`, `--negative`, `--cash`, `--qris`), radii, a 4/8px spacing scale, a 5-step type scale with 2 weights, and motion. Never hard-code a colour or a size in a component. Every token and component rule: [`DESIGN.md`](DESIGN.md).
 - **Product colours** are shown exactly as chosen; tile text and icons are white, or `#1e1e1e` where white falls below 2.6:1 (see Tile colours).
-- **Motion** uses only the motion tokens (`--dur-tap` 120ms, `--dur-1` 200ms, `--dur-2` 280ms, `--dur-3` 420ms; `--ease-out` to enter, `--ease-in` to exit) and animates only `transform`/`opacity`. `prefers-reduced-motion` turns it all off.
+- **Motion** uses only the motion tokens (`--dur-tap` 120ms, `--dur-1` 200ms, `--dur-2` 280ms, `--dur-3` 420ms; `--dur-liquid` 340ms for the liquid pills; `--ease-out` to enter and exit, `--ease-liquid` for the liquid pills) and animates only `transform`/`opacity` (the liquid pills move their edges, folds their height). `prefers-reduced-motion` turns movement off and keeps the fades of sheets, toasts and the colour picker.
 - **Charts** follow the dataviz rules: thin bars with 4px rounded data-ends, a hairline baseline, values in text colour (never series colour), a written fallback instead of a one-bar chart. `--cash`/`--qris` were validated as a colour-blind-safe pair on the card surface; re-validate if you change either or the surface.
 - **Icons**: add new ones to `ICONS` in `ui/icons.ts` (Lucide), never an icon font or emoji.
 - Buttons and menu items use sentence case; user-entered names are shown exactly as typed.
@@ -129,7 +134,7 @@ Platform: Capacitor 8, Android `compileSdk`/`targetSdk` 36, `minSdk` 24 (Android
 
 ## Themes and languages
 
-- **Themes**: `:root` holds the Dark+ tokens; `:root[data-theme="light"]` overrides them with Light+ (`--bg #ffffff`, `--surface-1 #f3f3f3`, `--text #1e1e1e`, `--positive #116329`, `--negative #c72c1c`, `--on-negative`, `--bar-bg`). The phone's setting (`matchMedia`) only picks the first theme on a fresh install; after that it is the user's Dark theme switch. `applyTheme()` also updates `<meta name="theme-color">`. Tile colours do not change with the theme.
+- **Themes**: `:root` holds the Dark+ tokens; `:root[data-theme="light"]` overrides them with Light+ (`--bg #ffffff`, `--surface-1 #f3f3f3`, `--text #1e1e1e`, `--positive #116329`, `--negative #c72c1c`, `--on-negative`, `--bar-bg`). The phone's setting (`matchMedia`) only picks the first theme on a fresh install; after that it is the user's Dark theme switch. `applyTheme()` also updates `<meta name="theme-color">`; the Settings switch goes through `revealTheme()`, which wraps it in a View Transition (the theme applies a frame later). Tile colours do not change with the theme.
 - **Languages**: every user-facing string is a key in `src/i18n.ts` (`en`, and `id: Record<Key, string>` so a missing translation fails the build). Static markup uses `data-i18n` (text) and `data-i18n-aria` / `-title` / `-placeholder`; `translateStatic()` fills them on start and on a language change, then `render()` redraws the views. Counts use `tn()` with English `"one|other"` forms. Never translated: payment method names, CSV headers, user-typed text. `tests/e2e/i18n.test.mjs` walks every screen in Indonesian and fails on leftover English words.
 
 ## Requirements
@@ -145,6 +150,6 @@ What every change must keep true (the product reasons are in `PRODUCT.md`):
 
 ## Testing and release
 
-- `npx tsc --noEmit` and `npm test` (Node unit tests in `tests/*.test.ts`: event maths, groups, storage and backups, payments, i18n, config).
+- `npx tsc --noEmit` and `npm test` (Node unit tests in `tests/*.test.ts`: event maths, report maths, groups, storage and backups, payments, i18n, config).
 - `npm run build`, then `npm run test:e2e`: browser suites in `tests/e2e/` against `vite preview` (port 4320, or `CNTR_URL`), including a fake Android bridge with an in-memory SQLite for data-safety. A new screen, flow or rule gets a check there.
 - CI (`.github/workflows/build-apk.yml`) runs the browser tests, then builds a signed APK on every push. Branches: `dev` (daily work) → `main` (tested) → `playstore` (releases only: a push there creates the GitHub Release and uploads to Google Play). Release notes come from the version's section in `CHANGELOG.md`.

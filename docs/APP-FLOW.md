@@ -38,12 +38,12 @@ How a seller moves through CNTR, screen by screen. Code-level navigation (`openS
 1. There is always exactly one live event; its name defaults to "Event {date}".
 2. **Expenses**: Event tab → +. Optional **For products** switch links the expense to products: those products then count no per-item cost in this event. An expense's trash is held to delete, like product Delete (keyboard / screen reader: "Delete expense?").
 3. **End day** (confirm): closes the day, writes one replacing day backup. Or automatically with "New day when the date changes".
-4. **End event** (name it; "No expenses recorded. Are you sure?" when there are none): moves it to History, writes a timestamped automatic backup (newest 20 kept), starts a new live event.
+4. **End event** (name it; "No expenses recorded. Are you sure?" when there are none): moves it to History, writes a timestamped automatic backup (newest 20 kept), starts a new live event, and opens the ended event's report (Highlights first); its Back goes to the new live event.
 5. "Still at {name}?" asks when the last sale is over 3 days old.
 
 ## History
 
-1. Past event → its report (same layout as the Event tab). Edit → change counts, expenses, name; leaving a changed edit asks Keep editing / Discard. "Delete event" (red, under the report) asks "Delete event?" (a dialog, not a hold: it drops a whole event).
+1. Past event → its report (same layout as the Event tab), opening with **Highlights**: up to 5 plain sentences worked out from its numbers (result and break-even gap, best day, top group, biggest expense, busiest half-hour). With 2+ days of sales a **By day / Combined** switch sits above the Products: ended events open Combined, the live Event tab By day; the choice isn't saved (it replaced the old Settings → Products per day). Edit → change counts, expenses, name; leaving a changed edit asks Keep editing / Discard. "Delete event" (red, under the report) asks "Delete event?" (a dialog, not a hold: it drops a whole event).
 2. Compare: pick 2 events; the older is A, B shows the change.
 
 ## Data safety

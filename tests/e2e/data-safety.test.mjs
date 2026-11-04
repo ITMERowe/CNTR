@@ -80,6 +80,13 @@ async function restoreWith(page, buffer, confirm = true) {
   check('A6 restore asks first and states what will be replaced', m.title === 'Restore backup?' && /3 current sales/.test(m.text), m.text.slice(0, 90));
   check('A7 after restore the app shows the backup (3 sales, not 5)', (await heroSales(page)) === '3', `hero ${await heroSales(page)}`);
 
+  // A backup from before events and languages: the app builds a live event from its sales and keeps the current language.
+  const old = JSON.parse(backupText); delete old.data.cntrLiveEvent; delete old.data.cntrSettings.language;
+  await toSettings(page);
+  await restoreWith(page, JSON.stringify(old));
+  const oldRestored = await page.evaluate(() => ({ language: JSON.parse(localStorage.cntrSettings).language, live: !!localStorage.cntrLiveEvent }));
+  check('A7b a backup with no language or live event restores: sales kept, language kept, live event made', (await heroSales(page)) === '3' && oldRestored.language === 'en' && oldRestored.live, oldRestored);
+
   // Save failure: storage full. The change stays in memory, a warning shows, and it is written once space frees up.
   await page.evaluate(() => { window.__realSet = Storage.prototype.setItem; Storage.prototype.setItem = function () { throw new DOMException('Quota exceeded', 'QuotaExceededError'); }; });
   await sell(page, 1); await page.waitForTimeout(300);
@@ -87,8 +94,7 @@ async function restoreWith(page, buffer, confirm = true) {
   check('A8 storage full shows a clear warning', Boolean(alertShown) && /could not be saved/.test(alertShown), String(alertShown).slice(0, 80));
   check('A9 the unsaved sale is still on screen', (await heroSales(page)) === '4');
   await page.evaluate(() => { Storage.prototype.setItem = window.__realSet; });
-  await page.waitForTimeout(5600);
-  const cleared = await page.evaluate(() => document.querySelector('#storageAlert').hidden);
+  const cleared = await page.waitForFunction(() => document.querySelector('#storageAlert').hidden, null, { timeout: 15000 }).then(() => true, () => false);
   await page.reload(); await page.waitForTimeout(700);
   check('A10 retry saves it once space is back; warning clears', cleared && (await heroSales(page)) === '4', `hero after reload ${await heroSales(page)}`);
 
@@ -426,6 +432,18 @@ function fakeNative() {
   check('B30 Cancel pressed during the save cannot undo or block it: the edit is saved once and the editor closes', after.sales === 2 && !after.editing && after.saveText !== 'Saving…', after);
   check('B32 no page errors around a slow save', errors.length === 0, errors.join(' | '));
   await ctx.close();
+}
+
+// A13b: an unreadable History value is kept aside (not overwritten by the next save) and the seller is told.
+{
+  const page = await b.newPage();
+  await page.goto(URL);
+  await page.evaluate((p) => { localStorage.clear(); localStorage.cntrProducts = p; localStorage.cntrEvents = '[{"id":"e1",'; }, SAMPLE_PRODUCTS);
+  await page.reload(); await page.waitForTimeout(600);
+  await page.click('.tile [data-action="plus"][data-payment="Cash"]'); await page.waitForTimeout(300);
+  const r = await page.evaluate(() => ({ aside: localStorage['cntrMeta.damaged.cntrEvents'], alert: !document.querySelector('#storageAlert').hidden }));
+  check('A13b unreadable stored History is copied aside and the storage alert shows', r.aside === '[{"id":"e1",' && r.alert, r);
+  await page.close();
 }
 
 await b.close();

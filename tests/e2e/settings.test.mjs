@@ -48,11 +48,12 @@ const toggled = await run(page, `${H}
   const before = { checked: document.getElementById('themeToggle').checked, label: document.getElementById('themeLabel').textContent };
   document.getElementById('themeToggle').click();
   await wait(100);
-  return { before, after: { checked: document.getElementById('themeToggle').checked }, stored: stored('cntrSettings').theme };
+  return { before, after: { checked: document.getElementById('themeToggle').checked }, stored: stored('cntrSettings').theme, reveal: document.documentElement.dataset.reveal ?? null, x: parseFloat(document.documentElement.style.getPropertyValue('--reveal-x')), r: parseFloat(document.documentElement.style.getPropertyValue('--reveal-r')) };
 `);
 check('a fresh install resolves the theme from the phone (light) and saves it, not "system"', fresh.theme === 'light' && fresh.stored === 'light', fresh);
 check('once resolved, the app does not keep following the phone', afterPhoneChange === 'light', afterPhoneChange);
 check('the Dark theme switch turns dark on and saves the choice', !toggled.before.checked && toggled.before.label === 'Dark theme' && toggled.after.checked && toggled.stored === 'dark', toggled);
+check('going dark shrinks the light page into the switch, sized to reach the far corner', toggled.reveal === 'shrink' && toggled.x > 0 && toggled.r > toggled.x, toggled);
 
 // Restore the product data cleared above, for the Products tests below.
 await run(page, `
@@ -106,7 +107,7 @@ const list = await run(page, `${H}
   };
 `);
 check('Products: the counter first (no heading of its own), then Hidden with its count', list.counter.join() === 'Gacha,Pin' && list.hidden.join() === 'Old badge' && list.heads.join() === 'Hidden · 1', list);
-check('a row shows price, profit per item and its payment methods', /Rp 5\.000/.test(list.pinText) && /profit Rp 4\.000/.test(list.pinText) && /E-wallet/.test(list.pinText), list.pinText);
+check('a row shows price, profit per item and its payment methods', /Rp\s5\.000/.test(list.pinText) && /profit Rp\s4\.000/.test(list.pinText) && /E-wallet/.test(list.pinText), list.pinText);
 check('no delete buttons on rows; Add product is the + in the page header (no second one at the end)', list.deleteButtons === 0 && list.addButton, list);
 
 // 3. Tapping the switch moves a product between sections; tapping a row opens the editor

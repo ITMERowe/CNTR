@@ -22,6 +22,8 @@
   --text-2: #cccccc;
   --text-3: #9d9d9d;
   --on-ink: #1e1e1e;
+  --accent: #8b93ff; /* indigo (owner, 0.1.2): primary buttons, switches/checkboxes on, the tab pill; never tiles or money */
+  --on-accent: #12143a;
 
   /* Meaning */
   --positive: #4ade80;
@@ -51,13 +53,15 @@
 
   /* Motion: one vocabulary everywhere */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --ease-emphasis: cubic-bezier(0.34, 1.25, 0.64, 1);
   --dur-tap: 120ms;
   --dur-1: 200ms;
   --dur-2: 280ms;
   --dur-3: 420ms;
   --dur-hold: 700ms; /* hold to delete; HOLD_MS in src/ui/dom.ts */
+  /* Spring (duration 0.3s, bounce 0.3) as a curve: overshoots 4.6% and settles; used by the tab pill only. */
+  --ease-liquid: linear(0, 0.051 5%, 0.173 10%, 0.327 15%, 0.485 20%, 0.632 25%, 0.756 30%, 0.856 35%, 0.931 40%, 0.984 45%, 1.018 50%, 1.037 55%, 1.045 60%, 1.046 65%, 1.042 70%, 1.035 75%, 1.028 80%, 1.021 85%, 1.015 90%, 1.009 95%, 1);
+  --dur-liquid: 340ms;
 
   /* Type: one family, 5 sizes, 2 weights, 2 line-heights. The revenue figures are fluid (they shrink long amounts). */
   --fs-xs: 12px; /* labels, captions, meta */
@@ -91,6 +95,8 @@
   --text-2: #3b3b3b;
   --text-3: #616161;
   --on-ink: #ffffff;
+  --accent: #4338ca;
+  --on-accent: #ffffff;
 
   /* Darker greens and reds so money stays readable on white */
   --positive: #116329;
@@ -261,6 +267,11 @@ p {
 .screen.active {
   display: block;
   animation: screen-in var(--dur-2) var(--ease-out);
+}
+
+/* Entrances play on a screen's first visit only: display:none → block would replay them on every tab switch. */
+.screen.entered :is(.tile, .card, .report-hero, .kpi-row, .list-row, .product-item, .product-row, .rank-fill, .group, .variant-row) {
+  animation: none;
 }
 
 .page {
@@ -436,16 +447,17 @@ p {
 
 .icon-btn:active {
   background: var(--surface-2);
-  transform: scale(0.94);
+  transform: scale(0.96);
 }
 
 .icon-btn-solid {
-  background: var(--text);
-  color: var(--on-ink);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .icon-btn-solid:active {
-  background: var(--text-2);
+  background: var(--accent);
+  opacity: 0.85;
 }
 
 .icon-btn-soft {
@@ -530,8 +542,8 @@ p {
 }
 
 .btn-primary {
-  background: var(--text);
-  color: var(--on-ink);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .btn-secondary {
@@ -559,6 +571,12 @@ p {
   align-items: start;
   gap: var(--s2);
   padding: var(--s2) var(--s4) var(--s4);
+}
+
+/* 2-3 columns: src/ui/masonry.ts places each tile in the shortest column on 1px rows (the gap is in its span). */
+.sales-grid.is-masonry {
+  grid-auto-rows: 1px;
+  row-gap: 0;
 }
 
 /* Phone landscape and tablets: more columns, each never narrower than a 360px phone's tile
@@ -637,8 +655,7 @@ p {
 .product-price {
   flex-shrink: 0;
   font-size: var(--fs-sm);
-  font-weight: var(--fw-regular);
-  opacity: 0.78;
+  font-weight: var(--fw-regular); /* full ink: fading it would drop below the 2.6:1 tile rule; size and weight carry the hierarchy */
 }
 
 .tile-edit {
@@ -656,7 +673,7 @@ p {
 
 .tile-edit:active {
   background: var(--ink-soft);
-  transform: scale(0.94);
+  transform: scale(0.96);
 }
 
 .tile-edit::after {
@@ -843,7 +860,7 @@ p {
 }
 
 .pay-undo:active:not(:disabled) {
-  transform: scale(0.9);
+  transform: scale(0.95);
 }
 
 .pay-undo:disabled {
@@ -1032,7 +1049,7 @@ p {
 
 /* Compact tiles (Sell ⋮ menu): no price (a variant keeps it as a caption), and each half is one row (label, count, then −), so more tiles fit. */
 .is-compact .tile {
-  padding: var(--s2);
+  padding: var(--s3); /* owner, 0.1.2: s2 put text too close to the edges */
 }
 
 .is-compact .tile-head {
@@ -1074,7 +1091,7 @@ p {
 /* Compact group: a table. Payment labels once in the header row, then each variant is name | count | count, no price. */
 .is-compact .tile-group-head,
 .is-compact .variant {
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr); /* 1.4 (was 1.5) keeps TRANSFER 8px clear in its cell with the s3 tile padding */
 }
 
 /* The name gets the whole first line (never cut on a 360px phone); the payment labels sit on a slim line below,
@@ -1122,7 +1139,7 @@ p {
 }
 
 .is-compact .variant .variant-meta {
-  gap: 0;
+  gap: 2px; /* name and price touched at 0 */
 }
 
 /* An unsold cell is quiet; a sold one is set heavier and ringed, so the rows with sales stand out at a glance.
@@ -1262,6 +1279,11 @@ p {
   animation-delay: 120ms;
 }
 
+/* A form part a switch just showed. */
+.reveal:not([hidden]) {
+  animation: rise var(--dur-2) var(--ease-out) both;
+}
+
 .card-head {
   display: flex;
   align-items: center;
@@ -1296,31 +1318,16 @@ p {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--s2) 0 var(--s3);
+  padding: 0 0 var(--s1);
   animation: rise var(--dur-3) var(--ease-out) both;
 }
 
+/* The hero's three parts as one ledger card: a row each, label (and hint) left, full amount right.
+   Full-width rows keep long amounts (Rp 4.015.000) whole at 320px, which three side-by-side tiles could not. */
 .kpi-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s3);
-}
-
-.kpi-row-3 {
-  gap: var(--s2);
-}
-
-/* An odd last KPI (Expenses) takes the whole row instead of leaving a hole beside it. */
-.kpi-row > :last-child:nth-child(odd) {
-  grid-column: 1 / -1;
-}
-
-.kpi {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: var(--s3) var(--s4);
+  padding: 0 var(--s4);
   background: var(--surface-1);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
@@ -1328,37 +1335,50 @@ p {
   animation-delay: 40ms;
 }
 
-.kpi-row-3 .kpi {
-  padding: var(--s3);
+.kpi {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.kpi:last-child {
+  border-bottom: 0;
+}
+
+/* Label and hint share a line; on a narrow phone the hint wraps under the label, never the amount. */
+.kpi-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--s2);
 }
 
 .kpi-label {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
-  color: var(--text-3);
+  color: var(--text-2);
 }
 
 .kpi-value {
+  flex: none;
   font-size: var(--fs-lg);
   line-height: var(--lh-tight);
   font-weight: var(--fw-bold);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.kpi-row-3 .kpi-value {
-  font-size: var(--fs-lg);
 }
 
 .kpi-hint {
   font-size: var(--fs-xs);
   color: var(--text-3);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .list {
@@ -1435,6 +1455,9 @@ p {
 /* A long amount on a narrow phone moves the amount and buttons to a 2nd line, instead of squeezing the name to a letter a line. */
 .cost-item {
   flex-wrap: wrap;
+  /* Dense: a one-line expense is one 44px line; with edit buttons the 48px buttons set the height. */
+  min-height: 44px;
+  padding-block: var(--s1);
 }
 
 .cost-item .list-main {
@@ -1766,13 +1789,13 @@ p {
 
 .product-toggle-btn[aria-checked='true'] .switch-track,
 .switch input:checked + .switch-track {
-  background: var(--text);
+  background: var(--accent);
 }
 
 .product-toggle-btn[aria-checked='true'] .switch-track::before,
 .switch input:checked + .switch-track::before {
   transform: translateX(18px);
-  background: var(--on-ink);
+  background: var(--on-accent);
 }
 
 /* ---------- Empty states ---------- */
@@ -1814,58 +1837,77 @@ p {
 
 /* ---------- Report charts (dataviz specs) ---------- */
 
-.split-bar {
+/* Payment mix: an 88px donut with the labelled legend beside it (method, share, amount, sales). */
+.split {
   display: flex;
-  gap: 2px; /* surface gap between segments */
-  height: 12px;
+  align-items: center;
+  gap: var(--s4);
 }
 
-.split-seg {
-  border-radius: 4px;
-  transform-origin: left;
-  animation: grow-x var(--dur-3) var(--ease-out) both;
+.donut {
+  flex: none;
+  width: 88px;
+  height: 88px;
+  transform: rotate(-90deg); /* segments start at 12 o'clock; the card's own rise is the entrance */
 }
 
-.split-seg + .split-seg {
-  animation-delay: 60ms;
+.donut-seg {
+  fill: none;
+  stroke: var(--chip-color, var(--chart-rest));
+  stroke-width: 6; /* about 12px of ring at 88px */
 }
 
-.split-seg,
 .split-item .swatch {
   background: var(--chip-color, var(--chart-rest));
 }
 
 .seg-empty {
-  background: var(--chart-rest);
+  stroke: var(--chart-rest);
 }
 
 .split-legend {
+  flex: 1;
+  min-width: 0;
   display: grid;
   gap: var(--s2);
-  margin-top: var(--s4);
 }
 
+/* Two lines per method: dot, name and share; then the amount and sales count under the name. */
 .split-item {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'dot name share' '. amount amount';
   align-items: center;
-  gap: var(--s2) var(--s3);
+  column-gap: var(--s2);
+}
+
+.split-item .swatch {
+  grid-area: dot;
 }
 
 .split-name {
+  grid-area: name;
   font-weight: var(--fw-bold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .split-share {
-  color: var(--text-3);
-  font-size: var(--fs-xs);
+  grid-area: share;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
 }
 
 .split-amount {
+  grid-area: amount;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--s2);
+  font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
 }
@@ -1887,12 +1929,15 @@ p {
 
 .rank {
   display: grid;
-  gap: var(--s4);
+  grid-template-columns: minmax(0, 1fr); /* a long product name ellipsizes instead of pushing revenue off screen */
+  gap: var(--s3);
 }
 
+/* Two lines: swatch, name, revenue; then units (+ profit when it differs) beside the share bar. */
 .product-row {
   display: grid;
-  gap: 6px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
   animation: rise var(--dur-2) var(--ease-out) both;
   animation-delay: calc(min(var(--i, 0), 8) * 30ms);
 }
@@ -1913,14 +1958,15 @@ p {
 }
 
 .rank-count {
-  font-size: var(--fs-xs);
-  color: var(--text-2);
+  color: var(--text-3);
   font-variant-numeric: tabular-nums;
 }
 
+/* The bar is a fixed 40% column, so bars line up and compare across rows whatever the text beside them. */
 .rank-meta {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40%;
+  align-items: center;
   gap: var(--s3);
   font-size: var(--fs-xs);
   padding-left: 18px;
@@ -1930,13 +1976,21 @@ p {
   font-weight: var(--fw-bold);
 }
 
+/* On a narrow phone the profit moves to its own line as a whole, never split mid-amount. */
+.rank-profit-part {
+  white-space: nowrap;
+}
+
 .rank-revenue {
-  color: var(--text-3);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .rank-track {
+  display: block;
   height: 6px;
-  margin-left: 18px;
   border-radius: var(--r-pill);
   background: var(--surface-2);
   overflow: hidden;
@@ -2410,7 +2464,6 @@ p {
   font-size: var(--fs-sm);
   line-height: var(--lh-tight);
   font-weight: var(--fw-regular);
-  opacity: 0.78;
 }
 
 .color-text {
@@ -2523,14 +2576,29 @@ p {
 }
 
 .color-preset {
+  position: relative;
   aspect-ratio: 1;
   border-radius: var(--r-sm);
   background: var(--preset);
   transition: transform var(--dur-tap) var(--ease-out);
 }
 
+/* 7 across leaves under 44px per swatch on the narrowest phones. */
+@media (max-width: 360px) {
+  .picker-presets {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* The swatch alone can be under 44px: the tap area also covers the gaps around it. */
+.color-preset::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--s2) / -2);
+}
+
 .color-preset:active {
-  transform: scale(0.9);
+  transform: scale(0.95);
 }
 
 /* ---------- Bottom sheets (dialogs) ---------- */
@@ -2545,7 +2613,7 @@ p {
   background: var(--scrim);
   opacity: 0;
   visibility: hidden;
-  transition: opacity var(--dur-1) var(--ease-in), visibility 0s linear var(--dur-1);
+  transition: opacity var(--dur-1) var(--ease-out), visibility 0s linear var(--dur-1);
 }
 
 .sheet-overlay.open {
@@ -2567,7 +2635,7 @@ p {
   border-bottom: 0;
   border-radius: var(--r-lg) var(--r-lg) 0 0;
   transform: translateY(100%);
-  transition: transform var(--dur-1) var(--ease-in);
+  transition: transform var(--dur-1) var(--ease-out);
 }
 
 .sheet::before {
@@ -2691,6 +2759,14 @@ p {
   overflow-wrap: anywhere;
 }
 
+/* ...but a very long one stops at 3 lines, so one event can't fill the list. */
+.event-row .list-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
 .event-row .list-sub {
   flex-wrap: wrap;
   row-gap: 0;
@@ -2707,8 +2783,13 @@ p {
   color: var(--text-3);
 }
 
+/* A past event's dates sit right under its name (the 52px name row already leaves air below the text). */
+.event-name-row:has(+ .event-when) {
+  margin-bottom: 0;
+}
+
 .event-when {
-  margin: calc(var(--s2) * -1) 0 var(--s3);
+  margin: calc(var(--s2) * -1) 0 0;
   font-size: var(--fs-xs);
   color: var(--text-3);
 }
@@ -2784,7 +2865,125 @@ p {
 }
 
 /* Settings → Products per day: each day's Products card collapses */
+/* Report: an ended event's Highlights, a few short sentences; an accent dot marks each. */
+.highlights {
+  display: grid;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Ended reports only, and rare: the sentences land one after another. */
+.highlights li {
+  animation: rise var(--dur-2) var(--ease-out) both;
+  animation-delay: calc(120ms + var(--i, 0) * 60ms);
+  position: relative;
+  overflow-wrap: anywhere;
+  padding-left: var(--s4);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-2);
+}
+
+.highlights li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Report: Products by day or combined (2+ days with sales). Two halves of one pill; the chosen one takes the accent. */
+.view-switch {
+  position: relative;
+  overflow: clip; /* the pill's spring overshoot stays inside the outline */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s1);
+  padding: var(--s1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface-1);
+}
+
+/* The chosen half's pill moves like the tab bar's: the edge facing the new half springs first, the other 70ms later, so it stretches across. */
+.view-switch::before {
+  --edge: var(--dur-2) var(--ease-out);
+  content: '';
+  position: absolute;
+  top: var(--s1);
+  bottom: var(--s1);
+  left: var(--s1);
+  right: calc(50% + var(--s1) / 2);
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  transition: left var(--edge), right var(--edge) 70ms;
+}
+
+.view-switch:has(.view-switch-btn:last-child[aria-pressed='true'])::before {
+  left: calc(50% + var(--s1) / 2);
+  right: var(--s1);
+  transition: right var(--edge), left var(--edge) 70ms;
+}
+
+@supports (transition-timing-function: linear(0, 1)) {
+  .view-switch::before {
+    --edge: var(--dur-liquid) var(--ease-liquid);
+  }
+}
+
+/* The tab pill's squash and swell; one name per direction, so a tap mid-move replays it. */
+.view-switch[data-swap='left']::before { animation: pill-squash-1 var(--dur-liquid) var(--ease-out); }
+.view-switch[data-swap='right']::before { animation: pill-squash-2 var(--dur-liquid) var(--ease-out); }
+
+.view-switch-btn {
+  position: relative;
+  min-height: 44px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--text-2);
+  transition: color var(--dur-tap), transform var(--dur-tap) var(--ease-out);
+}
+
+.view-switch-btn:active {
+  transform: scale(0.97);
+}
+
+/* Darkens once the pill is under it, like the tab icon. */
+.view-switch-btn[aria-pressed='true'] {
+  color: var(--on-accent);
+  transition: color var(--dur-tap) var(--dur-tap), transform var(--dur-tap) var(--ease-out);
+}
+
+/* The Products below slide in from the side the pill moved to, as one block. */
+.view-swap.is-switched :is(.card, .product-row, .rank-fill) {
+  animation: none;
+}
+
+.view-swap[data-swap='left'] { animation: view-in-left var(--dur-2) var(--ease-out); }
+.view-swap[data-swap='right'] { animation: view-in-right var(--dur-2) var(--ease-out); }
+
+@keyframes view-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--s4)));
+  }
+}
+
+@keyframes view-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(var(--s4));
+  }
+}
+
 .products-day-head {
+  transition: margin-bottom var(--dur-2) var(--ease-out);
   display: flex;
   align-items: center;
   gap: var(--s2);
@@ -2818,6 +3017,26 @@ p {
 
 .products-day[open] > .products-day-head {
   margin-bottom: var(--s3);
+}
+
+/* Folds slide open and shut where the WebView supports it (Chromium 131+); older ones snap. */
+@supports selector(::details-content) {
+  :is(.products-day, .product-group) {
+    interpolate-size: allow-keywords;
+  }
+
+  :is(.products-day, .product-group)::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow: clip;
+    overflow-clip-margin: var(--s1);
+    transition: block-size var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out), content-visibility var(--dur-2) allow-discrete;
+  }
+
+  :is(.products-day, .product-group)[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
 }
 
 .products-day[open] > .products-day-head .icon {
@@ -2907,7 +3126,7 @@ p {
 }
 
 .step-btn:active:not(:disabled) {
-  transform: scale(0.92);
+  transform: scale(0.95);
 }
 
 .step-btn:disabled {
@@ -3065,10 +3284,11 @@ body.is-editing-event .content {
   top: 2px;
   width: 6px;
   height: 11px;
-  border: solid var(--on-ink);
+  border: solid var(--on-accent);
   border-width: 0 2.5px 2.5px 0;
-  transform: rotate(45deg) scale(0);
-  transition: transform var(--dur-1) var(--ease-emphasis);
+  opacity: 0;
+  transform: rotate(45deg) scale(0.5);
+  transition: transform var(--dur-1) var(--ease-emphasis), opacity var(--dur-1) var(--ease-out);
 }
 
 .check-row:has(input:checked) {
@@ -3077,11 +3297,12 @@ body.is-editing-event .content {
 }
 
 .check-row input:checked + .check-box {
-  background: var(--text);
-  border-color: var(--text);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .check-row input:checked + .check-box::after {
+  opacity: 1;
   transform: rotate(45deg) scale(1);
 }
 
@@ -3140,32 +3361,63 @@ body.is-editing-event .content {
   transition: color var(--dur-1);
 }
 
-/* Active indicator: a thin line, not a pill. */
-.tab::after {
+/* Active indicator: one accent pill behind the active tab's icon. Liquid squash and stretch: its two edges spring separately,
+   the one facing the new tab first (openScreen sets data-dir), so it stretches across the gap, thins, then catches up.
+   CSS only besides that: :has() picks the column (--i). Reduce-motion makes it jump. */
+.tabbar {
+  container-type: inline-size;
+}
+
+.tabbar::before {
+  --col: calc(100cqw / 5); /* cqw is the bar's content box: padding already left out */
+  --i: 0;
+  --edge: var(--dur-2) var(--ease-out);
   content: '';
   position: absolute;
-  top: 0;
-  left: 50%;
-  width: 28px;
-  height: 2px;
-  margin-left: -14px;
+  top: calc(var(--s1) + 6px);
+  left: calc(var(--s2) + env(safe-area-inset-left) + var(--col) * (var(--i) + 0.5) - 28px);
+  right: calc(100cqw + var(--s2) + env(safe-area-inset-right) - var(--col) * (var(--i) + 0.5) - 28px);
+  height: 32px;
   border-radius: var(--r-pill);
-  background: var(--text);
+  background: var(--accent);
   opacity: 0;
-  transform: scaleX(0.4);
-  transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-emphasis);
+  transition: left var(--edge), right var(--edge), opacity var(--dur-1);
 }
+
+.tabbar[data-dir='right']::before { transition: right var(--edge), left var(--edge) 70ms, opacity var(--dur-1); }
+.tabbar[data-dir='left']::before { transition: left var(--edge), right var(--edge) 70ms, opacity var(--dur-1); }
+
+/* The edges spring where the WebView supports linear(); older ones keep the plain ease-out. */
+@supports (transition-timing-function: linear(0, 1)) {
+  .tabbar::before {
+    --edge: var(--dur-liquid) var(--ease-liquid);
+  }
+}
+
+/* While stretched it thins, then lands with a small swell, over the same time as the edges. One keyframes name per tab, so each change replays it. */
+.tabbar:has(.tab.active)::before { opacity: 1; }
+.tabbar:has(.tab:nth-child(1).active)::before { animation: pill-squash-1 var(--dur-liquid) var(--ease-out); }
+.tabbar:has(.tab:nth-child(2).active)::before { --i: 1; animation: pill-squash-2 var(--dur-liquid) var(--ease-out); }
+.tabbar:has(.tab:nth-child(3).active)::before { --i: 2; animation: pill-squash-3 var(--dur-liquid) var(--ease-out); }
+.tabbar:has(.tab:nth-child(4).active)::before { --i: 3; animation: pill-squash-4 var(--dur-liquid) var(--ease-out); }
+.tabbar:has(.tab:nth-child(5).active)::before { --i: 4; animation: pill-squash-5 var(--dur-liquid) var(--ease-out); }
+
+@keyframes pill-squash-1 { 35% { scale: 1 0.78; } 75% { scale: 1 1.05; } }
+@keyframes pill-squash-2 { 35% { scale: 1 0.78; } 75% { scale: 1 1.05; } }
+@keyframes pill-squash-3 { 35% { scale: 1 0.78; } 75% { scale: 1 1.05; } }
+@keyframes pill-squash-4 { 35% { scale: 1 0.78; } 75% { scale: 1 1.05; } }
+@keyframes pill-squash-5 { 35% { scale: 1 0.78; } 75% { scale: 1 1.05; } }
 
 .tab .icon {
   position: relative;
   width: 22px;
   height: 22px;
   margin-top: var(--s1);
-  transition: transform var(--dur-tap) var(--ease-out);
+  transition: transform var(--dur-tap) var(--ease-out), color var(--dur-1);
 }
 
 .tab:active .icon {
-  transform: scale(0.88);
+  transform: scale(0.95);
 }
 
 .tab-label {
@@ -3178,32 +3430,24 @@ body.is-editing-event .content {
   color: var(--text);
 }
 
-.tab.active::after {
-  opacity: 1;
-  transform: none;
+.tab.active .icon {
+  color: var(--on-accent);
+  /* Turns dark only once the pill is under it (it was dark on the bare bar mid-slide). */
+  transition: transform var(--dur-tap) var(--ease-out), color var(--dur-tap) 200ms;
 }
 
-/* Sell sits in the middle, as the main action: its own pill is always filled, with a bigger icon
-   (a deliberate exception to "no pill" above, since prominence is the whole point of this one tab).
-   Only the icon sits on the filled pill, so only it takes the ink/on-ink pair; the label stays on the bar itself. */
-.tab.tab-primary::before {
-  content: '';
-  position: absolute;
-  top: 8px;
-  width: 56px;
-  height: 30px;
-  border-radius: var(--r-pill);
-  background: var(--text);
-}
-
+/* Sell sits in the middle, as the main action: a bigger icon (it no longer has its own pill). */
 .tab.tab-primary .icon {
   width: 26px;
   height: 26px;
   margin-top: 2px;
-  color: var(--on-ink);
 }
 
 /* ---------- Toast ---------- */
+
+.screen:focus {
+  outline: none; /* focused from code after Back, not a control */
+}
 
 .toast {
   position: absolute;
@@ -3224,13 +3468,13 @@ body.is-editing-event .content {
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, 12px) scale(0.98);
-  transition: opacity var(--dur-1) var(--ease-in), transform var(--dur-1) var(--ease-in);
+  transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
 }
 
 .toast.show {
   opacity: 1;
   transform: translate(-50%, 0);
-  transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-emphasis);
+  transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); /* shown on every sale: no overshoot */
 }
 
 /* ---------- Motion ---------- */
@@ -3263,15 +3507,43 @@ body.is-editing-event .content {
   }
 }
 
-@keyframes grow-x {
+/* Dark and light swap as a circle centred on the switch (theme.ts sets --reveal-*): the light page is always the circle. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+:root[data-reveal='grow']::view-transition-new(root) {
+  animation: theme-grow var(--dur-3) var(--ease-out);
+}
+
+:root[data-reveal='shrink']::view-transition-old(root) {
+  z-index: 1;
+  animation: theme-shrink var(--dur-3) var(--ease-out) both;
+}
+
+@keyframes theme-grow {
   from {
-    transform: scaleX(0);
+    clip-path: circle(0 at var(--reveal-x) var(--reveal-y));
+  }
+  to {
+    clip-path: circle(var(--reveal-r) at var(--reveal-x) var(--reveal-y));
   }
 }
 
-@keyframes grow-y {
+@keyframes theme-shrink {
   from {
-    transform: scaleY(0);
+    clip-path: circle(var(--reveal-r) at var(--reveal-x) var(--reveal-y));
+  }
+  to {
+    clip-path: circle(0 at var(--reveal-x) var(--reveal-y));
+  }
+}
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
   }
 }
 
@@ -3282,6 +3554,30 @@ body.is-editing-event .content {
     animation-duration: 1ms !important;
     animation-delay: 0ms !important;
     transition-duration: 1ms !important;
+  }
+
+  /* Gentler, not zero: things still fade in and out; only the movement goes (no transform transition, so it jumps). */
+  .sheet-overlay,
+  .color-picker {
+    transition: opacity var(--dur-1) var(--ease-out), visibility 0s linear var(--dur-1) !important;
+  }
+
+  .sheet-overlay.open,
+  .color-picker.open {
+    transition: opacity var(--dur-1) var(--ease-out), visibility 0s !important;
+  }
+
+  .toast,
+  .toast.show {
+    transition: opacity var(--dur-1) var(--ease-out) !important;
+  }
+
+  /* The global rule leaves transition delays: without this the pill sits stretched for 70ms and the icon stays light for 200ms. */
+  .tabbar::before,
+  .tab.active .icon,
+  .view-switch::before,
+  .view-switch-btn {
+    transition-delay: 0s !important;
   }
 }
 
@@ -3305,10 +3601,6 @@ body.is-editing-event .content {
 
   .payment-value {
     font-size: 24px;
-  }
-
-  .kpi-row-3 .kpi-value {
-    font-size: var(--fs-md);
   }
 }
 
@@ -3370,7 +3662,7 @@ body.is-editing-event .content {
 }
 
 .tour-count {
-  color: var(--text-3);
+  color: var(--text-2);
   font-size: var(--fs-xs);
 }
 

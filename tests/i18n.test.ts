@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
 import { en, id, initialLanguage, locale, setLanguage, t } from '../src/i18n.ts';
 
 test('a fresh install follows an Indonesian phone; everything else starts in English', () => {
@@ -29,4 +30,11 @@ test('t() fills placeholders and follows the language; locale() follows too', ()
   assert.equal(t('event.defaultName', { date: '1 Nov 2026' }), 'Acara 1 Nov 2026');
   assert.equal(locale(), 'id-ID');
   setLanguage('en');
+});
+
+test('every data-i18n key in index.html has a text', () => {
+  const html = readFileSync('index.html', 'utf8');
+  const keys = [...html.matchAll(/data-i18n(?:-[a-z]+)?="([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(keys.length > 20);
+  assert.deepEqual(keys.filter((key) => !(key in en)), []);
 });

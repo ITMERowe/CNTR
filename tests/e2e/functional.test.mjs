@@ -59,7 +59,7 @@ const exp2 = await run(page, `
   await new Promise((r) => setTimeout(r, 30)); return { before, afterEdit, asked, askText, left: JSON.parse(localStorage.cntrEventCosts).length };
 `);
 check('edit expense prefills and saves', exp2.before === 'Booth' && exp2.afterEdit === 'Booth fee', JSON.stringify(exp2));
-check('deleting an expense from the keyboard / a screen reader (a click with no press) asks first, naming it and its amount', exp2.asked && exp2.askText === 'Delete Booth fee (Rp 150.000)?', JSON.stringify(exp2));
+check('deleting an expense from the keyboard / a screen reader (a click with no press) asks first, naming it and its amount', exp2.asked && exp2.askText === 'Delete Booth fee (Rp\u00a0150.000)?', JSON.stringify(exp2));
 check('delete expense', exp2.left === 0);
 
 // 3b. Hold to delete, with a real pointer: a tap only hints, sliding off cancels, holding ~700ms deletes (no dialog).
@@ -212,9 +212,9 @@ await sleep(200);
 const compact = await page.evaluate(() => ({
   big: document.querySelector('.tile[data-product="Big"] .product-price').textContent,
   almost: document.querySelector('.tile[data-product="Almost"] .product-price').textContent,
-  revenue: document.querySelector('#stats .hero-figure')?.getAttribute('aria-label'),
+  revenue: document.querySelector('#stats .sr-only')?.textContent,
 }));
-check('compact money: 999.500 shows "Rp 1M" (tile and Sell revenue), 999.499 shows "Rp 999K"', compact.big === 'Rp 1M' && compact.almost === 'Rp 999K' && compact.revenue === 'Rp 1M', compact);
+check('compact money: 999.500 shows "Rp 1M" (tile and Sell revenue), 999.499 shows "Rp 999K"', compact.big === 'Rp\u00a01M' && compact.almost === 'Rp\u00a0999K' && compact.revenue === 'Revenue Rp\u00a01M', compact);
 await page.click('.tabbar .tab[data-tab="settingsScreen"]');
 await page.click('label[for="compactMoneyToggle"]');
 
