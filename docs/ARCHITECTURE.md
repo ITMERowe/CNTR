@@ -31,6 +31,7 @@ src/
     icons.ts           Bundled Lucide SVG icons; hydrateIcons() fills <i data-icon> in index.html
     tileDrag.ts        Hold a Sell tile, then drag to reorder
     masonry.ts         Sell on 2-3 columns: each tile in the shortest column (placeColumns is pure, unit-tested)
+    switches.ts        On/off switches: the knob's stretch and squish, played from a tap
   views/               Preact components
     SalesGrid.tsx      Sell tab tiles (counters, undo, haptic-triggering callbacks)
     SalesHero.tsx      Revenue total at the top of the Sell tab (count-up animation)
@@ -118,7 +119,7 @@ Tiles take the product colour as `--tile`. `needsDarkText()` (`formatters.ts`) g
 - **Confirm destructive actions** with `openConfirmModal()` (End day, End event, delete an event, remove a product).
 - **Styling** uses the tokens at the top of `src/style.css`: surfaces (`--bg`, `--surface-1..3`, VS Code dark palette), text (`--text`, `--text-2`, `--text-3`, all >= 4.5:1), meaning (`--positive`, `--negative`, `--cash`, `--qris`), radii, a 4/8px spacing scale, a 5-step type scale with 2 weights, and motion. Never hard-code a colour or a size in a component. Every token and component rule: [`DESIGN.md`](DESIGN.md).
 - **Product colours** are shown exactly as chosen; tile text and icons are white, or `#1e1e1e` where white falls below 2.6:1 (see Tile colours).
-- **Motion** uses only the motion tokens (`--dur-tap` 120ms, `--dur-1` 200ms, `--dur-2` 280ms, `--dur-3` 420ms; `--dur-liquid` 340ms for the liquid pills; `--ease-out` to enter and exit, `--ease-liquid` for the liquid pills) and animates only `transform`/`opacity` (the liquid pills move their edges, folds their height). `prefers-reduced-motion` turns movement off and keeps the fades of sheets, toasts and the colour picker.
+- **Motion** uses only the motion tokens (`--dur-tap` 120ms, `--dur-1` 200ms, `--dur-2` 280ms, `--dur-3` 420ms; `--dur-liquid` 340ms for the liquid pills and switch knob; `--ease-out` to enter and exit, `--ease-liquid` for the liquid pills and knob, `--ease-reveal` for the theme circle) and animates only `transform`/`opacity` (the liquid pills move their edges, folds their height). `prefers-reduced-motion` turns movement off and keeps the fades of sheets, toasts and the colour picker.
 - **Charts** follow the dataviz rules: thin bars with 4px rounded data-ends, a hairline baseline, values in text colour (never series colour), a written fallback instead of a one-bar chart. `--cash`/`--qris` were validated as a colour-blind-safe pair on the card surface; re-validate if you change either or the surface.
 - **Icons**: add new ones to `ICONS` in `ui/icons.ts` (Lucide), never an icon font or emoji.
 - Buttons and menu items use sentence case; user-entered names are shown exactly as typed.
@@ -134,7 +135,7 @@ Platform: Capacitor 8, Android `compileSdk`/`targetSdk` 36, `minSdk` 24 (Android
 
 ## Themes and languages
 
-- **Themes**: `:root` holds the Dark+ tokens; `:root[data-theme="light"]` overrides them with Light+ (`--bg #ffffff`, `--surface-1 #f3f3f3`, `--text #1e1e1e`, `--positive #116329`, `--negative #c72c1c`, `--on-negative`, `--bar-bg`). The phone's setting (`matchMedia`) only picks the first theme on a fresh install; after that it is the user's Dark theme switch. `applyTheme()` also updates `<meta name="theme-color">`; the Settings switch goes through `revealTheme()`, which wraps it in a View Transition (the theme applies a frame later). Tile colours do not change with the theme.
+- **Themes**: `:root` holds the Dark+ tokens; `:root[data-theme="light"]` overrides them with Light+ (`--bg #ffffff`, `--surface-1 #f3f3f3`, `--text #1e1e1e`, `--positive #116329`, `--negative #c72c1c`, `--on-negative`, `--bar-bg`). The phone's setting (`matchMedia`) only picks the first theme on a fresh install; after that it is the user's Dark theme switch. `applyTheme()` also updates `<meta name="theme-color">`; the Settings switch goes through `revealTheme()`, which waits 260ms for the knob to land, then wraps it in a View Transition (the theme applies a frame after that). Tile colours do not change with the theme.
 - **Languages**: every user-facing string is a key in `src/i18n.ts` (`en`, and `id: Record<Key, string>` so a missing translation fails the build). Static markup uses `data-i18n` (text) and `data-i18n-aria` / `-title` / `-placeholder`; `translateStatic()` fills them on start and on a language change, then `render()` redraws the views. Counts use `tn()` with English `"one|other"` forms. Never translated: payment method names, CSV headers, user-typed text. `tests/e2e/i18n.test.mjs` walks every screen in Indonesian and fails on leftover English words.
 
 ## Requirements

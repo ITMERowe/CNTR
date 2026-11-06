@@ -54,12 +54,13 @@
   /* Motion: one vocabulary everywhere */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-emphasis: cubic-bezier(0.34, 1.25, 0.64, 1);
+  --ease-reveal: cubic-bezier(0.4, 0, 0.2, 1); /* the theme circle only: its first frames are the slowest, so it must not start at full speed */
   --dur-tap: 120ms;
   --dur-1: 200ms;
   --dur-2: 280ms;
   --dur-3: 420ms;
   --dur-hold: 700ms; /* hold to delete; HOLD_MS in src/ui/dom.ts */
-  /* Spring (duration 0.3s, bounce 0.3) as a curve: overshoots 4.6% and settles; used by the tab pill only. */
+  /* Spring (duration 0.3s, bounce 0.3) as a curve: overshoots 4.6% and settles; the liquid pills and the switch knob only. */
   --ease-liquid: linear(0, 0.051 5%, 0.173 10%, 0.327 15%, 0.485 20%, 0.632 25%, 0.756 30%, 0.856 35%, 0.931 40%, 0.984 45%, 1.018 50%, 1.037 55%, 1.045 60%, 1.046 65%, 1.042 70%, 1.035 75%, 1.028 80%, 1.021 85%, 1.015 90%, 1.009 95%, 1);
   --dur-liquid: 340ms;
 
@@ -1771,10 +1772,12 @@ p {
   width: 44px;
   height: 26px;
   border-radius: var(--r-pill);
-  background: var(--surface-3);
-  transition: background-color var(--dur-1) var(--ease-out);
+  /* The accent fills in behind the knob as it slides. */
+  background: linear-gradient(var(--accent), var(--accent)) left / 0% 100% no-repeat var(--surface-3);
+  transition: background-size var(--dur-liquid) var(--ease-liquid); /* the knob's timing, so the fill's edge stays under it */
 }
 
+/* The knob's stretch and squish play from a tap: src/ui/switches.ts. */
 .switch-track::before {
   content: '';
   position: absolute;
@@ -1784,17 +1787,17 @@ p {
   height: 20px;
   border-radius: 50%;
   background: var(--text-3);
-  transition: transform var(--dur-1) var(--ease-emphasis), background-color var(--dur-1);
+  transition: left var(--dur-liquid) var(--ease-liquid), background-color var(--dur-1);
 }
 
 .product-toggle-btn[aria-checked='true'] .switch-track,
 .switch input:checked + .switch-track {
-  background: var(--accent);
+  background-size: 100% 100%;
 }
 
 .product-toggle-btn[aria-checked='true'] .switch-track::before,
 .switch input:checked + .switch-track::before {
-  transform: translateX(18px);
+  left: 21px;
   background: var(--on-accent);
 }
 
@@ -3507,6 +3510,13 @@ body.is-editing-event .content {
   }
 }
 
+/* The page under the circle is live: a colour easing in there repaints it every frame and shows the old theme's colours. */
+:root[data-reveal] *,
+:root[data-reveal] *::before,
+:root[data-reveal] *::after {
+  transition: none !important;
+}
+
 /* Dark and light swap as a circle centred on the switch (theme.ts sets --reveal-*): the light page is always the circle. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
@@ -3515,12 +3525,22 @@ body.is-editing-event .content {
 }
 
 :root[data-reveal='grow']::view-transition-new(root) {
-  animation: theme-grow var(--dur-3) var(--ease-out);
+  animation: theme-grow var(--dur-3) var(--ease-reveal);
 }
 
 :root[data-reveal='shrink']::view-transition-old(root) {
   z-index: 1;
-  animation: theme-shrink var(--dur-3) var(--ease-out) both;
+  animation: theme-shrink var(--dur-3) var(--ease-reveal) both;
+}
+
+/* A 1.15 line box ends above the font's descenders, so overflow: hidden cuts g, y and p: clip lower, same layout. */
+.page-title,
+.hero-figure,
+.product-name,
+.list-title,
+.swatch-name {
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
 }
 
 @keyframes theme-grow {

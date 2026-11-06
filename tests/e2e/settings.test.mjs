@@ -45,15 +45,33 @@ await sleep(150);
 const afterPhoneChange = await themeNow();
 const toggled = await run(page, `${H}
   tab('settingsScreen');
+  await wait();
   const before = { checked: document.getElementById('themeToggle').checked, label: document.getElementById('themeLabel').textContent };
   document.getElementById('themeToggle').click();
-  await wait(100);
-  return { before, after: { checked: document.getElementById('themeToggle').checked }, stored: stored('cntrSettings').theme, reveal: document.documentElement.dataset.reveal ?? null, x: parseFloat(document.documentElement.style.getPropertyValue('--reveal-x')), r: parseFloat(document.documentElement.style.getPropertyValue('--reveal-r')) };
+  const knob = () => document.querySelector('#themeToggle + .switch-track').getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSTransition)).length;
+  const knobOnTap = knob();
+  const track = document.querySelector('#themeToggle + .switch-track');
+  const moving = track.getAnimations({ subtree: true });
+  moving.forEach((a) => { a.pause(); a.currentTime = 100; });
+  const knobStretch = new DOMMatrix(getComputedStyle(track, '::before').transform).a;
+  const knobLeft = parseFloat(getComputedStyle(track, '::before').left);
+  moving.forEach((a) => a.play());
+  const early = document.documentElement.dataset.reveal ?? null;
+  await wait(340);
+  const during = { reveal: document.documentElement.dataset.reveal ?? null, colourTransitions: document.getAnimations().filter((a) => a instanceof CSSTransition).length };
+  const x = parseFloat(document.documentElement.style.getPropertyValue('--reveal-x'));
+  const r = parseFloat(document.documentElement.style.getPropertyValue('--reveal-r'));
+  await wait(600);
+  tab('eventScreen');
+  tab('settingsScreen');
+  return { before, knobOnTap, knobStretch, knobLeft, knobOnOpen: knob(), early, during, after: { checked: document.getElementById('themeToggle').checked }, stored: stored('cntrSettings').theme, revealAfter: document.documentElement.dataset.reveal ?? null, x, r };
 `);
 check('a fresh install resolves the theme from the phone (light) and saves it, not "system"', fresh.theme === 'light' && fresh.stored === 'light', fresh);
 check('once resolved, the app does not keep following the phone', afterPhoneChange === 'light', afterPhoneChange);
 check('the Dark theme switch turns dark on and saves the choice', !toggled.before.checked && toggled.before.label === 'Dark theme' && toggled.after.checked && toggled.stored === 'dark', toggled);
-check('going dark shrinks the light page into the switch, sized to reach the far corner', toggled.reveal === 'shrink' && toggled.x > 0 && toggled.r > toggled.x, toggled);
+check('going dark shrinks the light page into the switch, sized to reach the far corner', toggled.during.reveal === 'shrink' && toggled.x > 0 && toggled.r > toggled.x, toggled);
+check('the circle waits for the knob to land, nothing eases under it, and transitions come back after', toggled.early === null && toggled.during.colourTransitions === 0 && toggled.revealAfter === null, toggled);
+check('a switch stretches mid-slide on a tap, and not when its screen opens', toggled.knobOnTap === 1 && toggled.knobStretch > 1.2 && toggled.knobLeft > 3 && toggled.knobLeft < 21 && toggled.knobOnOpen === 0, toggled);
 
 // Restore the product data cleared above, for the Products tests below.
 await run(page, `

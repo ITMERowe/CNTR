@@ -74,6 +74,7 @@ import { editProductByName, initProductEditor, openProductEditor } from './ui/pr
 import { groupTiles } from './groups';
 import { initTileDrag } from './ui/tileDrag';
 import { initMasonry } from './ui/masonry';
+import { initSwitches } from './ui/switches';
 import { CompareView } from './views/Compare';
 import { EventScreen } from './views/EventScreen';
 import { EventChecklist, EventList, ProductChecklist, ProductList, RecentSales } from './views/Lists';
@@ -698,6 +699,7 @@ function wireHeader() {
 
   initTileDrag(el.grid, () => !loadSettings().autoSort, moveProduct);
   initMasonry(el.grid);
+  initSwitches();
 }
 
 function wireSettings() {

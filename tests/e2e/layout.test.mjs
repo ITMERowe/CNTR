@@ -13,6 +13,9 @@ function scan() {
   const out = { overflow: [], small: [], unlabeled: [], contrast: [], type: [] };
   for (const e of document.querySelectorAll('.screen.active *')) {
     if (visible(e) && !e.children.length && e.textContent.trim() && (e.getBoundingClientRect().right > innerWidth - 8 || e.scrollWidth > e.clientWidth + 1)) out.overflow.push(`${name(e)} "${e.textContent.trim().slice(0, 30)}"`);
+    // Plus Jakarta Sans: content area 1.26em, descent 0.222em, g and y reach about 0.2em under the baseline.
+    const style = getComputedStyle(e);
+    if (visible(e) && !e.children.length && /[gjpqy]/.test(e.textContent) && style.overflowY !== 'visible' && (parseFloat(style.lineHeight) / 2 + parseFloat(style.paddingBottom)) / parseFloat(style.fontSize) < 0.608) out.overflow.push(`${name(e)} cuts its descenders "${e.textContent.trim().slice(0, 30)}"`);
     if (visible(e) && e.getBoundingClientRect().right > innerWidth + 0.5) out.overflow.push(`${name(e)} sticks out of the screen (right ${Math.round(e.getBoundingClientRect().right)}px)`);
   }
   for (const e of document.querySelectorAll('button, a, input, select, [role=switch], [role=button]')) {
