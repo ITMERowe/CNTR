@@ -2,6 +2,14 @@
 
 Each version starts with **Highlights**: a short list for users, shown first on the GitHub Release and as Google Play's "What's new" (keep it under 500 characters). The sections after it are the full list; put the biggest changes first in each, since a release page shows only the first 5 of each section.
 
+## Unreleased (2026-11-18, 0.1.2 + 0.1.3 work on `dev`; the 0.1.2 icon and the release are still to do)
+
+- Accent changed to coral orange `#FD6E6E` in both themes (owner); `--on-accent` is dark ink `#2b0d0d` in both (white fails contrast on coral). `src/style.css`, `docs/DESIGN.md`.
+- Day cards say "before costs" (EN "before costs", ID "sebelum biaya") so the green profit isn't read as the event's result. `src/views/EventScreen.tsx`, `src/i18n.ts`.
+- A past event's date range ends on its last sale, not the day it was ended (`lastSaleAt` in `src/events.ts`; History list and the report). New unit test.
+- Switching tab from the product editor with changed group rows asks first (Keep editing / Discard), like Back (`guardProductEditor`, `src/ui/productEditor.ts`, `src/main.ts`).
+- **Tablet nav rail (0.1.3):** from 720px wide the five tabs become a left rail (88px) in place of the bottom bar; the pill travels down and up. Sell's 2 and 3 tile columns now start at 808px / 1168px (the rail takes 88px). `src/style.css`, `docs/DESIGN.md`, `docs/APP-FLOW.md`, `tests/e2e/layout.test.mjs`.
+
 ## 0.1.1 (2026-11-03)
 
 ### Highlights

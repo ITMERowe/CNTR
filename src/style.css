@@ -22,8 +22,8 @@
   --text-2: #cccccc;
   --text-3: #9d9d9d;
   --on-ink: #1e1e1e;
-  --accent: #8b93ff; /* indigo (owner, 0.1.2): primary buttons, switches/checkboxes on, the tab pill; never tiles or money */
-  --on-accent: #12143a;
+  --accent: #fd6e6e; /* coral orange (owner): primary buttons, switches/checkboxes on, the tab pill; never tiles or money */
+  --on-accent: #2b0d0d;
 
   /* Meaning */
   --positive: #4ade80;
@@ -96,8 +96,8 @@
   --text-2: #3b3b3b;
   --text-3: #616161;
   --on-ink: #ffffff;
-  --accent: #4338ca;
-  --on-accent: #ffffff;
+  --accent: #fd6e6e;
+  --on-accent: #2b0d0d;
 
   /* Darker greens and reds so money stays readable on white */
   --positive: #116329;
@@ -581,14 +581,14 @@ p {
 }
 
 /* Phone landscape and tablets: more columns, each never narrower than a 360px phone's tile
-   (~340px, where compact TRANSFER + count and a 14-char name still fit). */
-@media (min-width: 720px) {
+   (~340px, where compact TRANSFER + count and a 14-char name still fit). The widths count the 88px nav rail (>= 720px). */
+@media (min-width: 808px) {
   .sales-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1080px) {
+@media (min-width: 1168px) {
   .sales-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -3445,6 +3445,81 @@ body.is-editing-event .content {
   height: 26px;
   margin-top: 2px;
 }
+
+/* Tablets and landscape phones (>= 720px): the five tabs become a rail on the left, same order, same pill (it travels down and up).
+   --tabbar-h goes to 0, so everything that made room above the bottom bar (content padding, scroll padding, toast) lets go of it. */
+@media (min-width: 720px) {
+  :root {
+    --rail-w: 88px;
+    --rail-full: calc(var(--rail-w) + env(safe-area-inset-left));
+    --tabbar-h: 0px;
+  }
+
+  .app {
+    padding-left: var(--rail-full);
+  }
+
+  .topbar {
+    padding-left: var(--s4);
+  }
+
+  .content {
+    padding-left: 0;
+  }
+
+  .tabbar {
+    top: 0;
+    right: auto;
+    width: var(--rail-full);
+    height: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(5, 64px);
+    align-content: start;
+    padding: calc(env(safe-area-inset-top) + var(--s4)) 0 env(safe-area-inset-bottom) env(safe-area-inset-left);
+    border-top: 0;
+    border-right: 1px solid var(--line);
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  /* The pill's two ends are top and bottom now: the one facing the new tab moves first (data-dir right = down). */
+  .tabbar::before {
+    --top: calc(env(safe-area-inset-top) + var(--s4) + var(--i) * 64px + 6px);
+    top: var(--top);
+    bottom: calc(100% - var(--top) - 32px);
+    left: calc(env(safe-area-inset-left) + var(--rail-w) / 2 - 28px);
+    right: auto;
+    width: 56px;
+    height: auto;
+    transition: top var(--edge), bottom var(--edge), opacity var(--dur-1);
+  }
+
+  .tabbar[data-dir='right']::before { transition: bottom var(--edge), top var(--edge) 70ms, opacity var(--dur-1); }
+  .tabbar[data-dir='left']::before { transition: top var(--edge), bottom var(--edge) 70ms, opacity var(--dur-1); }
+
+  .tabbar:has(.tab:nth-child(1).active)::before { animation-name: pill-squash-v1; }
+  .tabbar:has(.tab:nth-child(2).active)::before { animation-name: pill-squash-v2; }
+  .tabbar:has(.tab:nth-child(3).active)::before { animation-name: pill-squash-v3; }
+  .tabbar:has(.tab:nth-child(4).active)::before { animation-name: pill-squash-v4; }
+  .tabbar:has(.tab:nth-child(5).active)::before { animation-name: pill-squash-v5; }
+
+  /* The docked Save / Cancel bar sits in the content column now, so the rail stays (leaving still asks first). */
+  body.is-editing-event .tabbar {
+    display: grid;
+  }
+
+  .toast {
+    left: calc(50% + var(--rail-full) / 2);
+  }
+
+}
+
+/* Thins sideways while stretched along the rail. */
+@keyframes pill-squash-v1 { 35% { scale: 0.78 1; } 75% { scale: 1.05 1; } }
+@keyframes pill-squash-v2 { 35% { scale: 0.78 1; } 75% { scale: 1.05 1; } }
+@keyframes pill-squash-v3 { 35% { scale: 0.78 1; } 75% { scale: 1.05 1; } }
+@keyframes pill-squash-v4 { 35% { scale: 0.78 1; } 75% { scale: 1.05 1; } }
+@keyframes pill-squash-v5 { 35% { scale: 0.78 1; } 75% { scale: 1.05 1; } }
 
 /* ---------- Toast ---------- */
 

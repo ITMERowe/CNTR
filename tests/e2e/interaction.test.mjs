@@ -343,7 +343,7 @@ for (const width of [320, 360, 393, 412]) {
 
 // Tablet: with 2 columns, a held tile moves sideways and down to the slot under it.
 {
-  const page = await browser.newPage({ viewport: { width: 800, height: 1280 } });
+  const page = await browser.newPage({ viewport: { width: 900, height: 1280 } }); // 2 columns from 808px (the nav rail takes 88px)
   await page.goto(URL);
   await page.evaluate((p) => { localStorage.clear(); localStorage.cntrProducts = p; }, SAMPLE_PRODUCTS);
   await page.reload();

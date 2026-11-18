@@ -1,4 +1,4 @@
-import { eventSummary, formatDay } from '../events';
+import { eventSummary, formatDay, lastSaleAt } from '../events';
 import { fmt } from '../formatters';
 import { groupTiles, variantLabel } from '../groups';
 import { FREE_PAYMENT, paymentClass, productPayments } from '../payments';
@@ -168,7 +168,7 @@ export function EventList({ events, onOpen }: { events: PastEvent[]; onOpen: (id
       {[...events].reverse().map((event, index) => {
         const net = eventNet(event);
         const first = formatDay(event.startedAt);
-        const last = formatDay(event.endedAt);
+        const last = formatDay(lastSaleAt(event));
         const days = event.dayBreaks.length + 1;
         return (
           <div

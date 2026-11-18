@@ -29,6 +29,11 @@ export function breakTime(now: Date, sales: SaleRecord[], dayBreaks: string[]): 
   return new Date(Math.max(now.getTime(), ...sales.map((sale) => time(sale.timestamp) + 1), ...dayBreaks.map((end) => time(end) + 1))).toISOString();
 }
 
+/** The last day an event sold anything (a forgotten live event is ended days later); the end date if it has no sales. */
+export function lastSaleAt(event: Pick<PastEvent, 'sales' | 'endedAt'>): string {
+  return event.sales.length ? new Date(Math.max(...event.sales.map((sale) => time(sale.timestamp)))).toISOString() : event.endedAt;
+}
+
 /** The sales after the last End day. */
 export function todaySales(sales: SaleRecord[], dayBreaks: string[]): SaleRecord[] {
   const days = splitDays(sales, dayBreaks);

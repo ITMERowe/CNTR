@@ -8,7 +8,9 @@ How a seller moves through CNTR, screen by screen. Code-level navigation (`openS
 2. Language follows the phone on a fresh install; theme is resolved from the phone once, then it's the user's choice.
 3. No starter products: the Sell tab's empty state leads to **Add product**.
 
-## Tabs (bottom bar, in this order)
+## Tabs (bottom bar on phones; a left rail from 720px wide; same order)
+
+Switching tab from the product editor with changed group rows asks first (Keep editing / Discard), like Back does. A past event's date range runs from its start to its **last sale**, not the day it was ended (a forgotten live event is often ended days later).
 
 | Tab | What it's for |
 |---|---|

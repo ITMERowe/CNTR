@@ -65,7 +65,7 @@ function DayCards({ days, live }: { days: SaleRecord[][]; live: boolean }) {
               </div>
               <div class="day-figures">
                 <span class="day-revenue">{fmt(revenue)}</span>
-                <span class={`day-profit ${profitClass(productProfit)}`}>{t('profit.amount', { amount: fmt(productProfit) })}</span>
+                <span class={`day-profit ${profitClass(productProfit)}`}>{t('profit.beforeCosts', { amount: fmt(productProfit) })}</span>
               </div>
             </div>
           );

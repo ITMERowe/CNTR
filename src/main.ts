@@ -9,7 +9,7 @@ import { version as packageVersion } from '../package.json';
 import { buildBackup, parseBackup, salesCsv } from './backup';
 import { DATA_KEYS, DROPPED_KEYS } from './migrate';
 import { pickTextFile, saveAutoBackup, saveDayBackup, saveFile, saveSafetyCopy } from './files';
-import { adjustCount, withLinkedCosts } from './events';
+import { adjustCount, lastSaleAt, withLinkedCosts } from './events';
 import { feedback } from './feedback';
 import { totals } from './reports';
 import {
@@ -70,7 +70,7 @@ import {
 } from './ui/dom';
 import { closeColorPicker } from './ui/colorPicker';
 import { hydrateIcons } from './ui/icons';
-import { editProductByName, initProductEditor, openProductEditor } from './ui/productEditor';
+import { editProductByName, guardProductEditor, initProductEditor, openProductEditor } from './ui/productEditor';
 import { groupTiles } from './groups';
 import { initTileDrag } from './ui/tileDrag';
 import { initMasonry } from './ui/masonry';
@@ -245,7 +245,7 @@ function renderPastEvent() {
       colorFor: snapshotColor,
       key: event.id,
       live: false,
-      dates: { startedAt: event.startedAt, endedAt: event.endedAt },
+      dates: { startedAt: event.startedAt, endedAt: lastSaleAt(event) },
       ...(draft
         ? {
             onRename: () => openNameSheet('rename-draft'),
@@ -649,7 +649,7 @@ function goTo(screenId: string) {
 
 function wireNavigation() {
   document.querySelectorAll<HTMLButtonElement>('.tabbar .tab').forEach((button) => {
-    onClick(button, () => leaveEditing(() => goTo(button.dataset.tab ?? 'salesScreen')));
+    onClick(button, () => leaveEditing(() => guardProductEditor(() => goTo(button.dataset.tab ?? 'salesScreen'))));
   });
 
   onClick(el.openAboutMenuBtn, () => goTo('aboutScreen'));

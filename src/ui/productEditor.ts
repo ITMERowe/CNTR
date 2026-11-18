@@ -214,6 +214,12 @@ function leaveProductEditor() {
 }
 
 
+/** A tab switch from the editor: changed group rows ask first, like Back does; otherwise `leave` runs at once. */
+export function guardProductEditor(leave: () => void) {
+  if (activeScreenId() !== 'productEditScreen' || groupForm() === openedForm) leave();
+  else openConfirmModal(t('discard.groupMessage'), t('discard.button'), leave, { title: t('discard.title'), cancelLabel: t('discard.keep') });
+}
+
 function closeProductEditor() {
   closeColorPicker();
   editingIndex = -1;

@@ -133,7 +133,8 @@ for (const [theme, language] of [['dark', 'en'], ['light', 'en'], ['dark', 'id']
 }
 
 // Wide screens: Sell gets 2 columns on a phone in landscape or a tablet in portrait, 3 on a big tablet; other pages stay a centred column.
-for (const [width, height, columns] of [[412, 892, 1], [915, 412, 2], [800, 1280, 2], [1280, 800, 3]]) {
+// From 720px the 88px nav rail takes the left, so columns count from the content: 2 from 808px wide, 3 from 1168px.
+for (const [width, height, columns] of [[412, 892, 1], [915, 412, 2], [800, 1280, 1], [900, 1280, 2], [1280, 800, 3]]) {
   const page = await browser.newPage({ viewport: { width, height } });
   await page.goto(URL);
   await page.evaluate((p) => { localStorage.clear(); localStorage.cntrProducts = p; }, SAMPLE_PRODUCTS);
@@ -143,7 +144,8 @@ for (const [width, height, columns] of [[412, 892, 1], [915, 412, 2], [800, 1280
   check(`${width}x${height}: Sell shows ${columns} tile column(s)`, cols === columns, `${cols}`);
   await page.click('.tabbar .tab[data-tab="settingsScreen"]');
   const box = await page.evaluate(() => document.querySelector('#settingsScreen .page').getBoundingClientRect().toJSON());
-  check(`${width}x${height}: Settings is at most 640px wide and centred`, box.width <= 640 && Math.abs(box.left - (width - box.right)) < 1, box);
+  const rail = width >= 720 ? 88 : 0;
+  check(`${width}x${height}: Settings is at most 640px wide and centred in the content (right of the ${rail}px rail)`, box.width <= 640 && Math.abs(box.left - rail - (width - box.right)) < 1, box);
   await page.close();
 }
 
@@ -228,22 +230,27 @@ for (const [width, height] of [[360, 640], [412, 915]]) {
 }
 
 // Sliding tab pill (a ::before on .tabbar): its centre sits under the active tab's icon, on every tab and width.
-for (const [width, height] of [[320, 640], [412, 892], [892, 412]]) {
+for (const [width, height] of [[320, 640], [412, 892], [892, 412], [1024, 768]]) {
   const page = await browser.newPage({ viewport: { width, height } });
   await page.goto(URL);
   await sleep(300);
   const offsets = [];
+  const rail = width >= 720; // the nav rail: the pill travels down the rail, so it is centred on the icon in both directions
   for (const tab of ['eventScreen', 'productHistoryScreen', 'salesScreen', 'historyScreen', 'settingsScreen']) {
     await page.click(`.tabbar .tab[data-tab="${tab}"]`);
     await sleep(450);
-    offsets.push(await page.evaluate((id) => {
+    offsets.push(await page.evaluate(([id, rail]) => {
       const bar = document.querySelector('.tabbar');
       const pill = getComputedStyle(bar, '::before');
       const shift = new DOMMatrix(pill.transform === 'none' ? undefined : pill.transform).m41;
-      const centre = bar.getBoundingClientRect().left + parseFloat(pill.left) + shift + parseFloat(pill.width) / 2;
+      const box = bar.getBoundingClientRect();
+      const centre = box.left + parseFloat(pill.left) + shift + parseFloat(pill.width) / 2;
       const icon = document.querySelector(`.tabbar .tab[data-tab="${id}"] .icon`).getBoundingClientRect();
-      return Math.round(centre - (icon.left + icon.width / 2));
-    }, tab));
+      const across = Math.round(centre - (icon.left + icon.width / 2));
+      // In the rail the pill's top is set and its height is 32px (the 'height' computed value is the used one).
+      const along = rail ? Math.round(box.top + parseFloat(pill.top) + parseFloat(pill.height) / 2 - (icon.top + icon.height / 2)) : 0;
+      return Math.abs(across) > Math.abs(along) ? across : along;
+    }, [tab, rail]));
   }
   check(`${width}x${height}: the tab pill is centred under the active tab's icon on all five tabs`, offsets.every((d) => Math.abs(d) <= 1), offsets);
   await page.close();
