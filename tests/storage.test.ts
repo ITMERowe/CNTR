@@ -243,3 +243,18 @@ test('expenses linked to products round-trip; old ones without links still load;
     assert.equal(parseBackup(JSON.stringify(bad)).ok, false, JSON.stringify(productIds));
   }
 });
+
+test('a backup of any state reads back: empty, products only, live sales only, full', () => {
+  const states: [string, Map<string, string>][] = [
+    ['empty', new Map()],
+    ['products only', new Map([['cntrProducts', PRODUCTS]])],
+    ['live sales only', new Map([['cntrSales', SALES]])],
+    ['full', fullData],
+  ];
+  for (const [label, stored] of states) {
+    const backup = buildBackup(stored);
+    const parsed = parseBackup(JSON.stringify(backup));
+    assert.ok(parsed.ok, label);
+    for (const [key, value] of stored) assert.deepEqual(JSON.parse(parsed.values.get(key)!), JSON.parse(value), `${label}: ${key}`);
+  }
+});

@@ -75,7 +75,8 @@ for (const width of [412, 1280]) {
     await compact();
     // 3 variants here: about 62px per row by default (2 rows were 182px), 52px compact (2 rows were 148px).
     // Compact was 200px; the group's name now has its own line over the column labels (+12px once per tile, rows unchanged).
-    check(`${at} a 3-variant group is short (under 260px, compact under 220px), every sell button at least 44px`, normal.height < 260 && tight.height < 220 && !normal.small && !tight.small, { normal, tight });
+    // 0.1.2: compact tiles pad s3 instead of s2 (owner: text was too close to the edges), +8px once per tile.
+    check(`${at} a 3-variant group is short (under 260px, compact under 228px), every sell button at least 44px`, normal.height < 260 && tight.height < 228 && !normal.small && !tight.small, { normal, tight });
     check(`${at} compact tiles show the payment labels once, as column headers`, normal.labels === 6 && tight.labels === 2, { normal: normal.labels, tight: tight.labels });
   }
 
@@ -404,7 +405,7 @@ for (const width of [412, 1280]) {
     const p = price.getBoundingClientRect();
     return { price: price.offsetParent ? price.textContent : null, opacity: getComputedStyle(price).opacity, height: Math.round(r.height), inside: p.top >= r.top - 0.5 && p.bottom <= r.bottom + 0.5, wide: document.documentElement.scrollWidth > innerWidth };
   }));
-  check('360px compact: every variant row shows its price, full ink, inside a 44px row, no sideways scroll', rows.length === 3 && rows.every((r) => r.price === 'Rp 25.000' && r.opacity === '1' && r.height <= 44 && r.inside && !r.wide), rows);
+  check('360px compact: every variant row shows its price, full ink, inside a 44px row, no sideways scroll', rows.length === 3 && rows.every((r) => r.price === 'Rp\u00a025.000' && r.opacity === '1' && r.height <= 44 && r.inside && !r.wide), rows);
   await page.close();
 }
 

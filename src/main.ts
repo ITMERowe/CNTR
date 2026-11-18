@@ -9,7 +9,7 @@ import { version as packageVersion } from '../package.json';
 import { buildBackup, parseBackup, salesCsv } from './backup';
 import { DATA_KEYS, DROPPED_KEYS } from './migrate';
 import { pickTextFile, saveAutoBackup, saveDayBackup, saveFile, saveSafetyCopy } from './files';
-import { adjustCount, withLinkedCosts } from './events';
+import { adjustCount, lastSaleAt, withLinkedCosts } from './events';
 import { feedback } from './feedback';
 import { totals } from './reports';
 import {
@@ -50,7 +50,7 @@ import {
 } from './storage';
 import { practiceData, runTour, TOUR_SESSION_KEY, TOUR_STEPS, tourRunning } from './tutorial';
 import { initialLanguage, language, locale, setLanguage, t, tn, translateStatic, type Lang } from './i18n';
-import { applyTheme } from './theme';
+import { applyTheme, revealTheme } from './theme';
 import type { AppSettings, Currency, PastEvent, Product } from './types';
 import {
   activeScreenId,
@@ -70,9 +70,11 @@ import {
 } from './ui/dom';
 import { closeColorPicker } from './ui/colorPicker';
 import { hydrateIcons } from './ui/icons';
-import { editProductByName, initProductEditor, openProductEditor } from './ui/productEditor';
+import { editProductByName, guardProductEditor, initProductEditor, openProductEditor } from './ui/productEditor';
 import { groupTiles } from './groups';
 import { initTileDrag } from './ui/tileDrag';
+import { initMasonry } from './ui/masonry';
+import { initSwitches } from './ui/switches';
 import { CompareView } from './views/Compare';
 import { EventScreen } from './views/EventScreen';
 import { EventChecklist, EventList, ProductChecklist, ProductList, RecentSales } from './views/Lists';
@@ -91,7 +93,8 @@ function addSale(product: Product, payment: string) {
   pulse = { product: product.name, payment, direction: 'up', id: ++pulseId };
   feedback('sale');
   render();
-  showToast(newDay ? t('toast.newDay', { day: liveDayCount() }) : `${product.name} · ${payment}`);
+  if (newDay) showToast(t('toast.newDay', { day: liveDayCount() }));
+  else showToast(`${product.name} · ${payment}`, 900);
 }
 
 function undoSale(product: Product, payment: string) {
@@ -154,6 +157,8 @@ function moveProduct(name: string, to: number) {
 
 /** The past event open in History, and its unsaved edit copy while editing. */
 let viewingId: string | null = null;
+/** Where a past event's Back goes: History, or the new live event right after End event. */
+let pastEventBack = 'historyScreen';
 let draft: PastEvent | null = null;
 
 /** Folds or unfolds a Sell group; names of groups that no longer exist drop out of the list. */
@@ -169,7 +174,7 @@ function toggleGroup(group: string) {
 function render() {
   const today = todayLiveSales();
   const { revenue, profit } = totals(withLinkedCosts(today, state.eventCosts, [...state.products, ...state.productHistory]));
-  renderView(h(SalesHero, { revenue, profit, count: today.length, day: liveDayCount() }), el.stats);
+  renderView(h(SalesHero, { revenue, profit, count: today.length }), el.stats);
   renderView(
     h(SalesGrid, {
       products: sellProducts(),
@@ -196,7 +201,6 @@ function render() {
       // Hidden products too, so a linked expense still covers their sales.
       costProducts: [...state.products, ...state.productHistory],
       colorFor: productColor,
-      productsPerDay: loadSettings().productsPerDay,
       live: true,
       onRename: () => openNameSheet('rename-live'),
       onAddExpense: () => openExpenseModal(null),
@@ -239,9 +243,9 @@ function renderPastEvent() {
       expenses: event.expenses,
       products: event.products,
       colorFor: snapshotColor,
-      productsPerDay: loadSettings().productsPerDay,
+      key: event.id,
       live: false,
-      dates: { startedAt: event.startedAt, endedAt: event.endedAt },
+      dates: { startedAt: event.startedAt, endedAt: lastSaleAt(event) },
       ...(draft
         ? {
             onRename: () => openNameSheet('rename-draft'),
@@ -328,10 +332,12 @@ function confirmEndEvent(name: string) {
     t('endEvent.button'),
     () =>
       void withAutoBackup(() => {
-        endEvent(name);
+        const ended = endEvent(name);
         render();
         feedback('success');
         showToast(t('toast.movedToHistory'));
+        // Straight to its report, Highlights first (owner, 0.1.2); Back goes to the new live event.
+        openPastEvent(ended.id, 'eventScreen');
       }),
     { title: t('endEvent.title'), danger: false },
   );
@@ -358,8 +364,9 @@ function checkStaleEvent() {
 
 // ---- Past events ----
 
-function openPastEvent(id: string) {
+function openPastEvent(id: string, back = 'historyScreen') {
   if (!findPastEvent(id)) return;
+  pastEventBack = back;
   viewingId = id;
   draft = null;
   goTo('pastEventScreen');
@@ -368,7 +375,7 @@ function openPastEvent(id: string) {
 function closePastEvent() {
   viewingId = null;
   draft = null;
-  goTo('historyScreen');
+  goTo(pastEventBack);
 }
 
 /** A deep copy to edit; Save replaces the stored event, Cancel drops it. */
@@ -527,7 +534,7 @@ function openExpenseModal(id: string | null) {
   el.expenseModalTitle.textContent = cost ? t('expense.edit') : t('add_expense');
   el.addCostBtn.textContent = cost ? t('save_changes') : t('add_expense');
   el.eventCostName.value = cost?.name ?? '';
-  el.eventCostAmount.value = cost ? formatInputNumber(String(cost.amount), loadSettings().currency) : '';
+  el.eventCostAmount.value = cost ? formatInputNumber(cost.amount, loadSettings().currency) : '';
   const products = linkableProducts();
   el.expenseProductsField.hidden = !products.length;
   renderView(h(ProductChecklist, { products, checked: cost?.productIds ?? [] }), el.expenseProducts);
@@ -642,7 +649,7 @@ function goTo(screenId: string) {
 
 function wireNavigation() {
   document.querySelectorAll<HTMLButtonElement>('.tabbar .tab').forEach((button) => {
-    onClick(button, () => leaveEditing(() => goTo(button.dataset.tab ?? 'salesScreen')));
+    onClick(button, () => leaveEditing(() => guardProductEditor(() => goTo(button.dataset.tab ?? 'salesScreen'))));
   });
 
   onClick(el.openAboutMenuBtn, () => goTo('aboutScreen'));
@@ -691,6 +698,8 @@ function wireHeader() {
   });
 
   initTileDrag(el.grid, () => !loadSettings().autoSort, moveProduct);
+  initMasonry(el.grid);
+  initSwitches();
 }
 
 function wireSettings() {
@@ -703,11 +712,6 @@ function wireSettings() {
   el.compactMoneyToggle.addEventListener('change', () => {
     saveSettings({ ...loadSettings(), compactMoney: el.compactMoneyToggle.checked });
     productsChanged();
-  });
-  el.productsPerDayToggle.checked = loadSettings().productsPerDay;
-  el.productsPerDayToggle.addEventListener('change', () => {
-    saveSettings({ ...loadSettings(), productsPerDay: el.productsPerDayToggle.checked });
-    render();
   });
   el.newDayToggle.checked = loadSettings().newDayOnDateChange;
   el.newDayToggle.addEventListener('change', () => {
@@ -729,7 +733,7 @@ function wireSettings() {
   el.themeToggle.addEventListener('change', () => {
     const theme: AppSettings['theme'] = el.themeToggle.checked ? 'dark' : 'light';
     saveSettings({ ...loadSettings(), theme });
-    applyTheme(theme);
+    revealTheme(theme, el.themeToggle.parentElement!);
     updateThemeState();
     feedback('step');
   });
@@ -966,17 +970,24 @@ async function backUpDroppedReports() {
 }
 
 /** Runs a destructive `action` after a safety backup (`backup`, default the full timestamped one); if the backup fails, asks before going ahead. */
+let backupRunning = false;
+
 async function withAutoBackup(action: () => void, backup: () => Promise<void> = autoBackup) {
   if (tutorialActive()) {
     action(); // practice data: no backup files to pile up
     return;
   }
+  // A second End event (or delete) confirmed while the first one's backup is still being written would run twice.
+  if (backupRunning) return;
+  backupRunning = true;
   try {
     await backup();
   } catch (error) {
     feedback('warn');
     openConfirmModal(t('autoBackup.failedText', { error: errorText(error) }), t('continue'), action, { title: t('autoBackup.failed') });
     return;
+  } finally {
+    backupRunning = false;
   }
   action();
 }

@@ -59,6 +59,11 @@ for (const reduced of [false, true]) {
   check(`${mode} sell button at rest: 80px tall, 14px corners, the ink-faint fill, a 2px bottom edge`, rest.h === 80 && rest.radius === '14px' && rest.bg === (rest.onLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.09)') && /inset$/.test(rest.shadow) && rest.shadow.includes(' 0px -2px 0px'), rest);
   check(`${mode} sell button pressed: the edge flattens, the face sinks and shrinks; one press sells once`, pressed.shadow.includes(' 0px 0px 0px') && pressed.transform !== 'none' && sold === 1, { pressed, sold });
 
+  // Entrances play on a screen's first visit only: returning to Sell must not replay the tiles' rise.
+  await page.click('.tabbar .tab[data-tab="eventScreen"]'); await page.click('.tabbar .tab[data-tab="salesScreen"]'); await sleep(50);
+  const replaying = await page.evaluate(() => [...document.querySelectorAll('.tile')].flatMap((t) => t.getAnimations().map((a) => a.animationName)));
+  check(`${mode} tiles do not replay their entrance on a return to Sell`, replaying.length === 0, replaying);
+
   // Hold to delete: the fill shows while held (instantly with reduced motion); a short hold still deletes nothing.
   await page.click('.tabbar .tab[data-tab="eventScreen"]'); await sleep(300);
   const trash = await page.locator('.delete-cost').boundingBox();

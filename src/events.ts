@@ -29,6 +29,11 @@ export function breakTime(now: Date, sales: SaleRecord[], dayBreaks: string[]): 
   return new Date(Math.max(now.getTime(), ...sales.map((sale) => time(sale.timestamp) + 1), ...dayBreaks.map((end) => time(end) + 1))).toISOString();
 }
 
+/** The last day an event sold anything (a forgotten live event is ended days later); the end date if it has no sales. */
+export function lastSaleAt(event: Pick<PastEvent, 'sales' | 'endedAt'>): string {
+  return event.sales.length ? new Date(Math.max(...event.sales.map((sale) => time(sale.timestamp)))).toISOString() : event.endedAt;
+}
+
 /** The sales after the last End day. */
 export function todaySales(sales: SaleRecord[], dayBreaks: string[]): SaleRecord[] {
   const days = splitDays(sales, dayBreaks);
@@ -64,13 +69,13 @@ export function defaultEventName(sales: SaleRecord[], now: Date): string {
   return t('event.defaultName', { date: formatDay(first ?? now) });
 }
 
-/** One product per name sold: the latest sale's price and cost, the colour from `known` ('' if unknown). */
+/** One product per name sold: the latest sale's price and cost, the colour, payments and group from `known` ('' colour if unknown). */
 export function snapshotProducts(sales: SaleRecord[], known: Product[]): Product[] {
   const byName = new Map<string, Product>();
   for (const sale of [...sales].sort((a, b) => time(a.timestamp) - time(b.timestamp))) {
     const match = known.find((product) => product.name === sale.product);
     const id = sale.productId ?? match?.id;
-    byName.set(sale.product, { ...(id && { id }), name: sale.product, price: sale.price, cost: sale.cost, color: match?.color ?? '', ...(match?.payments && { payments: [...match.payments] }) });
+    byName.set(sale.product, { ...(id && { id }), name: sale.product, price: sale.price, cost: sale.cost, color: match?.color ?? '', ...(match?.payments && { payments: [...match.payments] }), ...(match?.group && { group: match.group }) });
   }
   return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
 }

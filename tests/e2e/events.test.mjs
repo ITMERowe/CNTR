@@ -34,11 +34,11 @@ const live = await run(page, `${H}
   tab('eventScreen');
   const sales = stored('cntrSales');
   const profit = sales.reduce((s, x) => s + x.price - x.cost, 0);
-  return { tabsFill, eyebrow: document.querySelector('#stats .eyebrow').textContent, tabs, hero: amount('#eventCard .hero-figure'), profit, dayCards: document.querySelectorAll('#eventCard .day-card').length, endDay: !!document.getElementById('endDayBtn'), endEvent: !!document.getElementById('endEventBtn') };
+  return { tabsFill, eyebrow: !!document.querySelector('#stats .eyebrow'), heroLabel: document.querySelector('#stats .sr-only').textContent, tabs, hero: amount('#eventCard .hero-figure'), profit, dayCards: document.querySelectorAll('#eventCard .day-card').length, endDay: !!document.getElementById('endDayBtn'), endEvent: !!document.getElementById('endEventBtn') };
 `);
 check('tabs are Event, Products, Sell, History, Settings', live.tabs === 'Event,Products,Sell,History,Settings', live.tabs);
 check('the 5 tabs fill the tab bar', live.tabsFill, live);
-check('Sell hero says Revenue before any End day', live.eyebrow === 'Revenue', live.eyebrow);
+check('Sell hero has no label on screen; screen readers hear "Revenue"', !live.eyebrow && live.heroLabel.startsWith('Revenue '), live);
 check('Event hero = product profit with no save step', live.hero === live.profit && live.profit > 0, live);
 check('no day cards before End day; End buttons shown', live.dayCards === 0 && live.endDay && live.endEvent, live);
 
@@ -72,14 +72,14 @@ const day = await run(page, `${H}
   const dayCards = document.querySelectorAll('#eventCard .day-card').length;
   tab('salesScreen');
   const counter = document.querySelector('.tile[data-product="Gacha"] [data-counter-for="Cash"]').textContent;
-  const eyebrow = document.querySelector('#stats .eyebrow').textContent;
+  const eyebrow = !!document.querySelector('#stats .eyebrow');
   const minus = document.querySelector('.tile[data-product="Gacha"] [data-payment="Cash"][data-action="minus"]');
   minus.click();
   await wait();
   return { asked, dayCards, counter, eyebrow, minusDisabled: minus.disabled, sales: stored('cntrSales').length, breaks: stored('cntrLiveEvent').dayBreaks.length };
 `);
 check('End day asks first and shows 2 day cards', day.asked && day.dayCards === 2, day);
-check('Sell counters show today only after End day, and the hero says which day', day.counter === '0' && day.eyebrow === 'Day 2 revenue', day);
+check('Sell counters show today only after End day, still with no hero label', day.counter === '0' && !day.eyebrow, day);
 check('undo after End day never removes an ended day\'s sale', day.minusDisabled && day.sales === 3 && day.breaks === 1, day);
 
 // 4b. Changing a product's price later never reprices an ended day
@@ -96,30 +96,15 @@ const reprice = await run(page, `${H}
 `);
 check('editing a product price does not change an ended day', reprice.before === reprice.after, reprice);
 
-// 4c. Settings → Products per day (on by default): one collapsible Products card per day (latest open); off = one card
+// 4c. Products by day / combined: a switch on the report itself (no setting), only once 2+ days have sales
 const perDay = await run(page, `${H}
-  tab('settingsScreen');
-  const toggle = document.getElementById('productsPerDayToggle');
-  const onByDefault = toggle.checked;
   tab('eventScreen');
-  const cards = [...document.querySelectorAll('#eventCard details.products-day')];
-  const on = { onByDefault, cards: cards.length, open: cards.map((c) => c.open), titles: cards.map((c) => c.querySelector('summary').textContent) };
-  cards[0].querySelector('summary').click();
-  const firstOpens = cards[0].open;
-  tab('settingsScreen');
-  toggle.click();
-  await wait();
-  tab('eventScreen');
-  const off = { offCards: document.querySelectorAll('#eventCard details.products-day').length, offSetting: stored('cntrSettings').productsPerDay };
-  tab('settingsScreen');
-  toggle.click(); // back on for the rest of the run
-  await wait();
-  return { ...on, firstOpens, ...off, backOn: stored('cntrSettings').productsPerDay };
+  const cards = () => document.querySelectorAll('#eventCard details.products-day').length;
+  const sw = () => [...document.querySelectorAll('#eventCard .view-switch-btn')];
+  return { settingGone: !document.getElementById('productsPerDayToggle'), switches: sw().length, oneDayCards: cards() };
 `);
-// Day 2 has just started (no sales yet), so it gets no card: Day 1, the latest day with sales, is the open one.
-check('Products per day is on by default: a card per day with sales, the latest of them open', perDay.onByDefault && perDay.cards === 1 && perDay.open.join() === 'true' && /Day 1/.test(perDay.titles[0]), perDay);
-check('a day card folds when tapped', !perDay.firstOpens, perDay);
-check('turning it off shows one Products card again, and the choice is saved', perDay.offCards === 0 && perDay.offSetting === false && perDay.backOn === true, perDay);
+// Only Day 1 has sales so far: no switch, one Products card (the switch needs 2+ days with sales; checked after End event below).
+check('Products per day is no longer a setting; with one day of sales there is no By day / Combined switch', perDay.settingGone && perDay.switches === 0 && perDay.oneDayCards === 0, perDay);
 
 // 5. End event moves it to History and starts fresh
 const end = await run(page, `${H}
@@ -132,11 +117,15 @@ const end = await run(page, `${H}
   await nameSheet('Comifuro 21');
   await confirmYes();
   await wait(100);
+  const opened = document.querySelector('.screen.active').id;
+  const highlights = [...document.querySelectorAll('#pastEventCard .highlights li')].map((li) => li.textContent);
   const events = stored('cntrEvents');
   const firstSale = events[0].sales.map((s) => s.timestamp).sort()[0];
-  return { startedAtFirstSale: events[0].startedAt === firstSale, total, prefill, count: events.length, name: events[0]?.name, sales: events[0]?.sales.length, breaks: events[0]?.dayBreaks.length, expenses: events[0]?.expenses.length, liveSales: stored('cntrSales').length, liveCosts: stored('cntrEventCosts').length, liveBreaks: stored('cntrLiveEvent').dayBreaks.length, empty: !!document.querySelector('#eventCard .empty') };
+  return { opened, highlights, startedAtFirstSale: events[0].startedAt === firstSale, total, prefill, count: events.length, name: events[0]?.name, sales: events[0]?.sales.length, breaks: events[0]?.dayBreaks.length, expenses: events[0]?.expenses.length, liveSales: stored('cntrSales').length, liveCosts: stored('cntrEventCosts').length, liveBreaks: stored('cntrLiveEvent').dayBreaks.length, empty: !!document.querySelector('#eventCard .empty') };
 `);
 check('End event prefills the current name', end.prefill === 'Comifuro', end);
+check('End event opens the ended report, Highlights first (result line first)', end.opened === 'pastEventScreen' && end.highlights.length >= 2 && /^(Ended|Made) /.test(end.highlights[0]), end);
+check('Highlights end with the busiest half-hour', /^Busiest half-hour: .*\d\d:\d\d–\d\d:\d\d, \d+ sales/.test(end.highlights.at(-1)), end.highlights);
 check('a past event starts at its first sale (not when the previous event ended)', end.startedAtFirstSale, end);
 check('End event stores the event with all sales, breaks and expenses', end.count === 1 && end.name === 'Comifuro 21' && end.sales === 4 && end.breaks === 1 && end.expenses === 1, end);
 check('fresh live event after End event', end.liveSales === 0 && end.liveCosts === 0 && end.liveBreaks === 0 && end.empty, end);
@@ -149,12 +138,27 @@ const view = await run(page, `${H}
   const screen = document.querySelector('.screen.active').id;
   const hero = amount('#pastEventCard .hero-figure');
   const ends = !!document.querySelector('#pastEventCard #endDayBtn, #pastEventCard #endEventBtn');
+  const sw = () => [...document.querySelectorAll('#pastEventCard .view-switch-btn')];
+  const days = () => document.querySelectorAll('#pastEventCard details.products-day').length;
+  const opened = { pressed: sw().map((b) => b.getAttribute('aria-pressed')).join(), days: days() };
+  sw()[0].click();
+  await wait();
+  const byDay = { pressed: sw().map((b) => b.getAttribute('aria-pressed')).join(), days: days() };
+  const box = document.querySelector('#pastEventCard .view-switch');
+  const content = document.querySelector('#pastEventCard .view-swap');
+  const moving = { pill: box.dataset.swap, content: content.dataset.swap };
+  await wait(600);
+  const pill = getComputedStyle(box, '::before');
+  const first = sw()[0].getBoundingClientRect();
+  const settled = { swap: box.dataset.swap ?? null, contentSwap: content.dataset.swap ?? null, left: Math.abs(box.getBoundingClientRect().left + box.clientLeft + parseFloat(pill.left) - first.left), width: Math.abs(parseFloat(pill.width) - first.width), rowsStill: !document.querySelector('#pastEventCard .view-swap .product-row')?.getAnimations().length };
   document.getElementById('pastEventBackBtn').click();
-  return { rows, screen, hero, ends, back: document.querySelector('.screen.active').id };
+  return { moving, settled, rows, screen, hero, ends, opened, byDay, back: document.querySelector('.screen.active').id };
 `);
+check('By day / Combined: a tap moves the pill and slides the Products the same way, then settles exactly on the chosen half', view.moving.pill === 'left' && view.moving.content === 'left' && view.settled.swap === null && view.settled.contentSwap === null && view.settled.left < 1 && view.settled.width < 1 && view.settled.rowsStill, view);
 check('History lists the ended event', view.rows.length === 1 && view.rows[0].includes('Comifuro 21'), view);
 check('past event view shows the same net, no End buttons', view.screen === 'pastEventScreen' && view.hero === end.total && !view.ends, view);
 check('back from past event returns to History', view.back === 'historyScreen', view);
+check('an ended 2-day event opens Combined (one Products card); By day shows a card per day', view.opened.pressed === 'false,true' && view.opened.days === 0 && view.byDay.pressed === 'true,false' && view.byDay.days === 2, view);
 
 // 7. Edit: −1 then Save removes one sale from that day; Cancel changes nothing
 const edit = await run(page, `${H}
@@ -276,7 +280,7 @@ const cmp2 = await run(page, `${H}
   const rows = [...document.querySelectorAll('#compareEventCard .cmp-row')].map((r) => [r.querySelector('.cmp-label').textContent, ...[...r.querySelectorAll('.cmp-value')].map((v) => v.textContent)].join('|'));
   return { rows, green: document.querySelectorAll('#compareEventCard .is-positive, #compareEventCard .is-winner').length };
 `);
-check('compare: one row per expense name, same names added up, a missing one is "—"', ['Booth|Rp 50.000|Rp 60.000', 'Transport|—|Rp 30.000', 'Parking|Rp 20.000|—'].every((row) => cmp2.rows.includes(row)), cmp2.rows);
+check('compare: one row per expense name, same names added up, a missing one is "—"', ['Booth|Rp\u00a050.000|Rp\u00a060.000', 'Transport|—|Rp\u00a030.000', 'Parking|Rp\u00a020.000|—'].every((row) => cmp2.rows.includes(row)), cmp2.rows);
 check('compare: no "better" colouring', cmp2.green === 0, cmp2);
 
 const discard = await run(page, `${H}
@@ -388,6 +392,54 @@ await sleep(400);
 const field = await page.$eval('#eventCostAmount', (n) => { const r = n.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, height: innerHeight }; });
 check('a focused field scrolls back into view when the keyboard shrinks the page', below > keyboardTop && field.top >= 0 && field.bottom <= field.height, { below, field });
 await page.setViewportSize({ width: 412, height: 892 });
+
+// End day, then End event with no new sales: the sales stay, and no empty day appears.
+await load();
+const dayThenEnd = await run(page, `${H}
+  tab('salesScreen');
+  tap('Poster', 'Cash');
+  await wait();
+  tab('eventScreen');
+  document.getElementById('endDayBtn').click();
+  await confirmYes();
+  const before = stored('cntrEvents').length;
+  const sold = stored('cntrSales').length;
+  document.getElementById('endEventBtn').click();
+  await nameSheet('No new sales');
+  await confirmYes();
+  await wait(100);
+  if (document.getElementById('confirmModalOverlay').classList.contains('open')) await confirmYes();
+  await wait(100);
+  const events = stored('cntrEvents');
+  return { added: events.length - before, sold, sales: events.at(-1).sales.length, name: events.at(-1).name, days: document.querySelectorAll('#pastEventCard .day-card').length, opened: document.querySelector('.screen.active').id };
+`);
+check('End day then End event with no new sales: one event, its sale kept, no empty day', dayThenEnd.added === 1 && dayThenEnd.sold > 0 && dayThenEnd.sales === dayThenEnd.sold && dayThenEnd.name === 'No new sales' && dayThenEnd.days <= 1 && dayThenEnd.opened === 'pastEventScreen', dayThenEnd);
+
+// Accessibility: the tab says which page is open, a sale is announced once, Back keeps focus on the page, the colour field opens from the keyboard.
+await load();
+const a11y = await run(page, `${H}
+  tab('historyScreen');
+  const current = [...document.querySelectorAll('.tabbar .tab[aria-current="page"]')].map((n) => n.dataset.tab).join();
+  tab('salesScreen');
+  return { current, live: document.getElementById('stats').hasAttribute('aria-live'), heroHidden: document.querySelector('#stats .hero-figure').getAttribute('aria-hidden') };
+`);
+check('the open tab has aria-current; the hero is quiet (the toast announces a sale)', a11y.current === 'historyScreen' && !a11y.live && a11y.heroHidden === 'true', a11y);
+await page.click('.tabbar .tab[data-tab="productHistoryScreen"]');
+await page.click('.product-edit-btn');
+await sleep(300);
+await page.focus('#colorField');
+await page.keyboard.press('Enter');
+await sleep(100);
+const picker = await page.evaluate(() => ({ open: document.getElementById('colorPickerMenu').classList.contains('open'), focus: document.activeElement?.id, preset: document.querySelector('.color-preset').getBoundingClientRect().width }));
+await page.keyboard.press('Escape');
+await sleep(100);
+const closed = await page.evaluate(() => ({ open: document.getElementById('colorPickerMenu').classList.contains('open'), focus: document.activeElement?.id }));
+check('Enter opens the colour picker on the hex field; Escape closes it back on the field', picker.open && picker.focus === 'editColorHexInput' && !closed.open && closed.focus === 'colorField', { picker, closed });
+await page.focus('.screen.active .back-btn');
+await page.keyboard.press('Enter');
+await sleep(200);
+const afterBack = await page.evaluate(() => ({ screen: document.querySelector('.screen.active').id, focus: document.activeElement?.id }));
+check('Back moves focus to the screen it opens, not nowhere', afterBack.focus === afterBack.screen, afterBack);
 
 check('no uncaught exceptions', errors.length === 0, errors.join(' | '));
 await browser.close();

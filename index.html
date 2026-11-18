@@ -35,22 +35,22 @@
             </div>
           </div>
         </div>
-        <div class="hero" id="stats" aria-live="polite"></div>
+        <div class="hero" id="stats"></div>
       </header>
 
       <main class="content">
         <p class="storage-alert" id="storageAlert" role="alert" hidden></p>
-        <section class="screen active" id="salesScreen">
+        <section class="screen active" tabindex="-1" id="salesScreen">
           <div class="sales-grid" id="grid"></div>
         </section>
 
-        <section class="screen" id="eventScreen">
+        <section class="screen" tabindex="-1" id="eventScreen">
           <div class="page">
             <div class="stack" id="eventCard"></div>
           </div>
         </section>
 
-        <section class="screen" id="historyScreen">
+        <section class="screen" tabindex="-1" id="historyScreen">
           <div class="page">
             <div class="page-header">
               <h1 class="page-title" data-i18n="history">History</h1>
@@ -69,7 +69,7 @@
           </div>
         </section>
 
-        <section class="screen" id="pastEventScreen">
+        <section class="screen" tabindex="-1" id="pastEventScreen">
           <div class="page">
             <div class="page-header">
               <button class="icon-btn back-btn" id="pastEventBackBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
@@ -85,7 +85,7 @@
           </div>
         </section>
 
-        <section class="screen" id="compareEventScreen">
+        <section class="screen" tabindex="-1" id="compareEventScreen">
           <div class="page">
             <div class="page-header">
               <button class="icon-btn back-btn" id="compareEventBackBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
@@ -95,7 +95,7 @@
           </div>
         </section>
 
-        <section class="screen" id="settingsScreen">
+        <section class="screen" tabindex="-1" id="settingsScreen">
           <div class="page">
             <div class="page-header">
               <h1 class="page-title" data-i18n="settings">Settings</h1>
@@ -104,13 +104,6 @@
               <section class="group" data-group="event">
                 <h2 class="group-title" data-i18n="event">Event</h2>
                 <div class="group-body">
-                  <label class="group-row" for="productsPerDayToggle">
-                    <span class="group-row-label"><span data-i18n="products_per_day">Products per day</span></span>
-                    <span class="switch">
-                      <input type="checkbox" id="productsPerDayToggle" role="switch" />
-                      <span class="switch-track" aria-hidden="true"></span>
-                    </span>
-                  </label>
                   <label class="group-row" for="newDayToggle">
                     <span class="group-row-label"><span data-i18n="settings.newDay">New day when the date changes</span><small data-i18n="settings.newDayText">On the first sale of a new date</small></span>
                     <span class="switch">
@@ -205,7 +198,7 @@
           </div>
         </section>
 
-        <section class="screen" id="productHistoryScreen">
+        <section class="screen" tabindex="-1" id="productHistoryScreen">
           <div class="page">
             <div class="page-header">
               <h1 class="page-title" data-i18n="products">Products</h1>
@@ -215,7 +208,7 @@
           </div>
         </section>
 
-        <section class="screen" id="aboutScreen">
+        <section class="screen" tabindex="-1" id="aboutScreen">
           <div class="page">
             <div class="page-header">
               <button class="icon-btn back-btn" id="aboutBackBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
@@ -248,7 +241,7 @@
           </div>
         </section>
 
-        <section class="screen" id="productEditScreen">
+        <section class="screen" tabindex="-1" id="productEditScreen">
           <div class="page">
             <div class="page-header">
               <button class="icon-btn back-btn" id="closeEditBtn" type="button" title="Back" data-i18n-title="back" aria-label="Back" data-i18n-aria="back"><i data-icon="arrow-left"></i></button>
@@ -299,7 +292,7 @@
                   </span>
                 </label>
               </div>
-              <div class="form-part" id="productFields">
+              <div class="form-part reveal" id="productFields">
                 <label class="field">
                   <span class="field-label" data-i18n="name">Name</span>
                   <input class="input input-lg" id="editName" maxlength="1000" type="text" placeholder="Product name" data-i18n-placeholder="product_name" autocomplete="off" />
@@ -307,15 +300,15 @@
                 <div class="field-row">
                   <label class="field">
                     <span class="field-label" id="editPriceLabel">Price</span>
-                    <input class="input" id="editPrice" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                    <input class="input" id="editPrice" type="text" inputmode="decimal" autocomplete="off" />
                   </label>
                   <label class="field">
                     <span class="field-label" id="editCostLabel">Cost</span>
-                    <input class="input" id="editCost" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                    <input class="input" id="editCost" type="text" inputmode="decimal" autocomplete="off" />
                   </label>
                 </div>
               </div>
-              <label class="field" id="groupNameField" hidden>
+              <label class="field reveal" id="groupNameField" hidden>
                 <span class="field-label" data-i18n="product.groupName">Group name</span>
                 <input class="input input-lg" id="editGroup" maxlength="1000" type="text" placeholder="e.g. Poster" data-i18n-placeholder="product.groupPlaceholder" autocomplete="off" />
               </label>
@@ -323,7 +316,7 @@
                 <span class="field-label" id="editPaymentsLabel" data-i18n="payment_methods_pick_1_or_2">Payment methods · pick 1 or 2</span>
                 <div class="payment-options" id="editPayments" role="group" aria-labelledby="editPaymentsLabel"></div>
               </div>
-              <div class="field variants" id="variantsField" hidden>
+              <div class="field variants reveal" id="variantsField" hidden>
                 <div class="variant-row variant-head" aria-hidden="true">
                   <span class="field-label" data-i18n="product.variant">Variant</span>
                   <span class="field-label" id="variantPriceLabel">Price</span>
@@ -342,7 +335,7 @@
       <nav class="tabbar" aria-label="Main" data-i18n-aria="main">
         <button class="tab" data-tab="eventScreen" type="button"><i data-icon="event"></i><span class="tab-label" data-i18n="event">Event</span></button>
         <button class="tab" data-tab="productHistoryScreen" type="button"><i data-icon="package"></i><span class="tab-label" data-i18n="products">Products</span></button>
-        <button class="tab tab-primary active" data-tab="salesScreen" type="button"><i data-icon="sell"></i><span class="tab-label" data-i18n="sell">Sell</span></button>
+        <button class="tab tab-primary active" data-tab="salesScreen" type="button" aria-current="page"><i data-icon="sell"></i><span class="tab-label" data-i18n="sell">Sell</span></button>
         <button class="tab" data-tab="historyScreen" type="button"><i data-icon="history"></i><span class="tab-label" data-i18n="history">History</span></button>
         <button class="tab" data-tab="settingsScreen" type="button"><i data-icon="settings"></i><span class="tab-label" data-i18n="settings">Settings</span></button>
       </nav>
@@ -406,7 +399,7 @@
           </label>
           <label class="field">
             <span class="field-label" data-i18n="amount">Amount</span>
-            <input class="input" id="eventCostAmount" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off" />
+            <input class="input" id="eventCostAmount" type="text" inputmode="decimal" placeholder="0" autocomplete="off" />
           </label>
           <div class="field" id="expenseProductsField">
             <div class="group-body">
@@ -418,7 +411,7 @@
                 </span>
               </label>
             </div>
-            <div class="form-part" id="expenseProductsBody" hidden>
+            <div class="form-part reveal" id="expenseProductsBody" hidden>
               <p class="field-hint" id="expenseProductsHint" data-i18n="expense.productsHint">Their item cost won't be counted again.</p>
               <div class="checklist" id="expenseProducts" role="group" aria-labelledby="expenseProductsLabel" aria-describedby="expenseProductsHint"></div>
             </div>

@@ -87,6 +87,20 @@ const mix = await run(page, `${H}
 `);
 check('payment mix lists the methods used (Transfer, Card), not Cash/QRIS', mix.join() === 'Transfer,Card', mix);
 
+// The donut: one coloured arc per method used, labelled for screen readers, with its legend beside it.
+const donut = await run(page, `${H}
+  const svg = document.querySelector('#eventCard svg.donut');
+  const arcs = [...svg.querySelectorAll('.donut-seg')];
+  return {
+    arcs: arcs.map((a) => a.classList.contains('pay-transfer') ? 'Transfer' : a.classList.contains('pay-card') ? 'Card' : '?').join(),
+    colours: arcs.map((a) => getComputedStyle(a).stroke).join(' | '),
+    label: svg.getAttribute('role') + ': ' + svg.getAttribute('aria-label'),
+    legend: document.querySelectorAll('#eventCard .split-legend .split-item').length,
+    height: Math.round(svg.getBoundingClientRect().height),
+  };
+`);
+check('payment mix donut: one arc per method (Transfer, Card) in its colour, an img label naming both, legend beside it', donut.arcs === 'Transfer,Card' && donut.colours === 'rgb(25, 158, 112) | rgb(144, 133, 233)' && /^img: Transfer .+, Card .+/.test(donut.label) && donut.legend === 2 && donut.height === 88, donut);
+
 // 6. History edit offers each product's own methods
 const hist = await run(page, `${H}
   document.getElementById('endEventBtn').click();

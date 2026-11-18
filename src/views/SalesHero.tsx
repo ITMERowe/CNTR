@@ -5,14 +5,15 @@ import { t, tn } from '../i18n';
 const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
 /** Counts from the previous value to `value` with an ease-out, so a new sale "lands" in the total. */
-function useCountUp(value: number, duration = 420) {
+function useCountUp(value: number, duration = 200) {
   const [shown, setShown] = useState(value);
-  const from = useRef(value);
+  // The number on screen, so a sale landing mid-count continues from there instead of jumping.
+  const onScreen = useRef(value);
 
   useEffect(() => {
-    const start = from.current;
-    from.current = value;
+    const start = onScreen.current;
     if (start === value || prefersReducedMotion()) {
+      onScreen.current = value;
       setShown(value);
       return;
     }
@@ -21,7 +22,8 @@ function useCountUp(value: number, duration = 420) {
     const step = (now: number) => {
       const t = Math.min(1, (now - startedAt) / duration);
       const eased = 1 - (1 - t) ** 3;
-      setShown(Math.round(start + (value - start) * eased));
+      onScreen.current = Math.round(start + (value - start) * eased);
+      setShown(onScreen.current);
       if (t < 1) frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);
@@ -31,14 +33,14 @@ function useCountUp(value: number, duration = 420) {
   return shown;
 }
 
-/** Today's totals at the top of the Sell screen; after End day the label says which day. */
-export function SalesHero({ revenue, profit, count, day }: { revenue: number; profit: number; count: number; day: number }) {
+/** Today's totals at the top of the Sell screen. No label (owner, 0.1.2): the figure is clearly revenue; screen readers still hear it. */
+export function SalesHero({ revenue, profit, count }: { revenue: number; profit: number; count: number }) {
   const shown = useCountUp(revenue);
   const { sign, symbol, number } = splitFigure(fmt(shown));
   return (
     <>
-      <span class="eyebrow">{day > 1 ? t('hero.dayRevenue', { day }) : t('revenue')}</span>
-      <span class="hero-figure" aria-label={fmt(revenue)} style={{ '--chars': fmt(revenue).length }}>
+      <span class="sr-only">{`${t('revenue')} ${fmt(revenue)}`}</span>
+      <span class="hero-figure" aria-hidden="true" style={{ '--chars': fmt(revenue).length }}>
         {sign}
         <span class="hero-figure-symbol">{symbol}</span> {number}
       </span>

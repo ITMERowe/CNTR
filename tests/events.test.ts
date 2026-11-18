@@ -1,7 +1,7 @@
 // Event maths: days, totals, History edits. Run with `npm test`.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { adjustCount, breakTime, defaultEventName, eventSummary, formatDay, saleTime, snapshotProducts, splitDays, todaySales, withLinkedCosts } from '../src/events.ts';
+import { adjustCount, breakTime, defaultEventName, eventSummary, formatDay, lastSaleAt, saleTime, snapshotProducts, splitDays, todaySales, withLinkedCosts } from '../src/events.ts';
 import { setLanguage } from '../src/i18n.ts';
 import type { PastEvent, SaleRecord } from '../src/types.ts';
 
@@ -23,6 +23,12 @@ function event(sales: SaleRecord[], dayBreaks: string[] = []): PastEvent {
     expenses: [],
   };
 }
+
+test('lastSaleAt is the newest sale, not the day the event was ended; no sales falls back to the end date', () => {
+  const e = event([sale('Poster', T3), sale('Poster', T1)]);
+  assert.equal(new Date(lastSaleAt(e)).toISOString(), T3);
+  assert.equal(lastSaleAt(event([])), e.endedAt);
+});
 
 test('splitDays puts each sale in the day before the next break', () => {
   const days = splitDays([sale('Poster', T1), sale('Poster', T3)], [BREAK]);
@@ -144,4 +150,9 @@ test('linked costs: a product hidden then re-added under the same name is covere
   const after = { ...sale('Sticker', T1, 'Cash', 2000, 500), productId: 'p-new' };
   const covered = withLinkedCosts([before, after], [{ id: 'x', name: 'Print', amount: 1, productIds: ['p-new'] }], products);
   assert.deepEqual(covered.map((s) => s.cost), [0, 0]);
+});
+
+test('snapshotProducts keeps the group, so an ended event can still total by group (Highlights)', () => {
+  const [poster] = snapshotProducts([sale('Poster A3', T1)], [{ name: 'Poster A3', price: 1, cost: 1, color: '#123456', group: 'Poster' }]);
+  assert.equal(poster.group, 'Poster');
 });

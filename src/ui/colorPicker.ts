@@ -102,6 +102,12 @@ function trackPointer(area: HTMLElement, update: (x: number, y: number) => void)
 
 export function initColorPicker() {
   el.colorField.addEventListener('click', () => el.colorPickerMenu.classList.add('open'));
+  el.colorField.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    el.colorPickerMenu.classList.add('open');
+    el.editColorHexInput.focus();
+  });
 
   el.editColorHexInput.addEventListener('input', () => {
     const value = el.editColorHexInput.value.trim();
@@ -129,6 +135,8 @@ export function initColorPicker() {
     if (!el.colorPickerMenu.contains(target) && !el.colorField.contains(target)) closeColorPicker();
   });
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeColorPicker();
+    if (event.key !== 'Escape' || !el.colorPickerMenu.classList.contains('open')) return;
+    closeColorPicker();
+    el.colorField.focus();
   });
 }

@@ -13,6 +13,9 @@ function scan() {
   const out = { overflow: [], small: [], unlabeled: [], contrast: [], type: [] };
   for (const e of document.querySelectorAll('.screen.active *')) {
     if (visible(e) && !e.children.length && e.textContent.trim() && (e.getBoundingClientRect().right > innerWidth - 8 || e.scrollWidth > e.clientWidth + 1)) out.overflow.push(`${name(e)} "${e.textContent.trim().slice(0, 30)}"`);
+    // Plus Jakarta Sans: content area 1.26em, descent 0.222em, g and y reach about 0.2em under the baseline.
+    const style = getComputedStyle(e);
+    if (visible(e) && !e.children.length && /[gjpqy]/.test(e.textContent) && style.overflowY !== 'visible' && (parseFloat(style.lineHeight) / 2 + parseFloat(style.paddingBottom)) / parseFloat(style.fontSize) < 0.608) out.overflow.push(`${name(e)} cuts its descenders "${e.textContent.trim().slice(0, 30)}"`);
     if (visible(e) && e.getBoundingClientRect().right > innerWidth + 0.5) out.overflow.push(`${name(e)} sticks out of the screen (right ${Math.round(e.getBoundingClientRect().right)}px)`);
   }
   for (const e of document.querySelectorAll('button, a, input, select, [role=switch], [role=button]')) {
@@ -26,7 +29,7 @@ function scan() {
   }
   const rgb = (c) => (c.match(/[\d.]+/g) || []).map(Number);
   const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
-  const background = (e) => { for (let n = e; n; n = n.parentElement) { const c = rgb(getComputedStyle(n).backgroundColor); if (c.length === 3 || c[3] > 0.9) return c.slice(0, 3); } return [30, 30, 30]; };
+  const background = (e) => { if (e.matches('.view-switch-btn[aria-pressed="true"]')) return rgb(getComputedStyle(e.parentElement, '::before').backgroundColor).slice(0, 3); /* its pill is the parent's ::before */ for (let n = e; n; n = n.parentElement) { const c = rgb(getComputedStyle(n).backgroundColor); if (c.length === 3 || c[3] > 0.9) return c.slice(0, 3); } return [30, 30, 30]; };
   for (const e of document.querySelectorAll('body *')) {
     if (!visible(e) || ![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
     const s = getComputedStyle(e);
@@ -130,7 +133,8 @@ for (const [theme, language] of [['dark', 'en'], ['light', 'en'], ['dark', 'id']
 }
 
 // Wide screens: Sell gets 2 columns on a phone in landscape or a tablet in portrait, 3 on a big tablet; other pages stay a centred column.
-for (const [width, height, columns] of [[412, 892, 1], [915, 412, 2], [800, 1280, 2], [1280, 800, 3]]) {
+// From 720px the 88px nav rail takes the left, so columns count from the content: 2 from 808px wide, 3 from 1168px.
+for (const [width, height, columns] of [[412, 892, 1], [915, 412, 2], [800, 1280, 1], [900, 1280, 2], [1280, 800, 3]]) {
   const page = await browser.newPage({ viewport: { width, height } });
   await page.goto(URL);
   await page.evaluate((p) => { localStorage.clear(); localStorage.cntrProducts = p; }, SAMPLE_PRODUCTS);
@@ -140,7 +144,8 @@ for (const [width, height, columns] of [[412, 892, 1], [915, 412, 2], [800, 1280
   check(`${width}x${height}: Sell shows ${columns} tile column(s)`, cols === columns, `${cols}`);
   await page.click('.tabbar .tab[data-tab="settingsScreen"]');
   const box = await page.evaluate(() => document.querySelector('#settingsScreen .page').getBoundingClientRect().toJSON());
-  check(`${width}x${height}: Settings is at most 640px wide and centred`, box.width <= 640 && Math.abs(box.left - (width - box.right)) < 1, box);
+  const rail = width >= 720 ? 88 : 0;
+  check(`${width}x${height}: Settings is at most 640px wide and centred in the content (right of the ${rail}px rail)`, box.width <= 640 && Math.abs(box.left - rail - (width - box.right)) < 1, box);
   await page.close();
 }
 
@@ -221,6 +226,49 @@ for (const [width, height] of [[360, 640], [412, 915]]) {
   const rows = await page.evaluate(() => [...document.querySelectorAll('#productHistoryList :is(.product-item, .product-group-title)')].map((n) => Math.round(n.getBoundingClientRect().height)));
   // 64px: name + one meta line; a narrow phone may wrap the payment methods to a 2nd meta line.
   check(`${width}x${height}: Products rows are 64-${width > 360 ? 72 : 88}px (a product, a variant or a group header)`, rows.length > 5 && rows.every((h) => h >= 64 && h <= (width > 360 ? 72 : 88)), rows);
+  await page.close();
+}
+
+// Sliding tab pill (a ::before on .tabbar): its centre sits under the active tab's icon, on every tab and width.
+for (const [width, height] of [[320, 640], [412, 892], [892, 412], [1024, 768]]) {
+  const page = await browser.newPage({ viewport: { width, height } });
+  await page.goto(URL);
+  await sleep(300);
+  const offsets = [];
+  const rail = width >= 720; // the nav rail: the pill travels down the rail, so it is centred on the icon in both directions
+  for (const tab of ['eventScreen', 'productHistoryScreen', 'salesScreen', 'historyScreen', 'settingsScreen']) {
+    await page.click(`.tabbar .tab[data-tab="${tab}"]`);
+    await sleep(450);
+    offsets.push(await page.evaluate(([id, rail]) => {
+      const bar = document.querySelector('.tabbar');
+      const pill = getComputedStyle(bar, '::before');
+      const shift = new DOMMatrix(pill.transform === 'none' ? undefined : pill.transform).m41;
+      const box = bar.getBoundingClientRect();
+      const centre = box.left + parseFloat(pill.left) + shift + parseFloat(pill.width) / 2;
+      const icon = document.querySelector(`.tabbar .tab[data-tab="${id}"] .icon`).getBoundingClientRect();
+      const across = Math.round(centre - (icon.left + icon.width / 2));
+      // In the rail the pill's top is set and its height is 32px (the 'height' computed value is the used one).
+      const along = rail ? Math.round(box.top + parseFloat(pill.top) + parseFloat(pill.height) / 2 - (icon.top + icon.height / 2)) : 0;
+      return Math.abs(across) > Math.abs(along) ? across : along;
+    }, [tab, rail]));
+  }
+  check(`${width}x${height}: the tab pill is centred under the active tab's icon on all five tabs`, offsets.every((d) => Math.abs(d) <= 1), offsets);
+  await page.close();
+}
+
+// A long product name on the report ellipsizes; its revenue stays on screen at 320px (council audit, 2026-11-03).
+{
+  const page = await browser.newPage({ viewport: { width: 320, height: 640 } });
+  await page.goto(URL);
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.cntrProducts = JSON.stringify([{ name: 'Figure Skala 1/7 Kobo Kanaeru Pre-order Batch 2 Limited', price: 850000, cost: 0, color: '#4f6eff' }]);
+  });
+  await page.reload(); await sleep(600);
+  await page.click('.tile [data-action="plus"][data-payment="Cash"]');
+  await page.click('.tabbar .tab[data-tab="eventScreen"]'); await sleep(600);
+  const right = await page.evaluate(() => Math.round(document.querySelector('#eventScreen .rank-revenue').getBoundingClientRect().right));
+  check('320px: a long product name keeps its report revenue on screen', right <= 320, { right });
   await page.close();
 }
 

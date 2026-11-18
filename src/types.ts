@@ -62,8 +62,6 @@ export interface PastEvent {
 export interface AppSettings {
   currency: Currency;
   compactMoney: boolean;
-  /** Event screen: one Products card per day instead of one for the whole event. */
-  productsPerDay: boolean;
   /** The first sale on a new calendar date starts a new day by itself (as if End day had been pressed). */
   newDayOnDateChange: boolean;
   /** Sell: best sellers today first (re-sorted only when Sell is opened, so a tile never moves mid-tap). */
